@@ -3,5 +3,10 @@
     "defaultMode": "bypassPermissions"
   },
   "model": "sonnet[1m]",
-  "skipDangerousModePermissionPrompt": true
+  "skipDangerousModePermissionPrompt": true,
+  "statusLine": {
+    "type": "command",
+    "command": "bunx -y ccstatusline@latest",
+    "padding": 0
+  }
 }
