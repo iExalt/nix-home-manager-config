@@ -19,6 +19,8 @@
   home.file.".vimrc".source = ./dotfiles/.vimrc;
   home.file.".zsh_aliases".source = ./dotfiles/.zsh_aliases;
   home.file.".kubectl_aliases.zsh".source = ./dotfiles/.kubectl_aliases.zsh;
+  home.file.".codex/config.toml".source = ./dotfiles/.codex/config.toml;
+  home.file.".claude/settings.json".source = ./dotfiles/.claude/settings.json;
 
   home.sessionVariables = {
     LESS = "-FRX";
