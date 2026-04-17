@@ -74,12 +74,17 @@ in
       core.editor = "vim";
       push.autoSetupRemote = true;
       gpg.ssh.allowedSignersFile = "~/.ssh/allowed_signers";
+      "credential \"https://github.com\"".helper = "!gh auth git-credential";
     };
     signing = {
       format = "ssh";
       key = "~/.ssh/id_ed25519.pub";
       signByDefault = true;
     };
+  };
+
+  programs.gh = {
+    enable = true;
   };
 
   programs.home-manager.enable = true;

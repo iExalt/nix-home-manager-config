@@ -7,3 +7,6 @@ service_tier = "fast"
 
 [tui]
 status_line = ["model-with-reasoning", "current-dir", "git-branch", "used-tokens", "context-used", "fast-mode"]
+
+[projects."/home/shadeform/Projects/openzl"]
+trust_level = "trusted"
