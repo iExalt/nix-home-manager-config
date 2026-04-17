@@ -3,6 +3,7 @@ model_reasoning_effort = "high"
 approval_policy = "never"
 sandbox_mode = "danger-full-access"
 approvals_reviewer = "user"
+service_tier = "fast"
 
 [tui]
 status_line = ["model-with-reasoning", "current-dir", "git-branch", "used-tokens", "context-used", "fast-mode"]
