@@ -78,6 +78,15 @@ if [ -x "$ZSH_PATH" ]; then
   fi
 fi
 
+# 7. Install node + bun via mise, pinned to the current latest. Run through the
+#    nix zsh with -i so mise activation and the `muse` function (from
+#    dotfiles/.zsh_aliases) are loaded.
+ZSH_BIN="$HOME/.nix-profile/bin/zsh"
+if [ -x "$ZSH_BIN" ]; then
+  log "Installing node + bun via mise (pinned to current latest)..."
+  "$ZSH_BIN" -ic 'muse node && muse bun'
+fi
+
 log "Done. Log out and back in to pick up the new shell + environment."
 log "Public key for git signing:"
 cat "$SSH_KEY.pub"
