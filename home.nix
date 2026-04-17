@@ -22,7 +22,6 @@
   home.file.".codex/config.toml".source = ./dotfiles/.codex/config.toml;
   home.file.".claude/settings.json".source = ./dotfiles/.claude/settings.json;
   xdg.configFile."ccstatusline/settings.json".source = ./dotfiles/.config/ccstatusline/settings.json;
-  xdg.configFile."mise/config.toml".source = ./dotfiles/.config/mise/config.toml;
 
   home.sessionVariables = {
     LESS = "-FRX";
