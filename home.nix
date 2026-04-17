@@ -38,6 +38,7 @@
       ];
     };
     initContent = ''
+      eval "$(mise activate zsh)"
       source ~/.zsh_aliases
     '';
   };
