@@ -57,6 +57,19 @@ else
   home-manager switch -b backup
 fi
 
-log "Done. Start a new shell to pick up the environment."
+# 6. Switch login shell to the nix-managed zsh
+ZSH_PATH="$HOME/.nix-profile/bin/zsh"
+if [ -x "$ZSH_PATH" ]; then
+  if ! grep -qxF "$ZSH_PATH" /etc/shells 2>/dev/null; then
+    log "Registering $ZSH_PATH in /etc/shells..."
+    echo "$ZSH_PATH" | sudo tee -a /etc/shells >/dev/null
+  fi
+  if [ "$SHELL" != "$ZSH_PATH" ]; then
+    log "Changing login shell to $ZSH_PATH..."
+    sudo chsh -s "$ZSH_PATH" "$USER"
+  fi
+fi
+
+log "Done. Log out and back in to pick up the new shell + environment."
 log "Public key for git signing:"
 cat "$SSH_KEY.pub"
