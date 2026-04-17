@@ -65,6 +65,16 @@ if [ -x "$ZSH_PATH" ]; then
   if [ "$SHELL" != "$ZSH_PATH" ]; then
     log "Changing login shell to $ZSH_PATH..."
     sudo chsh -s "$ZSH_PATH" "$USER"
+    # Kick sshd so the new shell is picked up on the next login (without this,
+    # connections that predated chsh — incl. SSH ControlMaster reuse — keep bash).
+    if command -v systemctl >/dev/null 2>&1; then
+      for svc in ssh sshd; do
+        if systemctl list-unit-files "${svc}.service" >/dev/null 2>&1; then
+          sudo systemctl restart "$svc" || true
+          break
+        fi
+      done
+    fi
   fi
 fi
 
