@@ -4,5 +4,5 @@ approval_policy = "never"
 sandbox_mode = "danger-full-access"
 approvals_reviewer = "user"
 
-[projects."/Users/clliaw/Work"]
-trust_level = "trusted"
+[tui]
+status_line = ["model-with-reasoning", "current-dir", "git-branch", "used-tokens", "context-used", "fast-mode"]
