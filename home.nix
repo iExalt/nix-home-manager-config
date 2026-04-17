@@ -1,5 +1,8 @@
 { config, pkgs, lib, ... }:
 
+let
+  repoRoot = "${config.home.homeDirectory}/Projects/nix-home-manager-config";
+in
 {
   home.username = builtins.getEnv "USER";
   home.homeDirectory = builtins.getEnv "HOME";
@@ -19,8 +22,10 @@
   home.file.".vimrc".source = ./dotfiles/.vimrc;
   home.file.".zsh_aliases".source = ./dotfiles/.zsh_aliases;
   home.file.".kubectl_aliases.zsh".source = ./dotfiles/.kubectl_aliases.zsh;
-  home.file.".codex/config.toml".source = ./dotfiles/.codex/config.toml;
-  home.file.".claude/settings.json".source = ./dotfiles/.claude/settings.json;
+  home.file.".codex/config.toml".source =
+    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/.codex/config.toml";
+  home.file.".claude/settings.json".source =
+    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/.claude/settings.json";
   xdg.configFile."ccstatusline/settings.json".source = ./dotfiles/.config/ccstatusline/settings.json;
 
   home.sessionVariables = {
