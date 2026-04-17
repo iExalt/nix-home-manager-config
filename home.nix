@@ -26,6 +26,10 @@ in
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/.codex/config.toml";
   home.file.".claude/settings.json".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/.claude/settings.json";
+  home.file.".claude/CLAUDE.md".source =
+    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/AGENTS.md";
+  home.file.".codex/AGENTS.md".source =
+    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/AGENTS.md";
   xdg.configFile."ccstatusline/settings.json".source = ./dotfiles/.config/ccstatusline/settings.json;
 
   home.sessionVariables = {
