@@ -17,6 +17,7 @@ in
   home.packages = [
     pkgs.zsh
     pkgs.mise
+    pkgs.difftastic
   ];
 
   home.file.".vimrc".source = ./dotfiles/.vimrc;
@@ -33,7 +34,7 @@ in
   xdg.configFile."ccstatusline/settings.json".source = ./dotfiles/.config/ccstatusline/settings.json;
 
   home.sessionVariables = {
-    LESS = "-FRX";
+    LESS = "-FR";
   };
 
   programs.zsh = {
@@ -76,6 +77,10 @@ in
         email = "cman101202@gmail.com";
       };
       core.editor = "vim";
+      diff.external = "${pkgs.difftastic}/bin/difft";
+      diff.tool = "difftastic";
+      difftool.difftastic.cmd = ''${pkgs.difftastic}/bin/difft "$LOCAL" "$REMOTE"'';
+      difftool.prompt = false;
       push.autoSetupRemote = true;
       gpg.ssh.allowedSignersFile = "~/.ssh/allowed_signers";
       "credential \"https://github.com\"".helper = "!gh auth git-credential";
