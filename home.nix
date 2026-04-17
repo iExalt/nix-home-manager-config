@@ -38,15 +38,16 @@ in
       enable = true;
       plugins = [
         "getantidote/use-omz"
+        "mattmc3/ez-compinit"
         "ohmyzsh/ohmyzsh path:lib"
         "ohmyzsh/ohmyzsh path:plugins/git"
         "ahmetb/kubectx path:completion kind:fpath"
         "agkozak/zsh-z"
-        "aloxaf/fzf-tab"
         "zdharma-continuum/fast-syntax-highlighting"
       ];
     };
     initContent = ''
+      zstyle ':plugin:ez-compinit' 'compstyle' 'ohmy'
       eval "$(mise activate zsh)"
       source ~/.zsh_aliases
     '';
