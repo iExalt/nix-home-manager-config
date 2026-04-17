@@ -16,7 +16,9 @@
   home.file.".zsh_aliases".source = ./dotfiles/.zsh_aliases;
   home.file.".kubectl_aliases.zsh".source = ./dotfiles/.kubectl_aliases.zsh;
 
-  home.sessionVariables = {};
+  home.sessionVariables = {
+    LESS = "-FRX";
+  };
 
   programs.zsh = {
     enable = true;
