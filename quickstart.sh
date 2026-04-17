@@ -2,7 +2,6 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-NIXPKGS_CHANNEL="https://nixos.org/channels/nixos-25.11"
 HM_CHANNEL="https://github.com/nix-community/home-manager/archive/release-25.11.tar.gz"
 
 log() { printf '\n==> %s\n' "$*"; }
@@ -20,9 +19,8 @@ if [ -f /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]; then
   . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
 fi
 
-# 2. Pin nixpkgs and home-manager channels to matching 25.11 release
-log "Ensuring nixpkgs + home-manager channels..."
-nix-channel --add "$NIXPKGS_CHANNEL" nixpkgs
+# 2. Install home-manager channel (nixpkgs is provided by Determinate)
+log "Ensuring home-manager channel..."
 nix-channel --add "$HM_CHANNEL" home-manager
 nix-channel --update
 
