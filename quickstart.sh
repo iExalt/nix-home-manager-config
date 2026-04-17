@@ -26,12 +26,29 @@ if ! nix-channel --list | grep -q '^home-manager '; then
   nix-channel --update
 fi
 
-# 3. Link this repo's home.nix into ~/.config/home-manager
+# 3. Generate ed25519 SSH key (used for git commit signing) if missing
+SSH_KEY="$HOME/.ssh/id_ed25519"
+if [ ! -f "$SSH_KEY" ]; then
+  log "Generating ed25519 SSH keypair at $SSH_KEY..."
+  mkdir -p "$HOME/.ssh"
+  chmod 700 "$HOME/.ssh"
+  ssh-keygen -t ed25519 -f "$SSH_KEY" -C "cman101202@gmail.com" -N ""
+fi
+
+# Register key as a trusted signer so git can verify your own commits
+ALLOWED_SIGNERS="$HOME/.ssh/allowed_signers"
+SIGNER_LINE="cman101202@gmail.com $(cat "$SSH_KEY.pub")"
+if [ ! -f "$ALLOWED_SIGNERS" ] || ! grep -qxF "$SIGNER_LINE" "$ALLOWED_SIGNERS"; then
+  log "Adding signing key to $ALLOWED_SIGNERS..."
+  printf '%s\n' "$SIGNER_LINE" >> "$ALLOWED_SIGNERS"
+fi
+
+# 4. Link this repo's home.nix into ~/.config/home-manager
 log "Linking home.nix -> $REPO_ROOT/home.nix"
 mkdir -p "$HOME/.config/home-manager"
 ln -sfn "$REPO_ROOT/home.nix" "$HOME/.config/home-manager/home.nix"
 
-# 4. Install home-manager, or just switch if already installed
+# 5. Install home-manager, or just switch if already installed
 if ! command -v home-manager >/dev/null 2>&1; then
   log "Installing home-manager..."
   nix-shell '<home-manager>' -A install
@@ -41,3 +58,5 @@ else
 fi
 
 log "Done. Start a new shell to pick up the environment."
+log "Public key for git signing:"
+cat "$SSH_KEY.pub"
