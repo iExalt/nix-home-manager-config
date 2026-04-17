@@ -51,6 +51,11 @@
     settings = builtins.fromTOML (builtins.readFile ./dotfiles/starship.toml);
   };
 
+  programs.fzf = {
+    enable = true;
+    enableZshIntegration = true;
+  };
+
   programs.git = {
     enable = true;
     settings = {
