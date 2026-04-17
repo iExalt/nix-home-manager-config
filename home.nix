@@ -13,10 +13,34 @@
   ];
 
   home.file.".vimrc".source = ./dotfiles/.vimrc;
+  home.file.".zsh_aliases".source = ./dotfiles/.zsh_aliases;
+  home.file.".kubectl_aliases.zsh".source = ./dotfiles/.kubectl_aliases.zsh;
 
   home.sessionVariables = {};
 
-  programs.zsh.enable = true;
+  programs.zsh = {
+    enable = true;
+    antidote = {
+      enable = true;
+      plugins = [
+        "getantidote/use-omz"
+        "ohmyzsh/ohmyzsh path:lib"
+        "ohmyzsh/ohmyzsh path:plugins/git"
+        "ahmetb/kubectx path:completion kind:fpath"
+        "agkozak/zsh-z"
+        "zdharma-continuum/fast-syntax-highlighting"
+      ];
+    };
+    initContent = ''
+      source ~/.zsh_aliases
+    '';
+  };
+
+  programs.starship = {
+    enable = true;
+    enableZshIntegration = true;
+    settings = builtins.fromTOML (builtins.readFile ./dotfiles/starship.toml);
+  };
 
   programs.home-manager.enable = true;
 }

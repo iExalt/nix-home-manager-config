@@ -1,0 +1,4 @@
+[ -f ~/.kubectl_aliases.zsh ] && source ~/.kubectl_aliases.zsh
+
+alias reload="source ~/.zshrc"
+alias gbd!="git branch -D"
