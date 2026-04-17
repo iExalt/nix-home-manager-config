@@ -4,6 +4,10 @@
   },
   "model": "sonnet[1m]",
   "skipDangerousModePermissionPrompt": true,
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
   "statusLine": {
     "type": "command",
     "command": "bunx -y ccstatusline@latest",
