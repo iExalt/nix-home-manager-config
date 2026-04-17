@@ -42,5 +42,21 @@
     settings = builtins.fromTOML (builtins.readFile ./dotfiles/starship.toml);
   };
 
+  programs.git = {
+    enable = true;
+    userName = "Clement Liaw";
+    userEmail = "cman101202@gmail.com";
+    extraConfig = {
+      core.editor = "vim";
+      push.autoSetupRemote = true;
+      gpg.ssh.allowedSignersFile = "~/.ssh/allowed_signers";
+    };
+    signing = {
+      format = "ssh";
+      key = "~/.ssh/id_ed25519.pub";
+      signByDefault = true;
+    };
+  };
+
   programs.home-manager.enable = true;
 }
