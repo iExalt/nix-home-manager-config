@@ -44,9 +44,11 @@
 
   programs.git = {
     enable = true;
-    userName = "Clement Liaw";
-    userEmail = "cman101202@gmail.com";
-    extraConfig = {
+    settings = {
+      user = {
+        name = "Clement Liaw";
+        email = "cman101202@gmail.com";
+      };
       core.editor = "vim";
       push.autoSetupRemote = true;
       gpg.ssh.allowedSignersFile = "~/.ssh/allowed_signers";
