@@ -2,6 +2,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+NIXPKGS_CHANNEL="https://nixos.org/channels/nixos-25.11"
 HM_CHANNEL="https://github.com/nix-community/home-manager/archive/release-25.11.tar.gz"
 
 log() { printf '\n==> %s\n' "$*"; }
@@ -19,12 +20,11 @@ if [ -f /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]; then
   . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
 fi
 
-# 2. Add home-manager channel if missing
-if ! nix-channel --list | grep -q '^home-manager '; then
-  log "Adding home-manager channel..."
-  nix-channel --add "$HM_CHANNEL" home-manager
-  nix-channel --update
-fi
+# 2. Pin nixpkgs and home-manager channels to matching 25.11 release
+log "Ensuring nixpkgs + home-manager channels..."
+nix-channel --add "$NIXPKGS_CHANNEL" nixpkgs
+nix-channel --add "$HM_CHANNEL" home-manager
+nix-channel --update
 
 # 3. Generate ed25519 SSH key (used for git commit signing) if missing
 SSH_KEY="$HOME/.ssh/id_ed25519"
