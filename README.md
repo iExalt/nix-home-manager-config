@@ -29,12 +29,19 @@ cd ~/Projects/nix-home-manager-config
 
    ```sh
    nix run github:nix-community/home-manager/release-25.11 -- \
-     switch --flake ~/Projects/nix-home-manager-config#clliaw@x86_64-linux -b backup
+     switch --flake ~/Projects/nix-home-manager-config#x86_64-linux -b backup --impure
    ```
 
    Replace `x86_64-linux` with your system (`aarch64-linux`, `aarch64-darwin`).
+   `--impure` is required — the flake reads `$USER` and `$HOME` at eval
+   time so the same config works for any login user.
 
 ## Usage
 
-Edit `home.nix` and run `home-manager switch --flake .#clliaw@$(nix eval --impure --raw --expr 'builtins.currentSystem')`
-to apply changes. Commit `flake.lock` to pin inputs.
+Edit `home.nix` and run:
+
+```sh
+home-manager switch --flake .#$(nix eval --impure --raw --expr 'builtins.currentSystem') --impure
+```
+
+Commit `flake.lock` to pin inputs.

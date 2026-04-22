@@ -1,5 +1,5 @@
 {
-  description = "clliaw home-manager configuration";
+  description = "home-manager configuration";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
@@ -11,29 +11,23 @@
 
   outputs = { nixpkgs, home-manager, ... }:
     let
-      username = "clliaw";
+      systems = [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ];
       mkHome = system:
-        let
-          pkgs = nixpkgs.legacyPackages.${system};
-          isDarwin = pkgs.stdenv.hostPlatform.isDarwin;
-        in
         home-manager.lib.homeManagerConfiguration {
-          inherit pkgs;
+          pkgs = nixpkgs.legacyPackages.${system};
           modules = [
             ./home.nix
             {
-              home.username = username;
-              home.homeDirectory =
-                if isDarwin then "/Users/${username}" else "/home/${username}";
+              # Read at eval time — requires `--impure`. Keeps the flake
+              # portable across VMs where the login user isn't "clliaw"
+              # (e.g. cloud dev boxes named after the provider account).
+              home.username = builtins.getEnv "USER";
+              home.homeDirectory = builtins.getEnv "HOME";
             }
           ];
         };
     in
     {
-      homeConfigurations = {
-        "${username}@x86_64-linux" = mkHome "x86_64-linux";
-        "${username}@aarch64-linux" = mkHome "aarch64-linux";
-        "${username}@aarch64-darwin" = mkHome "aarch64-darwin";
-      };
+      homeConfigurations = nixpkgs.lib.genAttrs systems mkHome;
     };
 }
