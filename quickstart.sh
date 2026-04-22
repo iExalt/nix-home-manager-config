@@ -47,13 +47,15 @@ case "$(uname -s)-$(uname -m)" in
     ;;
 esac
 
-FLAKE_ATTR="$REPO_ROOT#clliaw@$SYSTEM"
+FLAKE_ATTR="$REPO_ROOT#$SYSTEM"
+# --impure lets the flake read $USER / $HOME at eval time so it works
+# for whichever user is actually running this (not just clliaw).
 if ! command -v home-manager >/dev/null 2>&1; then
   log "Applying home-manager flake ($FLAKE_ATTR) via nix run..."
-  nix run "$HM_FLAKE_REF" -- switch --flake "$FLAKE_ATTR" -b backup
+  nix run "$HM_FLAKE_REF" -- switch --flake "$FLAKE_ATTR" -b backup --impure
 else
   log "Running home-manager switch ($FLAKE_ATTR)..."
-  home-manager switch --flake "$FLAKE_ATTR" -b backup
+  home-manager switch --flake "$FLAKE_ATTR" -b backup --impure
 fi
 
 # 4. Switch login shell to the nix-managed zsh
@@ -63,7 +65,16 @@ if [ -x "$ZSH_PATH" ]; then
     log "Registering $ZSH_PATH in /etc/shells..."
     echo "$ZSH_PATH" | sudo tee -a /etc/shells >/dev/null
   fi
-  if [ "$SHELL" != "$ZSH_PATH" ]; then
+  if [ "$SHELL" = "$ZSH_PATH" ]; then
+    :  # already the login shell
+  elif ! grep -q "^$USER:" /etc/passwd 2>/dev/null; then
+    # Some cloud VMs put the login user in LDAP/SSSD/DirectoryService
+    # rather than /etc/passwd, which makes chsh refuse. Skip automatic
+    # chsh and leave breadcrumbs for the user to do it manually later.
+    log "User '$USER' is not in /etc/passwd — skipping automatic chsh."
+    log "To change your login shell manually later, run:"
+    log "  sudo chsh -s $ZSH_PATH $USER"
+  else
     log "Changing login shell to $ZSH_PATH..."
     sudo chsh -s "$ZSH_PATH" "$USER"
     # Kick sshd so the new shell is picked up on the next login (without this,
