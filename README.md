@@ -28,7 +28,7 @@ cd ~/Projects/nix-home-manager-config
 3. Apply the config:
 
    ```sh
-   nix run github:nix-community/home-manager/release-25.11 -- \
+   nix run github:nix-community/home-manager -- \
      switch --flake ~/Projects/nix-home-manager-config#x86_64-linux -b backup --impure
    ```
 
@@ -44,4 +44,6 @@ Edit `home.nix` and run:
 home-manager switch --flake .#$(nix eval --impure --raw --expr 'builtins.currentSystem') --impure
 ```
 
-Commit `flake.lock` to pin inputs.
+To pull in newer package versions (nixpkgs + home-manager track rolling
+unstable), run `nix flake update` then re-switch. Commit `flake.lock`
+to pin inputs between updates.

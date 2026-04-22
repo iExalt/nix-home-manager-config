@@ -2,9 +2,12 @@
   description = "home-manager configuration";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
+    # Rolling unstable so user tools (mise, etc.) don't lag months
+    # behind. Run `nix flake update` to advance the pin; `flake.lock`
+    # still guarantees reproducibility between updates.
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     home-manager = {
-      url = "github:nix-community/home-manager/release-25.11";
+      url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };

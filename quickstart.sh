@@ -2,7 +2,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-HM_FLAKE_REF="github:nix-community/home-manager/release-25.11"
+HM_FLAKE_REF="github:nix-community/home-manager"
 
 log() { printf '\n==> %s\n' "$*"; }
 
