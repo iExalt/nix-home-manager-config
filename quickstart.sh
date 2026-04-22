@@ -3,6 +3,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HM_CHANNEL="https://github.com/nix-community/home-manager/archive/release-25.11.tar.gz"
+NIXPKGS_CHANNEL="https://nixos.org/channels/nixos-25.11"
 
 log() { printf '\n==> %s\n' "$*"; }
 
@@ -19,8 +20,12 @@ if [ -f /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]; then
   . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
 fi
 
-# 2. Install home-manager channel (nixpkgs is provided by Determinate)
-log "Ensuring home-manager channel..."
+# 2. Install nixpkgs + home-manager channels. Determinate Nix deprecates
+#    channels in favor of flakes and does not put <nixpkgs> on NIX_PATH, so
+#    the legacy `nix-shell '<home-manager>' -A install` bootstrap below
+#    needs us to register nixpkgs explicitly.
+log "Ensuring nixpkgs + home-manager channels..."
+nix-channel --add "$NIXPKGS_CHANNEL" nixpkgs
 nix-channel --add "$HM_CHANNEL" home-manager
 nix-channel --update
 
