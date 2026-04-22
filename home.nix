@@ -4,15 +4,10 @@ let
   repoRoot = "${config.home.homeDirectory}/Projects/nix-home-manager-config";
 in
 {
-  home.username = builtins.getEnv "USER";
-  home.homeDirectory = builtins.getEnv "HOME";
+  # home.username and home.homeDirectory are set by flake.nix.
 
   # Don't change this — it pins the Home Manager release your config was written for.
   home.stateVersion = "25.11";
-
-  # Determinate Nix pins nixpkgs to a newer release than our home-manager channel.
-  # They work fine together; just suppress the version-mismatch warning.
-  home.enableNixpkgsReleaseCheck = false;
 
   home.packages = [
     pkgs.zsh

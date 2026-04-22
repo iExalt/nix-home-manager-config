@@ -2,12 +2,11 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-HM_CHANNEL="https://github.com/nix-community/home-manager/archive/release-25.11.tar.gz"
-NIXPKGS_CHANNEL="https://nixos.org/channels/nixos-25.11"
+HM_FLAKE_REF="github:nix-community/home-manager/release-25.11"
 
 log() { printf '\n==> %s\n' "$*"; }
 
-# 1. Install Determinate Nix if missing
+# 1. Install Determinate Nix if missing (flakes enabled by default)
 if ! command -v nix >/dev/null 2>&1; then
   log "Installing Determinate Nix..."
   curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix \
@@ -20,16 +19,7 @@ if [ -f /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]; then
   . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
 fi
 
-# 2. Install nixpkgs + home-manager channels. Determinate Nix deprecates
-#    channels in favor of flakes and does not put <nixpkgs> on NIX_PATH, so
-#    the legacy `nix-shell '<home-manager>' -A install` bootstrap below
-#    needs us to register nixpkgs explicitly.
-log "Ensuring nixpkgs + home-manager channels..."
-nix-channel --add "$NIXPKGS_CHANNEL" nixpkgs
-nix-channel --add "$HM_CHANNEL" home-manager
-nix-channel --update
-
-# 3. Generate ed25519 SSH key (used for git commit signing) if missing
+# 2. Generate ed25519 SSH key (used for git commit signing) if missing
 SSH_KEY="$HOME/.ssh/id_ed25519"
 if [ ! -f "$SSH_KEY" ]; then
   log "Generating ed25519 SSH keypair at $SSH_KEY..."
@@ -46,21 +36,27 @@ if [ ! -f "$ALLOWED_SIGNERS" ] || ! grep -qxF "$SIGNER_LINE" "$ALLOWED_SIGNERS";
   printf '%s\n' "$SIGNER_LINE" >> "$ALLOWED_SIGNERS"
 fi
 
-# 4. Link this repo's home.nix into ~/.config/home-manager
-log "Linking home.nix -> $REPO_ROOT/home.nix"
-mkdir -p "$HOME/.config/home-manager"
-ln -sfn "$REPO_ROOT/home.nix" "$HOME/.config/home-manager/home.nix"
+# 3. Activate the home-manager flake
+case "$(uname -s)-$(uname -m)" in
+  Linux-x86_64)   SYSTEM="x86_64-linux" ;;
+  Linux-aarch64)  SYSTEM="aarch64-linux" ;;
+  Darwin-arm64)   SYSTEM="aarch64-darwin" ;;
+  *)
+    echo "Unsupported system: $(uname -s)-$(uname -m)" >&2
+    exit 1
+    ;;
+esac
 
-# 5. Install home-manager, or just switch if already installed
+FLAKE_ATTR="$REPO_ROOT#clliaw@$SYSTEM"
 if ! command -v home-manager >/dev/null 2>&1; then
-  log "Installing home-manager..."
-  nix-shell '<home-manager>' -A install
+  log "Applying home-manager flake ($FLAKE_ATTR) via nix run..."
+  nix run "$HM_FLAKE_REF" -- switch --flake "$FLAKE_ATTR" -b backup
 else
-  log "Running home-manager switch..."
-  home-manager switch -b backup
+  log "Running home-manager switch ($FLAKE_ATTR)..."
+  home-manager switch --flake "$FLAKE_ATTR" -b backup
 fi
 
-# 6. Switch login shell to the nix-managed zsh
+# 4. Switch login shell to the nix-managed zsh
 ZSH_PATH="$HOME/.nix-profile/bin/zsh"
 if [ -x "$ZSH_PATH" ]; then
   if ! grep -qxF "$ZSH_PATH" /etc/shells 2>/dev/null; then
@@ -83,7 +79,7 @@ if [ -x "$ZSH_PATH" ]; then
   fi
 fi
 
-# 7. Install node + bun via mise, pinned to the current latest. Run through the
+# 5. Install node + bun via mise, pinned to the current latest. Run through the
 #    nix zsh with -i so mise activation and the `muse` function (from
 #    dotfiles/.zsh_aliases) are loaded.
 ZSH_BIN="$HOME/.nix-profile/bin/zsh"
