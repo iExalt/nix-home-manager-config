@@ -12,8 +12,9 @@
     "command": "bunx -y ccstatusline@latest",
     "padding": 0
   },
-  "skipDangerousModePermissionPrompt": true,
   "enabledPlugins": {
     "rust-analyzer-lsp@claude-plugins-official": true
-  }
+  },
+  "skipDangerousModePermissionPrompt": true,
+  "effortLevel": "xhigh"
 }
