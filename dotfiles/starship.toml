@@ -147,6 +147,7 @@ symbol = "󰈸 "
 symbol = " "
 
 [netns]
+disabled = true
 symbol = "󰛳 "
 
 [nim]
@@ -310,4 +311,3 @@ symbol = " "
 
 [zig]
 symbol = " "
-
