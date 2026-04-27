@@ -2,8 +2,3 @@
 
 alias reload="source ~/.zshrc"
 alias gbd!="git branch -D"
-
-muse() {
-  local tool="$1"
-  mise use --global "$tool@$(mise latest "$tool")"
-}
