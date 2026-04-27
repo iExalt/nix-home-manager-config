@@ -1,0 +1,24 @@
+_review_base_branch() {
+  local ref
+
+  for ref in main master origin/main origin/master upstream/main upstream/master; do
+    if git rev-parse --verify --quiet "${ref}^{commit}" >/dev/null 2>&1; then
+      print -r -- "$ref"
+      return 0
+    fi
+  done
+
+  print -u2 "review: could not find a main or master base branch"
+  return 1
+}
+
+review() {
+  local base
+
+  base="$(_review_base_branch)" || return
+  codex review --base "$base" "$@"
+}
+
+review-commit() {
+  codex review --uncommitted "$@"
+}
