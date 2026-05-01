@@ -95,6 +95,10 @@ in
 
   programs.home-manager.enable = true;
 
+  # Home Manager's generated option manpage currently triggers a Nix 2.34
+  # store-path context warning while evaluating the activation package.
+  manual.manpages.enable = false;
+
   home.activation.installGhosttyTerminfo = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     mkdir -p "$HOME/.terminfo"
     ${pkgs.ncurses}/bin/tic -x -o "$HOME/.terminfo" ${./dotfiles/xterm-ghostty-terminfo.txt}
