@@ -12,11 +12,3 @@ status_line = ["model-with-reasoning", "current-dir", "git-branch", "used-tokens
 [tui.model_availability_nux]
 "gpt-5.5" = 1
 
-[projects."/home/shadeform/Projects/openzl"]
-trust_level = "trusted"
-
-[projects."/home/shadeform/Projects/TerminalO3"]
-trust_level = "trusted"
-
-[projects."/home/shadeform/Projects/nix-home-manager-config"]
-trust_level = "trusted"
