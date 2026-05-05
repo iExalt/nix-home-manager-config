@@ -49,7 +49,7 @@ in
     };
     initContent = ''
       zstyle ':plugin:ez-compinit' 'compstyle' 'ohmy'
-      eval "$(mise activate zsh --shims)"
+      eval "$(mise activate zsh)"
       source ~/.zsh_functions
       source ~/.zsh_aliases
     '';
