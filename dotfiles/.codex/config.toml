@@ -1,5 +1,5 @@
 model = "gpt-5.5"
-model_reasoning_effort = "xhigh"
+model_reasoning_effort = "high"
 approval_policy = "never"
 sandbox_mode = "danger-full-access"
 approvals_reviewer = "user"
@@ -7,8 +7,10 @@ service_tier = "fast"
 commit_attribution = ""
 
 [tui]
-status_line = ["model-with-reasoning", "current-dir", "git-branch", "used-tokens", "context-used", "fast-mode"]
+status_line = ["model-with-reasoning", "current-dir", "git-branch", "total-input-tokens", "total-output-tokens", "context-used", "thread-title", "run-state", "fast-mode"]
 
 [tui.model_availability_nux]
-"gpt-5.5" = 1
+"gpt-5.5" = 4
 
+[features]
+goals = true
