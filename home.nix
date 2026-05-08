@@ -13,6 +13,7 @@ in
     pkgs.zsh
     pkgs.mise
     pkgs.difftastic
+    pkgs.zellij
   ];
 
   home.file.".vimrc".source = ./dotfiles/.vimrc;
@@ -28,6 +29,7 @@ in
   home.file.".codex/AGENTS.md".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/AGENTS.md";
   xdg.configFile."ccstatusline/settings.json".source = ./dotfiles/.config/ccstatusline/settings.json;
+  xdg.configFile."zellij/config.kdl".source = ./dotfiles/.config/zellij/config.kdl;
 
   home.sessionVariables = {
     LESS = "-FR";
