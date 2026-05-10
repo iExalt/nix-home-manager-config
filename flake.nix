@@ -18,6 +18,7 @@
       systems = [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ];
       availableOverlays = {
         grafana-mcp = ./overlays/grafana-mcp.nix;
+        victoria-metrics-mcp = ./overlays/victoria-metrics-mcp.nix;
       };
       localConfig =
         let

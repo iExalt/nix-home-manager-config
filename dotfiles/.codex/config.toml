@@ -12,6 +12,8 @@ goals = true
 [mcp_servers]
 [mcp_servers.grafana]
 url = "https://grafana-mcp.analogsea.ca/mcp"
+[mcp_servers.victoria-metrics]
+url = "https://victoria-metrics-mcp.analogsea.ca/mcp"
 
 [tui]
 status_line = ["model-with-reasoning", "current-dir", "git-branch", "total-input-tokens", "total-output-tokens", "context-used", "thread-title", "run-state", "fast-mode"]
