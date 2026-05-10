@@ -29,7 +29,7 @@ cd ~/Projects/nix-home-manager-config
 
    ```sh
    nix run github:nix-community/home-manager -- \
-     switch --flake ~/Projects/nix-home-manager-config#x86_64-linux -b backup --impure
+     switch --flake path:~/Projects/nix-home-manager-config#x86_64-linux -b backup --impure
    ```
 
    Replace `x86_64-linux` with your system (`aarch64-linux`, `aarch64-darwin`).
@@ -51,18 +51,17 @@ to pin inputs between updates.
 ## Optional Overlays
 
 Machine-specific Home Manager overlays can be enabled without committing local
-state. The default selector is:
+state:
 
 ```nix
-# ~/.config/nix-home-manager/overlays.nix
-[ "grafana-mcp" ]
+# config.nix
+{
+  overlays = [ "grafana-mcp" ];
+}
 ```
 
-Then run `./reload.sh`. You can also enable overlays for one switch:
-
-```sh
-HM_OVERLAYS=grafana-mcp ./reload.sh
-```
+Start from `config.nix.example`, then run `./reload.sh`. `config.nix` is
+ignored by git so each clone can choose its own overlays.
 
 Available overlays:
 

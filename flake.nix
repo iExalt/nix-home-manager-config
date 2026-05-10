@@ -19,21 +19,14 @@
       availableOverlays = {
         grafana-mcp = ./overlays/grafana-mcp.nix;
       };
-      overlayNamesFromEnv =
-        lib.filter (name: name != "") (
-          lib.splitString "," (builtins.getEnv "HM_OVERLAYS")
-        );
-      overlayNamesFromFile =
+      localConfig =
         let
-          overlayFile =
-            if builtins.getEnv "HM_OVERLAYS_FILE" != ""
-            then builtins.getEnv "HM_OVERLAYS_FILE"
-            else "${builtins.getEnv "HOME"}/.config/nix-home-manager/overlays.nix";
+          configFile = ./config.nix;
         in
-        if overlayFile != "" && builtins.pathExists overlayFile
-        then import overlayFile
-        else [ ];
-      enabledOverlayNames = lib.unique (overlayNamesFromFile ++ overlayNamesFromEnv);
+        if builtins.pathExists configFile
+        then import configFile
+        else { };
+      enabledOverlayNames = localConfig.overlays or [ ];
       enabledOverlayModules =
         map
           (name:

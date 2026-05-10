@@ -47,7 +47,7 @@ case "$(uname -s)-$(uname -m)" in
     ;;
 esac
 
-FLAKE_ATTR="$REPO_ROOT#$SYSTEM"
+FLAKE_ATTR="path:$REPO_ROOT#$SYSTEM"
 # --impure lets the flake read $USER / $HOME at eval time so it works
 # for whichever user is actually running this (not just clliaw).
 if ! command -v home-manager >/dev/null 2>&1; then
