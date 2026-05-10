@@ -4,3 +4,6 @@ result-*
 
 # Ignore automatically generated direnv output
 .direnv
+
+# Machine-local Home Manager overlay selector
+/config.nix
