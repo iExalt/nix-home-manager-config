@@ -20,8 +20,6 @@ in
   home.file.".zsh_aliases".source = ./dotfiles/.zsh_aliases;
   home.file.".zsh_functions".source = ./dotfiles/.zsh_functions;
   home.file.".kubectl_aliases.zsh".source = ./dotfiles/.kubectl_aliases.zsh;
-  home.file.".codex/config.toml".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/.codex/config.toml";
   home.file.".claude/settings.json".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/.claude/settings.json";
   home.file.".claude/CLAUDE.md".source =
