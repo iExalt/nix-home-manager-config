@@ -15,5 +15,7 @@ url = "https://grafana-mcp.analogsea.ca/mcp"
 
 [tui]
 status_line = ["model-with-reasoning", "current-dir", "git-branch", "total-input-tokens", "total-output-tokens", "context-used", "thread-title", "run-state", "fast-mode"]
+status_line_use_colors = true
+
 [tui.model_availability_nux]
 "gpt-5.5" = 4
