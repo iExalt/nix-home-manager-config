@@ -1,3 +1,6 @@
-keybind = alt+left=unbind
-keybind = alt+right=unbind
-macos-option-as-alt = true
+# fix: Send left Option as Alt while preserving right Option for macOS characters.
+macos-option-as-alt = left
+
+# fix: Encode Option-arrow as xterm modified arrows so Zellij sees Alt-arrow.
+keybind = alt+arrow_left=csi:1;3D
+keybind = alt+arrow_right=csi:1;3C
