@@ -89,10 +89,10 @@ keybinds clear-defaults=true {
         bind "tab" { MovePane; }
     }
     scroll {
-        bind "Alt down" { MoveFocus "down"; SwitchToMode "normal"; }
-        bind "Alt up" { MoveFocus "up"; SwitchToMode "normal"; }
+        bind "Alt Shift down" { MoveFocus "down"; SwitchToMode "normal"; }
+        bind "Alt Shift up" { MoveFocus "up"; SwitchToMode "normal"; }
         bind "e" { EditScrollback; SwitchToMode "normal"; }
-        // fix: Reserve Alt+Left/Right for shell and editor word movement.
+        // fix: Reserve Alt+Arrow keys for shell and editor movement.
         bind "Alt Shift left" { MoveFocusOrTab "left"; SwitchToMode "normal"; }
         bind "Alt Shift right" { MoveFocusOrTab "right"; SwitchToMode "normal"; }
         bind "Alt h" { MoveFocusOrTab "left"; SwitchToMode "normal"; }
@@ -175,9 +175,9 @@ keybinds clear-defaults=true {
         bind "Ctrl o" { SwitchToMode "session"; }
     }
     shared_except "locked" "scroll" {
-        bind "Alt down" { MoveFocus "down"; }
-        bind "Alt up" { MoveFocus "up"; }
-        // fix: Keep Alt+Left/Right available to applications inside panes.
+        bind "Alt Shift down" { MoveFocus "down"; }
+        bind "Alt Shift up" { MoveFocus "up"; }
+        // fix: Keep Alt+Arrow keys available to applications inside panes.
         bind "Alt Shift left" { MoveFocusOrTab "left"; SwitchToMode "normal"; }
         bind "Alt Shift right" { MoveFocusOrTab "right"; SwitchToMode "normal"; }
         bind "Alt h" { MoveFocusOrTab "left"; }
