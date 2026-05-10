@@ -14,11 +14,37 @@
 
   outputs = { nixpkgs, home-manager, ... }:
     let
+      lib = nixpkgs.lib;
       systems = [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ];
+      availableOverlays = {
+        grafana-mcp = ./overlays/grafana-mcp.nix;
+      };
+      overlayNamesFromEnv =
+        lib.filter (name: name != "") (
+          lib.splitString "," (builtins.getEnv "HM_OVERLAYS")
+        );
+      overlayNamesFromFile =
+        let
+          overlayFile =
+            if builtins.getEnv "HM_OVERLAYS_FILE" != ""
+            then builtins.getEnv "HM_OVERLAYS_FILE"
+            else "${builtins.getEnv "HOME"}/.config/nix-home-manager/overlays.nix";
+        in
+        if overlayFile != "" && builtins.pathExists overlayFile
+        then import overlayFile
+        else [ ];
+      enabledOverlayNames = lib.unique (overlayNamesFromFile ++ overlayNamesFromEnv);
+      enabledOverlayModules =
+        map
+          (name:
+            availableOverlays.${name} or (throw "Unknown home-manager overlay '${name}'"))
+          enabledOverlayNames;
       mkHome = system:
         home-manager.lib.homeManagerConfiguration {
           pkgs = nixpkgs.legacyPackages.${system};
           modules = [
+            ./modules/claude-config.nix
+            ./modules/codex-config.nix
             ./home.nix
             {
               # Read at eval time — requires `--impure`. Keeps the flake
@@ -27,7 +53,7 @@
               home.username = builtins.getEnv "USER";
               home.homeDirectory = builtins.getEnv "HOME";
             }
-          ];
+          ] ++ enabledOverlayModules;
         };
     in
     {

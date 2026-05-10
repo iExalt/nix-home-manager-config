@@ -41,9 +41,30 @@ cd ~/Projects/nix-home-manager-config
 Edit `home.nix` and run:
 
 ```sh
-home-manager switch --flake .#$(nix eval --impure --raw --expr 'builtins.currentSystem') --impure
+./reload.sh
 ```
 
 To pull in newer package versions (nixpkgs + home-manager track rolling
 unstable), run `nix flake update` then re-switch. Commit `flake.lock`
 to pin inputs between updates.
+
+## Optional Overlays
+
+Machine-specific Home Manager overlays can be enabled without committing local
+state. The default selector is:
+
+```nix
+# ~/.config/nix-home-manager/overlays.nix
+[ "grafana-mcp" ]
+```
+
+Then run `./reload.sh`. You can also enable overlays for one switch:
+
+```sh
+HM_OVERLAYS=grafana-mcp ./reload.sh
+```
+
+Available overlays:
+
+- `grafana-mcp`: adds the Grafana MCP server to Codex
+  (`~/.codex/config.toml`) and Claude Code (`~/.claude.json`).
