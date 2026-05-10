@@ -29,6 +29,8 @@ in
   home.file.".codex/AGENTS.md".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/AGENTS.md";
   xdg.configFile."ccstatusline/settings.json".source = ./dotfiles/.config/ccstatusline/settings.json;
+  xdg.configFile."ghostty/config".source =
+    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/.config/ghostty/config";
   xdg.configFile."zellij/config.kdl".source = ./dotfiles/.config/zellij/config.kdl;
 
   home.sessionVariables = {
