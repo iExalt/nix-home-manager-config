@@ -96,6 +96,7 @@ in
   };
 
   programs.home-manager.enable = true;
+  news.display = "silent";
 
   # Home Manager's generated option manpage currently triggers a Nix 2.34
   # store-path context warning while evaluating the activation package.
