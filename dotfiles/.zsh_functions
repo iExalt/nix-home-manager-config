@@ -36,6 +36,15 @@ review-commit() {
   _codex_review --uncommitted "$@"
 }
 
+switch() {
+  local repo_root="${HOME}/Projects/nix-home-manager-config"
+  local system
+
+  system="$(nix eval --impure --raw --expr 'builtins.currentSystem')" || return
+  home-manager switch --flake "path:${repo_root}#${system}" --impure || return
+  source "${HOME}/.zshrc"
+}
+
 muse() {
   local tool="$1"
   mise use --global "$tool@$(mise latest "$tool")"
