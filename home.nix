@@ -32,6 +32,7 @@ in
   xdg.configFile."zellij/config.kdl".source = ./dotfiles/.config/zellij/config.kdl;
 
   home.sessionVariables = {
+    BAT_THEME = "1337";
     LESS = "-FR";
   };
 
