@@ -12,6 +12,14 @@ _review_base_branch() {
   return 1
 }
 
+codex() {
+  if [ -n "${ZELLIJ:-}" ]; then
+    command codex --no-alt-screen "$@"
+  else
+    command codex "$@"
+  fi
+}
+
 _codex_review() {
   local -a pipeline_status
 
