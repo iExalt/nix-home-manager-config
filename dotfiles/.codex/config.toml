@@ -8,6 +8,7 @@ service_tier = "fast"
 
 [features]
 goals = true
+memories = true
 
 [tui]
 status_line = ["model-with-reasoning", "current-dir", "git-branch", "total-input-tokens", "total-output-tokens", "context-used", "thread-title", "run-state", "fast-mode"]
