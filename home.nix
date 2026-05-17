@@ -38,6 +38,10 @@ in
     LESS = "-FR";
   };
 
+  home.sessionPath = [
+    "$HOME/.local/bin"
+  ];
+
   programs.zsh = {
     enable = true;
     antidote = {
