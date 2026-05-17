@@ -20,6 +20,8 @@ in
   home.file.".zsh_aliases".source = ./dotfiles/.zsh_aliases;
   home.file.".zsh_functions".source = ./dotfiles/.zsh_functions;
   home.file.".kubectl_aliases.zsh".source = ./dotfiles/.kubectl_aliases.zsh;
+  home.file.".cache/zsh/completions/_kubectl".source =
+    ./dotfiles/zsh/completions/_kubectl;
   home.file.".claude/settings.json".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/.claude/settings.json";
   home.file.".claude/CLAUDE.md".source =
@@ -50,15 +52,20 @@ in
         "zdharma-continuum/fast-syntax-highlighting"
       ];
     };
-    initContent = ''
-      zstyle ':plugin:ez-compinit' 'compstyle' 'ohmy'
-      eval "$(mise activate zsh)"
-      # fix(kubectl): load completions from the mise-managed kubectl binary.
-      source <(kubectl completion zsh)
-      compdef _kubectl k
-      source ~/.zsh_functions
-      source ~/.zsh_aliases
-    '';
+    initContent = lib.mkMerge [
+      (lib.mkOrder 550 ''
+        # fix(kubectl): put managed completions on fpath before compinit scans.
+        fpath+=("$HOME/.cache/zsh/completions")
+      '')
+      ''
+        zstyle ':plugin:ez-compinit' 'compstyle' 'ohmy'
+        eval "$(mise activate zsh)"
+        # fix(completion): keep plain Tab on zsh completion while preserving fzf triggers.
+        fzf_default_completion=expand-or-complete
+        source ~/.zsh_functions
+        source ~/.zsh_aliases
+      ''
+    ];
   };
 
   programs.starship = {
