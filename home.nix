@@ -53,6 +53,9 @@ in
     initContent = ''
       zstyle ':plugin:ez-compinit' 'compstyle' 'ohmy'
       eval "$(mise activate zsh)"
+      # fix(kubectl): load completions from the mise-managed kubectl binary.
+      source <(kubectl completion zsh)
+      compdef _kubectl k
       source ~/.zsh_functions
       source ~/.zsh_aliases
     '';
