@@ -1,3 +1,2 @@
 # fix: Send left Option as Alt while preserving right Option for macOS characters.
 macos-option-as-alt = left
-
