@@ -2,6 +2,18 @@
 
 let
   repoRoot = "${config.home.homeDirectory}/Projects/nix-home-manager-config";
+  miseTools = [
+    "node@26.2.0"
+    "bun@1.3.14"
+    "gh@2.92.0"
+    "codex@latest"
+    "claude@latest"
+    "rg@15.1.0"
+    "fd@10.4.2"
+    "rust@1.95.0"
+    "dust@1.2.4"
+  ];
+  miseToolArgs = lib.escapeShellArgs miseTools;
 in
 {
   # home.username and home.homeDirectory are set by flake.nix.
@@ -120,5 +132,33 @@ in
   home.activation.installGhosttyTerminfo = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     mkdir -p "$HOME/.terminfo"
     ${pkgs.ncurses}/bin/tic -x -o "$HOME/.terminfo" ${./dotfiles/xterm-ghostty-terminfo.txt}
+  '';
+
+  home.activation.installMiseTools = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    # feat(mise): install shared global tools while preserving local config.
+    if [ -z "''${MISE_GITHUB_TOKEN:-}" ]; then
+      token="$(${pkgs.gh}/bin/gh auth token 2>/dev/null || true)"
+      if [ -n "$token" ]; then
+        export MISE_GITHUB_TOKEN="$token"
+      fi
+    fi
+
+    for tool_spec in ${miseToolArgs}; do
+      if [ "$tool_spec" = "''${tool_spec%@*}" ]; then
+        tool="$tool_spec"
+        desired_version="latest"
+      else
+        tool="''${tool_spec%@*}"
+        desired_version="''${tool_spec##*@}"
+      fi
+
+      current_line="$(${pkgs.mise}/bin/mise ls --global "$tool" 2>/dev/null | head -n 1 || true)"
+      current_version="''${current_line##* }"
+      if [ -n "$current_line" ] && [ "$current_version" = "$desired_version" ]; then
+        run ${pkgs.mise}/bin/mise install --yes "$tool"
+      else
+        run ${pkgs.mise}/bin/mise use --global --yes "$tool_spec"
+      fi
+    done
   '';
 }

@@ -130,15 +130,7 @@ if [ -x "$ZSH_PATH" ]; then
   fi
 fi
 
-# 5. Install dependencies via mise, pinned to the current latest. Run through the
-#    nix zsh with -i so mise activation and the `muse` function (from
-#    dotfiles/.zsh_aliases) are loaded.
-ZSH_BIN="$HOME/.nix-profile/bin/zsh"
-if [ -x "$ZSH_BIN" ]; then
-  log "Installing dependencies via mise (pinned to current latest)..."
-  "$ZSH_BIN" -ic 'muse node && muse bun && muse gh'
-fi
-
+# 5. feat(mise): install shared tools during Home Manager activation.
 log "Done. Log out and back in to pick up the new shell + environment."
 log "Public key for git signing:"
 cat "$SSH_KEY.pub"
