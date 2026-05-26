@@ -12,6 +12,7 @@ let
     "fd@10.4.2"
     "rust@1.95.0"
     "dust@1.2.4"
+    "bat@0.26.1"
   ];
   miseToolArgs = lib.escapeShellArgs miseTools;
 in
