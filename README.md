@@ -28,13 +28,17 @@ cd ~/Projects/nix-home-manager-config
 3. Apply the config:
 
    ```sh
-   nix run github:nix-community/home-manager -- \
-     switch --flake path:~/Projects/nix-home-manager-config#x86_64-linux -b backup --impure
+   nix run --inputs-from path:$HOME/Projects/nix-home-manager-config home-manager -- \
+     switch --flake path:$HOME/Projects/nix-home-manager-config#x86_64-linux -b backup --impure
    ```
 
    Replace `x86_64-linux` with your system (`aarch64-linux`, `aarch64-darwin`).
    `--impure` is required — the flake reads `$USER` and `$HOME` at eval
    time so the same config works for any login user.
+
+   If GitHub returns an HTTP 403 rate-limit error while Nix is fetching flakes,
+   rerun the quickstart with `GITHUB_TOKEN` or `GH_TOKEN` set. The script passes
+   that token to Nix as an `access-tokens` entry.
 
 ## Usage
 

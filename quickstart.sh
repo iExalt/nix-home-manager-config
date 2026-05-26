@@ -2,9 +2,46 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-HM_FLAKE_REF="github:nix-community/home-manager"
+FLAKE_REF="path:$REPO_ROOT"
+HM_FLAKE_REF="home-manager"
 
 log() { printf '\n==> %s\n' "$*"; }
+
+configure_nix_github_token() {
+  if printf '%s\n' "${NIX_CONFIG:-}" | grep -q '^[[:space:]]*access-tokens[[:space:]]*='; then
+    return
+  fi
+
+  local token="${GITHUB_TOKEN:-${GH_TOKEN:-}}"
+  if [ -z "$token" ] && command -v gh >/dev/null 2>&1; then
+    token="$(gh auth token 2>/dev/null || true)"
+  fi
+
+  if [ -n "$token" ]; then
+    log "Using GitHub token for Nix fetches..."
+    if [ -n "${NIX_CONFIG:-}" ]; then
+      export NIX_CONFIG="${NIX_CONFIG}"$'\n'"access-tokens = github.com=${token}"
+    else
+      export NIX_CONFIG="access-tokens = github.com=${token}"
+    fi
+  fi
+}
+
+run_home_manager() {
+  if "$@"; then
+    return
+  fi
+
+  cat >&2 <<'EOF'
+
+Home Manager activation failed. If the error above mentions GitHub HTTP 403
+or API rate limits, rerun with an authenticated GitHub token, for example:
+
+  GITHUB_TOKEN=... ./quickstart.sh
+
+EOF
+  return 1
+}
 
 # 1. Install Determinate Nix if missing (flakes enabled by default)
 if ! command -v nix >/dev/null 2>&1; then
@@ -18,6 +55,7 @@ if [ -f /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]; then
   # shellcheck disable=SC1091
   . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
 fi
+configure_nix_github_token
 
 # 2. Generate ed25519 SSH key (used for git commit signing) if missing
 SSH_KEY="$HOME/.ssh/id_ed25519"
@@ -47,15 +85,17 @@ case "$(uname -s)-$(uname -m)" in
     ;;
 esac
 
-FLAKE_ATTR="path:$REPO_ROOT#$SYSTEM"
+FLAKE_ATTR="$FLAKE_REF#$SYSTEM"
 # --impure lets the flake read $USER / $HOME at eval time so it works
 # for whichever user is actually running this (not just clliaw).
 if ! command -v home-manager >/dev/null 2>&1; then
-  log "Applying home-manager flake ($FLAKE_ATTR) via nix run..."
-  nix run "$HM_FLAKE_REF" -- switch --flake "$FLAKE_ATTR" -b backup --impure
+  log "Applying home-manager flake ($FLAKE_ATTR) via locked nix run..."
+  run_home_manager \
+    nix run --inputs-from "$FLAKE_REF" "$HM_FLAKE_REF" -- \
+      switch --flake "$FLAKE_ATTR" -b backup --impure
 else
   log "Running home-manager switch ($FLAKE_ATTR)..."
-  home-manager switch --flake "$FLAKE_ATTR" -b backup --impure
+  run_home_manager home-manager switch --flake "$FLAKE_ATTR" -b backup --impure
 fi
 
 # 4. Switch login shell to the nix-managed zsh
