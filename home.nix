@@ -137,6 +137,9 @@ in
 
   home.activation.installMiseTools = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     # feat(mise): install shared global tools while preserving local config.
+    # fix(mise): expose curl for rustup bootstrap during activation.
+    export PATH="${lib.makeBinPath [ pkgs.curl ]}:$PATH"
+
     if [ -z "''${MISE_GITHUB_TOKEN:-}" ]; then
       token="$(${pkgs.gh}/bin/gh auth token 2>/dev/null || true)"
       if [ -n "$token" ]; then
