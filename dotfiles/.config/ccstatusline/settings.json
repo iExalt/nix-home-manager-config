@@ -8,9 +8,9 @@
         "color": "cyan"
       },
       {
-        "id": "0437e6b9-dd31-4354-a3f2-a062e379331f",
+        "id": "6face780-6c37-486c-afbf-6bf946e405d8",
         "type": "separator",
-        "character": " "
+        "character": "-"
       },
       {
         "id": "49bc26e7-b441-411d-b4df-4b7bb44307c5",
@@ -18,6 +18,30 @@
       },
       {
         "id": "2",
+        "type": "separator"
+      },
+      {
+        "id": "2755cdd2-6de2-43b8-ac5b-d8184e0bd452",
+        "type": "input-speed",
+        "metadata": {
+          "windowSeconds": "60"
+        }
+      },
+      {
+        "id": "4891c13b-1caf-4c33-90d2-14421183dd14",
+        "type": "separator",
+        "character": "-"
+      },
+      {
+        "id": "d6aae659-bf92-419d-bf5e-b3d8c160bc31",
+        "type": "output-speed",
+        "rawValue": false,
+        "metadata": {
+          "windowSeconds": "60"
+        }
+      },
+      {
+        "id": "a2762719-ce66-4e1d-b154-7cfb2669b8e5",
         "type": "separator"
       },
       {
@@ -45,7 +69,8 @@
       },
       {
         "id": "6",
-        "type": "separator"
+        "type": "separator",
+        "character": "-"
       },
       {
         "id": "7",
