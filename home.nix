@@ -13,6 +13,7 @@ let
     "rust@1.95.0"
     "dust@1.2.4"
     "bat@0.26.1"
+    "zellij@0.44.3"
   ];
   miseToolArgs = lib.escapeShellArgs miseTools;
 in
@@ -26,7 +27,6 @@ in
     pkgs.zsh
     pkgs.mise
     pkgs.difftastic
-    pkgs.zellij
   ];
 
   home.file.".vimrc".source = ./dotfiles/.vimrc;
