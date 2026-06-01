@@ -63,6 +63,32 @@
         "type": "separator"
       },
       {
+        "id": "343ce33f-c1b0-486b-8aee-d8153485c398",
+        "type": "tokens-input"
+      },
+      {
+        "id": "9cf460a5-683e-4a39-921c-709ef3e33036",
+        "type": "separator",
+        "character": "-"
+      },
+      {
+        "id": "373cb3a1-f813-4c63-833a-093730ad2252",
+        "type": "tokens-cached"
+      },
+      {
+        "id": "dccfabe2-7902-4acf-8665-f3a03228a876",
+        "type": "separator",
+        "character": "-"
+      },
+      {
+        "id": "62b9fbb8-38f1-495b-9f4a-3f9fd13a37f1",
+        "type": "tokens-output"
+      },
+      {
+        "id": "fe2352d3-5c51-4a8e-b465-3041fb7590da",
+        "type": "separator"
+      },
+      {
         "id": "5",
         "type": "git-branch",
         "color": "magenta"
