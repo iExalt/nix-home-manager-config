@@ -3,14 +3,14 @@
 let
   repoRoot = "${config.home.homeDirectory}/Projects/nix-home-manager-config";
   miseTools = [
-    "node@26.2.0"
+    "node@26.3.0"
     "bun@1.3.14"
-    "gh@2.92.0"
+    "gh@2.93.0"
     "codex@latest"
     "claude@latest"
     "rg@15.1.0"
     "fd@10.4.2"
-    "rust@1.95.0"
+    "rust@1.96.0"
     "dust@1.2.4"
     "bat@0.26.1"
     "zellij@0.44.3"
