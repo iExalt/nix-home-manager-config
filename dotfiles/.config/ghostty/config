@@ -1,2 +1,5 @@
 # fix: Send left Option as Alt while preserving right Option for macOS characters.
 macos-option-as-alt = left
+
+# fix: Send Shift+Enter as a newline for remote shells and terminal applications.
+keybind = shift+enter=text:\n
