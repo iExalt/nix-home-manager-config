@@ -5,7 +5,7 @@ let
   miseTools = [
     "node@26.3.0"
     "bun@1.3.14"
-    "gh@2.93.0"
+    "gh@2.94.0"
     "codex@latest"
     "claude@latest"
     "rg@15.1.0"
