@@ -10,6 +10,7 @@ let
     "claude@latest"
     "rg@15.1.0"
     "fd@10.4.2"
+    "python@3.14.6"
     "rust@1.96.0"
     "dust@1.2.4"
     "bat@0.26.1"
@@ -41,6 +42,10 @@ in
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/AGENTS.md";
   home.file.".codex/AGENTS.md".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/AGENTS.md";
+  home.file.".codex/skills/peer-review".source =
+    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/peer-review";
+  home.file.".claude/skills/peer-review".source =
+    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/peer-review";
   xdg.configFile."ccstatusline/settings.json".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/.config/ccstatusline/settings.json";
   xdg.configFile."ghostty/config".source =

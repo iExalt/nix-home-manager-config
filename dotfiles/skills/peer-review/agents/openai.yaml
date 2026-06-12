@@ -1,0 +1,4 @@
+interface:
+  display_name: "Peer Review"
+  short_description: "Cross-provider review with persistent sessions"
+  default_prompt: "Use $peer-review to have another provider critically review this work and reconcile the findings."
