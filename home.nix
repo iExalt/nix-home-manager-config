@@ -19,6 +19,17 @@ let
     # fix(mise): avoid intermittent aqua .pkg extraction failures on macOS.
     "asdf:MetricMike/asdf-awscli@2.35.4"
   ];
+  miseActivationPackages = with pkgs; [
+    bash
+    coreutils
+    curl
+    gawk
+    git
+    gnutar
+    gzip
+    gnused
+    unzip
+  ];
   miseToolArgs = lib.escapeShellArgs miseTools;
 in
 {
@@ -146,8 +157,8 @@ in
 
   home.activation.installMiseTools = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     # feat(mise): install shared global tools while preserving local config.
-    # fix(mise): expose curl for rustup bootstrap during activation.
-    export PATH="${lib.makeBinPath [ pkgs.curl ]}:$PATH"
+    # fix(mise): expose backend dependencies during activation.
+    export PATH="${lib.makeBinPath miseActivationPackages}:$PATH"
 
     if [ -z "''${MISE_GITHUB_TOKEN:-}" ]; then
       token="$(${pkgs.gh}/bin/gh auth token 2>/dev/null || true)"
