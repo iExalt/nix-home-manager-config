@@ -11,10 +11,13 @@ let
     "rg@15.1.0"
     "fd@10.4.2"
     "python@3.14.6"
+    "uv@0.11.21"
     "rust@1.96.0"
     "dust@1.2.4"
     "bat@0.26.1"
     "zellij@0.44.3"
+    # fix(mise): avoid intermittent aqua .pkg extraction failures on macOS.
+    "asdf:MetricMike/asdf-awscli@2.35.4"
   ];
   miseToolArgs = lib.escapeShellArgs miseTools;
 in
@@ -153,22 +156,7 @@ in
       fi
     fi
 
-    for tool_spec in ${miseToolArgs}; do
-      if [ "$tool_spec" = "''${tool_spec%@*}" ]; then
-        tool="$tool_spec"
-        desired_version="latest"
-      else
-        tool="''${tool_spec%@*}"
-        desired_version="''${tool_spec##*@}"
-      fi
-
-      current_line="$(${pkgs.mise}/bin/mise ls --global "$tool" 2>/dev/null | head -n 1 || true)"
-      current_version="''${current_line##* }"
-      if [ -n "$current_line" ] && [ "$current_version" = "$desired_version" ]; then
-        run ${pkgs.mise}/bin/mise install --yes "$tool"
-      else
-        run ${pkgs.mise}/bin/mise use --global --yes "$tool_spec"
-      fi
-    done
+    # fix(mise): remove the legacy aqua AWS CLI key when selecting the asdf backend.
+    run ${pkgs.mise}/bin/mise use --global --yes --remove awscli ${miseToolArgs}
   '';
 }
