@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pair Program"
+  short_description: "Pilot-navigator coding with approval gates"
+  default_prompt: "Use $pair-program to work through this implementation with you as pilot and me as navigator."
