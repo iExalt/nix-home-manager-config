@@ -64,6 +64,10 @@ in
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/pair-program";
   home.file.".claude/skills/pair-program".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/pair-program";
+  home.file.".codex/skills/maintain-project-status".source =
+    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/maintain-project-status";
+  home.file.".claude/skills/maintain-project-status".source =
+    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/maintain-project-status";
   home.file.".vibe/config.toml".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/.vibe/config.toml";
   xdg.configFile."ccstatusline/settings.json".source =
@@ -75,6 +79,7 @@ in
   home.sessionVariables = {
     BAT_THEME = "1337";
     LESS = "-FR";
+    XDG_RUNTIME_DIR = "/run/user/$UID";
   };
 
   home.sessionPath = [
