@@ -1,0 +1,4 @@
+interface:
+  display_name: "Maintain Project Status"
+  short_description: "Evidence-backed milestone status documents"
+  default_prompt: "Use $maintain-project-status to create or update an evidence-backed project status document."
