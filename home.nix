@@ -64,7 +64,8 @@ in
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/pair-program";
   home.file.".claude/skills/pair-program".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/pair-program";
-  home.file.".vibe/config.toml".source = ./dotfiles/.vibe/config.toml;
+  home.file.".vibe/config.toml".source =
+    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/.vibe/config.toml";
   xdg.configFile."ccstatusline/settings.json".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/.config/ccstatusline/settings.json";
   xdg.configFile."ghostty/config".source =
