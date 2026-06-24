@@ -47,6 +47,8 @@ in
   home.file.".vimrc".source = ./dotfiles/.vimrc;
   home.file.".zsh_aliases".source = ./dotfiles/.zsh_aliases;
   home.file.".zsh_functions".source = ./dotfiles/.zsh_functions;
+  home.file.".zshrc".source =
+    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/.zshrc";
   home.file.".kubectl_aliases.zsh".source = ./dotfiles/.kubectl_aliases.zsh;
   home.file.".cache/zsh/completions/_kubectl".source =
     ./dotfiles/zsh/completions/_kubectl;
@@ -88,6 +90,7 @@ in
 
   programs.zsh = {
     enable = true;
+    dotDir = "${config.xdg.configHome}/zsh";
     antidote = {
       enable = true;
       plugins = [
@@ -113,6 +116,10 @@ in
         source ~/.zsh_functions
         source ~/.zsh_aliases
       ''
+      (lib.mkOrder 2000 ''
+        # feat(zsh): load the writable, repo-backed user configuration last.
+        source "$HOME/.zshrc"
+      '')
     ];
   };
 
