@@ -4,20 +4,20 @@ let
   repoRoot = "${config.home.homeDirectory}/Projects/nix-home-manager-config";
   miseTools = [
     "node@26.3.0"
-    "bun@1.3.14"
-    "gh@2.94.0"
+    "bun@latest"
+    "gh@latest"
     "codex@latest"
     "claude@latest"
-    "rg@15.1.0"
-    "fd@10.4.2"
+    "rg@latest"
+    "fd@latest"
     "python@3.14.6"
-    "uv@0.11.21"
-    "rust@1.96.0"
-    "dust@1.2.4"
-    "bat@0.26.1"
-    "zellij@0.44.3"
+    "uv@latest"
+    "rust@latest"
+    "dust@latest"
+    "bat@latest"
+    "zellij@latest"
     # fix(mise): avoid intermittent aqua .pkg extraction failures on macOS.
-    "asdf:MetricMike/asdf-awscli@2.35.4"
+    "asdf:MetricMike/asdf-awscli@latest"
   ];
   miseActivationPackages = with pkgs; [
     bash
