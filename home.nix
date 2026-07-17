@@ -175,8 +175,8 @@ in
 
   home.activation.installMiseTools = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     # feat(mise): install shared global tools while preserving local config.
-    # fix(mise): expose backend dependencies during activation.
-    export PATH="${lib.makeBinPath miseActivationPackages}:$PATH"
+    # fix(mise): expose backend dependencies and macOS system tools during activation.
+    export PATH="${lib.makeBinPath miseActivationPackages}:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
 
     if [ -z "''${MISE_GITHUB_TOKEN:-}" ]; then
       token="$(${pkgs.gh}/bin/gh auth token 2>/dev/null || true)"
