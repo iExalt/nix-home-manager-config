@@ -7,7 +7,9 @@ let
     "node@26.3.0"
     "bun@latest"
     "gh@latest"
-    "codex@latest"
+    # fix(mise): use npm backend so @latest is not resolved to platform tags
+    # like 0.144.4-win32-x64 from the aqua/npm shorthand mix.
+    "npm:@openai/codex@latest"
     "claude@latest"
     "rg@latest"
     "fd@latest"
@@ -116,6 +118,8 @@ in
         fzf_default_completion=expand-or-complete
         source ~/.zsh_functions
         source ~/.zsh_aliases
+        bindkey "^[[1;3D" backward-word
+        bindkey "^[[1;3C" forward-word
       ''
       (lib.mkOrder 2000 ''
         # feat(zsh): load the writable, repo-backed user configuration last.
@@ -173,8 +177,15 @@ in
     # feat(terminfo): make Ghostty's terminal definition available to root.
     mkdir -p "$HOME/.terminfo"
     ${pkgs.ncurses}/bin/tic -x -o "$HOME/.terminfo" ${./dotfiles/xterm-ghostty-terminfo.txt}
-    sudo mkdir -p "${rootHome}/.terminfo"
-    sudo ${pkgs.ncurses}/bin/tic -x -o "${rootHome}/.terminfo" ${./dotfiles/xterm-ghostty-terminfo.txt}
+
+    # fix(terminfo): activation PATH is sanitized; locate sudo and skip if unavailable.
+    export PATH="/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
+    if command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
+      sudo mkdir -p "${rootHome}/.terminfo"
+      sudo ${pkgs.ncurses}/bin/tic -x -o "${rootHome}/.terminfo" ${./dotfiles/xterm-ghostty-terminfo.txt}
+    else
+      echo "warning: skipping root Ghostty terminfo install (sudo unavailable or needs a password)" >&2
+    fi
   '';
 
   home.activation.installMiseTools = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
@@ -189,7 +200,7 @@ in
       fi
     fi
 
-    # fix(mise): remove the legacy aqua AWS CLI key when selecting the asdf backend.
-    run ${pkgs.mise}/bin/mise use --global --yes --remove awscli ${miseToolArgs}
+    # fix(mise): drop legacy aqua tool keys when selecting explicit backends.
+    run ${pkgs.mise}/bin/mise use --global --yes --remove awscli --remove codex ${miseToolArgs}
   '';
 }
