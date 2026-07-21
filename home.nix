@@ -2,6 +2,7 @@
 
 let
   repoRoot = "${config.home.homeDirectory}/Projects/nix-home-manager-config";
+  rootHome = if pkgs.stdenv.isDarwin then "/var/root" else "/root";
   miseTools = [
     "node@26.3.0"
     "bun@latest"
@@ -169,8 +170,11 @@ in
   manual.manpages.enable = false;
 
   home.activation.installGhosttyTerminfo = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    # feat(terminfo): make Ghostty's terminal definition available to root.
     mkdir -p "$HOME/.terminfo"
     ${pkgs.ncurses}/bin/tic -x -o "$HOME/.terminfo" ${./dotfiles/xterm-ghostty-terminfo.txt}
+    sudo mkdir -p "${rootHome}/.terminfo"
+    sudo ${pkgs.ncurses}/bin/tic -x -o "${rootHome}/.terminfo" ${./dotfiles/xterm-ghostty-terminfo.txt}
   '';
 
   home.activation.installMiseTools = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
