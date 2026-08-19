@@ -235,7 +235,7 @@ in
       ${pkgs.zstd}/bin/zstd \
         --decompress \
         --force \
-        --output "$codexHostBinary" \
+        -o "$codexHostBinary" \
         "$codexHostArchive"
       ${pkgs.coreutils}/bin/install -m 0755 "$codexHostBinary" "$codexHost"
     fi
