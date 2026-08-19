@@ -3,13 +3,20 @@
 let
   repoRoot = "${config.home.homeDirectory}/Projects/nix-home-manager-config";
   rootHome = if pkgs.stdenv.isDarwin then "/var/root" else "/root";
+  codexReleaseTargets = {
+    "aarch64-darwin" = "aarch64-apple-darwin";
+    "aarch64-linux" = "aarch64-unknown-linux-musl";
+    "x86_64-darwin" = "x86_64-apple-darwin";
+    "x86_64-linux" = "x86_64-unknown-linux-musl";
+  };
+  codexReleaseTarget =
+    codexReleaseTargets.${pkgs.stdenv.hostPlatform.system}
+      or (throw "Unsupported Codex host platform: ${pkgs.stdenv.hostPlatform.system}");
   miseTools = [
     "node@26.3.0"
     "bun@latest"
     "gh@latest"
-    # fix(mise): use npm backend so @latest is not resolved to platform tags
-    # like 0.144.4-win32-x64 from the aqua/npm shorthand mix.
-    "npm:@openai/codex@latest"
+    "aqua:openai/codex@latest"
     "claude@latest"
     "rg@latest"
     "fd@latest"
@@ -200,7 +207,37 @@ in
       fi
     fi
 
-    # fix(mise): drop legacy aqua tool keys when selecting explicit backends.
-    run ${pkgs.mise}/bin/mise use --global --yes --remove awscli --remove codex ${miseToolArgs}
+    # fix(mise): drop legacy shorthand and npm keys when selecting explicit backends.
+    run ${pkgs.mise}/bin/mise use --global --yes \
+      --remove awscli \
+      --remove codex \
+      --remove npm:@openai/codex \
+      ${miseToolArgs}
+
+    codexVersion="$(${pkgs.mise}/bin/mise current aqua:openai/codex)"
+    codexInstallDir="$(${pkgs.mise}/bin/mise where aqua:openai/codex)"
+    codexHost="''${codexInstallDir}/codex-code-mode-host"
+
+    if [ ! -x "$codexHost" ]; then
+      # fix(codex): Aqua exposes only bin/codex from OpenAI's release package.
+      codexHostTempDir="$(${pkgs.coreutils}/bin/mktemp -d)"
+      trap '${pkgs.coreutils}/bin/rm -rf "$codexHostTempDir"' EXIT
+      codexHostArchive="''${codexHostTempDir}/codex-code-mode-host.zst"
+      codexHostBinary="''${codexHostTempDir}/codex-code-mode-host"
+      codexHostUrl="https://github.com/openai/codex/releases/download/rust-v''${codexVersion}/codex-code-mode-host-${codexReleaseTarget}.zst"
+
+      ${pkgs.curl}/bin/curl \
+        --fail \
+        --location \
+        --retry 3 \
+        --output "$codexHostArchive" \
+        "$codexHostUrl"
+      ${pkgs.zstd}/bin/zstd \
+        --decompress \
+        --force \
+        --output "$codexHostBinary" \
+        "$codexHostArchive"
+      ${pkgs.coreutils}/bin/install -m 0755 "$codexHostBinary" "$codexHost"
+    fi
   '';
 }
