@@ -13,6 +13,11 @@ _review_base_branch() {
 }
 
 codex() {
+  # fix(codex): repair Aqua upgrades before the CLI starts code mode.
+  if command -v ensure-codex-code-mode-host >/dev/null 2>&1; then
+    ensure-codex-code-mode-host || return
+  fi
+
   if [ -n "${ZELLIJ:-}" ]; then
     command codex --no-alt-screen "$@"
   else

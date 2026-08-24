@@ -12,11 +12,50 @@ let
   codexReleaseTarget =
     codexReleaseTargets.${pkgs.stdenv.hostPlatform.system}
       or (throw "Unsupported Codex host platform: ${pkgs.stdenv.hostPlatform.system}");
+  codexHostInstaller = pkgs.writeShellApplication {
+    name = "ensure-codex-code-mode-host";
+    runtimeInputs = with pkgs; [ coreutils curl gnused mise zstd ];
+    text = ''
+      codexBinary="$(mise which codex)"
+      codexInstallDir="$(dirname "$codexBinary")"
+      codexHost="''${codexInstallDir}/codex-code-mode-host"
+
+      if [ -x "$codexHost" ]; then
+        exit 0
+      fi
+
+      codexVersion="$("$codexBinary" --version | sed -n 's/^codex-cli //p')"
+      if [ -z "$codexVersion" ]; then
+        echo "error: could not determine Codex version from $codexBinary" >&2
+        exit 1
+      fi
+
+      # fix(codex): Aqua exposes only codex from OpenAI's release package.
+      codexHostTempDir="$(mktemp -d)"
+      trap 'rm -rf "$codexHostTempDir"' EXIT
+      codexHostArchive="''${codexHostTempDir}/codex-code-mode-host.zst"
+      codexHostBinary="''${codexHostTempDir}/codex-code-mode-host"
+      codexHostUrl="https://github.com/openai/codex/releases/download/rust-v''${codexVersion}/codex-code-mode-host-${codexReleaseTarget}.zst"
+
+      curl \
+        --fail \
+        --location \
+        --retry 3 \
+        --output "$codexHostArchive" \
+        "$codexHostUrl"
+      zstd \
+        --decompress \
+        --force \
+        -o "$codexHostBinary" \
+        "$codexHostArchive"
+      install -m 0755 "$codexHostBinary" "$codexHost"
+    '';
+  };
   miseTools = [
     "node@26.3.0"
     "bun@latest"
     "gh@latest"
-    "aqua:openai/codex@latest"
+    "aqua:codex@latest"
     "claude@latest"
     "rg@latest"
     "fd@latest"
@@ -52,6 +91,7 @@ in
     pkgs.zsh
     pkgs.mise
     pkgs.difftastic
+    codexHostInstaller
   ];
 
   home.file.".vimrc".source = ./dotfiles/.vimrc;
@@ -207,37 +247,14 @@ in
       fi
     fi
 
-    # fix(mise): drop legacy shorthand and npm keys when selecting explicit backends.
+    # fix(mise): drop legacy Codex keys when selecting Aqua explicitly.
     run ${pkgs.mise}/bin/mise use --global --yes \
       --remove awscli \
       --remove codex \
+      --remove aqua:openai/codex \
       --remove npm:@openai/codex \
       ${miseToolArgs}
 
-    codexVersion="$(${pkgs.mise}/bin/mise current aqua:openai/codex)"
-    codexInstallDir="$(${pkgs.mise}/bin/mise where aqua:openai/codex)"
-    codexHost="''${codexInstallDir}/codex-code-mode-host"
-
-    if [ ! -x "$codexHost" ]; then
-      # fix(codex): Aqua exposes only bin/codex from OpenAI's release package.
-      codexHostTempDir="$(${pkgs.coreutils}/bin/mktemp -d)"
-      trap '${pkgs.coreutils}/bin/rm -rf "$codexHostTempDir"' EXIT
-      codexHostArchive="''${codexHostTempDir}/codex-code-mode-host.zst"
-      codexHostBinary="''${codexHostTempDir}/codex-code-mode-host"
-      codexHostUrl="https://github.com/openai/codex/releases/download/rust-v''${codexVersion}/codex-code-mode-host-${codexReleaseTarget}.zst"
-
-      ${pkgs.curl}/bin/curl \
-        --fail \
-        --location \
-        --retry 3 \
-        --output "$codexHostArchive" \
-        "$codexHostUrl"
-      ${pkgs.zstd}/bin/zstd \
-        --decompress \
-        --force \
-        -o "$codexHostBinary" \
-        "$codexHostArchive"
-      ${pkgs.coreutils}/bin/install -m 0755 "$codexHostBinary" "$codexHost"
-    fi
+    run ${codexHostInstaller}/bin/ensure-codex-code-mode-host
   '';
 }
