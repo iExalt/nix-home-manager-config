@@ -3,59 +3,11 @@
 let
   repoRoot = "${config.home.homeDirectory}/Projects/nix-home-manager-config";
   rootHome = if pkgs.stdenv.isDarwin then "/var/root" else "/root";
-  codexReleaseTargets = {
-    "aarch64-darwin" = "aarch64-apple-darwin";
-    "aarch64-linux" = "aarch64-unknown-linux-musl";
-    "x86_64-darwin" = "x86_64-apple-darwin";
-    "x86_64-linux" = "x86_64-unknown-linux-musl";
-  };
-  codexReleaseTarget =
-    codexReleaseTargets.${pkgs.stdenv.hostPlatform.system}
-      or (throw "Unsupported Codex host platform: ${pkgs.stdenv.hostPlatform.system}");
-  codexHostInstaller = pkgs.writeShellApplication {
-    name = "ensure-codex-code-mode-host";
-    runtimeInputs = with pkgs; [ coreutils curl gnused mise zstd ];
-    text = ''
-      codexBinary="$(mise which codex)"
-      codexInstallDir="$(dirname "$codexBinary")"
-      codexHost="''${codexInstallDir}/codex-code-mode-host"
-
-      if [ -x "$codexHost" ]; then
-        exit 0
-      fi
-
-      codexVersion="$("$codexBinary" --version | sed -n 's/^codex-cli //p')"
-      if [ -z "$codexVersion" ]; then
-        echo "error: could not determine Codex version from $codexBinary" >&2
-        exit 1
-      fi
-
-      # fix(codex): Aqua exposes only codex from OpenAI's release package.
-      codexHostTempDir="$(mktemp -d)"
-      trap 'rm -rf "$codexHostTempDir"' EXIT
-      codexHostArchive="''${codexHostTempDir}/codex-code-mode-host.zst"
-      codexHostBinary="''${codexHostTempDir}/codex-code-mode-host"
-      codexHostUrl="https://github.com/openai/codex/releases/download/rust-v''${codexVersion}/codex-code-mode-host-${codexReleaseTarget}.zst"
-
-      curl \
-        --fail \
-        --location \
-        --retry 3 \
-        --output "$codexHostArchive" \
-        "$codexHostUrl"
-      zstd \
-        --decompress \
-        --force \
-        -o "$codexHostBinary" \
-        "$codexHostArchive"
-      install -m 0755 "$codexHostBinary" "$codexHost"
-    '';
-  };
   miseTools = [
     "node@26.3.0"
     "bun@latest"
     "gh@latest"
-    "aqua:codex@latest"
+    "npm:@openai/codex@latest"
     "claude@latest"
     "rg@latest"
     "fd@latest"
@@ -77,6 +29,7 @@ let
     gnutar
     gzip
     gnused
+    mise
     unzip
   ];
   miseToolArgs = lib.escapeShellArgs miseTools;
@@ -91,7 +44,6 @@ in
     pkgs.zsh
     pkgs.mise
     pkgs.difftastic
-    codexHostInstaller
   ];
 
   home.file.".vimrc".source = ./dotfiles/.vimrc;
@@ -247,14 +199,12 @@ in
       fi
     fi
 
-    # fix(mise): drop legacy Codex keys when selecting Aqua explicitly.
+    # fix(mise): drop legacy Codex keys when selecting the official npm package.
     run ${pkgs.mise}/bin/mise use --global --yes \
       --remove awscli \
       --remove codex \
+      --remove aqua:codex \
       --remove aqua:openai/codex \
-      --remove npm:@openai/codex \
       ${miseToolArgs}
-
-    run ${codexHostInstaller}/bin/ensure-codex-code-mode-host
   '';
 }
