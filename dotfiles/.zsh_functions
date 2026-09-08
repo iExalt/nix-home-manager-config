@@ -57,6 +57,31 @@ muse() {
   mise use --global "$tool@$(mise latest "$tool")"
 }
 
+mise-union() {
+  local config_file
+  local -a mise_search_roots
+
+  mise_search_roots=(
+    "$HOME"
+    /etc
+    /opt/homebrew/etc
+    /usr/local/etc
+  )
+
+  if (( ! $+commands[fd] || ! $+commands[yq] )); then
+    print -u2 'mise-tools-union: requires fd and yq'
+    return 127
+  fi
+
+  command fd --hidden --no-ignore --type f --print0 --glob 'mise.toml' \
+    "${mise_search_roots[@]}" 2>/dev/null |
+    while IFS= read -r -d $'\0' config_file; do
+      command yq -p=toml -o=tsv -r \
+        '.tools // {} | keys | .[]' "$config_file"
+    done |
+    command sort -u
+}
+
 # Wrap mise such that it knows how to auth with GitHub.
 mise() {
   if [ -z "${MISE_GITHUB_TOKEN}" ]; then

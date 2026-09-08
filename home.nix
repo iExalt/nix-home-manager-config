@@ -4,14 +4,14 @@ let
   repoRoot = "${config.home.homeDirectory}/Projects/nix-home-manager-config";
   rootHome = if pkgs.stdenv.isDarwin then "/var/root" else "/root";
   miseTools = [
-    "node@26.3.0"
+    "node@26"
     "bun@latest"
     "gh@latest"
     "npm:@openai/codex@latest"
     "claude@latest"
     "rg@latest"
     "fd@latest"
-    "python@3.14.6"
+    "python@3.14"
     "uv@latest"
     "rust@latest"
     "dust@latest"
