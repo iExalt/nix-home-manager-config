@@ -58,28 +58,59 @@ muse() {
 }
 
 mise-union() {
-  local config_file
-  local -a mise_search_roots
+  setopt localoptions pipefail
+  local config_file dependency rows
+  local scan_status=0
 
-  mise_search_roots=(
-    "$HOME"
-    /etc
-    /opt/homebrew/etc
-    /usr/local/etc
-  )
+  for dependency in mise fd jq awk; do
+    if (( ! $+commands[$dependency] )); then
+      print -u2 "mise-union: requires $dependency"
+      return 127
+    fi
+  done
 
-  if (( ! $+commands[fd] || ! $+commands[yq] )); then
-    print -u2 'mise-tools-union: requires fd and yq'
-    return 127
-  fi
+  rows="$(
+    command fd --hidden --no-ignore --type f --print0 --exclude '/.cargo' \
+      --exclude '/Library' --exclude '/go' --exclude '/.cursor' \
+      --glob 'mise.toml' "$HOME" 2>/dev/null |
+      {
+        while IFS= read -r -d $'\0' config_file; do
+          if ! mise ls --cd "${config_file:h}" --json; then
+            print -u2 "mise-union: could not list tools in ${config_file:h}"
+            scan_status=1
+          fi
+        done
+        return "$scan_status"
+      } |
+      command jq -sr --arg home "$HOME/" '
+        [ .[] | to_entries[] | .key as $tool | .value[] |
+          [ $tool, .version, (.source.path // ""), (.requested_version // "") ]
+        ] | unique | group_by(.[0:2])[] |
+        if any(.[]; .[2] != "") then .[] | select(.[2] != "") else .[] end |
+        .[2] |= (if startswith($home) then "~/" + ltrimstr($home) else . end) |
+        @tsv
+      '
+  )" || scan_status=$?
 
-  command fd --hidden --no-ignore --type f --print0 --glob 'mise.toml' \
-    "${mise_search_roots[@]}" 2>/dev/null |
-    while IFS= read -r -d $'\0' config_file; do
-      command yq -p=toml -o=tsv -r \
-        '.tools // {} | keys | .[]' "$config_file"
-    done |
-    command sort -u
+  {
+    print -r -- $'Tool\tVersion\tSource\tRequested'
+    [[ -z "$rows" ]] || print -r -- "$rows"
+  } | command awk -F '\t' '
+    {
+      for (col = 1; col <= 4; col++) {
+        cells[NR, col] = $col
+        if (length($col) > widths[col]) widths[col] = length($col)
+      }
+    }
+    END {
+      for (row = 1; row <= NR; row++) {
+        for (col = 1; col < 4; col++)
+          printf "%-*s  ", widths[col], cells[row, col]
+        printf "%s\n", cells[row, 4]
+      }
+    }
+  '
+  return "$scan_status"
 }
 
 # Wrap mise such that it knows how to auth with GitHub.
