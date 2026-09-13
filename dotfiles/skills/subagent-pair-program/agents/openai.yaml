@@ -1,0 +1,3 @@
+interface:
+  display_name: "Subagent Pair Program"
+  short_description: "Agent navigator with subagent implementation pilots"
