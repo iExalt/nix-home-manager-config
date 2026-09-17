@@ -18,7 +18,15 @@ limitation instead of claiming to have delegated or independently reviewed work.
 
 1. Establish the user's goal, constraints, and completion criteria. Inspect the
    workspace, applicable instructions, relevant source, and existing changes.
-   Maintain a checklist covering implementation, review, and verification.
+   As the main agent, maintain a user-visible checklist covering implementation,
+   review, and verification. Show it before assigning the first increment using
+   a user-visible plan tool when available, or a concise Markdown checklist in
+   progress updates. Keep ownership of this checklist rather than relying on
+   pilot checklists or private agent messages. Update it when work starts, awaits
+   review, completes, becomes blocked, or changes scope, so the user can see
+   completed, current, and remaining work at a glance. Mark items complete only
+   after required verification and navigator acceptance; show the final state
+   at handoff. These updates do not require user approval.
 2. Choose the smallest coherent increment that can be reviewed independently.
    Use one pilot for tightly coupled work. Add pilots when bounded tasks can run
    independently alongside useful navigator work; identify dependencies and file

@@ -12,8 +12,14 @@ the navigator who must understand, review, and steer the implementation.
 
 1. Establish the goal, constraints, and completion criteria. Inspect the
    workspace and relevant source before choosing an implementation.
-2. Maintain an internal checklist for the entire task. Use the available plan
-   tool when one exists. For substantial work, propose a repository-local
+2. As the main agent, maintain a user-visible checklist for the entire task,
+   covering implementation, review, and verification. Show it before the first
+   increment using a user-visible plan tool when available, or a concise Markdown
+   checklist in progress updates. Update it when work starts, awaits approval or
+   review, completes, becomes blocked, or changes scope, so the user can see
+   completed, current, and remaining work at a glance. Mark items complete only
+   after their required verification and navigator review; show the final state
+   at handoff. For substantial work, propose a repository-local
    Markdown checklist when it would make fine-grained progress easier to audit;
    creating that file is itself a change that requires approval.
 3. Choose the smallest coherent implementation increment that advances the
