@@ -387,6 +387,9 @@ default_mode "normal"
 // Default value: 10000
 // 
 // scroll_buffer_size 10000
+
+// fix: Keep mouse scrolling from activating Scroll mode and its SEARCH keybindings.
+scroll_mode_sync false
  
 // Provide a command to execute when copying text. The text will be piped to
 // the stdin of the program to perform the copy. This can be used with
