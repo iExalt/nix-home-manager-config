@@ -72,18 +72,53 @@ Sending root-derived fixes through the lead still duplicates the lead's work.
 Inspect implementation evidence for a specific escalation or final acceptance
 concern; keep that inspection proportional to the decision being made.
 
-During execution, manage dependencies, prepare the next bounded assignment,
-resolve cross-item decisions, review another item's completed acceptance packet,
-or communicate meaningful progress. If no such work is needed, wait. Spare
-capacity is not a reason to duplicate delegated work. Do not request updates or
-inspect worker state unless the result could change a pending navigator decision.
-The lead reports blockers, escalations, material changes to the completion outlook,
-and acceptance readiness; routine repair chatter stays within its team.
+During execution, independent navigator work is limited to preparing the next
+item's acceptance contract or resolving a known cross-item decision. Once that
+work is complete, park under the protocol below. Spare capacity is not a reason
+to duplicate delegated work or invent additional source investigations.
 
 At acceptance, check the contract, critical interfaces, risks, and verification
 evidence. Return missing evidence or defects as a bounded correction to the lead,
 without implementing the correction yourself. Preserve independent review where
 needed; avoid replaying the lead's entire investigation.
+
+## Dispatch, Then Park
+
+After assigning a complete work item contract, park until an actionable event
+arrives. Prefer agent completion notifications or the longest suitable,
+interruptible wait supported by the tool, subject to higher-priority
+responsiveness requirements. Resume substantive navigator work only for:
+
+- A lead escalation requiring a navigator decision.
+- An acceptance packet ready for review, including another active item's packet.
+- A material blocker, dependency change, or missed agreed checkpoint.
+- New user instructions.
+
+A wait timeout is not an actionable event. If it brings no new evidence and no
+agreed checkpoint is overdue, wait again. Do not inspect worker logs, call
+`list_agents`, request status, search the implementation, or repeat an unchanged
+progress update merely because the wait returned. Do not acknowledge every
+informational message; respond only when a decision or action is needed.
+
+Before parking, have the lead identify its next observable result and a
+workload-appropriate time or condition for escalating if that result does not
+materialize. This is a stall threshold, not a recurring status-report deadline.
+A missed checkpoint permits one bounded status inquiry to establish the blocker
+and next checkpoint; it does not transfer debugging to the main agent or justify
+repeated polling while the lead responds.
+
+The lead sends an acceptance packet, a decision request with evidence and its
+recommendation, or a material blocker/change to delivery expectations. Routine
+progress, test failures, and repair attempts remain within its team. During
+delegated execution, report meaningful state changes to the user; unchanged
+worker progress does not require periodic commentary under this skill. Maintain
+responsiveness through interruptible waits. Higher-priority instructions that
+require periodic commentary or shorter waits still apply; satisfy them without
+adding redundant inspection or status requests.
+
+Do not add a monitoring agent merely to watch the lead. Use one only when an
+external process needs supervision and completion notifications are unavailable,
+under the process-monitoring rules below.
 
 ## Required Subagent Models and Effort
 
@@ -164,8 +199,8 @@ otherwise use only the following combinations:
    approval; do not require a redundant exchange. The lead performs
    this routine review within the main navigator's approved boundary.
 5. While the lead coordinates implementation, follow the Main-Agent Delegation
-   Boundary above. Keep routine diagnosis and repair with the lead; wait when no
-   independent navigator work or escalation requires attention.
+   Boundary and Dispatch, Then Park protocol above. Keep routine diagnosis and
+   repair with the lead; a wait timeout alone creates no navigator work.
 6. Have the lead review the actual diff and verification evidence when the pilot
    returns. The lead requires a proportional code walkthrough, investigates
    unsupported claims, and returns actionable corrections to the pilot. A pilot's
