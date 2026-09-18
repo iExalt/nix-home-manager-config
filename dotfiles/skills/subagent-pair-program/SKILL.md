@@ -1,14 +1,15 @@
 ---
 name: subagent-pair-program
-description: "Coordinate autonomous pair programming with the main agent as navigator and one or more subagents as implementation pilots. Use when the user wants delegated implementation with agent-to-agent proposal, review, and verification loops without approving each increment. For interactive sessions where the user navigates, use pair-program instead."
+description: "Coordinate autonomous pair programming with the main agent as navigator, a required Sol work item lead, and Luna implementation pilots. Use when the user wants delegated implementation with agent-to-agent proposal, review, and verification loops without approving each increment. For interactive sessions where the user navigates, use pair-program instead."
 ---
 
 # Subagent Pair Program
 
-Act as the navigator: own the design, task checklist, pilot assignments, review,
-and final acceptance. Delegate implementation to one or more subagent pilots.
-Pilots propose changes, implement approved increments, verify them, and walk you
-through the result. Keep this loop between agents; do not ask the user to approve
+Act as the main navigator: own the design, task checklist, work item assignments,
+and final acceptance. Every work item requires a Sol lead to coordinate Luna
+implementation pilots. Pilots propose changes, implement approved increments,
+verify them, and walk the lead through the result. The lead returns reviewed
+evidence to you. Keep this loop between agents; do not ask the user to approve
 routine increments or attend code walkthroughs.
 
 This workflow requires subagent tools. If they are unavailable, report the
@@ -28,32 +29,101 @@ risky semantics. If the boundary cannot yet be specified, assign discovery that
 returns a proposed item before authorizing implementation. Independent items may
 run concurrently when dependencies, ownership, and available resources permit.
 
-## Optional Work Item Lead
+## Required Work Item Lead
 
-Use direct navigator-to-pilot coordination for straightforward items. When one
-item needs substantial coordination or repair/review iteration, delegate its
-local navigator duties to a GPT-5.6 Sol lead, with Luna high implementation
-pilots, unless the user specifies otherwise. Start Sol at medium for routine
-coordination; use high for substantive review or complex implementation decisions,
-such as ownership, concurrency, and lifecycle reasoning. Verify model/tool
-availability and honor current spawn semantics; use an explicit brief and limited context instead
-of assuming a full-history fork supports model overrides. If unavailable, retain
-direct coordination and disclose the limitation.
+Assign a Sol lead before dispatching pilots for every work item, including
+straightforward items. Do not bypass the lead with direct main-agent-to-pilot
+coordination. The main agent must not absorb routine proposal approvals, repair
+loops, or first-pass review. Reuse an existing lead under a new bounded assignment
+when appropriate; a mandatory lead does not require a new spawn for every item.
 
 The main navigator selects the item, defines its acceptance boundary, owns the
 user-visible checklist and cross-item design, and makes final acceptance decisions.
-The lead may decompose that item, approve routine pilot proposals, review diffs,
-direct in-scope repairs, and coordinate verification. Name the lead as the pilots'
-approval and reporting recipient. Explicitly coordinate any permission to spawn
-pilots, file ownership, and the total team size; a lead consumes a slot that could
-otherwise hold a pilot. Do not add a management layer without useful work for it.
+The lead owns getting that item to acceptance: decompose it, approve routine
+pilot proposals, review diffs, diagnose failures, direct in-scope repairs, and
+repeat verification without seeking main-agent approval for each step. Name the
+lead as the pilots' approval and reporting recipient. Explicitly coordinate any permission to spawn
+pilots, file ownership, and the total team size. Reserve capacity for the lead
+and at least one implementation pilot; serialize work rather than dropping the
+lead to make room for more pilots. If only the main agent can spawn pilots, it
+may create them on the lead's behalf, but they still report to the lead.
 
-Escalate changed architecture, scope, acceptance criteria, ownership conflicts,
-external-action authorization, or repeated failure of the approach to the main
-navigator. The lead returns after its assigned item; it cannot take another
-checkbox from the backlog without a new assignment. Reuse its context for related
+Escalate to the main navigator when completing the item requires changing scope,
+acceptance criteria, or an architectural contract; a dependency or ownership
+conflict exceeds the lead's authority; a decision materially affects another
+item; external-action authorization is missing; or repeated repair attempts
+produce no new evidence or require relaxing acceptance. Ordinary compiler/test
+failures and local implementation decisions stay with the lead. Each escalation
+must state the decision needed, evidence, options, and the lead's recommendation.
+The main agent resolves that decision and returns execution to the lead rather
+than taking over the repair.
+
+The lead returns after its assigned item; it cannot take another checkbox from
+the backlog without a new assignment. Reuse its context for related
 items when useful, but renew the boundary explicitly. Routine next-item selection
 remains autonomous and does not require user approval.
+
+## Main-Agent Delegation Boundary
+
+While an item is delegated, the main agent must not run a parallel implementation
+or debugging loop: independently diagnose routine failures, inspect each
+intermediate patch, prescribe local repairs, or rerun the lead's verification.
+Sending root-derived fixes through the lead still duplicates the lead's work.
+Inspect implementation evidence for a specific escalation or final acceptance
+concern; keep that inspection proportional to the decision being made.
+
+During execution, manage dependencies, prepare the next bounded assignment,
+resolve cross-item decisions, review another item's completed acceptance packet,
+or communicate meaningful progress. If no such work is needed, wait. Spare
+capacity is not a reason to duplicate delegated work. Do not request updates or
+inspect worker state unless the result could change a pending navigator decision.
+The lead reports blockers, escalations, material changes to the completion outlook,
+and acceptance readiness; routine repair chatter stays within its team.
+
+At acceptance, check the contract, critical interfaces, risks, and verification
+evidence. Return missing evidence or defects as a bounded correction to the lead,
+without implementing the correction yourself. Preserve independent review where
+needed; avoid replaying the lead's entire investigation.
+
+## Required Subagent Models and Effort
+
+These are model-selection requirements, not suggestions. They apply to every
+subagent in the workflow, including nested agents, replacements, reviewers, and
+discovery workers. An explicit user model/effort instruction takes precedence;
+otherwise use only the following combinations:
+
+| Role or assignment | Model | Reasoning effort |
+| --- | --- | --- |
+| Work item lead: routine coordination | `gpt-5.6-sol` | `medium` |
+| Work item lead: substantive review or complex ownership, concurrency, lifecycle, or implementation decisions | `gpt-5.6-sol` | `high` |
+| Implementation, diagnosis, or independent code review pilot | `gpt-5.6-luna` | `high` |
+| Mechanical edits, straightforward fixtures, code location, or bounded factual discovery | `gpt-5.6-luna` | `medium` |
+| Process monitoring and completion/failure reporting | `gpt-5.6-luna` | `low` |
+
+- Always supply both the exact model identifier and effort when spawning. Never
+  rely on parent inheritance, configured defaults, or an implicit model alias.
+  Include this policy and the named lead in assignments so descendants follow it.
+- Use `fork_turns: "none"` with an explicit task brief where that parameter is
+  supported. Never use a full-history fork that prevents the selected model and
+  effort from taking effect. Check the actual tool schema in other environments.
+- Do not spawn Astra subagents, or substitute another unlisted model or effort,
+  without explicit user authorization. An Astra main navigator is allowed; its
+  model must not propagate to children. Task difficulty, slot pressure, failed
+  checks, and a request to "keep going" are not authorization for an exception.
+- Escalate difficult Luna work to the existing Sol lead; involve the main
+  navigator only under the escalation conditions above. Narrow the assignment
+  as needed. Do not silently upgrade the pilot to Astra or increase effort beyond
+  the table. Choose Sol high when its assigned
+  duties include substantive review; medium is for routine coordination.
+- Check returned configuration when exposed. Never reuse an agent whose model
+  or effort is incompatible with its assignment. Use a supported explicit effort
+  change or replace it with a concise handoff; a message saying "think harder"
+  is not an effort-setting change. If an unintended model is detected, interrupt
+  it and correct the configuration before further work.
+- If the required model, explicit selection, lead/pilot routing, or capacity is
+  unavailable, report the specific limitation. Continue independent read-only
+  preparation, but do not silently fall back to Astra or omit the lead. Request
+  an explicit exception only if needed to proceed with the affected work.
 
 ## Navigator Loop
 
@@ -69,33 +139,38 @@ remains autonomous and does not require user approval.
    after required verification and navigator acceptance; show the final state
    at handoff. These updates do not require user approval.
    Distinguish implemented or staged work from integrated, verified, accepted work.
-2. Select a bounded work item with an observable acceptance result.
-   Use one pilot for tightly coupled work. Add pilots when bounded tasks can run
+2. Select a bounded work item with an observable acceptance result. Show its
+   active acceptance boundary separately from milestone context and the backlog.
+   Assign its lead using the required model/effort policy. Have the lead use one
+   pilot for tightly coupled work. Add pilots when bounded tasks can run
    independently alongside useful navigator work; identify dependencies and file
    ownership before parallelizing.
-3. Give each pilot a concrete assignment with:
+3. Give the lead a bounded contract covering the following points, with authority
+   to complete the in-scope proposal, repair, review, and verification loops. Have
+   it assign each pilot an appropriate subset:
    - The desired behavior and acceptance criteria.
    - The checklist item, exclusions, tolerances, and conditions for escalation.
-   - Relevant source context, constraints, and applicable instructions.
+   - Relevant source context, architectural decisions, constraints, and applicable
+     instructions.
    - The workspace or worktree and files or components it may change.
    - Known concurrent work and dependencies.
    - Expected verification and a requirement to propose its approach before edits.
-   - A named reviewer/approver: you or the delegated work item lead. Direct
+   - The required model/effort policy and the lead as reviewer/approver. Direct
      proposals and questions there and wait for approval before implementation.
-4. Review the pilot's proposal against the source and overall design. Resolve
-   tradeoffs yourself within the user's authorized scope. Approve the specific
-   increment and verification, or send concrete revisions. An assignment that
+4. Have the lead review the pilot's proposal against the source and approved item
+   contract, resolving routine tradeoffs within scope. The lead approves the
+   specific increment and verification, or sends concrete revisions. An assignment that
    already supplies and explicitly approves a complete approach can serve as
-   approval; do not require a redundant exchange. A delegated lead performs
+   approval; do not require a redundant exchange. The lead performs
    this routine review within the main navigator's approved boundary.
-5. While the pilot implements, inspect affected interfaces, resolve upcoming
-   design questions, or review other independent increments. Keep implementation
-   ownership with pilots rather than editing their assigned files concurrently.
-6. Review the actual diff and verification evidence when the pilot returns.
-   Require a proportional code walkthrough, investigate unsupported claims, and
-   return actionable corrections to the responsible pilot. A pilot's completion
-   message alone does not establish acceptance. With a lead, keep detailed pilot
-   walkthroughs and routine correction loops there. The main navigator reviews
+5. While the lead coordinates implementation, follow the Main-Agent Delegation
+   Boundary above. Keep routine diagnosis and repair with the lead; wait when no
+   independent navigator work or escalation requires attention.
+6. Have the lead review the actual diff and verification evidence when the pilot
+   returns. The lead requires a proportional code walkthrough, investigates
+   unsupported claims, and returns actionable corrections to the pilot. A pilot's
+   completion message alone does not establish acceptance. Keep detailed
+   walkthroughs and routine correction loops with the lead. The main navigator reviews
    the acceptance packet, critical interfaces and risks, and relevant integrated
    diff/evidence without repeating the entire delegated review by default.
 7. The main navigator accepts the work item only when its behavior and checks
@@ -110,8 +185,8 @@ remains autonomous and does not require user approval.
 ## Pilot Contract
 
 Include these expectations in pilot assignments; do not assume pilots inherit
-this skill or the navigator's full context. Here, navigator means the named
-approver for the assignment, including a delegated lead when designated:
+this skill or the navigator's full context. Here, navigator means the required
+work item lead, who escalates decisions outside its contract to the main agent:
 
 - Inspect the assigned source before proposing behavior, affected files,
   implementation approach, tradeoffs, and verification.
@@ -157,9 +232,9 @@ unchanged work indefinitely.
 
 For long processes, use completion notifications where supported. Otherwise name
 one monitor with a workload-appropriate cadence, stall/failure conditions, and a
-run handle. A Luna low watcher can handle routine monitoring when available and
-consistent with the user's model choices. Respect tool wait limits. The main agent
-should not duplicate polling or restart finished pilots for unchanged status.
+run handle. Any monitoring subagent must use Luna low under the model policy above.
+Respect tool wait limits. The main agent should not duplicate polling or restart
+finished pilots for unchanged status.
 
 Keep a compact checkpoint for interruption or handoff: current item and acceptance
 boundary, accepted revisions, outstanding diffs and owners, active processes,
@@ -169,9 +244,11 @@ when obsolete context outweighs useful continuity.
 
 ## Concurrent Work and Integration
 
-- Give shared files one active writer. Serialize overlapping changes or isolate
-  them in worktrees with an explicit integration owner and sequence. Include
-  generated files and shared configuration when assessing overlap.
+- Before approving parallel edits, the lead records a file-ownership table. Each
+  file has one active pilot owner; different regions of the same file still
+  overlap. Serialize shared-file edits or isolate them in worktrees with an
+  explicit integration owner and sequence. Update ownership before reassignment,
+  including generated files and shared configuration.
 - In a shared workspace, pilot edits are already visible; review them in place.
   For isolated worktrees, identify the accepted patch or commits and integrate
   them deliberately. Do not apply the same changes twice.
@@ -187,16 +264,16 @@ when obsolete context outweighs useful continuity.
 
 ## Autonomy and Completion
 
-The navigator supplies routine implementation approvals. Keep the user informed
+The work item lead supplies routine implementation approvals. Keep the user informed
 of meaningful progress and outcomes without turning updates into approval gates.
 Ask the user only when missing information or authorization actually prevents
 progress; continue independent authorized work while waiting.
 
 Navigator approval does not expand the user's scope or grant permission for
 external actions. Honor existing permissions for publishing, deployment, and
-other restricted actions. If a pilot repeatedly fails for the same reason,
-inspect the cause and revise the assignment or approach instead of retrying
-unchanged work indefinitely.
+other restricted actions. If a pilot repeatedly fails for the same reason, the
+lead investigates and revises the assignment or approach, escalating under the
+conditions above instead of retrying unchanged work indefinitely.
 
 When committing is authorized, have one owner stage only accepted changes at
 coherent boundaries and use conventional commits. Use conventional comments
@@ -208,8 +285,10 @@ remaining limitations. Keep detailed pilot walkthroughs within the agent loop
 unless the user requests them.
 
 When evaluating workflow changes, compare elapsed time and model usage per accepted
-work item, including all agents, rework, and quality outcomes. Separate cached input,
-uncached input, and output where available; do not infer savings from tool counts
+work item, including all agents, rework, and quality outcomes. Track main-agent
+routine diagnostic interventions, rejected acceptance packets, and regressions
+alongside tokens and time; fewer messages alone do not establish better delegation.
+Separate cached input, uncached input, and output where available; do not infer savings from tool counts
 or sum overlapping waits as elapsed time. Roll accepted items up to milestone
 progress. Honor pauses by stopping productive work and retaining a checkpoint;
 do not assume skill instructions can suppress runtime-generated wakeups.
