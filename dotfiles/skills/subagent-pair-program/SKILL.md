@@ -58,6 +58,13 @@ must state the decision needed, evidence, options, and the lead's recommendation
 The main agent resolves that decision and returns execution to the lead rather
 than taking over the repair.
 
+Also escalate when new evidence materially weakens the item's necessity, reveals
+a cheaper credible route consistent with the agreed priorities, or materially
+changes the expected remaining effort to the user's outcome, even while
+implementation progresses and checks pass. The main navigator resolves route
+choices within existing authorization; changes to user priorities, hard
+constraints, or substantial effort commitments require a user decision.
+
 The lead returns after its assigned item; it cannot take another checkbox from
 the backlog without a new assignment. Reuse its context for related
 items when useful, but renew the boundary explicitly. Routine next-item selection
@@ -162,8 +169,9 @@ otherwise use only the following combinations:
 
 ## Navigator Loop
 
-1. Establish the user's goal, constraints, and completion criteria. Inspect the
-   workspace, applicable instructions, relevant source, and existing changes.
+1. Establish the user's goal, first useful outcome, priorities, constraints, and
+   completion criteria. Reuse existing decisions rather than repeating intake.
+   Inspect the workspace, applicable instructions, relevant source, and existing changes.
    As the main agent, maintain a user-visible checklist covering implementation,
    review, and verification. Show it before assigning the first increment using
    a user-visible plan tool when available, or a concise Markdown checklist in
@@ -184,6 +192,8 @@ otherwise use only the following combinations:
    to complete the in-scope proposal, repair, review, and verification loops. Have
    it assign each pilot an appropriate subset:
    - The desired behavior and acceptance criteria.
+   - The user outcome this item advances and why it is needed now. Distinguish
+     demonstrated prerequisites, chosen design constraints, and untested assumptions.
    - The checklist item, exclusions, tolerances, and conditions for escalation.
    - Relevant source context, architectural decisions, constraints, and applicable
      instructions.
@@ -210,7 +220,11 @@ otherwise use only the following combinations:
    diff/evidence without repeating the entire delegated review by default.
 7. The main navigator accepts the work item only when its behavior and checks
    satisfy the criteria, including any required integration. Update the checklist,
-   release dependent work, and explicitly assign the next item.
+   then assess whether returned evidence changes the recommended route before
+   releasing dependent work or dispatching the next item. Account for switching
+   costs and preserve useful work and required acceptance criteria. Reuse the
+   existing route decision when nothing material has changed; this check does not
+   authorize background investigation while parked. Explicitly assign the next item.
    Reuse pilots when their retained context is useful.
 8. After the increments are accepted, inspect the combined result and run or
    direct appropriate integration checks. Resolve failures through the same
@@ -251,6 +265,10 @@ remaining risks, and any decision needed. Keep raw logs and detailed walkthrough
 in pilot/lead context or linked artifacts. Concision must not omit failed checks,
 partial evidence, or material correctness concerns.
 
+Include a short outcome statement: what the user can now do or know, and the next
+obstacle to their goal. Infrastructure work should name the capability it enables
+without claiming that capability has already been delivered.
+
 Give each validation run one owner. Record its source identity, configuration,
 environment, result, and evidence location. Reuse applicable receipts; invalidate
 affected evidence when source, dependencies, configuration, or environment changes.
@@ -264,6 +282,12 @@ execution, drain, and analysis time. Use explicit stop conditions for exploratio
 do not silently weaken acceptance, enlarge a sweep, or replace a required statistical
 campaign with an underpowered probe. Revise a failed approach rather than retrying
 unchanged work indefinitely.
+
+For an unfamiliar transformation where errors would multiply, validate the method
+on a representative case before applying it broadly. Once established, batch the
+remaining mechanical work within the item. For discovery assignments, define the
+question being resolved: an identified unsupported operation may satisfy that
+investigation's acceptance criteria while product implementation remains open.
 
 For long processes, use completion notifications where supported. Otherwise name
 one monitor with a workload-appropriate cadence, stall/failure conditions, and a
