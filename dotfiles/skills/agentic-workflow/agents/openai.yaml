@@ -1,0 +1,4 @@
+interface:
+  display_name: "Agentic Workflow"
+  short_description: "Choose outcomes, probe risks, and plan the next step"
+  default_prompt: "Use $agentic-workflow to guide me through the Agentic Workflow Primer using the Q&A dialog, starting with what I want to achieve."
