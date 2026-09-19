@@ -41,7 +41,7 @@ The main navigator selects the item, defines its acceptance boundary, owns the
 user-visible checklist and cross-item design, and makes final acceptance decisions.
 The lead owns getting that item to acceptance: decompose it, approve routine
 pilot proposals, review diffs, diagnose failures, direct in-scope repairs, and
-repeat verification without seeking main-agent approval for each step. Name the
+arrange necessary verification without seeking main-agent approval for each step. Name the
 lead as the pilots' approval and reporting recipient. Explicitly coordinate any permission to spawn
 pilots, file ownership, and the total team size. Reserve capacity for the lead
 and at least one implementation pilot; serialize work rather than dropping the
@@ -90,6 +90,25 @@ remains autonomous and does not require user approval.
 
 ## Main-Agent Delegation Boundary
 
+The main navigator owns whether the team is doing the right work; the lead owns
+getting the assigned work done correctly. Guide and course-correct the lead through
+outcomes, priorities, constraints, and acceptance boundaries, not instructions to
+its pilots. Independently evaluate the lead's recommendations rather than treating
+technical completion as automatic approval of the next investment.
+
+At meaningful handoffs or route-changing events, judge whether the result advances
+the user's outcome, whether the proposed next prerequisite is necessary and
+appropriately sized, and whether accumulated implementation or verification effort
+remains worthwhile. Accept, narrow, redirect, or stop work as the evidence warrants.
+Agreement is valid; neither ritual disagreement nor a separate questionnaire or
+report is required. Preserve existing user priorities and authorization boundaries.
+
+Proportionality is a navigator responsibility. Challenge verification, preservation,
+or infrastructure work whose cost exceeds its value to the user, as well as
+insufficient checks. Set the expected rigor with the item contract and revise it
+when concrete evidence changes the risk; do not let successive reviews silently
+expand acceptance requirements.
+
 While an item is delegated, the main agent must not run a parallel implementation
 or debugging loop: independently diagnose routine failures, inspect each
 intermediate patch, prescribe local repairs, or rerun the lead's verification.
@@ -98,7 +117,8 @@ Inspect implementation evidence for a specific escalation or final acceptance
 concern; keep that inspection proportional to the decision being made.
 
 During execution, independent navigator work is limited to preparing the next
-item's acceptance contract or resolving a known cross-item decision. Once that
+item's acceptance contract or resolving a named strategic or cross-item uncertainty
+that could change scope, architecture, or the route to the user's outcome. Once that
 work is complete, park under the protocol below. Spare capacity is not a reason
 to duplicate delegated work or invent additional source investigations.
 
@@ -106,6 +126,33 @@ At acceptance, check the contract, critical interfaces, risks, and verification
 evidence. Return missing evidence or defects as a bounded correction to the lead,
 without implementing the correction yourself. Preserve independent review where
 needed; avoid replaying the lead's entire investigation.
+
+## Lead Review Discipline
+
+- Give each discovery question one owner. The pilot returns findings, source
+  references, and uncertainties; the lead reads enough source to judge the proposal
+  and its critical assumptions. Do not independently repeat the assigned discovery
+  while the pilot works.
+- Review at handoff. After approving implementation, wait for a proposal, result,
+  blocker, or agreed stall threshold. Apply Dispatch, Then Park to the lead's
+  coordination with pilots too; do not inspect intermediate files or poll agents
+  merely to check progress. A concrete review concern can justify bounded inspection.
+- Reuse applicable pilot verification. Passing checks satisfy their part of the
+  contract when the tested changes, relevant configuration, and results are clear.
+  Handoff alone never justifies repeating compilation, formatting, JSON validation,
+  or tests. Independent review means judging the evidence and behavior, not
+  independently rerunning every command.
+- Name the reason for additional investigation or checks: missing or contradictory
+  evidence, a relevant change that invalidates a result, or a specific correctness
+  concern the existing checks do not resolve. Choose the smallest check that answers
+  it. General discomfort is insufficient; this explanation belongs in the existing
+  review exchange, not a new approval stage.
+
+Once the agreed criteria are supported and substantive review concerns are
+resolved, return the acceptance packet. Do not add another inspection or validation
+pass merely to increase confidence. Include the recommended next bounded item and
+its purpose when useful; flag material changes in route or expected effort so the
+main navigator can decide. The lead cannot authorize its own next backlog item.
 
 ## Dispatch, Then Park
 
@@ -317,20 +364,37 @@ work item lead, who escalates decisions outside its contract to the main agent:
 
 ## Acceptance Evidence and Context
 
-Return a compact acceptance packet: checklist item, revision or diff identity,
-changed behavior and interfaces, verification commands/results and artifact paths,
-remaining risks, and any decision needed. Keep raw logs and detailed walkthroughs
-in pilot/lead context or linked artifacts. Concision must not omit failed checks,
+Choose verification according to the user's requested outcome, the consequence of
+failure, and the reversibility of the action. Use the smallest evidence sufficient
+to establish the relevant behavior. Do not introduce hashes, exhaustive manifests,
+byte-for-byte comparisons, or durable receipts unless they resolve a concrete
+uncertainty or satisfy an explicit requirement. Respect the user's requested rigor
+and priorities without claiming that omitted checks passed.
+
+For a documentation edit, diff and affected-link review may suffice; an ordinary
+code fix usually needs focused behavioral checks. Exact pixel or byte comparison
+belongs where exact parity is required. Before deleting unique source that must be
+preserved, establish that the preserved copy can actually restore it. A checksum
+establishes identity, not correctness, usefulness, or recoverability. Preservation
+does not automatically require publishing manifests or recovery machinery.
+
+Return a compact acceptance packet identifying the item and reviewed changes,
+changed behavior, relevant verification commands/results, remaining risks, and any
+decision needed. Link existing artifacts when useful; an ordinary handoff need not
+create a receipt file or hash the diff. Keep raw logs and detailed walkthroughs in
+pilot/lead context or linked artifacts. Concision must not omit failed checks,
 partial evidence, or material correctness concerns.
 
 Include a short outcome statement: what the user can now do or know, and the next
 obstacle to their goal. Infrastructure work should name the capability it enables
 without claiming that capability has already been delivered.
 
-Give each validation run one owner. Record its source identity, configuration,
-environment, result, and evidence location. Reuse applicable receipts; invalidate
-affected evidence when source, dependencies, configuration, or environment changes.
-Do not rerun a broad suite solely because an agent hands off or resumes work.
+Give each validation run one owner. Retain enough context to know which changes it
+tested and whether the result still applies; record configuration, environment, or
+artifact identity only to the extent relevant to that judgment. Reuse applicable
+results; invalidate only evidence affected by changes to source, dependencies,
+configuration, or environment. Do not rerun checks solely because an agent hands
+off or resumes work.
 Preserve independent review of ownership, lifecycle, and cross-language contracts;
 focused passing tests do not establish integrated correctness.
 
@@ -354,8 +418,8 @@ Respect tool wait limits. The main agent should not duplicate polling or restart
 finished pilots for unchanged status.
 
 Keep a compact checkpoint for interruption or handoff: current item and acceptance
-boundary, accepted revisions, outstanding diffs and owners, active processes,
-validation receipts, next action, and unresolved decisions. Recheck current state
+boundary, accepted changes, outstanding diffs and owners, active processes,
+relevant verification results, next action, and unresolved decisions. Recheck current state
 on resume instead of repeating broad discovery. Reset an agent with this brief
 when obsolete context outweighs useful continuity.
 
