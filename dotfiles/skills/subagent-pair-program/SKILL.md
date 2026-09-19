@@ -116,16 +116,56 @@ repeated polling while the lead responds.
 
 The lead sends an acceptance packet, a decision request with evidence and its
 recommendation, or a material blocker/change to delivery expectations. Routine
-progress, test failures, and repair attempts remain within its team. During
-delegated execution, report meaningful state changes to the user; unchanged
-worker progress does not require periodic commentary under this skill. Maintain
-responsiveness through interruptible waits. Higher-priority instructions that
-require periodic commentary or shorter waits still apply; satisfy them without
-adding redundant inspection or status requests.
+progress, test failures, and repair attempts remain within its team. Maintain
+responsiveness through interruptible waits and apply the User-Facing Update Gate
+below. A missed checkpoint permits internal coordination, not an automatic chat
+update before the lead returns an appropriate event.
 
 Do not add a monitoring agent merely to watch the lead. Use one only when an
 external process needs supervision and completion notifications are unavailable,
 under the process-monitoring rules below.
+
+## User-Facing Update Gate
+
+Periodic commentary is a non-goal. After the initial assignment/checklist, the
+main agent updates the chat during delegated execution only in response to an
+appropriate lead event: an acceptance packet, a material finding that changes
+confidence or invalidates evidence, an escalation requiring a decision, or a
+material blocker/change to scope, route, or delivery expectations. New user
+instructions still receive a direct response; they are not a reason to resume
+periodic narration.
+
+Compare the event's factual content with prior updates. Do not relay routine
+worker activity or paraphrase unchanged status, acceptance criteria, or planned
+checks. A lead message may require internal action without warranting a chat
+update. Batch routine corrections into the next meaningful result. Report
+acceptance only after main-navigator review; label a pending submission as under
+review if it must be mentioned.
+
+For a substantive update, state the new outcome or finding, decisive evidence,
+and next checkpoint or remaining boundary. Link receipts for full hashes,
+commands, and logs. Preserve material failures and limitations. Combine actual
+checklist changes with that update rather than sending separate narration.
+
+If a higher-priority system or developer instruction prevents suppressing output
+during a wait, output exactly one plain-text line in this format:
+
+`Forced interaction: <explanation in as few words as possible>`
+
+Examples: `Forced interaction: waiting on lead` or
+`Forced interaction: waiting for build`.
+
+Choose the line when the waiting period begins and repeat it verbatim whenever
+forced to interact again during that same period. Do not vary the wording,
+punctuation, capitalization, or append timestamps, elapsed time, checklists,
+technical recaps, or reassurance. A timeout or non-actionable worker message does
+not start a new waiting period. Change the line only when a material event changes
+what is being awaited. Retain the chosen line in handoff/compaction checkpoints
+if the wait continues. If no higher-priority instruction requires output, remain
+silent. Never inspect workers or request status merely to fill a forced message.
+
+Forced interactions are an instruction-compliance fallback, not progress updates
+or a reporting cadence. Count them separately when evaluating communication.
 
 ## Required Subagent Models and Effort
 
@@ -176,9 +216,10 @@ otherwise use only the following combinations:
    review, and verification. Show it before assigning the first increment using
    a user-visible plan tool when available, or a concise Markdown checklist in
    progress updates. Keep ownership of this checklist rather than relying on
-   pilot checklists or private agent messages. Update it when work starts, awaits
-   review, completes, becomes blocked, or changes scope, so the user can see
-   completed, current, and remaining work at a glance. Mark items complete only
+   pilot checklists or private agent messages. After the initial checklist,
+   publish changes at appropriate lead-driven work-item transitions under the
+   User-Facing Update Gate; do not narrate internal pilot review/repair states or
+   republish unchanged status. Mark items complete only
    after required verification and navigator acceptance; show the final state
    at handoff. These updates do not require user approval.
    Distinguish implemented or staged work from integrated, verified, accepted work.
