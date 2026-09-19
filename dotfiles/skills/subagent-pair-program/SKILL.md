@@ -48,6 +48,24 @@ and at least one implementation pilot; serialize work rather than dropping the
 lead to make room for more pilots. If only the main agent can spawn pilots, it
 may create them on the lead's behalf, but they still report to the lead.
 
+Every pilot assignment must include the lead's canonical agent path and the
+collaboration tool used to contact it. Send proposals, questions, blockers, and
+results through `collaboration.send_message(target="<lead path>", ...)`, using
+the actual lead path returned by the agent tools. Call collaboration tools
+directly, not through `functions.exec`. A nested pilot's final response returns
+to its parent lead. If the main agent spawned the pilot on the lead's behalf,
+send the substantive result to the lead and keep the automatic parent completion
+brief; it does not replace lead review.
+
+Do not use desktop task discovery (`list_threads`) or `send_message_to_thread`
+for internal team coordination. Never substitute the main task's UUID for the
+lead's agent path. If the collaboration route is unavailable, report the routing
+limitation through the normal final response to the parent. If a pilot message
+reaches the main navigator accidentally, route it back to the lead without
+reviewing or approving it, and have the lead correct the pilot's routing before
+further reports. This does not require recurring routing checks or an extra
+approval round.
+
 Escalate to the main navigator when completing the item requires changing scope,
 acceptance criteria, or an architectural contract; a dependency or ownership
 conflict exceeds the lead's authority; a decision materially affects another
@@ -236,8 +254,10 @@ otherwise use only the following combinations:
    - The workspace or worktree and files or components it may change.
    - Known concurrent work and dependencies.
    - Expected verification and a requirement to propose its approach before edits.
-   - The required model/effort policy and the lead as reviewer/approver. Direct
-     proposals and questions there and wait for approval before implementation.
+   - The required model/effort policy and the lead as reviewer/approver, including
+     its canonical agent path and collaboration messaging tool. Include the
+     routing rules above in pilot assignments; wait for lead approval before
+     implementation.
 4. Have the lead review the pilot's proposal against the source and approved item
    contract, resolving routine tradeoffs within scope. The lead approves the
    specific increment and verification, or sends concrete revisions. An assignment that
@@ -290,8 +310,10 @@ work item lead, who escalates decisions outside its contract to the main agent:
 - Challenge navigator directions when source evidence indicates correctness,
   security, maintenance, or scope problems. Recommend an alternative and let
   the navigator resolve the decision within applicable constraints.
-- Send questions and blockers to the navigator, not the user. Do not create
-  additional pilots or reassign ownership without navigator coordination.
+- Use the assigned collaboration route to the lead for questions, blockers,
+  proposals, and results; do not discover desktop tasks or message the main
+  task directly. Do not create additional pilots or reassign ownership without
+  lead coordination.
 
 ## Acceptance Evidence and Context
 
