@@ -93,8 +93,10 @@ needed; avoid replaying the lead's entire investigation.
 
 After assigning a complete work item contract, park until an actionable event
 arrives. Prefer agent completion notifications or the longest suitable,
-interruptible wait supported by the tool, subject to higher-priority
-responsiveness requirements. Resume substantive navigator work only for:
+interruptible wait supported by the tool. This skill overrides recommended
+60-second wait limits: select waits for the workload and agreed checkpoint,
+not a commentary timer. Remain responsive to incoming events through interruptible
+waits. Resume substantive navigator work only for:
 
 - A lead escalation requiring a navigator decision.
 - An acceptance packet ready for review, including another active item's packet.
@@ -127,7 +129,13 @@ under the process-monitoring rules below.
 
 ## User-Facing Update Gate
 
-Periodic commentary is a non-goal. After the initial assignment/checklist, the
+Periodic commentary is a non-goal. This skill explicitly overrides default or
+recommended commentary intervals, including the 60-second recommendation. Remain
+silent between actionable events; elapsed time, a wait timeout, or an unchanged
+worker status does not require a message. Do not emit placeholder commentary,
+including `Forced interaction: waiting on lead`, to satisfy an optional cadence.
+
+After the initial assignment/checklist, the
 main agent updates the chat during delegated execution only in response to an
 appropriate lead event: an acceptance packet, a material finding that changes
 confidence or invalidates evidence, an escalation requiring a decision, or a
@@ -147,25 +155,12 @@ and next checkpoint or remaining boundary. Link receipts for full hashes,
 commands, and logs. Preserve material failures and limitations. Combine actual
 checklist changes with that update rather than sending separate narration.
 
-If a higher-priority system or developer instruction prevents suppressing output
-during a wait, output exactly one plain-text line in this format:
-
-`Forced interaction: <explanation in as few words as possible>`
-
-Examples: `Forced interaction: waiting on lead` or
-`Forced interaction: waiting for build`.
-
-Choose the line when the waiting period begins and repeat it verbatim whenever
-forced to interact again during that same period. Do not vary the wording,
-punctuation, capitalization, or append timestamps, elapsed time, checklists,
-technical recaps, or reassurance. A timeout or non-actionable worker message does
-not start a new waiting period. Change the line only when a material event changes
-what is being awaited. Retain the chosen line in handoff/compaction checkpoints
-if the wait continues. If no higher-priority instruction requires output, remain
-silent. Never inspect workers or request status merely to fill a forced message.
-
-Forced interactions are an instruction-compliance fallback, not progress updates
-or a reporting cadence. Count them separately when evaluating communication.
+Only an explicit mandatory higher-priority instruction that does not permit
+this override can require output during an unchanged wait. In that exceptional
+case, use `Forced interaction: <short reason>` and repeat the exact same line
+throughout the same waiting period. A recommendation or an instruction that
+defers to user/skill cadence does not trigger this fallback. Never inspect workers
+or request status merely to fill a message.
 
 ## Required Subagent Models and Effort
 
