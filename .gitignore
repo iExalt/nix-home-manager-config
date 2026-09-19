@@ -7,3 +7,6 @@ result-*
 
 # Machine-local Home Manager overlay selector
 /config.nix
+
+# chore(codex): regenerate the machine-local model catalog from the upstream cache.
+/dotfiles/.codex/models-catalog.local.json
