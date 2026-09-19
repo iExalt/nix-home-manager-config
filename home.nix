@@ -72,6 +72,10 @@ in
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/subagent-pair-program";
   home.file.".claude/skills/subagent-pair-program".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/subagent-pair-program";
+  home.file.".codex/skills/agentic-workflow".source =
+    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/agentic-workflow";
+  home.file.".claude/skills/agentic-workflow".source =
+    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/agentic-workflow";
   home.file.".codex/skills/maintain-project-status".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/maintain-project-status";
   home.file.".claude/skills/maintain-project-status".source =
