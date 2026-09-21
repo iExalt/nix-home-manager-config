@@ -260,10 +260,29 @@ update. Batch routine corrections into the next meaningful result. Report
 acceptance only after main-navigator review; label a pending submission as under
 review if it must be mentioned.
 
-For a substantive update, state the new outcome or finding, decisive evidence,
-and next checkpoint or remaining boundary. Link receipts for full hashes,
-commands, and logs. Preserve material failures and limitations. Combine actual
-checklist changes with that update rather than sending separate narration.
+Write substantive updates for a technically capable project owner who may lack
+expertise in this domain. Assume familiarity with the desired outcome, not with
+subsystem names, internal states, or the latest lead-pilot exchange. The navigator
+interprets the significance of the lead's result; do not merely compress or relay
+its acceptance packet.
+
+Anchor the update in the current project objective or acceptance stage. Explain
+what changed, what it enables or resolves, what remains unproved, and why the next
+step advances the user's goal. Include the decisive evidence in terms the user
+can assess. Introduce technical terms through their purpose when needed; keep
+implementation details only when they help explain progress, risk, or a decision.
+Distinguish a working prerequisite from the end capability it supports.
+
+Prefer a little necessary background over maximum brevity. These are writing
+principles, not mandatory headings or a questionnaire: use natural paragraphs
+without repeating the whole roadmap. Before sending, ask whether the user could
+understand why the result matters without opening a pilot conversation or asking
+another agent. Supply the missing connection if needed.
+
+Link existing evidence for technical details, commands, and logs. Preserve
+material failures and limitations. Combine actual checklist changes with the
+update rather than sending separate narration. Better context does not justify
+more frequent messages or unchanged-status updates.
 
 Only an explicit mandatory higher-priority instruction that does not permit
 this override can require output during an unchanged wait. In that exceptional
