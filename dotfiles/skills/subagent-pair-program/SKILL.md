@@ -70,7 +70,7 @@ Escalate to the main navigator when completing the item requires changing scope,
 acceptance criteria, or an architectural contract; a dependency or ownership
 conflict exceeds the lead's authority; a decision materially affects another
 item; external-action authorization is missing; or repeated repair attempts
-produce no new evidence or require relaxing acceptance. Ordinary compiler/test
+fail to advance the real acceptance gate or require relaxing acceptance. Ordinary compiler/test
 failures and local implementation decisions stay with the lead. Each escalation
 must state the decision needed, evidence, options, and the lead's recommendation.
 The main agent resolves that decision and returns execution to the lead rather
@@ -153,6 +153,51 @@ resolved, return the acceptance packet. Do not add another inspection or validat
 pass merely to increase confidence. Include the recommended next bounded item and
 its purpose when useful; flag material changes in route or expected effort so the
 main navigator can decide. The lead cannot authorize its own next backlog item.
+
+## Time to Useful Results
+
+Tie each item to the next user-visible result or decision-changing experiment.
+Before implementation, settle the acceptance details that could invalidate that
+result, such as the actual execution path, batch size, comparison baseline, or
+required integration boundary. Passing local tests alone does not resolve a
+failing end-to-end reproducer.
+
+By default, after two attempted repairs fail to advance the same real acceptance
+gate, stop accumulating repairs and escalate to the navigator. The lead reports
+which hypotheses failed, what changed in the reproducer, and the next experiment
+that can distinguish the remaining explanations. For hangs, distinguish runnable
+work, external waiting, task exit, missing wakeups, and backpressure before adding
+performance changes. Treat unproven repairs as provisional; decide whether to
+retain or remove them rather than building indefinitely on them. The navigator
+reassesses the route and remaining effort, then returns execution to the lead.
+Set a different threshold in the item contract when the workload warrants it;
+this is an event-driven intervention, not permission for root polling or debugging.
+
+Authorize a bounded investigation through to a discriminating result. The approved
+proposal should cover the diagnostic question, permitted instrumentation and
+probes, resource limits, and stopping condition. Within that boundary, pilots may
+adjust temporary trace fields, take samples, repair probe setup, and rerun probes
+without a fresh approval for each action. Keep instrumentation proportional to
+the question; do not build a general diagnostic subsystem to answer one unknown.
+Behavior changes outside the approved approach, expanded scope, or exhausted
+limits still require lead review under the existing escalation rules.
+
+Run required comparisons as soon as a representative partial output exists.
+Compare an available checkpoint while other components remain incomplete instead
+of deferring all integration feedback until the entire feature is built. Reuse
+the result where applicable and label partial coverage accurately. If that
+comparison is outside the active assignment, the lead proposes a bounded item to
+the navigator; it does not absorb the backlog or expand acceptance unilaterally.
+
+Batch mechanical evidence corrections and publication chores into the current
+reviewed handoff. Return known corrections together; avoid a separate pilot turn
+for each wording fix or publication preparation step. The lead may directly make
+small factual documentation corrections after taking file ownership, without
+changing behavior or weakening claims. Preserve substantive code review and
+user-requested publication checkpoints. Recheck preservation or backup state when
+relevant state changes or a destructive action requires it, not after every
+unrelated edit. Check dependency compatibility before publishing a prerequisite
+as accepted when downstream work relies on it.
 
 ## Dispatch, Then Park
 
@@ -286,9 +331,9 @@ otherwise use only the following combinations:
 2. Select a bounded work item with an observable acceptance result. Show its
    active acceptance boundary separately from milestone context and the backlog.
    Assign its lead using the required model/effort policy. Have the lead use one
-   pilot for tightly coupled work. Add pilots when bounded tasks can run
-   independently alongside useful navigator work; identify dependencies and file
-   ownership before parallelizing.
+   pilot for tightly coupled work. Add pilots when independent, bounded work can
+   shorten the path to the next useful result; the navigator may remain parked.
+   Identify dependencies, file ownership, and resource contention before parallelizing.
 3. Give the lead a bounded contract covering the following points, with authority
    to complete the in-scope proposal, repair, review, and verification loops. Have
    it assign each pilot an appropriate subset:
@@ -348,7 +393,9 @@ work item lead, who escalates decisions outside its contract to the main agent:
   scope, design, dependencies, or file ownership, bring a revised proposal to
   the navigator before proceeding.
 - Fix routine compiler/test failures within the approved item without a new
-  proposal for each mechanical repair. Do not absorb adjacent checklist items.
+  proposal for each mechanical repair. Exercise the approved diagnostic authority
+  under Time to Useful Results without stopping for each probe adjustment; report
+  at its result or stopping condition. Do not absorb adjacent checklist items.
 - Run focused checks and report exact commands, outcomes, and any checks that
   could not run. Explain failures without silently broadening the fix.
 - Return a walkthrough with file and symbol references, important control and
@@ -425,6 +472,12 @@ when obsolete context outweighs useful continuity.
 
 ## Concurrent Work and Integration
 
+- Overlap independent parts of a bounded item when doing so shortens delivery:
+  for example, a CPU oracle alongside timing qualification, or comparison of
+  existing outputs alongside implementation. Keep dependent work sequenced and
+  separate discovery ownership. Independent checklist items still need explicit
+  navigator assignments; parallelism does not authorize milestone-sized work.
+  Use additional pilots only for concrete useful work, not to fill slots.
 - Before approving parallel edits, the lead records a file-ownership table. Each
   file has one active pilot owner; different regions of the same file still
   overlap. Serialize shared-file edits or isolate them in worktrees with an
@@ -439,7 +492,9 @@ when obsolete context outweighs useful continuity.
 - When the design or user direction changes, pause affected pilots, reconcile
   their in-progress edits, and send updated assignments before resuming.
 - Schedule builds and benchmarks against actual CPU/GPU, memory, disk, and shared
-  cache constraints. Prefer source-only staging over copying build artifacts.
+  cache constraints, including other active tasks on the host. Serialize competing
+  measurements and builds where contention would distort evidence or delay the
+  critical path; independent source work can continue. Prefer source-only staging over copying build artifacts.
   Track temporary artifact ownership and retention; clean only task-owned
   disposable data within applicable authorization.
 
