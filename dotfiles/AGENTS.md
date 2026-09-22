@@ -9,3 +9,4 @@
 * Implement changes directly in the repository in question by default, creating a sibling directory as a worktree if the user asks
 * Only place truly temporary files in /tmp
 * Do not use /tmp as a staging ground for WIP changes
+* Commit only a small number of reciepts directly inlined in documents/status updates
