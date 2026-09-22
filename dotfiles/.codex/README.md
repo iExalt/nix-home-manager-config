@@ -6,8 +6,9 @@
 mise exec -- python dotfiles/.codex/patch-model-catalog.py
 ```
 
-Run from the repository root before using this config on a new checkout. The
-script copies the models from `~/.codex/models_cache.json`, changes only Astra's
+Home Manager activation runs it automatically when the catalog is missing and
+sets `model_catalog_json` to this host's checkout path; if no model cache exists
+yet, activation drops the setting so Codex still starts. The script copies the models from `~/.codex/models_cache.json`, changes only Astra's
 two 60-second communication recommendations, and adds event-driven waiting
 guidance. User or skill requests can override the recommended cadence. Sol,
 Luna, and other models retain their original catalog entries. Cache identity,
@@ -26,8 +27,8 @@ if Astra's original cadence wording has changed. `--source` accepts an upstream
 cache or catalog JSON file containing a `models` array.
 
 To disable the customization, remove `model_catalog_json` and restart Codex.
-No Home Manager rebuild is needed on this machine because its config resolves
-to the repository file; the catalog setting uses this checkout's absolute path.
+No Home Manager rebuild is needed because the config resolves to the repository
+file, but the next rebuild restores `model_catalog_json`.
 
 See the [Codex configuration reference](https://developers.openai.com/codex/config-reference)
 for `model_catalog_json`.
