@@ -27,13 +27,15 @@ workers unless the user explicitly authorizes an exception:
 
 | Assignment | Model | Effort |
 | --- | --- | --- |
-| Lead: routine coordination | `gpt-5.6-sol` | `medium` |
-| Lead: substantive review or complex implementation, ownership, concurrency, or lifecycle decisions | `gpt-5.6-sol` | `high` |
-| Implementation, diagnosis, independent code review | `gpt-5.6-luna` | `high` |
-| Mechanical edits, simple fixtures, code location, bounded factual discovery | `gpt-5.6-luna` | `medium` |
-| External process monitoring | `gpt-5.6-luna` | `low` |
+| Lead: routine coordination | GPT Sol | `medium` |
+| Lead: substantive review or complex implementation, ownership, concurrency, or lifecycle decisions | GPT Sol | `high` |
+| Implementation, diagnosis, independent code review | GPT Luna | `high` |
+| Mechanical edits, simple fixtures, code location, bounded factual discovery | GPT Luna | `medium` |
+| External process monitoring | GPT Luna | `low` |
 
-Supply the exact model and effort explicitly. Use `fork_turns: "none"` and a scoped
+Resolve GPT Sol and GPT Luna to the latest available model in each class using
+the tool's advertised models; do not invent identifiers. Supply the resolved
+model identifier and effort explicitly. Use `fork_turns: "none"` and a scoped
 brief where supported; never inherit Astra through a full-history fork. Pass this
 policy to descendants. Check returned configuration when exposed; interrupt and
 correct unintended settings. Reuse an agent only at a compatible model/effort;
