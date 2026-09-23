@@ -1,11 +1,11 @@
 approval_policy = "never"
 approvals_reviewer = "user"
 commit_attribution = ""
+# fix(codex): allow user- and skill-directed commentary cadence for Astra.
+developer_instructions = "Honor my requested progress-update cadence.\nDuring passive waits, exempt the task from the 60-second\ncommentary cadence and 60-second wait guidance.\nUse interruptible waits within the tools' supported limits.\nDo not wake or send updates solely to report unchanged status.\nReport meaningful progress, failures, blockers, and completion,\nand respond promptly to user input.\n"
 model = "gpt-5.5"
 model_reasoning_effort = "xhigh"
 model_reasoning_summary = "auto"
-# fix(codex): allow user- and skill-directed commentary cadence for Astra.
-model_catalog_json = "/Users/clliaw/Projects/nix-home-manager-config/dotfiles/.codex/models-catalog.local.json"
 sandbox_mode = "danger-full-access"
 service_tier = "fast"
 
