@@ -40,7 +40,8 @@ Evidence:
 
 - Commit: `[commit ID and subject]`
 - Current source: `[module, symbol, or path]`
-- Verification: `[test, command, artifact, hash, or measured result]`
+- Verification: `[relevant test/command and concise result or small table;
+  retained artifact only when needed]`
 
 ### [Designed Or Implemented But Not Fully Verified Outcome]
 
@@ -155,7 +156,7 @@ For each update:
 4. recheck dependencies, cycles, exit-condition ownership, and prerequisites;
 5. replace the recommended sequence with three to seven concrete steps;
 6. update deferrals, active risks, blocked decisions, and measured results;
-7. append a dated progress-log entry; and
+7. append a concise dated outcome entry, without duplicating existing evidence; and
 8. keep low-level tasks in the detailed checklist.
 
 Status terms:
@@ -178,3 +179,11 @@ Status terms:
 - [Newly verified accomplishment with evidence.]
 - [Changed boundary, decision, dependency, or risk.]
 - [Verification commands and concise results.]
+
+## Appendix: Supporting Results (Optional)
+
+[Omit this section when unnecessary. Use it for moderately larger useful tables,
+with conditions and limitations, not raw logs or datasets. Summarize bulky output
+without committing it. If exact files must be preserved, link the shared
+`.tar.zstd` archive here with its purpose and extraction command; do not also
+retain expanded outputs or create a separate report.]
