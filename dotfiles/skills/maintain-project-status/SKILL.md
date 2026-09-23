@@ -33,6 +33,43 @@ but preserve the evidence, boundary, dependency, and update semantics.
 - Preserve unrelated worktree changes and identify evidence that exists only in
   the uncommitted tree.
 
+## Documentation And Evidence Retention
+
+Default to one project-wide status/progress document and the active implementation
+plan, which may contain its checklist. Reuse these documents instead of creating
+per-item reports, acceptance receipts, benchmark writeups, or handoff documents.
+Component READMEs and `docs` directories are appropriate for durable usage,
+interfaces, and design knowledge; their existence does not make them a destination
+for run logs. Add a separate document only for a distinct ongoing reader need
+that the existing documents cannot reasonably serve.
+
+Choose the smallest useful retained representation:
+
+- Inline short results and small tables in the progress document. Keep only a
+  small number of decisive receipts, with enough conditions and limitations to
+  interpret the result.
+- Put moderately larger useful tables or details in an appendix to that same
+  document. An appendix is not a place to paste raw logs or unbounded datasets.
+- For larger output, retain the conclusion and relevant reproduction command or
+  source reference; omit raw output from the commit by default. Say when exact
+  raw results were not retained rather than linking disposable local files as
+  durable evidence.
+- Only when preserving exact files is essential to an explicit requirement or
+  named future use, consolidate them into a benchmark/evidence `.tar.zstd` archive.
+  Reuse the existing archive when present; update it without losing existing
+  members. Do not create one archive per run or retain both the archive and its
+  expanded contents. In the progress document, briefly state why it is retained,
+  what it contains, and how to extract the relevant files. Verify that the archive
+  is readable and contains required files before removing task-owned originals.
+
+Verification and retention are separate decisions: running a rigorous benchmark
+does not require committing all its outputs. Keep reusable tests, benchmark
+harnesses, and required runtime/test fixtures as normal source files. This policy
+concerns generated evidence, not hiding source in archives or weakening checks.
+Keep working evidence only as long as needed for review; remove only task-owned
+disposable material within the authorized scope. Do not turn a status update into
+an unsolicited repository-wide cleanup or create preservation machinery by default.
+
 ## Status Model
 
 Track workflow status separately from evidence state.
@@ -85,7 +122,8 @@ Inspect before writing:
 - milestone exit gates, checked checklist items, dependencies, and open
   decisions.
 
-Prefer repository-managed tools and commands. Keep a small evidence ledger:
+Prefer repository-managed tools and commands. Keep a small evidence ledger in
+working context or the existing status document, not a new receipt file:
 
 | Claim | Evidence | Current-tree check | Classification |
 | --- | --- | --- | --- |
@@ -100,8 +138,9 @@ Group accomplishments by coherent outcome, not by commit chronology. For each
 group:
 
 - state what now exists or is proven;
-- name concrete evidence such as commit IDs, test names, modules, artifact
-  paths, hashes, or benchmark result files;
+- name the relevant concrete evidence, such as test names, commands and measured
+  results, modules, or commit IDs; reference retained artifacts or hashes only
+  when they serve the claim under the retention policy above;
 - verify that referenced commits resolve and paths or symbols still exist;
 - distinguish implementation evidence from verification evidence;
 - describe a design as a design, not as implemented behavior.
@@ -189,7 +228,7 @@ exhaustive implementation tasks in the checklist.
 When creating:
 
 - establish the initial baseline revision and date;
-- populate every template section;
+- populate applicable template sections; omit the optional appendix when unused;
 - link to the governing plan and checklist;
 - add reciprocal relative links from those documents when the status document
   is durable and belongs in their normal navigation.
@@ -201,7 +240,8 @@ When updating:
 - move only newly evidenced outcomes into accomplishments;
 - revise goal status, dependencies, and decisions;
 - replace the recommended sequence and active risk set;
-- append a dated progress-log entry;
+- append a concise dated progress-log entry for the meaningful outcome, not each
+  agent exchange or validation run; link an existing result instead of duplicating it;
 - preserve prior log entries unless correcting a documented factual error.
 
 Update after a meaningful implementation increment, changed decision, measured

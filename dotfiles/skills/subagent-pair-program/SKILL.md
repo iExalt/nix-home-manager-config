@@ -365,6 +365,9 @@ otherwise use only the following combinations:
    - The workspace or worktree and files or components it may change.
    - Known concurrent work and dependencies.
    - Expected verification and a requirement to propose its approach before edits.
+   - Existing status/plan paths, documentation ownership, and evidence retention:
+     inline concise results, use a bounded appendix for larger tables, and omit
+     bulky raw output unless exact preservation warrants a shared `.tar.zstd` archive.
    - The required model/effort policy and the lead as reviewer/approver, including
      its canonical agent path and collaboration messaging tool. Include the
      routing rules above in pilot assignments; wait for lead approval before
@@ -417,6 +420,9 @@ work item lead, who escalates decisions outside its contract to the main agent:
   at its result or stopping condition. Do not absorb adjacent checklist items.
 - Run focused checks and report exact commands, outcomes, and any checks that
   could not run. Explain failures without silently broadening the fix.
+- Return evidence through the lead exchange; do not create committed receipts,
+  per-run reports, or benchmark dumps by default. Update only assigned documents
+  and follow the item's retention policy.
 - Return a walkthrough with file and symbol references, important control and
   data flow, invariants, error behavior, design tradeoffs, and remaining risks.
   Scale the explanation to the change; a diffstat is not a review handoff.
@@ -427,6 +433,32 @@ work item lead, who escalates decisions outside its contract to the main agent:
   proposals, and results; do not discover desktop tasks or message the main
   task directly. Do not create additional pilots or reassign ownership without
   lead coordination.
+
+## Documentation Footprint
+
+Use the project's existing status/progress document and active implementation
+plan as the durable record. Follow
+[maintain-project-status](../maintain-project-status/SKILL.md) when maintaining
+that record. Component READMEs or docs should explain lasting usage and design,
+not accumulate agent handoffs. Do not create a document per item, acceptance
+packet, checkpoint, benchmark run, or agent. A distinct ongoing reader need can
+justify a new document; routine evidence production cannot.
+
+The navigator sets retention proportional to the user's needs. Inline short
+results or small tables in the progress document; put moderately larger useful
+details in its appendix. For anything larger, summarize results and omit raw data
+from the commit unless exact files are essential for a named purpose. In that
+case, consolidate them into one `.tar.zstd` benchmark/evidence archive, updating
+the existing archive when present, and record its purpose and extraction command
+in the progress document. Do not also commit expanded outputs. Keep reusable
+source, tests, benchmark harnesses, and required fixtures as normal source files.
+
+The lead consolidates pilot findings into the assigned documents with one file
+owner. Acceptance packets and interruption checkpoints normally remain in agent
+context; they do not imply new repository files. Before publication, review new
+documents and generated outputs against this policy as part of the existing diff
+review. Do not add a separate documentation approval loop or reduce required
+verification to reduce the amount retained.
 
 ## Acceptance Evidence and Context
 
@@ -448,7 +480,8 @@ Return a compact acceptance packet identifying the item and reviewed changes,
 changed behavior, relevant verification commands/results, remaining risks, and any
 decision needed. Link existing artifacts when useful; an ordinary handoff need not
 create a receipt file or hash the diff. Keep raw logs and detailed walkthroughs in
-pilot/lead context or linked artifacts. Concision must not omit failed checks,
+pilot/lead context or temporary working evidence, subject to the retention policy
+above. Concision must not omit failed checks,
 partial evidence, or material correctness concerns.
 
 Include a short outcome statement: what the user can now do or know, and the next
