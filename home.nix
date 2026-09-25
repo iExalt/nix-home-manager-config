@@ -13,7 +13,7 @@ let
     "fd@latest"
     "python@3.14"
     "uv@latest"
-    "rust[profile=minimal,components=\"clippy,rustfmt\"]@latest"
+    "rust[profile=minimal,components=clippy,rustfmt]@latest"
     "dust@latest"
     "bat@latest"
     "zellij@latest"
