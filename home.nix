@@ -16,6 +16,7 @@ let
     "rust[profile=minimal,components=clippy,rustfmt]@latest"
     "dust@latest"
     "bat@latest"
+    "glow@latest"
     "zellij@latest"
     # fix(mise): avoid intermittent aqua .pkg extraction failures on macOS.
     "asdf:MetricMike/asdf-awscli@latest"
@@ -90,7 +91,7 @@ in
 
   home.sessionVariables = {
     BAT_THEME = "1337";
-    LESS = "-FR";
+    LESS = "-FR --mouse";
     XDG_RUNTIME_DIR = "/run/user/$UID";
   };
 
