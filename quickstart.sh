@@ -98,6 +98,10 @@ else
   run_home_manager home-manager switch --flake "$FLAKE_ATTR" -b backup --impure
 fi
 
+# feat(config): install repository clean filters after Mise tools are provisioned.
+log "Installing Git filters for portable agent preferences..."
+PATH="$HOME/.nix-profile/bin:$PATH" bash "$REPO_ROOT/scripts/install-git-filters.sh"
+
 # 4. Switch login shell to the nix-managed zsh
 ZSH_PATH="$HOME/.nix-profile/bin/zsh"
 if [ -x "$ZSH_PATH" ]; then
