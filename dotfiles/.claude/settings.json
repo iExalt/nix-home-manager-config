@@ -3,18 +3,32 @@
     "commit": "",
     "pr": ""
   },
-  "permissions": {
-    "defaultMode": "bypassPermissions"
-  },
-  "model": "opus[1m]",
-  "statusLine": {
-    "type": "command",
-    "command": "bunx -y ccstatusline@latest",
-    "padding": 0
-  },
+  "effortLevel": "xhigh",
   "enabledPlugins": {
     "rust-analyzer-lsp@claude-plugins-official": true
   },
+  "model": "opus[1m]",
+  "modelSettings": {
+    "claude-fable-5-1": {
+      "effortLevel": "high"
+    },
+    "claude-opus-5-5": {
+      "effortLevel": "xhigh"
+    }
+  },
+  "permissions": {
+    "defaultMode": "bypassPermissions"
+  },
+  "sandbox": {
+    "enabled": false
+  },
   "skipDangerousModePermissionPrompt": true,
-  "effortLevel": "xhigh"
+  "statusLine": {
+    "command": "bunx -y ccstatusline@latest",
+    "padding": 0,
+    "type": "command"
+  },
+  "switchModelsOnFlag": false,
+  "theme": "dark",
+  "tui": "fullscreen"
 }
