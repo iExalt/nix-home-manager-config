@@ -1,0 +1,2 @@
+/dotfiles/.codex/config.toml filter=agent-codex
+/dotfiles/.claude/settings.json filter=agent-claude
