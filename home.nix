@@ -172,6 +172,8 @@ in
   programs.gh = {
     enable = true;
   };
+  # gh auth login/config set write config.yml; keep it out of the read-only store.
+  xdg.configFile."gh/config.yml".enable = false;
 
   programs.home-manager.enable = true;
   news.display = "silent";
