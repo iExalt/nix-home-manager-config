@@ -75,6 +75,11 @@ the parent agent as `unresolved`.
 
 ## Provider Turns
 
+The helper defaults to GPT-6 Astra (`gpt-6-astra`) with `medium` reasoning
+effort for Codex and Opus 5.5 (`claude-opus-5-5`) with `high` effort for Claude
+Code. These defaults apply to both new and resumed sessions. Use `--model`
+and `--effort` on `turn` when the user requests an override.
+
 Resolve this skill directory before invoking the helper. Typical commands:
 
 ```bash

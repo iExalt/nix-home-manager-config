@@ -130,6 +130,8 @@ def claude_turn(
     topic: str,
     add_dirs: list[Path],
     timeout: int,
+    model: str = "claude-opus-5-5",
+    effort: str = "high",
 ) -> tuple[str, str]:
     if new_session:
         active_session = str(uuid.uuid4())
@@ -163,6 +165,7 @@ def claude_turn(
             "--resume",
             active_session,
         ]
+    command.extend(["--model", model, "--effort", effort])
     for add_dir in add_dirs:
         command.extend(["--add-dir", str(add_dir)])
 
@@ -204,6 +207,8 @@ def codex_turn(
     new_session: bool,
     add_dirs: list[Path],
     timeout: int,
+    model: str = "gpt-6-astra",
+    effort: str = "medium",
 ) -> tuple[str, str]:
     with tempfile.NamedTemporaryFile(prefix="peer-review-codex-", delete=False) as handle:
         output_path = Path(handle.name)
@@ -245,6 +250,7 @@ def codex_turn(
                 ]
             )
 
+        command.extend(["--model", model, "-c", f'model_reasoning_effort="{effort}"'])
         result = run_command(command, cwd=cwd, prompt=prompt, timeout=timeout)
         if result.returncode != 0:
             raise command_error("codex", result)
@@ -287,6 +293,11 @@ def run_turn(args: argparse.Namespace) -> int:
         )
 
     mise = require_mise()
+    reviewer_options = {}
+    if args.model:
+        reviewer_options["model"] = args.model
+    if args.effort:
+        reviewer_options["effort"] = args.effort
     if args.provider == "claude":
         session_id, response = claude_turn(
             mise=mise,
@@ -297,6 +308,7 @@ def run_turn(args: argparse.Namespace) -> int:
             topic=args.topic,
             add_dirs=add_dirs,
             timeout=args.timeout,
+            **reviewer_options,
         )
     else:
         session_id, response = codex_turn(
@@ -307,6 +319,7 @@ def run_turn(args: argparse.Namespace) -> int:
             new_session=args.new,
             add_dirs=add_dirs,
             timeout=args.timeout,
+            **reviewer_options,
         )
 
     upsert_session(
@@ -350,6 +363,14 @@ def build_parser() -> argparse.ArgumentParser:
 
     turn_parser = subparsers.add_parser("turn", help="Run one provider review turn.")
     turn_parser.add_argument("--provider", choices=("claude", "codex"), required=True)
+    turn_parser.add_argument(
+        "--model",
+        help="Reviewer model (default: Codex gpt-6-astra; Claude claude-opus-5-5).",
+    )
+    turn_parser.add_argument(
+        "--effort",
+        help="Reviewer reasoning effort (default: Codex medium; Claude high).",
+    )
     selection = turn_parser.add_mutually_exclusive_group(required=True)
     selection.add_argument("--session-id", help="Resume this provider session.")
     selection.add_argument(
