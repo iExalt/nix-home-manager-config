@@ -61,43 +61,27 @@ workflow, or delegate another peer review.
 
 ## Review Rounds
 
-Start with an independent review, then run additional rounds only when needed:
+Before dispatch, read [the shared review protocol](references/review-protocol.md)
+and give it to the facilitator. It governs discovery coverage, agreed repair
+criteria, focused follow-up review, finding classification, design reassessment
+after two incomplete repair reviews, and explicit closure accounting. Include
+its applicable instructions in provider prompts; do not assume the external
+reviewer has loaded this skill or can access the reference.
 
-1. **Independent review**: Ask the reviewer to inspect the raw artifact and
-   source evidence. Require findings ordered by severity, concrete evidence,
-   impact, and a proposed correction. For a plan, check completeness,
-   sequencing, assumptions, rollback, and verification. For code or a PR, check
-   correctness, regressions, security, tests, and repository conventions.
-2. **Challenge when needed**: Have the facilitator verify each finding against
-   the actual artifact. Ask the reviewer to withdraw unsupported findings,
-   answer objections, and distinguish required fixes from optional
-   improvements.
-3. **Reconciliation when needed**: Produce a final disposition for every
-   finding: `accepted`, `rejected`, or `unresolved`, with a short rationale and
-   the concrete change for accepted findings.
-
-The facilitator may return a round to the main agent after the independent
-review when it verifies the findings and agrees with the reviewer, when there
-are no findings, or when all
-suggested changes are minor or optional. In that case, return the consensus
-record directly without asking the reviewer to restate it. This ends only the
-review round, not the repair loop or the requirement for final agreement.
-
-Run challenge or reconciliation rounds only when a finding is disputed,
-unsupported, unclear, or material to correctness, security, scope, architecture,
-or user-visible behavior. Continue the same provider session until the agents
-reach a stable disposition. Do not manufacture agreement. After three
-substantive rounds without convergence, return the remaining disagreement to
-the parent agent as `unresolved`. This limit applies to debating the same
-findings, not to productive repair/re-review cycles.
+Start with a complete independent discovery pass and reconcile the batch of
+findings. The facilitator may return an agreed record without another call to
+restate it. That completes a review round, not proof that accepted fixes were
+implemented or verified. Preserve accepted, rejected, and unresolved dispositions
+separately from implementation and reviewer closure.
 
 ## Repair Loop and Completion
 
 After each review round:
 
-1. Reconcile findings against the current artifact. Keep stable finding IDs and
-   track each disposition, correction, verification evidence, and reviewer
-   closure. Send the main agent's objections back through the facilitator;
+1. Reconcile findings using the shared protocol. Before complex repairs,
+   agree on the invariant, boundaries, and counterexample batch. Keep stable
+   IDs, dispositions, repair attempts, verification evidence, and closure.
+   Send the main agent's objections back through the facilitator;
    unilateral rejection does not establish agreement.
 2. Implement agreed fixes in the main agent, including in-scope findings found
    while fixing or testing. Preserve unrelated work. Verify the affected
@@ -110,10 +94,12 @@ After each review round:
    distinguish successive uncommitted revisions. Supply the actual current
    diff/content and a distinct round identifier through `--artifact-revision`.
    Keep the artifact stable during the review. If it changes, resubmit it.
-4. Ask the reviewer to verify previous fixes, reopen incomplete corrections,
-   and inspect the revised artifact for new findings and regressions throughout
-   the original scope. Do not restrict review to the previous finding list.
-   Reconcile new or reopened findings, fix them, and repeat in the same session.
+4. Ask the reviewer to check agreed closure criteria, the repair delta and
+   affected dependencies, and introduced regressions. Follow the shared
+   protocol for justified broader inspection and later-finding classification.
+   After two incomplete repair reviews of one finding, reassess its design
+   before editing again. Reconcile and fix findings, then repeat in the same
+   session; do not restart broad discovery on every revision.
 5. Finish successfully only when the reviewer explicitly reports no outstanding
    findings on the latest artifact and the main agent independently agrees.
    All accepted findings must be implemented and verified to the extent the
@@ -156,8 +142,10 @@ record in the same session before accepting the review.
 
 Resolve this skill directory before invoking the helper. Its `scripts` directory
 links to `../peer-review/scripts`, sharing the implementation, regression tests,
-and registry with peer-review. Install both sibling skill directories together;
-no registry migration or copy is needed. Typical commands:
+and registry with peer-review. Its `references` directory likewise links to
+`../peer-review/references`, keeping the review protocol identical. Install both
+sibling skill directories together; no registry migration or copy is needed.
+Typical commands:
 
 ```bash
 # Start a new Claude Code review session.
@@ -210,7 +198,10 @@ mise exec -- python scripts/provider_turn.py record --turn-id TURN_UUID \
 
 Repeat `record` for the same turn after fixes. `implemented` counts accepted
 findings whose corrections were applied; `verified` counts those corrections
-with relevant verification evidence. Missing counts mean unrecorded, not zero.
+with relevant verification evidence. Keep findings on their first-seen turn;
+reopened findings are not new findings. The shared protocol's consensus ledger
+tracks open/reopened/closed IDs; the registry counts alone cannot establish
+closure. Missing counts mean unrecorded, not zero.
 For helper changes, run `mise exec -- python -B -m unittest discover -s
 scripts -p 'test_*.py'` from this skill directory, then skill-creator validation.
 
@@ -229,19 +220,22 @@ Authoring provider: <provider>
 
 Inspect the registry; reuse only a session for the same artifact or workstream,
 and give --reuse-reason. A repository match alone is insufficient. Otherwise
-start new. Run an independent review, verify its
-claims against source, and finish after that round if the findings are agreed or
-minor. Use challenge and reconciliation rounds only for disputed, unclear, or
-material findings. Do not edit files. Record disposition counts. Return a
-self-contained record: provider, session and turn IDs, findings with final
-dispositions, consensus changes, unresolved disagreements, and verification
-recommendations. Do not substitute a plan-file reference for the findings.
+start new. Follow the supplied shared review protocol. Complete discovery
+coverage and batch findings before returning; verify claims against source.
+Agree on invariants, boundaries, and counterexamples before complex repairs.
+Use focused repair verification for follow-ups, classify later findings, and
+reassess the design after two incomplete repair reviews of the same finding.
+Do not edit files. Record disposition counts and return the self-contained
+consensus: coverage, findings and classifications, closure criteria, open/reopened/
+closed/new IDs, repair attempt counts, session/turn/revision IDs, and verification
+limits. Do not substitute a plan-file reference or zero new findings for closure.
 
 The main agent will implement agreed fixes and send revised artifacts back to
 you. Resume this same provider session for each revision. Give the reviewer the
 current artifact/diff, per-finding changes, verification evidence, and new issues.
-Require it to check old fixes and look for new findings throughout the original
-scope. Return explicit closure or remaining findings for each revised artifact.
+Require focused verification of closure criteria, affected dependencies, and
+regressions, with reasons for broader inspection. Return explicit closure or
+remaining findings for each revised artifact, even when there are no new IDs.
 Do not declare the whole loop complete on the basis of an agreed list of fixes;
 the reviewer and main agent must agree the latest artifact has no outstanding
 findings. Do not edit files or start a nested repair loop.

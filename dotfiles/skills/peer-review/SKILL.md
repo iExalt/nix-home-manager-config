@@ -7,10 +7,13 @@ description: Run a critical peer review of a plan, code change, patch, branch, o
 
 Use a facilitator subagent to conduct a read-only dialogue with a persistent
 review-agent session. Keep the authoring agent responsible for integrating the
-consensus.
+consensus. This skill does not automatically repeat repair/review cycles until
+clean; use peer-review-loop for that. Apply the shared follow-up protocol when
+a revised artifact is submitted. Keep a visible checklist when implementing.
 
 If you are already the downstream reviewer, review the artifact directly and
-return findings; do not start this workflow or delegate another peer review.
+return findings; do not invoke peer-review or peer-review-loop, start this
+workflow, or delegate another peer review.
 
 ## Workflow
 
@@ -54,32 +57,18 @@ return findings; do not start this workflow or delegate another peer review.
 
 ## Review Rounds
 
-Start with an independent review, then run additional rounds only when needed:
+Before dispatch, read [the shared review protocol](references/review-protocol.md)
+and give it to the facilitator. It governs discovery coverage, agreed repair
+criteria, focused follow-up review, finding classification, design reassessment
+after two incomplete repair reviews, and explicit closure accounting. Include
+its applicable instructions in provider prompts; do not assume the external
+reviewer has loaded this skill or can access the reference.
 
-1. **Independent review**: Ask the reviewer to inspect the raw artifact and
-   source evidence. Require findings ordered by severity, concrete evidence,
-   impact, and a proposed correction. For a plan, check completeness,
-   sequencing, assumptions, rollback, and verification. For code or a PR, check
-   correctness, regressions, security, tests, and repository conventions.
-2. **Challenge when needed**: Have the facilitator verify each finding against
-   the actual artifact. Ask the reviewer to withdraw unsupported findings,
-   answer objections, and distinguish required fixes from optional
-   improvements.
-3. **Reconciliation when needed**: Produce a final disposition for every
-   finding: `accepted`, `rejected`, or `unresolved`, with a short rationale and
-   the concrete change for accepted findings.
-
-The facilitator may finish after the independent review when it verifies the
-findings and agrees with the reviewer, when there are no findings, or when all
-suggested changes are minor or optional. In that case, return the consensus
-record directly without asking the reviewer to restate it.
-
-Run challenge or reconciliation rounds only when a finding is disputed,
-unsupported, unclear, or material to correctness, security, scope, architecture,
-or user-visible behavior. Continue the same provider session until the agents
-reach a stable disposition. Do not manufacture agreement. After three
-substantive rounds without convergence, return the remaining disagreement to
-the parent agent as `unresolved`.
+Start with a complete independent discovery pass and reconcile the batch of
+findings. The facilitator may return an agreed record without another call to
+restate it. That completes a review round, not proof that accepted fixes were
+implemented or verified. Preserve accepted, rejected, and unresolved dispositions
+separately from implementation and reviewer closure.
 
 ## Provider Turns
 
@@ -147,7 +136,10 @@ mise exec -- python scripts/provider_turn.py record --turn-id TURN_UUID \
 
 Repeat `record` for the same turn after fixes. `implemented` counts accepted
 findings whose corrections were applied; `verified` counts those corrections
-with relevant verification evidence. Missing counts mean unrecorded, not zero.
+with relevant verification evidence. Keep findings on their first-seen turn;
+reopened findings are not new findings. The shared protocol's consensus ledger
+tracks open/reopened/closed IDs; the registry counts alone cannot establish
+closure. Missing counts mean unrecorded, not zero.
 For helper changes, run `mise exec -- python -B -m unittest discover -s
 scripts -p 'test_*.py'` from this skill directory, then skill-creator validation.
 
@@ -166,13 +158,15 @@ Authoring provider: <provider>
 
 Inspect the registry; reuse only a session for the same artifact or workstream,
 and give --reuse-reason. A repository match alone is insufficient. Otherwise
-start new. Run an independent review, verify its
-claims against source, and finish after that round if the findings are agreed or
-minor. Use challenge and reconciliation rounds only for disputed, unclear, or
-material findings. Do not edit files. Record disposition counts. Return a
-self-contained record: provider, session and turn IDs, findings with final
-dispositions, consensus changes, unresolved disagreements, and verification
-recommendations. Do not substitute a plan-file reference for the findings.
+start new. Follow the supplied shared review protocol. Complete discovery
+coverage and batch findings before returning; verify claims against source.
+Agree on invariants, boundaries, and counterexamples before complex repairs.
+Use focused repair verification for follow-ups, classify later findings, and
+reassess the design after two incomplete repair reviews of the same finding.
+Do not edit files. Record disposition counts and return the self-contained
+consensus: coverage, findings and classifications, closure criteria, open/reopened/
+closed/new IDs, repair attempt counts, session/turn/revision IDs, and verification
+limits. Do not substitute a plan-file reference or zero new findings for closure.
 ```
 
 ## Guardrails
