@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import fcntl
 import json
 import os
 import re
@@ -11,10 +12,23 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import uuid
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+REVIEWER_INSTRUCTIONS = """You are the downstream reviewer. Inspect and critique the
+supplied artifact directly. Do not invoke peer-review, peer-review-loop, provider_turn.py,
+or another review facilitator; do not delegate this review to other agents.
+Keep the artifact unchanged. Return a self-contained review in your final response,
+including findings with severity, evidence, impact, and proposed corrections, or
+an explicit statement of no findings. Include verification limits. Do not return
+only a plan-file reference or a promise to review later.
+
+Review request:
+"""
 
 
 def utc_now() -> str:
@@ -52,8 +66,23 @@ def save_state(path: Path, state: dict[str, Any]) -> None:
     temporary.replace(path)
 
 
+@contextmanager
+def locked_state(path: Path):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    lock_path = path.with_name(path.name + ".lock")
+    with lock_path.open("a", encoding="utf-8") as lock:
+        lock_path.chmod(0o600)
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        try:
+            state = load_state(path)
+            yield state
+            save_state(path, state)
+        finally:
+            fcntl.flock(lock, fcntl.LOCK_UN)
+
+
 def upsert_session(
-    path: Path,
+    state: dict[str, Any],
     *,
     provider: str,
     session_id: str,
@@ -61,7 +90,6 @@ def upsert_session(
     cwd: Path,
     artifact_kind: str,
 ) -> None:
-    state = load_state(path)
     now = utc_now()
     for session in state["sessions"]:
         if session["provider"] == provider and session["session_id"] == session_id:
@@ -86,7 +114,6 @@ def upsert_session(
                 "last_used_at": now,
             }
         )
-    save_state(path, state)
 
 
 def require_mise() -> str:
@@ -110,9 +137,13 @@ def run_command(
     )
 
 
-def command_error(provider: str, result: subprocess.CompletedProcess[str]) -> RuntimeError:
+def command_error(
+    provider: str, result: subprocess.CompletedProcess[str]
+) -> RuntimeError:
     details = result.stderr.strip() or result.stdout.strip() or "no output"
-    return RuntimeError(f"{provider} review turn failed ({result.returncode}): {details}")
+    return RuntimeError(
+        f"{provider} review turn failed ({result.returncode}): {details}"
+    )
 
 
 def slug(value: str) -> str:
@@ -174,13 +205,25 @@ def claude_turn(
         raise command_error("claude", result)
 
     payload = json.loads(result.stdout)
+    if not isinstance(payload, dict):
+        raise RuntimeError(  # noqa: TRY004 - a provider protocol failure, not a caller type error
+            "Unexpected Claude Code JSON response: expected an object"
+        )
     if payload.get("is_error"):
-        raise RuntimeError(f"claude review turn failed: {payload.get('result', payload)}")
+        raise RuntimeError(
+            f"claude review turn failed: {payload.get('result', payload)}"
+        )
     returned_session = payload.get("session_id", active_session)
     response = payload.get("result")
-    if not returned_session or not isinstance(response, str):
+    if (
+        not isinstance(returned_session, str)
+        or not returned_session.strip()
+        or not isinstance(response, str)
+    ):
         raise RuntimeError(f"Unexpected Claude Code JSON response: {result.stdout}")
-    return returned_session, response
+    if not response.strip():
+        raise RuntimeError("Claude Code returned no final response")
+    return returned_session, response.strip()
 
 
 def extract_codex_session(events: str, fallback: str | None = None) -> str:
@@ -188,6 +231,8 @@ def extract_codex_session(events: str, fallback: str | None = None) -> str:
         try:
             event = json.loads(line)
         except json.JSONDecodeError:
+            continue
+        if not isinstance(event, dict):
             continue
         if event.get("type") == "thread.started" and event.get("thread_id"):
             return str(event["thread_id"])
@@ -210,7 +255,9 @@ def codex_turn(
     model: str = "gpt-6-astra",
     effort: str = "medium",
 ) -> tuple[str, str]:
-    with tempfile.NamedTemporaryFile(prefix="peer-review-codex-", delete=False) as handle:
+    with tempfile.NamedTemporaryFile(
+        prefix="peer-review-codex-", delete=False
+    ) as handle:
         output_path = Path(handle.name)
     try:
         command = [
@@ -276,10 +323,70 @@ def list_sessions(args: argparse.Namespace) -> int:
     return 0
 
 
+def artifact_revision(cwd: Path) -> str:
+    """Record a checkout hint; dirty work needs an explicit snapshot identifier."""
+    try:
+        options = {
+            "cwd": cwd,
+            "capture_output": True,
+            "text": True,
+            "timeout": 5,
+            "env": {**os.environ, "GIT_OPTIONAL_LOCKS": "0"},
+        }
+        head = subprocess.run(["git", "rev-parse", "HEAD"], check=False, **options)
+        status = subprocess.run(
+            ["git", "status", "--porcelain"], check=False, **options
+        )
+        if head.returncode == 0 and status.returncode == 0:
+            return head.stdout.strip() + ("+dirty" if status.stdout else "")
+    except (OSError, subprocess.SubprocessError):
+        pass
+    return "unknown"
+
+
+def record_dispositions(args: argparse.Namespace) -> int:
+    counts = {
+        key: getattr(args, key)
+        for key in ("accepted", "rejected", "unresolved", "implemented", "verified")
+    }
+    if any(value < 0 for value in counts.values()):
+        raise ValueError("Disposition counts must be nonnegative")
+    if (
+        counts["verified"] > counts["implemented"]
+        or counts["implemented"] > counts["accepted"]
+    ):
+        raise ValueError("Require verified <= implemented <= accepted")
+    with locked_state(args.state_file) as state:
+        turn = next(
+            (
+                item
+                for item in state.get("turns", [])
+                if item["turn_id"] == args.turn_id
+            ),
+            None,
+        )
+        if turn is None:
+            raise ValueError(f"Unknown turn ID: {args.turn_id}")
+        if turn["status"] != "success":
+            raise ValueError("Cannot record findings against a failed provider turn")
+        turn["dispositions"] = counts
+        turn["dispositions_updated_at"] = utc_now()
+    print(json.dumps({"turn_id": args.turn_id, "dispositions": counts}, indent=2))
+    return 0
+
+
 def run_turn(args: argparse.Namespace) -> int:
     prompt = sys.stdin.read().strip()
     if not prompt:
         raise ValueError("Read an empty prompt from stdin")
+    if args.session_id and not (args.reuse_reason and args.reuse_reason.strip()):
+        raise ValueError(
+            "Resuming requires --reuse-reason identifying the shared artifact/workstream"
+        )
+    if args.new and args.reuse_reason:
+        raise ValueError("--reuse-reason only applies when resuming a session")
+    if args.timeout <= 0:
+        raise ValueError("--timeout must be positive")
 
     cwd = args.cwd.resolve()
     if not cwd.is_dir():
@@ -292,50 +399,69 @@ def run_turn(args: argparse.Namespace) -> int:
             + ", ".join(str(path) for path in invalid_dirs)
         )
 
-    mise = require_mise()
-    reviewer_options = {}
-    if args.model:
-        reviewer_options["model"] = args.model
-    if args.effort:
-        reviewer_options["effort"] = args.effort
-    if args.provider == "claude":
-        session_id, response = claude_turn(
-            mise=mise,
-            cwd=cwd,
-            prompt=prompt,
-            session_id=args.session_id,
-            new_session=args.new,
-            topic=args.topic,
-            add_dirs=add_dirs,
-            timeout=args.timeout,
-            **reviewer_options,
-        )
-    else:
-        session_id, response = codex_turn(
-            mise=mise,
-            cwd=cwd,
-            prompt=prompt,
-            session_id=args.session_id,
-            new_session=args.new,
-            add_dirs=add_dirs,
-            timeout=args.timeout,
-            **reviewer_options,
-        )
-
-    upsert_session(
-        args.state_file,
-        provider=args.provider,
-        session_id=session_id,
-        topic=args.topic,
-        cwd=cwd,
-        artifact_kind=args.artifact_kind,
+    model = args.model or (
+        "claude-opus-5-5" if args.provider == "claude" else "gpt-6-astra"
     )
+    effort = args.effort or ("high" if args.provider == "claude" else "medium")
+    turn = {
+        "turn_id": str(uuid.uuid4()),
+        "provider": args.provider,
+        "session_id": args.session_id,
+        "topic": args.topic,
+        "cwd": str(cwd),
+        "artifact_kind": args.artifact_kind,
+        "artifact_revision": args.artifact_revision or artifact_revision(cwd),
+        "model": model,
+        "effort": effort,
+        "started_at": utc_now(),
+        "selection": "new" if args.new else "resume",
+        "reuse_reason": args.reuse_reason,
+        "status": "failed",
+    }
+    started = time.monotonic()
+    try:
+        options = {
+            "mise": require_mise(),
+            "cwd": cwd,
+            "prompt": REVIEWER_INSTRUCTIONS + prompt,
+            "session_id": args.session_id,
+            "new_session": args.new,
+            "add_dirs": add_dirs,
+            "timeout": args.timeout,
+            "model": model,
+            "effort": effort,
+        }
+        if args.provider == "claude":
+            session_id, response = claude_turn(topic=args.topic, **options)
+        else:
+            session_id, response = codex_turn(**options)
+        turn.update(session_id=session_id, status="success")
+    except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as error:
+        turn["error_type"] = type(error).__name__
+        print(f"Failed review turn ID: {turn['turn_id']}", file=sys.stderr)
+        raise
+    finally:
+        turn.update(
+            finished_at=utc_now(), duration_seconds=round(time.monotonic() - started, 3)
+        )
+        with locked_state(args.state_file) as state:
+            if turn["status"] == "success":
+                upsert_session(
+                    state,
+                    provider=args.provider,
+                    session_id=session_id,
+                    topic=args.topic,
+                    cwd=cwd,
+                    artifact_kind=args.artifact_kind,
+                )
+            state.setdefault("turns", []).append(turn)
     print(
         json.dumps(
             {
                 "provider": args.provider,
                 "session_id": session_id,
                 "response": response,
+                "turn_id": turn["turn_id"],
             },
             indent=2,
             sort_keys=True,
@@ -376,7 +502,15 @@ def build_parser() -> argparse.ArgumentParser:
     selection.add_argument(
         "--new",
         action="store_true",
-        help="Start a new session because the topic is completely different.",
+        help="Start a new session when no relevant, available review session exists.",
+    )
+    turn_parser.add_argument(
+        "--reuse-reason",
+        help="Why the resumed session matches this artifact/workstream.",
+    )
+    turn_parser.add_argument(
+        "--artifact-revision",
+        help="Commit or artifact snapshot ID (default: Git HEAD plus dirty marker, or unknown).",
     )
     turn_parser.add_argument("--topic", required=True)
     turn_parser.add_argument(
@@ -394,6 +528,16 @@ def build_parser() -> argparse.ArgumentParser:
     )
     turn_parser.add_argument("--timeout", type=int, default=1800)
     turn_parser.set_defaults(handler=run_turn)
+
+    record_parser = subparsers.add_parser(
+        "record", help="Record facilitator disposition counts for a completed turn."
+    )
+    record_parser.add_argument("--turn-id", required=True)
+    for name in ("accepted", "rejected", "unresolved"):
+        record_parser.add_argument(f"--{name}", type=int, required=True)
+    for name in ("implemented", "verified"):
+        record_parser.add_argument(f"--{name}", type=int, default=0)
+    record_parser.set_defaults(handler=record_dispositions)
     return parser
 
 
@@ -402,7 +546,13 @@ def main() -> int:
     args = parser.parse_args()
     try:
         return args.handler(args)
-    except (OSError, ValueError, RuntimeError, subprocess.SubprocessError, json.JSONDecodeError) as error:
+    except (
+        OSError,
+        ValueError,
+        RuntimeError,
+        subprocess.SubprocessError,
+        json.JSONDecodeError,
+    ) as error:
         print(f"error: {error}", file=sys.stderr)
         return 1
 

@@ -1,16 +1,20 @@
 ---
-name: peer-review
-description: Run a critical peer review of a plan, code change, patch, branch, or pull request through a persistent session with an agent from another provider, then reconcile findings and propagate accepted changes back to the authoring agent. Use when the user asks for peer review, cross-provider review, second-agent validation, adversarial review, plan review, code review, or PR review. Select Claude Code when Codex authored the artifact, select Codex when Claude Code authored it, and default to Codex when neither provider authored it or authorship is unknown.
+name: peer-review-loop
+description: Repeatedly peer-review and fix a plan, code change, patch, branch, or pull request using a persistent reviewer from another provider until the main agent and reviewer agree there are no outstanding findings. Use when the user asks for a peer-review loop, iterative review and repair, or to fix review findings and re-review until clean. For a review without the automatic repair loop, use peer-review.
 ---
 
-# Peer Review
+# Peer Review Loop
 
 Use a facilitator subagent to conduct a read-only dialogue with a persistent
-review-agent session. Keep the authoring agent responsible for integrating the
-consensus.
+review-agent session. The main agent owns implementation and verification;
+the facilitator and reviewer remain read-only. Invoking this skill authorizes
+in-scope fixes and repeat reviews without asking whether to implement each
+agreed finding. Keep a visible checklist of review, fixes, verification, and
+re-review. Preserve the original task scope and acceptance criteria.
 
 If you are already the downstream reviewer, review the artifact directly and
-return findings; do not start this workflow or delegate another peer review.
+return findings; do not invoke peer-review or peer-review-loop, start this
+workflow, or delegate another peer review.
 
 ## Workflow
 
@@ -47,10 +51,13 @@ return findings; do not start this workflow or delegate another peer review.
 7. Require the facilitator to return a self-contained consensus record, session
    ID, and turn ID to the parent. Record disposition counts with `record` below.
    Do not let the facilitator edit the artifact.
-8. Integrate accepted changes in the parent agent, update the plan or code,
-   rerun relevant verification, and summarize rejected or unresolved findings.
+8. The main agent resolves accepted findings, updates the plan or code, and
+   runs relevant verification. Do not end the task with a list of fixes to make.
    Distinguish accepted findings, implemented fixes, and verified fixes; update
-   the recorded counts when those states change.
+   recorded counts when those states change.
+9. Send the revised artifact and the change/verification evidence to the same
+   facilitator and provider session. Follow the repair loop below until both
+   the main agent and reviewer agree there are no outstanding findings.
 
 ## Review Rounds
 
@@ -69,17 +76,70 @@ Start with an independent review, then run additional rounds only when needed:
    finding: `accepted`, `rejected`, or `unresolved`, with a short rationale and
    the concrete change for accepted findings.
 
-The facilitator may finish after the independent review when it verifies the
-findings and agrees with the reviewer, when there are no findings, or when all
+The facilitator may return a round to the main agent after the independent
+review when it verifies the findings and agrees with the reviewer, when there
+are no findings, or when all
 suggested changes are minor or optional. In that case, return the consensus
-record directly without asking the reviewer to restate it.
+record directly without asking the reviewer to restate it. This ends only the
+review round, not the repair loop or the requirement for final agreement.
 
 Run challenge or reconciliation rounds only when a finding is disputed,
 unsupported, unclear, or material to correctness, security, scope, architecture,
 or user-visible behavior. Continue the same provider session until the agents
 reach a stable disposition. Do not manufacture agreement. After three
 substantive rounds without convergence, return the remaining disagreement to
-the parent agent as `unresolved`.
+the parent agent as `unresolved`. This limit applies to debating the same
+findings, not to productive repair/re-review cycles.
+
+## Repair Loop and Completion
+
+After each review round:
+
+1. Reconcile findings against the current artifact. Keep stable finding IDs and
+   track each disposition, correction, verification evidence, and reviewer
+   closure. Send the main agent's objections back through the facilitator;
+   unilateral rejection does not establish agreement.
+2. Implement agreed fixes in the main agent, including in-scope findings found
+   while fixing or testing. Preserve unrelated work. Verify the affected
+   behavior; repair new failures before resubmitting when feasible. For a plan,
+   revise and validate the plan rather than implementing the planned project.
+3. Resubmit the current artifact for independent inspection, with the original
+   review scope, a diff or exact revised content, a per-finding account of
+   changes, verification results and limits, and any newly discovered issues.
+   Identify the revision being reviewed; HEAD plus `+dirty` alone cannot
+   distinguish successive uncommitted revisions. Supply the actual current
+   diff/content and a distinct round identifier through `--artifact-revision`.
+   Keep the artifact stable during the review. If it changes, resubmit it.
+4. Ask the reviewer to verify previous fixes, reopen incomplete corrections,
+   and inspect the revised artifact for new findings and regressions throughout
+   the original scope. Do not restrict review to the previous finding list.
+   Reconcile new or reopened findings, fix them, and repeat in the same session.
+5. Finish successfully only when the reviewer explicitly reports no outstanding
+   findings on the latest artifact and the main agent independently agrees.
+   All accepted findings must be implemented and verified to the extent the
+   task requires; unresolved findings or required failing checks block success.
+   Rejected or optional findings need an agreed disposition and rationale;
+   do not silently relabel a required fix to reach a clean result. A clean
+   first review can finish immediately if the main agent agrees.
+
+There is no fixed cap on productive repair cycles. If the same disagreement or
+failed repair persists across three substantive attempts without new evidence
+or progress, report the remaining blocker and mark the loop incomplete rather
+than repeating unchanged work or manufacturing agreement. Also report incomplete
+when a provider is unavailable, a necessary user decision or permission is
+missing, or the user stops the work. Continue independent in-scope work where
+possible. The skill does not itself authorize commits, pushes, deployment,
+destructive actions, or expansion of the task.
+
+Keep counts attached to the turn that introduced the findings; do not count
+old findings as new in every round. Update that turn after implementation and
+verification. Keep reopened finding links and reviewer closure in the consensus
+record, since the registry counts do not encode those relationships.
+
+The final response states whether agreement was reached, summarizes changes and
+verification limits, identifies the final review session/turn and artifact,
+and lists any blockers if incomplete. Do not claim runtime verification from
+review agreement alone.
 
 ## Provider Turns
 
@@ -94,7 +154,10 @@ returned content: a successful provider call is not proof of a complete review.
 If it only references a plan or promises future work, request a self-contained
 record in the same session before accepting the review.
 
-Resolve this skill directory before invoking the helper. Typical commands:
+Resolve this skill directory before invoking the helper. Its `scripts` directory
+links to `../peer-review/scripts`, sharing the implementation, regression tests,
+and registry with peer-review. Install both sibling skill directories together;
+no registry migration or copy is needed. Typical commands:
 
 ```bash
 # Start a new Claude Code review session.
@@ -156,7 +219,7 @@ scripts -p 'test_*.py'` from this skill directory, then skill-creator validation
 Give the subagent a prompt with this structure:
 
 ```text
-Act as the facilitator, not the reviewer. Use the peer-review skill's
+Act as the facilitator, not the reviewer. Use the peer-review-loop skill's
 scripts/provider_turn.py to converse with <provider> in read-only mode.
 
 Artifact: <path, diff range, PR, or complete plan>
@@ -173,6 +236,15 @@ material findings. Do not edit files. Record disposition counts. Return a
 self-contained record: provider, session and turn IDs, findings with final
 dispositions, consensus changes, unresolved disagreements, and verification
 recommendations. Do not substitute a plan-file reference for the findings.
+
+The main agent will implement agreed fixes and send revised artifacts back to
+you. Resume this same provider session for each revision. Give the reviewer the
+current artifact/diff, per-finding changes, verification evidence, and new issues.
+Require it to check old fixes and look for new findings throughout the original
+scope. Return explicit closure or remaining findings for each revised artifact.
+Do not declare the whole loop complete on the basis of an agreed list of fixes;
+the reviewer and main agent must agree the latest artifact has no outstanding
+findings. Do not edit files or start a nested repair loop.
 ```
 
 ## Guardrails
