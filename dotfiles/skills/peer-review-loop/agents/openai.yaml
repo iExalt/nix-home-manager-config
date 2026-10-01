@@ -1,0 +1,4 @@
+interface:
+  display_name: "Peer Review Loop"
+  short_description: "Review, fix, and re-review until both agents agree"
+  default_prompt: "Use $peer-review-loop to review this work, implement agreed fixes, and repeat review until both agents agree there are no outstanding findings."
