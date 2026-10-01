@@ -9,6 +9,9 @@ Use a facilitator subagent to conduct a read-only dialogue with a persistent
 review-agent session. Keep the authoring agent responsible for integrating the
 consensus.
 
+If you are already the downstream reviewer, review the artifact directly and
+return findings; do not start this workflow or delegate another peer review.
+
 ## Workflow
 
 1. Identify the artifact, authoring provider, repository or working directory,
@@ -32,17 +35,22 @@ consensus.
      --cwd /absolute/workspace
    ```
 
-5. Reuse the most relevant session when the new artifact belongs to the same
-   feature, bug, PR stack, repository workstream, or direct continuation. When
-   uncertain, reuse it. Start a new session only when the topic is completely
-   different. Do not delete old sessions merely because a new one is needed.
+5. Reuse a session only when its artifact, feature, bug, or PR stack establishes
+   continuity. Sharing a repository is insufficient. Explain the match with
+   `--reuse-reason`; when relevance is uncertain, start a new session. If the
+   provider reports that a session is unavailable, start a new one with the raw
+   artifact and essential context. Preserve the old registry entry; do not
+   treat authentication or other execution failures as a reason to retry new.
 6. Conduct the dialogue in review rounds. Use `turn --session-id ID` to resume
-   or `turn --new` for a completely different topic. Send prompts on stdin.
+   or `turn --new` when no relevant, available session exists. Send prompts on stdin.
    Pass each external artifact parent with `--add-dir /absolute/path`.
-7. Require the facilitator to return the consensus record and session ID to the
-   parent agent. Do not let the facilitator edit the artifact.
+7. Require the facilitator to return a self-contained consensus record, session
+   ID, and turn ID to the parent. Record disposition counts with `record` below.
+   Do not let the facilitator edit the artifact.
 8. Integrate accepted changes in the parent agent, update the plan or code,
    rerun relevant verification, and summarize rejected or unresolved findings.
+   Distinguish accepted findings, implemented fixes, and verified fixes; update
+   the recorded counts when those states change.
 
 ## Review Rounds
 
@@ -80,6 +88,12 @@ effort for Codex and Opus 5.5 (`claude-opus-5-5`) with `high` effort for Claude
 Code. These defaults apply to both new and resumed sessions. Use `--model`
 and `--effort` on `turn` when the user requests an override.
 
+Every turn receives a direct-review instruction that prohibits recursive
+peer-review delegation and requires findings in the final response. Check the
+returned content: a successful provider call is not proof of a complete review.
+If it only references a plan or promises future work, request a self-contained
+record in the same session before accepting the review.
+
 Resolve this skill directory before invoking the helper. Typical commands:
 
 ```bash
@@ -96,6 +110,7 @@ cat prompt.txt | mise exec -- python scripts/provider_turn.py turn \
 cat prompt.txt | mise exec -- python scripts/provider_turn.py turn \
   --provider claude \
   --session-id SESSION_UUID \
+  --reuse-reason "Recheck fixes for the same PR" \
   --topic "repository: feature or PR" \
   --artifact-kind code \
   --cwd /absolute/workspace
@@ -104,6 +119,7 @@ cat prompt.txt | mise exec -- python scripts/provider_turn.py turn \
 cat prompt.txt | mise exec -- python scripts/provider_turn.py turn \
   --provider codex \
   --session-id SESSION_UUID \
+  --reuse-reason "Reconcile findings for the same plan" \
   --topic "repository: feature or PR" \
   --artifact-kind plan \
   --cwd /absolute/workspace
@@ -111,7 +127,29 @@ cat prompt.txt | mise exec -- python scripts/provider_turn.py turn \
 
 The helper stores session metadata under
 `${CODEX_HOME:-~/.codex}/state/peer-review/sessions.json`. Treat session IDs as
-opaque. Never hand-edit provider conversation files.
+opaque. Never hand-edit provider conversation files. Concurrent registry updates
+are locked; provider calls run outside the lock.
+
+The registry also stores compact per-turn records: status, timing, model/effort,
+artifact revision, session selection, and failure type. It does not store prompt,
+response, or error bodies. Use `--artifact-revision` for an external artifact or
+an identifiable working-tree snapshot; the default Git HEAD plus `+dirty` marker
+is only a checkout hint, not an exact snapshot. Failed calls are recorded but do
+not create successful session entries. Interrupted processes may leave no record.
+
+After reconciliation, record counts for that turn's findings (not cumulative
+session totals); keep finding IDs, rationale, and evidence in the consensus:
+
+```bash
+mise exec -- python scripts/provider_turn.py record --turn-id TURN_UUID \
+  --accepted 2 --rejected 1 --unresolved 0 --implemented 0 --verified 0
+```
+
+Repeat `record` for the same turn after fixes. `implemented` counts accepted
+findings whose corrections were applied; `verified` counts those corrections
+with relevant verification evidence. Missing counts mean unrecorded, not zero.
+For helper changes, run `mise exec -- python -B -m unittest discover -s
+scripts -p 'test_*.py'` from this skill directory, then skill-creator validation.
 
 ## Facilitator Prompt
 
@@ -126,13 +164,15 @@ Original task: <task and acceptance criteria>
 Workspace: <absolute path>
 Authoring provider: <provider>
 
-Inspect the prior session registry and reuse a related reviewer session unless
-this topic is completely different. Run an independent review, verify its
+Inspect the registry; reuse only a session for the same artifact or workstream,
+and give --reuse-reason. A repository match alone is insufficient. Otherwise
+start new. Run an independent review, verify its
 claims against source, and finish after that round if the findings are agreed or
 minor. Use challenge and reconciliation rounds only for disputed, unclear, or
-material findings. Do not edit files. Return: review provider, session ID,
-findings with final dispositions, consensus changes, unresolved disagreements,
-and verification recommendations.
+material findings. Do not edit files. Record disposition counts. Return a
+self-contained record: provider, session and turn IDs, findings with final
+dispositions, consensus changes, unresolved disagreements, and verification
+recommendations. Do not substitute a plan-file reference for the findings.
 ```
 
 ## Guardrails
