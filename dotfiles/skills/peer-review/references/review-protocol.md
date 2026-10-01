@@ -28,7 +28,9 @@ Avoid a separate reconciliation call merely to restate agreed findings.
 
 ## Agree on the repair's acceptance criteria
 
-For a complex fix, the main agent and reviewer agree through the facilitator on:
+Ask the reviewer to include proposed closure criteria and a counterexample batch
+with discovery findings that need complex repairs. Before implementation, the
+main agent and reviewer must explicitly agree through the facilitator on:
 
 - The invariant that must hold, not just the reported failing example.
 - The supported behavior, explicit boundaries, and treatment of unsupported or
@@ -36,9 +38,21 @@ For a complex fix, the main agent and reviewer agree through the facilitator on:
 - A batch of counterexamples and expected outcomes covering the failure class.
 - The bounded correction and evidence needed to close the finding.
 
-Do this before implementing a complex repair. Batch related decisions into an
-existing dialogue when possible; a straightforward fix needs no extra planning
-call. The main agent implements and verifies the whole agreed batch, including
+A complex repair changes a parser, semantic model, safety boundary, or behavior
+across several callers, or admits materially different designs. The facilitator
+may propose criteria but cannot supply the reviewer's agreement. Record the
+reviewer response that establishes agreement and the main agent's acceptance.
+If discovery already specifies the bounded correction and sufficient criteria,
+the main agent can accept those without another call. Otherwise batch the proposed
+design, boundaries, and counterexamples into one pre-repair clarification in the
+same reviewer session. Do not label unconfirmed proposals "agreed" or defer this
+agreement until review of the implemented repair. Simple fixes need no extra call.
+
+Counterexamples must exercise the invariant across related representations,
+not just repeat the reported examples. For identifier transformations, for
+example, distinguish identifiers from literal values even when both occur inside
+one expression. Prefer a bounded implementation or refusal where uncertain
+inputs cannot be handled safely. The main agent implements and verifies the whole agreed batch, including
 related cases found locally, before resubmission. Do not weaken original task
 requirements or safety guarantees to manufacture agreement. Existing defects,
 new guarantees introduced by a repair, and optional future hardening are distinct.
@@ -86,6 +100,28 @@ the same disagreement, report it as unresolved. If reassessment cannot produce
 a viable in-scope repair, report the blocker instead of repeating unchanged work.
 Never hide a serious missed defect to satisfy a round limit.
 
+## Running long provider turns
+
+Before dispatch, distinguish the helper's `--timeout` (seconds) from the outer
+execution tool's process timeout and its foreground wait/yield interval. Give the
+outer process a supported lifetime longer than the helper deadline, with shutdown
+margin. Background mode alone does not guarantee that an outer timeout stops
+killing the process. Do not assume a requested timeout above the tool's maximum
+will be honored. Use a supported persistent execution session when the required
+lifetime exceeds the tool's foreground limit; retain its task/session handle.
+
+Use that handle's native completion notification or interruptible wait/poll tool.
+A wait returning while the process is still running is not a failed provider turn;
+resume waiting on the same handle. Avoid shell sleep loops or parallel waiters
+watching an output file. Do not start a duplicate review because output is quiet.
+
+After an interruption, inspect process status, captured output, and the provider
+session before retrying. If still running, continue waiting. If terminated, resume
+the same provider session with the unchanged revision and ask it to finish the
+remaining coverage using its retained evidence. Start over only when the session
+or evidence is unusable. Count interrupted attempts separately from completed
+review rounds; helper registry records may be absent when the outer tool kills it.
+
 ## Consensus and measurements
 
 Keep one compact, updated consensus record in the conversation or an existing
@@ -94,7 +130,7 @@ task document; do not create a receipt file for every turn. Include:
 - Artifact/baseline/revision, provider session and turn IDs, and review stage
   (discovery, reconciliation, or repair verification).
 - Coverage and verification limits; each finding's ID, first-seen turn,
-  disposition, later-finding classification, closure criteria, implementation
+  disposition, later-finding classification, closure criteria and their reviewer agreement, implementation
   and verification evidence, and count of unsuccessful repair reviews.
 - Explicit open IDs, reopened IDs, closed IDs, and new IDs for this turn.
   Use empty lists explicitly; zero new findings does not mean zero open findings.
