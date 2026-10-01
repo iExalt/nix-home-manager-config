@@ -64,7 +64,8 @@ workflow, or delegate another peer review.
 Before dispatch, read [the shared review protocol](references/review-protocol.md)
 and give it to the facilitator. It governs discovery coverage, agreed repair
 criteria, focused follow-up review, finding classification, design reassessment
-after two incomplete repair reviews, and explicit closure accounting. Include
+after two incomplete repair reviews, reliable execution of long provider turns,
+and explicit closure accounting. Include
 its applicable instructions in provider prompts; do not assume the external
 reviewer has loaded this skill or can access the reference.
 
@@ -79,7 +80,8 @@ separately from implementation and reviewer closure.
 After each review round:
 
 1. Reconcile findings using the shared protocol. Before complex repairs,
-   agree on the invariant, boundaries, and counterexample batch. Keep stable
+   obtain explicit reviewer agreement on the design, invariant, boundaries, and
+   counterexample batch; facilitator proposals alone are insufficient. Keep stable
    IDs, dispositions, repair attempts, verification evidence, and closure.
    Send the main agent's objections back through the facilitator;
    unilateral rejection does not establish agreement.
@@ -222,7 +224,11 @@ Inspect the registry; reuse only a session for the same artifact or workstream,
 and give --reuse-reason. A repository match alone is insufficient. Otherwise
 start new. Follow the supplied shared review protocol. Complete discovery
 coverage and batch findings before returning; verify claims against source.
-Agree on invariants, boundaries, and counterexamples before complex repairs.
+Ask for closure criteria with complex discovery findings. Before a complex repair,
+obtain explicit reviewer agreement on its bounded design, invariants, boundaries,
+and counterexamples; facilitator proposals alone are not agreement. Follow the
+shared protocol's execution guidance: align helper and outer process deadlines,
+retain the execution handle, and resume interrupted work without duplicate reviews.
 Use focused repair verification for follow-ups, classify later findings, and
 reassess the design after two incomplete repair reviews of the same finding.
 Do not edit files. Record disposition counts and return the self-contained
