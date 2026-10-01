@@ -26,6 +26,38 @@ claims and distinguish required fixes from optional improvements. Assign each
 finding an accepted, rejected, or unresolved disposition with rationale.
 Avoid a separate reconciliation call merely to restate agreed findings.
 
+## Propose and challenge repairs
+
+Include an actionable repair proposal with each finding. For an easy fix, give
+an exact replacement or small suggested diff. For a complex fix, recommend one
+bounded design, name affected functions and callers, and provide pseudocode or
+a patch sketch with closure criteria and counterexamples. Check the tricky
+mechanism with read-only probes where feasible; distinguish tested behavior
+from an illustrative sketch and disclose what remains uncertain. A valid
+finding does not depend on having a complete solution; surface it with the
+missing design decision when a sound proposal is not yet available.
+
+The facilitator critically evaluates proposed fixes as well as findings. An
+accepted finding does not imply acceptance of its proposed remedy. Check the
+proposal against source, task constraints, affected callers, and counterexamples.
+Challenge a flawed, overly broad, or unnecessarily complex remedy with concrete
+evidence and a bounded alternative. Ask the reviewer to defend, amend, or replace
+its proposal, and apply the same scrutiny to the facilitator's alternative.
+Neither participant wins by authority; unresolved disagreement stays explicit.
+
+Use this inner dialogue to resolve design uncertainty before the main agent
+starts an outer implementation-and-review cycle. Batch related objections and
+probes in the same persistent reviewer session. Give each exchange a concrete
+question or counterexample; do not add confirmation calls when agreement is
+already established. Return the settled proposal, evidence, limits, and any
+remaining disagreements to the main agent, which independently accepts or
+challenges it before implementation. Relay substantive changes or objections
+back to the reviewer. The facilitator cannot accept on the main agent's behalf.
+Reviewer and facilitator remain read-only: suggested diffs go in their responses;
+the main agent owns application and tests. Design agreement is not fix closure.
+Use the existing three-discussion-round unresolved rule for stalled disagreement;
+the goal is fewer failed repairs and less total work, not an unbounded inner loop.
+
 ## Agree on the repair's acceptance criteria
 
 Ask the reviewer to include proposed closure criteria and a counterexample batch
@@ -44,17 +76,17 @@ may propose criteria but cannot supply the reviewer's agreement. Record the
 reviewer response that establishes agreement and the main agent's acceptance.
 If discovery already specifies the bounded correction and sufficient criteria,
 the main agent can accept those without another call. Otherwise batch the proposed
-design, boundaries, and counterexamples into one pre-repair clarification in the
-same reviewer session. Do not label unconfirmed proposals "agreed" or defer this
-agreement until review of the implemented repair. Simple fixes need no extra call.
+design, boundaries, and counterexamples into a pre-repair discussion in the
+same reviewer session, using the inner dialogue above. Do not label unconfirmed
+proposals "agreed" or defer agreement until review of the implemented repair. Simple fixes need no extra call.
 
 Counterexamples must exercise the invariant across related representations,
 not just repeat the reported examples. For identifier transformations, for
 example, distinguish identifiers from literal values even when both occur inside
 one expression. Prefer a bounded implementation or refusal where uncertain
-inputs cannot be handled safely. The main agent implements and verifies the whole agreed batch, including
-related cases found locally, before resubmission. Do not weaken original task
-requirements or safety guarantees to manufacture agreement. Existing defects,
+inputs cannot be handled safely. The main agent implements and verifies the whole
+agreed batch, including related cases found locally, before resubmission. Do not
+weaken original task requirements or safety guarantees to manufacture agreement. Existing defects,
 new guarantees introduced by a repair, and optional future hardening are distinct.
 
 ## Verify revisions without restarting discovery
@@ -85,6 +117,13 @@ cases before returning. Report a result for each agreed counterexample and
 explicitly identify findings closed, still open, or reopened. A correction can
 be implemented yet remain open pending verification. Reopen a closed finding
 only with new evidence, not a repeated preference or already-settled objection.
+
+For an incomplete repair, explain whether the implementation departed from the
+agreed proposal or the proposal itself was insufficient. Revise the repair sketch
+and counterexample batch for the remaining failure class, including flaws in the
+reviewer's own advice; resolve material design uncertainty in the inner dialogue
+before another implementation attempt. Do not wait for two failed repairs when
+the design flaw is already evident.
 
 ## Break repeated partial repairs
 
@@ -130,13 +169,15 @@ task document; do not create a receipt file for every turn. Include:
 - Artifact/baseline/revision, provider session and turn IDs, and review stage
   (discovery, reconciliation, or repair verification).
 - Coverage and verification limits; each finding's ID, first-seen turn,
-  disposition, later-finding classification, closure criteria and their reviewer agreement, implementation
+  disposition, later-finding classification, accepted repair proposal and closure
+  criteria, reviewer/facilitator agreement and main-agent acceptance, implementation
   and verification evidence, and count of unsuccessful repair reviews.
 - Explicit open IDs, reopened IDs, closed IDs, and new IDs for this turn.
   Use empty lists explicitly; zero new findings does not mean zero open findings.
 - At completion, discovery findings, later missed defects, introduced
   regressions, incomplete-fix returns, repair rounds, and provider calls.
-  Count reconciliation calls separately from artifact review rounds.
+  Count inner design/reconciliation calls separately from outer artifact review
+  rounds, and report total provider time when available to detect overhead shifts.
 
 The helper's registry stores per-turn disposition counts, not this finding
 ledger. Keep counts on the turn that introduced each finding, update that turn
