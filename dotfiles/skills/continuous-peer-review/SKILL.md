@@ -38,11 +38,13 @@ fixes, and run permitted isolated probes without changing the reviewed artifact.
 
 ## Joint design, risk-based overlap
 
-Before implementing each increment, exchange a bounded proposal with the reviewer:
-behavior, touched interfaces, dependencies, failure cases, correction/design,
-and acceptance evidence. Obtain agreement on the design and closure criteria.
-Batch upcoming proposals when useful, so the reviewer can answer while reviewing
-the preceding increment. Routine exchanges can be brief; do not manufacture a
+Jointly shape each increment before implementation, focusing the exchange on
+unresolved decisions, changed assumptions, and consequential failure cases. Refer
+to settled designs and criteria; a brief amendment and agreement suffice for a
+routine increment. Expand the proposal when behavior, interfaces, dependencies,
+or acceptance evidence need discussion. Obtain agreement on the design and closure
+criteria, batching upcoming proposals when useful so the reviewer can answer while
+reviewing the preceding increment. Do not repeat a full brief or manufacture a
 confirmation call when agreement is already explicit.
 
 Classify dependencies together:
@@ -60,14 +62,19 @@ Ordinary implementation choices within the agreed design need no extra approval.
 
 ## Review stable increments while implementing
 
-Submit a completed increment with its ID, original baseline, previous reviewed
-revision, current immutable snapshot, bounded diff, dependencies, and acceptance
-evidence. Map each agreed criterion to the expected and observed result, evidence
-location, and verification limits. Include relevant untracked artifacts. Keep
-one compact ledger in the conversation or an existing task document, not a new
-receipt per message.
+Default to a short handoff: increment ID, stable revision and raw delta reference,
+behavior change, relevant tests/evidence and limits, and unresolved questions.
+Identify the comparison baseline and any changed dependencies without repeating
+settled context. Present raw delta/evidence references before the author's
+interpretation so the reviewer can form an independent assessment. For complex or
+consequential changes, map agreed criteria to expected and observed results and
+evidence locations; do not require that ceremony for every routine increment.
+Include relevant untracked artifacts. Keep one compact ledger in the conversation
+or an existing task document, not a new receipt per message.
 
-Use exact commits and `git show REV:path` for source inspection where practical.
+Prefer existing exact commits and `git show REV:path` for source inspection; a
+separate snapshot copy or manifest is unnecessary when the commit supplies the
+review inputs.
 A changing checkout, HEAD label, or diff alone is not a stable source snapshot.
 For uncommitted work, freeze the relevant source and dependencies in an identified
 read-only review snapshot; keep actual implementation in the original repository.
@@ -90,7 +97,10 @@ finding affects; invalidate dependent acceptance where its assumptions no longer
 hold. Review revisions of an existing increment do not consume another slot.
 
 The reviewer examines correctness, affected callers, failure paths, regressions,
-and acceptance coverage proportional to the increment. It sends an actionable
+and acceptance coverage proportional to the increment. Treat the author's checklist
+as evidence, not the boundary of review: seek independent counterexamples to shared
+assumptions and use targeted probes where they add confidence beyond rerunning the
+author's tests. It sends an actionable
 finding as soon as evidence establishes it, rather than waiting for a final batch;
 then continues review and explicitly reports completion and coverage limits.
 Silence or a preliminary finding is neither acceptance nor completed review.
@@ -109,7 +119,8 @@ available boundary and before starting dependent or consequential actions.
 Keep messages concise and distinguish these purposes:
 
 - **Design:** increment, proposed behavior, dependencies/risk, concrete open question.
-- **Review request:** snapshot, delta, criteria/evidence, and pending related work.
+- **Review request:** increment ID, stable revision/delta, behavior change,
+  evidence/limits, and unresolved questions; name affected pending work when relevant.
 - **Finding:** stable ID, severity, evidence/revision, impact, affected increments,
   suggested repair and closure case; mark provisional uncertainty explicitly.
 - **Decision:** accepted/challenged/deferred finding or amended design, with reasons.
@@ -164,8 +175,14 @@ its criteria with no unresolved material findings. Identify accepted deferrals a
 verification limits. Changes after acceptance need proportional delta review;
 preserve the task's existing commit, push, and deployment authorization.
 
-For a trial or when assessing efficiency, use native timestamps where available
-to report elapsed milestone time, review turnaround, author/reviewer blocking,
-peak outstanding increments, and rework attributable to late findings. Do not
-add overlapping agent time to claim elapsed time saved. Distinguish actual
+For an efficiency trial, capture milestone start/end, review dispatch and acceptance
+times per revision, and actual blocked intervals for either role with their cause.
+Use native event timestamps where available, otherwise record them as events occur
+in the existing ledger. Snapshot creation times do not establish dispatch,
+acceptance, or blocking; pending review is not blocked time while other useful work
+continues. Mark unavailable measurements as unknown instead of reconstructing them
+from snapshots. Report elapsed milestone time, dispatch-to-acceptance turnaround,
+blocking, peak outstanding increments, and rework attributable to late findings.
+Do not add overlapping agent time to claim elapsed time saved. Distinguish actual
 parallel work and early messages from capabilities the trial did not exercise.
+Ordinary use needs only the compact coordination record, not trial instrumentation.
