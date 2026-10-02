@@ -139,15 +139,16 @@ update rather than announcing them separately.
 
 For a live operation, state its start with the stop condition, then report only
 an unexpected state, an interruption, or a decision, and finally its result.
-Monitor it for those events: emit state transitions that need action, failures,
-and completion, and keep routine progress and unchanged polls in a log read at
-decision points.
+Monitor it for those events only: failures, unexpected states, and the whole
+operation's completion. Do not emit successful stage completions, recaps, or
+unchanged polls, and check that failure filters do not match success output such
+as `failed=0`. Keep routine progress in a log read at decision points. A wake-up
+is costly because a turn almost always ends with text.
 
 Stay silent between these events, including during long implementation stretches
 and waits. When a monitor event, completion notification, or silent-turn reminder
 wakes you without one of these events, continue or end the turn without text.
-If a higher-priority instruction forces output anyway, repeat the latest status
-line unchanged.
+Never repeat or paraphrase an earlier update to fill a turn.
 
 ## Report for quick reading
 
