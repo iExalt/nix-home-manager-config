@@ -112,6 +112,29 @@ to scope, priorities, acceptance criteria, cost, risk, or an approved checkpoint
 Explain the new evidence and recommend the smallest useful adjustment. Do not
 silently weaken acceptance criteria or treat sunk effort as a reason to continue.
 
+## Update at increment outcomes
+
+The user follows outcomes, not activity. This skill overrides default guidance
+to announce actions before tool calls or narrate work as it happens. Between the
+phase proposal and chunk reports, send an update only when:
+
+- a reviewer increment is accepted or published;
+- a finding changes confidence, the plan, scope, or timing;
+- a decision, blocker, or new user instruction needs a response.
+
+Write each update as one status line: the chunk, accepted increments out of those
+planned, then what is now true and what follows. For example:
+`Chunk B · 3/5 accepted — Ceph pools are now selected by node label; B4 next.`
+State the outcome and why it matters, not the work that produced it. Omit routine
+fixes, retries, lint, commit mechanics, review handoffs, and test counts; carry
+consequential details into the chunk report. Combine checklist changes with an
+update rather than announcing them separately.
+
+Stay silent between these events, including during long implementation stretches
+and waits. A silent-turn reminder from the harness does not require a reply; send
+an update only if one of these events has occurred. If a higher-priority
+instruction forces output anyway, repeat the latest status line unchanged.
+
 ## Report for quick reading
 
 Begin chunk reports and phase proposals with a **TL;DR** of one or two lines.
@@ -132,9 +155,8 @@ A typical chunk report covers:
   needed if the approved route can no longer proceed.
 
 This is a content guide, not a requirement for four headings in every update.
-Keep detailed evidence in the project-status document. Follow the user's progress
-cadence during execution; report meaningful progress and blockers, and use
-interruptible waits without repeated unchanged-status updates.
+Keep detailed evidence in the project-status document. Between reports, follow
+the increment-outcome updates above and use interruptible waits.
 
 At phase completion, reconcile the phase's full exit criteria with current
 evidence and report results, accepted deferrals, and remaining boundaries.
