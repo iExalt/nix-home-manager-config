@@ -18,8 +18,13 @@ cross-provider review is not required.
 Inspect the task, repository rules, and existing work. Keep a visible checklist
 of small, coherent behavioral increments and their dependencies. An increment
 has an outcome and acceptance check, not an arbitrary file or line-count limit.
-Keep tightly coupled behavior together. Respect existing implementation and
-publication authority; invoking this skill does not authorize unrelated work.
+Agree increment boundaries with the reviewer before implementation, separating
+independently verifiable behavior when it would otherwise delay useful feedback.
+For example, extraction rules, fitting against synthetic truth, and execution with
+retry/provenance handling can be separate increments. Keep tightly coupled behavior
+together; do not split into fragments that cannot be meaningfully tested or reviewed.
+Respect existing implementation and publication authority; invoking this skill
+does not authorize unrelated work.
 
 Spawn the reviewer with a scoped brief: goal, milestone boundaries, supported
 behavior, non-goals, acceptance criteria, repository instructions, baseline,
@@ -46,6 +51,14 @@ or acceptance evidence need discussion. Obtain agreement on the design and closu
 criteria, batching upcoming proposals when useful so the reviewer can answer while
 reviewing the preceding increment. Do not repeat a full brief or manufacture a
 confirmation call when agreement is already explicit.
+
+Agree on the discriminating verification before coding: what would distinguish
+correct behavior from the plausible failure? For consequential execution paths,
+name the real entry point, relevant clean-environment assumptions, and failure/retry
+cases. Exercise that path end to end with safe fixtures or a rehearsal early;
+helper tests alone do not cover orchestration. Before a consequential rollout,
+review the actual command or script, canary target, stop condition, and recovery
+plan. A concurrency limit does not establish a canary or stop-on-failure boundary.
 
 Classify dependencies together:
 
@@ -84,14 +97,29 @@ If stable review inputs cannot be supplied, pause conflicting edits during revie
 and disclose the reduced parallelism. Tests of a newer checkout do not establish
 results for an older snapshot.
 
+Reuse isolated verification environments and compatible build caches for routine
+delta checks, keeping source pinned to the submitted snapshot and mutable test
+outputs separate. Rebuild affected artifacts; do not reuse results across changed
+inputs. Use an empty build/output directory when clean-checkout behavior is the
+property under test. Preserve independent counterexamples, but repeat expensive
+unchanged checks only when a changed dependency, failure, or coverage gap warrants
+them. Name the snapshot and environment for evidence carried forward.
+
 Track increment states: planned, design-agreed, implementing, awaiting-review,
-changes-requested, accepted. An accepted result names the reviewed snapshot.
+changes-requested, awaiting-verification, accepted. An accepted result names the reviewed snapshot and
+has no pending required closure checks; "accepted if tests pass" remains awaiting
+verification. Distinguish code review complete, ready for a bounded live validation,
+and ready to publish. When closure needs live evidence, agree the permitted trial
+and its bounds within the user's authorization, then keep the increment pending
+until the evidence is reconciled. Publication requires the applicable review and
+checks to be complete; needing live proof does not itself justify an early push.
 Later changes invalidate acceptance only for their affected delta and dependencies,
 which must be reviewed before completion.
 
 Allow at most **two completed increments awaiting acceptance**, counting the one
-under review and any awaiting repairs or re-review. At the cap, prioritize repairs,
-tests, and reviewer questions rather than starting more feature implementation.
+under review and any awaiting repairs, re-review, or required verification.
+At the cap, prioritize repairs, tests, and reviewer questions rather than starting
+more feature implementation.
 Do not split an increment merely to evade the cap. Mark which later increments a
 finding affects; invalidate dependent acceptance where its assumptions no longer
 hold. Review revisions of an existing increment do not consume another slot.
@@ -100,9 +128,9 @@ The reviewer examines correctness, affected callers, failure paths, regressions,
 and acceptance coverage proportional to the increment. Treat the author's checklist
 as evidence, not the boundary of review: seek independent counterexamples to shared
 assumptions and use targeted probes where they add confidence beyond rerunning the
-author's tests. It sends an actionable
-finding as soon as evidence establishes it, rather than waiting for a final batch;
-then continues review and explicitly reports completion and coverage limits.
+author's tests. It sends an actionable finding as soon as evidence establishes it,
+rather than waiting for a final batch; then continues review and explicitly reports
+completion and coverage limits.
 Silence or a preliminary finding is neither acceptance nor completed review.
 Use targeted source reads, bounded output, and references to unchanged evidence.
 
@@ -115,6 +143,10 @@ to an idle agent starts execution. Reuse the same reviewer rather than spawning
 one per increment. A native notification is delivery, not an acknowledgment.
 Do not promise preemption of an in-flight tool call; process messages at the next
 available boundary and before starting dependent or consequential actions.
+Send urgent messages in a separate completed tool step before starting a long
+operation; batching them together can delay delivery. When subsequent action
+depends on the peer's response, obtain acknowledgment and the required decision
+before proceeding. A logged send timestamp alone does not prove receipt.
 
 Keep messages concise and distinguish these purposes:
 
@@ -124,8 +156,10 @@ Keep messages concise and distinguish these purposes:
 - **Finding:** stable ID, severity, evidence/revision, impact, affected increments,
   suggested repair and closure case; mark provisional uncertainty explicitly.
 - **Decision:** accepted/challenged/deferred finding or amended design, with reasons.
-- **Review result:** reviewed snapshot; open/closed/new IDs; coverage and limits;
-  explicit acceptance or changes requested. Design agreement is not code acceptance.
+- **Review result:** reviewed snapshot; changed finding dispositions; coverage and
+  limits; explicit acceptance, pending verification, or changes requested. Name
+  remaining checks and any agreed live-validation bounds. Design agreement is not
+  code acceptance, and review completion alone is not publication readiness.
 
 Deliver findings immediately but interrupt work by impact. Safety issues and
 invalidated assumptions redirect affected work as soon as delivered. Local fixes
@@ -148,17 +182,31 @@ architecture remains unresolved; keep affected work blocked and continue
 independent work. Defer optional improvements explicitly rather than making them
 completion requirements. Do not silently relax acceptance criteria.
 
-The author implements agreed fixes and exercises the full counterexample batch
-before resubmission. For later findings, distinguish incomplete fixes, introduced
-regressions, missed original defects, and scope expansion. Preserve IDs and trace
-incomplete fixes to implementation deviations or flaws in the agreed proposal.
+If a proposed repair adds substantial behavior, such as retry orchestration,
+provenance enforcement, or a rehearsal command, treat it as a design delta before
+coding. Agree its boundaries, affected dependencies, and discriminating tests;
+use a separate increment when independently reviewable, subject to the same backlog
+cap. Preserve the original finding's closure conditions. A small correction within
+an agreed repair needs no new design exchange.
+
+The author implements agreed fixes and exercises the affected counterexamples and
+any newly added execution paths before resubmission. For later findings, distinguish
+incomplete fixes, introduced regressions, missed original defects, and scope
+expansion. Preserve IDs and trace incomplete fixes to implementation deviations
+or flaws in the agreed proposal.
 Reassess as soon as a design flaw is apparent instead of repeating partial fixes.
 
 Maintain a compact shared record: goal and boundaries, settled designs and reasons,
 current snapshots, dependencies, finding dispositions, closure evidence, pending
-questions, and next reviewer work. Retain relevant context, not entire transcripts
-or repeated source dumps. If a reviewer must be replaced or context refreshed,
-transfer this record and evidence references, preserving all unresolved findings;
+questions, and next reviewer work. Messages report changes to this record instead
+of repeating the complete ledger and evidence. At natural milestone boundaries,
+consolidate settled decisions and evidence references into a compact checkpoint;
+use native context compaction when available and needed, preserving the same
+reviewer. Do not imply that writing a summary alone removes prior context.
+Retain unresolved findings, pending checks, deferrals, and reasons for decisions;
+omit obsolete source dumps and superseded narration. If a reviewer must be replaced
+or context refreshed, transfer this record and evidence references, preserving
+all unresolved findings;
 do not silently restart discovery or erase disagreements.
 
 ## Integration and completion
