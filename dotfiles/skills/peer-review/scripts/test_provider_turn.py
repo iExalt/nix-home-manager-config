@@ -461,6 +461,82 @@ for i in range(8):
         self.assertEqual(len({t["turn_id"] for t in state["turns"]}), 48)
         self.assertEqual(state["sessions"][0]["topic"], "legacy")
 
+    def summary_turn(self, **changes):
+        return {"provider": "codex", "session_id": "summary-session", "status": "success",
+                "stage": "discovery", "duration_seconds": 20,
+                "started_at": "2026-10-02T01:00:00+00:00",
+                "finished_at": "2026-10-02T01:00:20+00:00", **changes}
+
+    def test_summary_filters_groups_failures_and_distinguishes_overlap(self):
+        records = [self.summary_turn(), self.summary_turn(stage="verification", status="failed"),
+                   self.summary_turn(provider="claude"), self.summary_turn(session_id="different")]
+        result = helper.summarize_turns({"turns": records}, "codex", "summary-session")
+        self.assertEqual(result["calls"], 2)
+        self.assertEqual(result["statuses"], {"success": 1, "failed": 1, "other": 0})
+        self.assertEqual(result["recorded_seconds"], 40)
+        self.assertEqual(result["recorded_span"]["elapsed_seconds"], 20)
+        self.assertTrue(result["recorded_span"]["complete_for_recorded_calls"])
+        self.assertEqual(result["stages"]["verification"]["recorded_seconds"], 20)
+
+    def test_summary_missing_invalid_and_zero_durations(self):
+        records = [self.summary_turn(duration_seconds=v, stage=None)
+                   for v in (None, True, -1, float("nan"), float("inf"), "10")]
+        result = helper.summarize_turns({"turns": records}, "codex", "summary-session")
+        self.assertIsNone(result["recorded_seconds"])
+        self.assertEqual(result["unknown_duration_calls"], 6)
+        self.assertEqual(result["stages"]["unspecified"]["calls"], 6)
+        records.append(self.summary_turn(duration_seconds=0, status="unknown"))
+        result = helper.summarize_turns({"turns": records}, "codex", "summary-session")
+        self.assertEqual(result["recorded_seconds"], 0)
+        self.assertEqual(result["timed_calls"], 1)
+        self.assertEqual(result["statuses"]["other"], 1)
+
+    def test_summary_timestamp_offsets_gaps_and_invalid_intervals(self):
+        records = [self.summary_turn(started_at="2026-10-01T21:00:00-04:00"),
+                   self.summary_turn(started_at="2026-10-02T01:01:00Z",
+                                     finished_at="2026-10-02T01:01:30Z"),
+                   self.summary_turn(finished_at=None),
+                   self.summary_turn(started_at="invalid"),
+                   self.summary_turn(started_at="2026-10-02T01:00:00"),
+                   self.summary_turn(finished_at="2026-10-02T00:59:59Z")]
+        result = helper.summarize_turns({"turns": records}, "codex", "summary-session")
+        span = result["recorded_span"]
+        self.assertEqual(span["elapsed_seconds"], 90)
+        self.assertEqual(span["timed_calls"], 2)
+        self.assertEqual(span["unknown_timing_calls"], 4)
+        self.assertFalse(span["complete_for_recorded_calls"])
+        self.assertEqual(span["started_at"], "2026-10-02T01:00:00+00:00")
+        result = helper.summarize_turns({"turns": records[2:]}, "codex", "summary-session")
+        self.assertIsNone(result["recorded_span"]["elapsed_seconds"])
+        self.assertIsNone(result["recorded_span"]["started_at"])
+        self.assertEqual(result["recorded_seconds"], 80)
+
+    def test_summary_no_matches_or_legacy_session_only_registry(self):
+        for state in ({}, {"version": 1, "sessions": [{"session_id": "summary-session"}]},
+                      {"turns": [self.summary_turn(session_id="different")]}):
+            with self.subTest(state=state), self.assertRaisesRegex(ValueError, "No recorded turns"):
+                helper.summarize_turns(state, "codex", "summary-session")
+
+    def test_summary_cli_read_only_and_no_provider_dependency(self):
+        helper.save_state(self.state, {"version": 1, "sessions": [], "turns": [self.summary_turn()]})
+        before = self.state.read_bytes()
+        argv = ["provider_turn.py", "--state-file", str(self.state), "summary",
+                "--provider", "codex", "--session-id", "summary-session"]
+        output = io.StringIO()
+        with (patch("sys.argv", argv), contextlib.redirect_stdout(output),
+              patch.object(helper, "require_mise", side_effect=AssertionError("provider not needed")),
+              patch.object(helper, "run_command", side_effect=AssertionError("no provider call"))):
+            self.assertEqual(helper.main(), 0)
+        self.assertEqual(json.loads(output.getvalue())["recorded_seconds"], 20)
+        self.assertEqual(self.state.read_bytes(), before)
+        self.assertFalse(self.state.with_name(self.state.name + ".lock").exists())
+        self.state.unlink()
+        with patch("sys.argv", argv), contextlib.redirect_stderr(io.StringIO()) as errors:
+            self.assertEqual(helper.main(), 1)
+        self.assertIn("No recorded turns", errors.getvalue())
+        self.assertFalse(self.state.exists())
+        self.assertFalse(self.state.with_name(self.state.name + ".lock").exists())
+
     def test_checkout_revision_distinguishes_dirty_tree(self):
         with patch.object(
             helper.subprocess,
