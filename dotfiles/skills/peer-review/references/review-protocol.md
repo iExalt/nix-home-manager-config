@@ -21,13 +21,17 @@ as an implicit prerequisite for closing a finding.
 When a proposed remedy requires a consequential scope, supported-behavior, or
 verification-infrastructure decision, the facilitator returns that question to
 the main agent early, with evidence and bounded alternatives, before elaborating
-or negotiating the design. Continue independent review where possible. The main
+or negotiating the design. Send the question when discovered, rather than saving
+it for the final findings handoff; continue independent review where possible. The main
 agent decides within the user's authorized scope and asks the user only when
 necessary. Relay the decision to the reviewer for scrutiny; it does not override
 a valid finding. Batch other technical objections into the same discussion.
 
 Keep discovery complete but concise: one coverage record and actionable findings.
-Use targeted reads; avoid repeatedly dumping entire files or truncated diffs.
+Start with changed-path summaries and targeted symbol/line reads. Bound tool
+output; narrow a truncated read instead of dumping the whole file again. Reuse
+prior evidence by path, revision, and turn ID. Read unchanged code again only to
+resolve a concrete dependency or new question, stating why.
 Follow-up responses give changed decisions, remaining questions, new evidence,
 and explicit open/closed IDs. Refer to unchanged designs by finding and turn ID
 instead of restating them. The facilitator maintains the full ledger and returns
@@ -41,8 +45,17 @@ records start/end timestamps, monotonic elapsed seconds, model/effort, stage,
 and available numeric provider usage in the registry and returns metrics with
 successful responses. Use these records instead of hand-written timestamp files.
 The default `unspecified` stage exists for compatibility, not new invocations.
-Provider usage is limited to the current CLI response: do not infer context size
-from total input usage or call duration from API duration. Compaction counts are
+Usage fields have explicit scope: Claude reports call usage; Codex reports a
+session-cumulative snapshot in `usage`. Never sum cumulative snapshots.
+`usage_delta` is available for a new session or a valid consecutive recorded
+baseline, with `usage_delta_scope` and `usage_baseline_turn_id`. A resumed delta
+covers the interval between snapshots, which can include activity outside the
+helper; do not label it exact call usage. Missing/legacy baselines, failed calls,
+a baseline completed after call start, an intervening recorded completion, or
+reset counters leave the delta unavailable. Serialize calls within one reviewer
+session; the registry cannot detect unrecorded or still-running activity.
+Historical unlabeled usage is not safely additive. Do not infer context size
+from token totals or call duration from API duration. Compaction counts are
 reported only when explicitly exposed by the provider; null means unavailable,
 not zero. The helper does not scrape private conversation logs to invent metrics.
 Report total recorded call time, discovery/discussion/verification subtotals,
@@ -136,6 +149,26 @@ inputs cannot be handled safely. The main agent implements and verifies the whol
 agreed batch, including related cases found locally, before resubmission. Do not
 weaken original task requirements or safety guarantees to manufacture agreement. Existing defects,
 new guarantees introduced by a repair, and optional future hardening are distinct.
+
+## Implementation discoveries and evidence
+
+If implementation reveals a conflict between agreed invariants, an unworkable
+proposal, or a need to change a boundary, state the counterexample and proposed
+amendment through the facilitator to the same reviewer before implementing the
+replacement design. Continue independent fixes while it is discussed. Ordinary
+implementation choices within the agreed design need no confirmation call.
+Record the revised agreement and main-agent acceptance. Two failed repairs are
+an escalation backstop, not permission to defer an already apparent design flaw.
+
+Before resubmission, map each agreed closure criterion to a concrete case, its
+expected and observed outcome, and the evidence location. Distinguish executed
+probes from source inspection and untested cases; a broad test-suite pass does
+not establish every criterion. Exercise the actual changed path and relevant
+failure transitions, including interactions between findings. Reuse existing
+harnesses or focused probes; do not require a new framework or receipt per case.
+Disclose blocked/deferred cases and their effect on closure rather than claiming
+they passed. For non-looped review, include this contract in the author handoff
+and apply it when an authorized repair/review follow-up occurs.
 
 ## Verify revisions without restarting discovery
 

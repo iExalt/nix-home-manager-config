@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import fcntl
 import json
+import math
 import os
 import re
 import shutil
@@ -152,7 +153,7 @@ def slug(value: str) -> str:
 
 
 def capture_metrics(raw: str, provider: str, metrics: dict[str, Any]) -> None:
-    """Best-effort numeric telemetry from this call only; never retain bodies."""
+    """Capture numeric provider counters with their scope; never retain bodies."""
     usage: dict[str, int | float] = {}
     compactions = None
     for line in ([raw] if provider == "claude" else raw.splitlines()):
@@ -163,17 +164,58 @@ def capture_metrics(raw: str, provider: str, metrics: dict[str, Any]) -> None:
         if not isinstance(event, dict):
             continue
         if provider == "claude" or event.get("type") == "turn.completed":
+            # Codex completion events are cumulative snapshots, not increments.
+            usage = {}
             source = event.get("usage")
             if isinstance(source, dict):
                 for key in ("input_tokens", "output_tokens", "cached_input_tokens",
                             "cache_read_input_tokens", "cache_creation_input_tokens"):
                     value = source.get(key)
-                    if type(value) in (int, float) and value >= 0:
-                        usage[key] = usage.get(key, 0) + value
+                    if type(value) in (int, float) and math.isfinite(value) and value >= 0:
+                        usage[key] = value
         # A positive observation is useful; absent events cannot establish zero.
         if event.get("type") in ("thread.compacted", "context.compacted"):
             compactions = (compactions or 0) + 1
-    metrics.update(usage=usage or None, compaction_events_observed=compactions)
+    metrics.update(
+        usage=usage or None,
+        usage_scope="session_cumulative" if provider == "codex" else "call",
+        usage_delta=None, usage_delta_scope=None, usage_baseline_turn_id=None,
+        compaction_events_observed=compactions,
+    )
+
+
+def latest_session_turn(state: dict[str, Any], provider: str, session_id: str | None):
+    if session_id is None:
+        return None
+    return next((t for t in reversed(state.get("turns", []))
+                 if t.get("provider") == provider and t.get("session_id") == session_id), None)
+
+
+def derive_usage_delta(turn: dict[str, Any], baseline, latest) -> None:
+    """Derive snapshot intervals, rejecting known overlap and invalid baselines."""
+    metrics = turn["provider_metrics"]
+    usage = metrics.get("usage")
+    if turn["status"] != "success" or not usage:
+        return
+    if metrics.get("usage_scope") == "call" or (
+        turn["selection"] == "new" and latest is None
+    ):
+        metrics.update(usage_delta=dict(usage), usage_delta_scope="call")
+        return
+    if not baseline or latest != baseline or baseline.get("status") != "success":
+        return
+    previous = baseline.get("provider_metrics", {})
+    old = previous.get("usage")
+    if (previous.get("usage_scope") != "session_cumulative" or not old
+            or baseline.get("finished_at", "~") > turn["started_at"]
+            or old.keys() != usage.keys()
+            or any(usage[k] < old[k] for k in usage)):
+        return
+    metrics.update(
+        usage_delta={k: usage[k] - old[k] for k in usage},
+        usage_delta_scope="recorded_interval",
+        usage_baseline_turn_id=baseline["turn_id"],
+    )
 
 
 def claude_turn(
@@ -445,12 +487,18 @@ def run_turn(args: argparse.Namespace) -> int:
         "model": model,
         "effort": effort,
         "stage": args.stage,
-        "provider_metrics": {"usage": None, "compaction_events_observed": None},
+        "provider_metrics": {
+            "usage": None,
+            "usage_scope": "session_cumulative" if args.provider == "codex" else "call",
+            "usage_delta": None, "usage_delta_scope": None,
+            "usage_baseline_turn_id": None, "compaction_events_observed": None,
+        },
         "started_at": utc_now(),
         "selection": "new" if args.new else "resume",
         "reuse_reason": args.reuse_reason,
         "status": "failed",
     }
+    baseline = latest_session_turn(load_state(args.state_file), args.provider, args.session_id)
     started = time.monotonic()
     try:
         options = {
@@ -479,6 +527,8 @@ def run_turn(args: argparse.Namespace) -> int:
             finished_at=utc_now(), duration_seconds=round(time.monotonic() - started, 3)
         )
         with locked_state(args.state_file) as state:
+            latest = latest_session_turn(state, args.provider, turn["session_id"])
+            derive_usage_delta(turn, baseline, latest)
             if turn["status"] == "success":
                 upsert_session(
                     state,

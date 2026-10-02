@@ -63,7 +63,8 @@ workflow, or delegate another peer review.
 Before dispatch, read [the shared review protocol](references/review-protocol.md)
 and give it to the facilitator. It governs discovery coverage, repair
 proposals and facilitator challenges, agreed criteria, focused follow-up review,
-finding classification, design reassessment
+finding classification, immediate discussion of implementation-discovered design
+conflicts, per-criterion repair evidence, and design reassessment
 after two incomplete repair reviews, reliable execution of long provider turns,
 and explicit closure accounting. Include
 its applicable instructions in provider prompts; do not assume the external
@@ -130,7 +131,8 @@ are locked; provider calls run outside the lock.
 The registry also stores compact per-turn records: status, timing, model/effort,
 artifact revision, session selection, stage, and failure type. Successful output
 also includes these metrics, including elapsed seconds and available provider
-usage. Missing provider metrics are null, not zero; see the shared protocol. It does not store prompt,
+usage with explicit scope and valid baseline deltas. Never sum cumulative
+usage snapshots. Missing provider metrics are null, not zero; see the shared protocol. It does not store prompt,
 response, or error bodies. Use `--artifact-revision` for an external artifact or
 an identifiable working-tree snapshot; the default Git HEAD plus `+dirty` marker
 is only a checkout hint, not an exact snapshot. Failed calls are recorded but do
@@ -172,7 +174,7 @@ Start a fresh session for this independently scoped campaign; reuse only for
 its discussion and repairs, with --reuse-reason. Carry relevant prior decisions
 in a compact brief rather than resuming an entire roadmap's conversation.
 Pass --stage discovery/discussion/verification. Follow the shared protocol's
-brief, early scope escalation, and concise response rules. Complete discovery
+brief, immediate scope escalation, bounded source reads, and incremental response rules. Complete discovery
 coverage and batch findings before returning; verify claims against source.
 Require actionable repair proposals: a suggested diff for easy fixes, a bounded
 sketch and counterexamples for complex ones, with checked versus untested claims.
@@ -184,7 +186,9 @@ and counterexamples; facilitator proposals alone are not agreement. Follow the
 shared protocol's execution guidance: align helper and outer process deadlines,
 retain the execution handle, and resume interrupted work without duplicate reviews.
 Use focused repair verification for follow-ups, classify later findings, and
-reassess the design after two incomplete repair reviews of the same finding.
+return implementation-discovered design conflicts for discussion immediately.
+Require evidence for each closure criterion before resubmission; two incomplete
+repair reviews are a reassessment backstop, not the first trigger.
 Do not edit files. Record disposition counts and return the self-contained
 consensus: coverage, findings and classifications, closure criteria, open/reopened/
 closed/new IDs, repair attempt counts, session/turn/revision IDs, and verification

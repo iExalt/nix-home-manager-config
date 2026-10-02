@@ -287,7 +287,8 @@ class ProviderTests(unittest.TestCase):
         metrics = {}
         helper.capture_metrics('not json\n[]\n{"type":"item.completed","text":"secret"}',
                                "codex", metrics)
-        self.assertEqual(metrics, {"usage": None, "compaction_events_observed": None})
+        self.assertIsNone(metrics["usage"])
+        self.assertIsNone(metrics["compaction_events_observed"])
         events = [
             {"type": "context.compacted"},
             {"type": "turn.completed", "usage": {"input_tokens": 10,
@@ -295,8 +296,66 @@ class ProviderTests(unittest.TestCase):
             {"type": "turn.completed", "usage": {"input_tokens": 15}},
         ]
         helper.capture_metrics('\n'.join(map(json.dumps, events)), "codex", metrics)
-        self.assertEqual(metrics, {"usage": {"input_tokens": 25},
-                                  "compaction_events_observed": 1})
+        self.assertEqual(metrics["usage"], {"input_tokens": 15})
+        self.assertEqual(metrics["usage_scope"], "session_cumulative")
+        self.assertEqual(metrics["compaction_events_observed"], 1)
+        events.append({"type": "turn.completed"})
+        helper.capture_metrics('\n'.join(map(json.dumps, events)), "codex", metrics)
+        self.assertIsNone(metrics["usage"])
+
+    def test_cumulative_usage_new_resume_and_invalid_baselines(self):
+        def run(command, **kwargs):
+            Path(command[command.index("-o") + 1]).write_text("No findings.")
+            return subprocess.CompletedProcess(command, 0, "\n".join(map(json.dumps, [
+                {"type": "thread.started", "thread_id": "counter-session"},
+                {"type": "turn.completed", "usage": {"input_tokens": counter[0]}},
+            ])), "")
+
+        counter = [100]
+        def invoke(new=False):
+            args = self.args("--new") if new else self.args(
+                "--session-id", "counter-session", "--reuse-reason", "Same repair")
+            args.provider = "codex"
+            with patch.object(helper, "run_command", side_effect=run):
+                return self.run_turn(args)
+
+        first = invoke(new=True)
+        self.assertEqual(first["metrics"]["provider_metrics"]["usage_delta"], {"input_tokens": 100})
+        counter[0] = 150
+        second = invoke()
+        metrics = second["metrics"]["provider_metrics"]
+        self.assertEqual(metrics["usage"], {"input_tokens": 150})
+        self.assertEqual(metrics["usage_delta"], {"input_tokens": 50})
+        self.assertEqual(metrics["usage_delta_scope"], "recorded_interval")
+        self.assertEqual(metrics["usage_baseline_turn_id"], first["turn_id"])
+        counter[0] = 10  # Counter reset is not a negative usage interval.
+        self.assertIsNone(invoke()["metrics"]["provider_metrics"]["usage_delta"])
+        for invalid in ("legacy", "failure", "missing"):
+            state = helper.load_state(self.state)
+            if invalid == "legacy":
+                state["turns"][-1]["provider_metrics"].pop("usage_scope")
+            elif invalid == "failure":
+                state["turns"][-1]["status"] = "failed"
+            else:
+                state["turns"] = []
+            helper.save_state(self.state, state)
+            counter[0] += 10
+            self.assertIsNone(invoke()["metrics"]["provider_metrics"]["usage_delta"])
+
+    def test_usage_delta_rejects_overlapping_recorded_calls(self):
+        baseline = {"turn_id": "previous", "status": "success",
+                    "finished_at": "2026-10-01T00:00:00+00:00",
+                    "provider_metrics": {"usage_scope": "session_cumulative",
+                                         "usage": {"input_tokens": 100}}}
+        turn = {"status": "success", "selection": "resume",
+                "started_at": "2026-10-01T00:01:00+00:00",
+                "provider_metrics": {"usage_scope": "session_cumulative",
+                                     "usage": {"input_tokens": 200}, "usage_delta": None}}
+        helper.derive_usage_delta(turn, baseline, dict(baseline, turn_id="overlap"))
+        self.assertIsNone(turn["provider_metrics"]["usage_delta"])
+        baseline["finished_at"] = "2026-10-01T00:02:00+00:00"
+        helper.derive_usage_delta(turn, baseline, baseline)
+        self.assertIsNone(turn["provider_metrics"]["usage_delta"])
 
     def test_resume_requires_reason_before_provider_execution(self):
         with patch.object(helper, "claude_turn") as call:
