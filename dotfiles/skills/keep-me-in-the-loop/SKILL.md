@@ -118,22 +118,36 @@ The user follows outcomes, not activity. This skill overrides default guidance
 to announce actions before tool calls or narrate work as it happens. Between the
 phase proposal and chunk reports, send an update only when:
 
+- a chunk's increment design is agreed and implementation starts;
 - a reviewer increment is accepted or published;
+- a live operation starts, deviates materially, or finishes;
 - a finding changes confidence, the plan, scope, or timing;
 - a decision, blocker, or new user instruction needs a response.
 
+Check each reviewer message against these events when it arrives, including one
+queued during a tool loop; report a qualifying event at the next tool boundary
+rather than folding it into later work.
+
 Write each update as one status line: the chunk, accepted increments out of those
 planned, then what is now true and what follows. For example:
+`Chunk A · 0/4 — design agreed; A1, mini's inventory, first.` or
 `Chunk B · 3/5 accepted — Ceph pools are now selected by node label; B4 next.`
 State the outcome and why it matters, not the work that produced it. Omit routine
 fixes, retries, lint, commit mechanics, review handoffs, and test counts; carry
 consequential details into the chunk report. Combine checklist changes with an
 update rather than announcing them separately.
 
+For a live operation, state its start with the stop condition, then report only
+an unexpected state, an interruption, or a decision, and finally its result.
+Monitor it for those events: emit state transitions that need action, failures,
+and completion, and keep routine progress and unchanged polls in a log read at
+decision points.
+
 Stay silent between these events, including during long implementation stretches
-and waits. A silent-turn reminder from the harness does not require a reply; send
-an update only if one of these events has occurred. If a higher-priority
-instruction forces output anyway, repeat the latest status line unchanged.
+and waits. When a monitor event, completion notification, or silent-turn reminder
+wakes you without one of these events, continue or end the turn without text.
+If a higher-priority instruction forces output anyway, repeat the latest status
+line unchanged.
 
 ## Report for quick reading
 
