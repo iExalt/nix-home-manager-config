@@ -151,6 +151,31 @@ def slug(value: str) -> str:
     return (normalized or "review")[:60]
 
 
+def capture_metrics(raw: str, provider: str, metrics: dict[str, Any]) -> None:
+    """Best-effort numeric telemetry from this call only; never retain bodies."""
+    usage: dict[str, int | float] = {}
+    compactions = None
+    for line in ([raw] if provider == "claude" else raw.splitlines()):
+        try:
+            event = json.loads(line)
+        except (ValueError, TypeError):
+            continue
+        if not isinstance(event, dict):
+            continue
+        if provider == "claude" or event.get("type") == "turn.completed":
+            source = event.get("usage")
+            if isinstance(source, dict):
+                for key in ("input_tokens", "output_tokens", "cached_input_tokens",
+                            "cache_read_input_tokens", "cache_creation_input_tokens"):
+                    value = source.get(key)
+                    if type(value) in (int, float) and value >= 0:
+                        usage[key] = usage.get(key, 0) + value
+        # A positive observation is useful; absent events cannot establish zero.
+        if event.get("type") in ("thread.compacted", "context.compacted"):
+            compactions = (compactions or 0) + 1
+    metrics.update(usage=usage or None, compaction_events_observed=compactions)
+
+
 def claude_turn(
     *,
     mise: str,
@@ -163,6 +188,7 @@ def claude_turn(
     timeout: int,
     model: str = "claude-opus-5-5",
     effort: str = "high",
+    metrics: dict[str, Any] | None = None,
 ) -> tuple[str, str]:
     if new_session:
         active_session = str(uuid.uuid4())
@@ -201,6 +227,8 @@ def claude_turn(
         command.extend(["--add-dir", str(add_dir)])
 
     result = run_command(command, cwd=cwd, prompt=prompt, timeout=timeout)
+    if metrics is not None:
+        capture_metrics(result.stdout, "claude", metrics)
     if result.returncode != 0:
         raise command_error("claude", result)
 
@@ -254,6 +282,7 @@ def codex_turn(
     timeout: int,
     model: str = "gpt-6-astra",
     effort: str = "medium",
+    metrics: dict[str, Any] | None = None,
 ) -> tuple[str, str]:
     with tempfile.NamedTemporaryFile(
         prefix="peer-review-codex-", delete=False
@@ -299,6 +328,8 @@ def codex_turn(
 
         command.extend(["--model", model, "-c", f'model_reasoning_effort="{effort}"'])
         result = run_command(command, cwd=cwd, prompt=prompt, timeout=timeout)
+        if metrics is not None:
+            capture_metrics(result.stdout, "codex", metrics)
         if result.returncode != 0:
             raise command_error("codex", result)
         active_session = extract_codex_session(result.stdout, fallback=session_id)
@@ -381,7 +412,7 @@ def run_turn(args: argparse.Namespace) -> int:
         raise ValueError("Read an empty prompt from stdin")
     if args.session_id and not (args.reuse_reason and args.reuse_reason.strip()):
         raise ValueError(
-            "Resuming requires --reuse-reason identifying the shared artifact/workstream"
+            "Resuming requires --reuse-reason identifying the same review campaign"
         )
     if args.new and args.reuse_reason:
         raise ValueError("--reuse-reason only applies when resuming a session")
@@ -413,6 +444,8 @@ def run_turn(args: argparse.Namespace) -> int:
         "artifact_revision": args.artifact_revision or artifact_revision(cwd),
         "model": model,
         "effort": effort,
+        "stage": args.stage,
+        "provider_metrics": {"usage": None, "compaction_events_observed": None},
         "started_at": utc_now(),
         "selection": "new" if args.new else "resume",
         "reuse_reason": args.reuse_reason,
@@ -430,6 +463,7 @@ def run_turn(args: argparse.Namespace) -> int:
             "timeout": args.timeout,
             "model": model,
             "effort": effort,
+            "metrics": turn["provider_metrics"],
         }
         if args.provider == "claude":
             session_id, response = claude_turn(topic=args.topic, **options)
@@ -462,6 +496,10 @@ def run_turn(args: argparse.Namespace) -> int:
                 "session_id": session_id,
                 "response": response,
                 "turn_id": turn["turn_id"],
+                "metrics": {key: turn[key] for key in (
+                    "started_at", "finished_at", "duration_seconds",
+                    "stage", "model", "effort", "provider_metrics"
+                )},
             },
             indent=2,
             sort_keys=True,
@@ -502,15 +540,19 @@ def build_parser() -> argparse.ArgumentParser:
     selection.add_argument(
         "--new",
         action="store_true",
-        help="Start a new session when no relevant, available review session exists.",
+        help="Start a fresh session for an independently scoped review campaign.",
     )
     turn_parser.add_argument(
         "--reuse-reason",
-        help="Why the resumed session matches this artifact/workstream.",
+        help="Why this is discussion or repair of the same review campaign.",
     )
     turn_parser.add_argument(
         "--artifact-revision",
         help="Commit or artifact snapshot ID (default: Git HEAD plus dirty marker, or unknown).",
+    )
+    turn_parser.add_argument(
+        "--stage", choices=("discovery", "discussion", "verification", "unspecified"),
+        default="unspecified", help="Review stage for latency accounting.",
     )
     turn_parser.add_argument("--topic", required=True)
     turn_parser.add_argument(

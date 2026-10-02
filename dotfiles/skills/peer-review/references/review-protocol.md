@@ -3,6 +3,54 @@
 Use this protocol in both peer-review and peer-review-loop. The invoking skill
 controls whether the main agent automatically repairs and repeats review.
 
+## Brief and latency boundaries
+
+Start a fresh session for each independently scoped milestone; keep it through
+that milestone's discussion and repairs. The shared registry is an index, not a
+reason to resume an entire roadmap. Carry forward only relevant settled
+decisions, constraints, and evidence references. Do not reset a live campaign
+merely to erase unresolved findings or avoid a long provider turn.
+
+Before discovery, the main agent supplies supported configurations, explicit
+non-goals, unresolved scope choices, available test harnesses and what they can
+prove, feasible local probes, and deferred live verification. Separate these
+constraints from claims of correctness; the reviewer still verifies independently.
+Do not negotiate a new test framework or support for an excluded configuration
+as an implicit prerequisite for closing a finding.
+
+When a proposed remedy requires a consequential scope, supported-behavior, or
+verification-infrastructure decision, the facilitator returns that question to
+the main agent early, with evidence and bounded alternatives, before elaborating
+or negotiating the design. Continue independent review where possible. The main
+agent decides within the user's authorized scope and asks the user only when
+necessary. Relay the decision to the reviewer for scrutiny; it does not override
+a valid finding. Batch other technical objections into the same discussion.
+
+Keep discovery complete but concise: one coverage record and actionable findings.
+Use targeted reads; avoid repeatedly dumping entire files or truncated diffs.
+Follow-up responses give changed decisions, remaining questions, new evidence,
+and explicit open/closed IDs. Refer to unchanged designs by finding and turn ID
+instead of restating them. The facilitator maintains the full ledger and returns
+a self-contained handoff to the main agent; brevity must not hide evidence or
+unresolved findings. A discussion response need not repeat the discovery report.
+
+## Automatic call metrics
+
+Pass `--stage discovery|discussion|verification` on every helper turn. The helper
+records start/end timestamps, monotonic elapsed seconds, model/effort, stage,
+and available numeric provider usage in the registry and returns metrics with
+successful responses. Use these records instead of hand-written timestamp files.
+The default `unspecified` stage exists for compatibility, not new invocations.
+Provider usage is limited to the current CLI response: do not infer context size
+from total input usage or call duration from API duration. Compaction counts are
+reported only when explicitly exposed by the provider; null means unavailable,
+not zero. The helper does not scrape private conversation logs to invent metrics.
+Report total recorded call time, discovery/discussion/verification subtotals,
+outer rounds, inner calls, and end-to-end campaign elapsed time separately;
+implementation and facilitator work overlap some calls. Failed recorded calls
+count toward latency; hard-killed helpers may lack a final record. Distinguish
+those missing attempts rather than presenting recorded time as a complete total.
+
 ## Discovery before repair
 
 Fix the artifact revision, scope, acceptance criteria, and verification limits

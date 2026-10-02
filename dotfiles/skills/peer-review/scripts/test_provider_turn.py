@@ -253,6 +253,51 @@ class ProviderTests(unittest.TestCase):
         self.assertEqual([t["status"] for t in state["turns"]], ["failed", "failed"])
         self.assertNotIn("sensitive provider error", self.state.read_text())
 
+    def test_metrics_are_returned_and_persisted_for_real_provider_paths(self):
+        for provider in ("claude", "codex"):
+            with self.subTest(provider=provider):
+                def run(command, **kwargs):
+                    if provider == "codex":
+                        Path(command[command.index("-o") + 1]).write_text("No findings.")
+                        stdout = '\n'.join(json.dumps(e) for e in [
+                            {"type": "thread.started", "thread_id": "returned"},
+                            {"type": "turn.completed", "usage": {
+                                "input_tokens": 120, "cached_input_tokens": 100,
+                                "output_tokens": 20}},
+                        ])
+                    else:
+                        stdout = json.dumps({"session_id": "returned",
+                            "result": "No findings.", "usage": {
+                                "input_tokens": 120, "output_tokens": 20}})
+                    return subprocess.CompletedProcess(command, 0, stdout, "")
+                args = self.args("--new", "--stage", "verification")
+                args.provider = provider
+                with patch.object(helper, "run_command", side_effect=run):
+                    result = self.run_turn(args)
+                metrics = result["metrics"]
+                turn = helper.load_state(self.state)["turns"][-1]
+                for key, value in metrics.items():
+                    self.assertEqual(turn[key], value)
+                self.assertEqual(metrics["stage"], "verification")
+                self.assertEqual(metrics["provider_metrics"]["usage"]["input_tokens"], 120)
+                self.assertIsNone(metrics["provider_metrics"]["compaction_events_observed"])
+                self.assertGreaterEqual(metrics["duration_seconds"], 0)
+
+    def test_metrics_ignore_bodies_and_handle_missing_or_malformed_events(self):
+        metrics = {}
+        helper.capture_metrics('not json\n[]\n{"type":"item.completed","text":"secret"}',
+                               "codex", metrics)
+        self.assertEqual(metrics, {"usage": None, "compaction_events_observed": None})
+        events = [
+            {"type": "context.compacted"},
+            {"type": "turn.completed", "usage": {"input_tokens": 10,
+                "output_tokens": True, "cached_input_tokens": -1, "secret": 5}},
+            {"type": "turn.completed", "usage": {"input_tokens": 15}},
+        ]
+        helper.capture_metrics('\n'.join(map(json.dumps, events)), "codex", metrics)
+        self.assertEqual(metrics, {"usage": {"input_tokens": 25},
+                                  "compaction_events_observed": 1})
+
     def test_resume_requires_reason_before_provider_execution(self):
         with patch.object(helper, "claude_turn") as call:
             with self.assertRaisesRegex(ValueError, "reuse-reason"):
