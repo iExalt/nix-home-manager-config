@@ -239,10 +239,9 @@ handoff. Report acceptance only after navigator review; label pending submission
 as under review. Preserve material failures and limitations.
 
 Remain silent during unchanged waits. A silent-turn reminder from the harness does
-not require a reply under this skill. Only a mandatory higher-priority instruction
-that disallows this override triggers `Forced interaction: <short reason>`; repeat
-that exact line throughout the same waiting period. Optional cadence never triggers
-this fallback. Never inspect workers just to fill a message.
+not require a reply under this skill. When a notification or reminder wakes you
+without an appropriate lead event, continue or end the turn without text. Never
+repeat or paraphrase an earlier update, or inspect workers, just to fill a message.
 
 ## Documentation Footprint
 
