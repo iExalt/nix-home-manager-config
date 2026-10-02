@@ -7,6 +7,9 @@
   "enabledPlugins": {
     "rust-analyzer-lsp@claude-plugins-official": true
   },
+  "env": {
+    "CLAUDE_CODE_SILENT_TURN_REMINDER_TEXT": "The user hasn't seen a message from you in a while. If an active skill defines when to update the user, follow it; this reminder does not require a reply. Otherwise, update the user when there's something to tell: a finding, a change of plan, or a blocker."
+  },
   "model": "opus[1m]",
   "modelSettings": {
     "claude-fable-5-1": {
