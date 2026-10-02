@@ -396,6 +396,80 @@ def list_sessions(args: argparse.Namespace) -> int:
     return 0
 
 
+def summarize_turns(state: dict[str, Any], provider: str, session_id: str) -> dict[str, Any]:
+    """Summarize recorded calls for an explicit session without inferring a campaign."""
+    turns = [turn for turn in state.get("turns", [])
+             if turn.get("provider") == provider and turn.get("session_id") == session_id]
+    if not turns:
+        raise ValueError("No recorded turns match this provider and session ID")
+
+    def durations(records):
+        known = []
+        for record in records:
+            value = record.get("duration_seconds")
+            try:
+                valid = type(value) in (int, float) and math.isfinite(value) and value >= 0
+            except OverflowError:
+                valid = False
+            if valid:
+                known.append(value)
+        return {
+            "calls": len(records),
+            "recorded_seconds": round(sum(known), 3) if known else None,
+            "timed_calls": len(known),
+            "unknown_duration_calls": len(records) - len(known),
+        }
+
+    stages = {}
+    statuses = {"success": 0, "failed": 0, "other": 0}
+    intervals = []
+    for turn in turns:
+        stage = turn.get("stage")
+        if not isinstance(stage, str) or not stage:
+            stage = "unspecified"
+        stages.setdefault(stage, []).append(turn)
+        status = turn.get("status")
+        statuses[status if status in ("success", "failed") else "other"] += 1
+        try:
+            start = datetime.fromisoformat(turn["started_at"])
+            end = datetime.fromisoformat(turn["finished_at"])
+            if start.utcoffset() is None or end.utcoffset() is None or end < start:
+                continue
+            intervals.append((start.astimezone(timezone.utc), end.astimezone(timezone.utc)))
+        except (KeyError, TypeError, ValueError, OverflowError):
+            continue
+
+    first = min((start for start, _ in intervals), default=None)
+    last = max((end for _, end in intervals), default=None)
+    return {
+        "provider": provider,
+        "session_id": session_id,
+        **durations(turns),
+        "statuses": statuses,
+        "stages": {stage: durations(records) for stage, records in sorted(stages.items())},
+        "recorded_span": {
+            "started_at": first.isoformat() if first is not None else None,
+            "finished_at": last.isoformat() if last is not None else None,
+            "elapsed_seconds": round((last - first).total_seconds(), 3) if intervals else None,
+            "timed_calls": len(intervals),
+            "unknown_timing_calls": len(turns) - len(intervals),
+            "complete_for_recorded_calls": len(intervals) == len(turns),
+        },
+        "limits": [
+            "Selection is a provider session, which may span multiple review campaigns.",
+            "Call durations may overlap; their sum is not wall-clock elapsed time.",
+            "Span covers valid recorded call intervals, not the full campaign or implementation time.",
+            "Unrecorded attempts and failures without this session ID are not included.",
+        ],
+    }
+
+
+def summarize_session(args: argparse.Namespace) -> int:
+    summary = summarize_turns(load_state(args.state_file), args.provider, args.session_id)
+    print(json.dumps(summary, indent=2, sort_keys=True, allow_nan=False))
+    return 0
+
+
 def artifact_revision(cwd: Path) -> str:
     """Record a checkout hint; dirty work needs an explicit snapshot identifier."""
     try:
@@ -574,6 +648,13 @@ def build_parser() -> argparse.ArgumentParser:
     list_parser.add_argument("--provider", choices=("claude", "codex"))
     list_parser.add_argument("--cwd", type=Path)
     list_parser.set_defaults(handler=list_sessions)
+
+    summary_parser = subparsers.add_parser(
+        "summary", help="Summarize recorded timings for one provider session (read-only)."
+    )
+    summary_parser.add_argument("--provider", choices=("claude", "codex"), required=True)
+    summary_parser.add_argument("--session-id", required=True)
+    summary_parser.set_defaults(handler=summarize_session)
 
     turn_parser = subparsers.add_parser("turn", help="Run one provider review turn.")
     turn_parser.add_argument("--provider", choices=("claude", "codex"), required=True)
