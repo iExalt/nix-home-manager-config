@@ -238,7 +238,8 @@ Combine actual checklist changes with these updates and show the final state at
 handoff. Report acceptance only after navigator review; label pending submissions
 as under review. Preserve material failures and limitations.
 
-Remain silent during unchanged waits. Only a mandatory higher-priority instruction
+Remain silent during unchanged waits. A silent-turn reminder from the harness does
+not require a reply under this skill. Only a mandatory higher-priority instruction
 that disallows this override triggers `Forced interaction: <short reason>`; repeat
 that exact line throughout the same waiting period. Optional cadence never triggers
 this fallback. Never inspect workers just to fill a message.
