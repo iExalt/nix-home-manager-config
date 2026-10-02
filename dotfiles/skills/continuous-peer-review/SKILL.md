@@ -28,7 +28,8 @@ does not authorize unrelated work.
 
 Spawn the reviewer with a scoped brief: goal, milestone boundaries, supported
 behavior, non-goals, acceptance criteria, repository instructions, baseline,
-available tests, deferred verification, and the author's native agent address.
+available tests, deferred verification, the author's native agent address, and
+whether the user authorized idle review of unrelated repository areas.
 Include these skill instructions. Give raw source/evidence locations as well as
 prior decisions; distinguish constraints from claims that the code is correct.
 The reviewer reads the relevant source independently and challenges shared design
@@ -97,11 +98,14 @@ If stable review inputs cannot be supplied, pause conflicting edits during revie
 and disclose the reduced parallelism. Tests of a newer checkout do not establish
 results for an older snapshot.
 
-Reuse isolated verification environments and compatible build caches for routine
-delta checks, keeping source pinned to the submitted snapshot and mutable test
-outputs separate. Rebuild affected artifacts; do not reuse results across changed
-inputs. Use an empty build/output directory when clean-checkout behavior is the
-property under test. Preserve independent counterexamples, but repeat expensive
+Keep one reviewer-owned verification environment for the session: a detached
+worktree and build/output directory in a predictable sibling location such as
+`../<repo>-review/`, never inside the author's tree. Move it between submitted
+snapshots with `git checkout --detach REV` and rebuild incrementally; do not create
+a fresh worktree or build cache per increment or revision. Keep mutable test outputs
+separate. Rebuild affected artifacts; do not reuse results across changed inputs.
+Use an empty build/output directory only when clean-checkout behavior is the
+property under test, and remove it afterward. Preserve independent counterexamples, but repeat expensive
 unchanged checks only when a changed dependency, failure, or coverage gap warrants
 them. Name the snapshot and environment for evidence carried forward.
 
@@ -133,6 +137,8 @@ rather than waiting for a final batch; then continues review and explicitly repo
 completion and coverage limits.
 Silence or a preliminary finding is neither acceptance nor completed review.
 Use targeted source reads, bounded output, and references to unchanged evidence.
+Re-review a revision from its delta against the previously reviewed snapshot,
+limited to affected paths; reread whole files only where the delta is insufficient.
 
 ## Messages and attention
 
@@ -140,7 +146,9 @@ Use native direct messaging (for example `collaboration.send_message` in Codex,
 or the available equivalent in Claude). Use the harness's resume/follow-up tool
 when a reviewer has finished its turn and needs new work; do not assume a message
 to an idle agent starts execution. Reuse the same reviewer rather than spawning
-one per increment. A native notification is delivery, not an acknowledgment.
+one per increment. The direct message carries the content; end a reviewer turn
+with a one-line final response naming what was sent rather than restating it.
+A native notification is delivery, not an acknowledgment.
 Do not promise preemption of an in-flight tool call; process messages at the next
 available boundary and before starting dependent or consequential actions.
 Send urgent messages in a separate completed tool step before starting a long
@@ -173,6 +181,42 @@ can prepare proposals and tests while waiting, but cannot count a pending propos
 as agreement. When only blocked work remains, use native interruptible waits or
 completion notifications; avoid polling loops and unchanged-status messages.
 
+## Reviewer idle time
+
+Spare reviewer capacity is what keeps handoff turnaround fast, so idle work must
+never delay a response. Inbound messages always take priority. Work in short,
+interruptible steps without long-running commands so messages are handled at the
+next tool boundary. Idle work may run read-only checks against live or shared
+systems the session is already permitted to access, but must not change their
+state or place noticeable load on them. Do not
+message the author merely to report idle activity; send results through the normal
+design, finding, or review-result messages once they are actionable.
+
+In priority order, the reviewer may:
+
+1. Read source affected by planned increments and challenge their designs before
+   implementation starts.
+2. Prepare counterexamples and probes for the agreed verification of the increment
+   being implemented, then run them against its snapshot at handoff.
+3. Review interactions between accepted increments so the final integration review
+   covers only the remaining delta.
+4. Inspect callers, dependencies, and pre-existing defects in code the milestone
+   changes or relies on.
+5. Review unrelated repository areas, only when the user authorized it.
+
+Keep idle-time probes, fixtures, and build outputs in the reviewer's session
+verification environment; never add them to the author's tree. Prefer lightweight
+scripts and targeted tests, building only when a probe requires it. Reviewer probes remain independent evidence
+rather than the author's test suite. Suggest a probe worth retaining as a
+regression test in a finding or review result; the author decides whether to adopt
+and write it.
+
+Pre-existing defects that affect the milestone are ordinary findings. Record other
+out-of-scope findings in a parking-lot list instead of messaging them, keeping only
+material ones with evidence. Deliver the list once at the milestone boundary,
+labeled out of scope; the author relays it to the user and does not act on it
+without separate authorization.
+
 ## Resolve findings and retain context
 
 Challenge findings and proposed remedies with evidence and bounded alternatives.
@@ -200,9 +244,10 @@ Maintain a compact shared record: goal and boundaries, settled designs and reaso
 current snapshots, dependencies, finding dispositions, closure evidence, pending
 questions, and next reviewer work. Messages report changes to this record instead
 of repeating the complete ledger and evidence. At natural milestone boundaries,
-consolidate settled decisions and evidence references into a compact checkpoint;
-use native context compaction when available and needed, preserving the same
-reviewer. Do not imply that writing a summary alone removes prior context.
+consolidate settled decisions and evidence references into a compact checkpoint.
+When the harness allows requesting compaction, compact after the checkpoint rather
+than waiting for automatic compaction; otherwise keep the checkpoint current so
+automatic compaction preserves it. Preserve the same reviewer. Do not imply that writing a summary alone removes prior context.
 Retain unresolved findings, pending checks, deferrals, and reasons for decisions;
 omit obsolete source dumps and superseded narration. If a reviewer must be replaced
 or context refreshed, transfer this record and evidence references, preserving
@@ -219,8 +264,10 @@ gap, or new evidence. Run the appropriate combined checks; passing increment tes
 alone is not integration acceptance.
 
 Finish only when the reviewer and main agent agree the final milestone satisfies
-its criteria with no unresolved material findings. Identify accepted deferrals and
-verification limits. Changes after acceptance need proportional delta review;
+its criteria with no unresolved material findings. Identify accepted deferrals,
+verification limits, and the reviewer's parked out-of-scope findings. At session
+end, the reviewer removes its verification environment and reports the space freed;
+if it cannot, the author removes it. Changes after acceptance need proportional delta review;
 preserve the task's existing commit, push, and deployment authorization.
 
 For an efficiency trial, capture milestone start/end, review dispatch and acceptance
