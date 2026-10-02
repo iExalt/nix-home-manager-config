@@ -1,0 +1,4 @@
+interface:
+  display_name: "Keep Me in the Loop"
+  short_description: "Execute approved phases with reviewed roadmap chunks"
+  default_prompt: "Use $keep-me-in-the-loop to propose the next phase of this roadmap, then execute its approved chunks with continuous peer review and concise TL;DR reports."

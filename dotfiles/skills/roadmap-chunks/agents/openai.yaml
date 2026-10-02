@@ -1,4 +1,0 @@
-interface:
-  display_name: "Roadmap Chunks"
-  short_description: "Execute approved phases with reviewed roadmap chunks"
-  default_prompt: "Use $roadmap-chunks to propose the next phase of this roadmap, then execute its approved chunks with continuous peer review and concise TL;DR reports."

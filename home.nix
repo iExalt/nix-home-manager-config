@@ -85,10 +85,10 @@ in
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/agentic-workflow";
   home.file.".claude/skills/agentic-workflow".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/agentic-workflow";
-  home.file.".codex/skills/roadmap-chunks".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/roadmap-chunks";
-  home.file.".claude/skills/roadmap-chunks".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/roadmap-chunks";
+  home.file.".codex/skills/keep-me-in-the-loop".source =
+    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/keep-me-in-the-loop";
+  home.file.".claude/skills/keep-me-in-the-loop".source =
+    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/keep-me-in-the-loop";
   home.file.".codex/skills/maintain-project-status".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/maintain-project-status";
   home.file.".claude/skills/maintain-project-status".source =

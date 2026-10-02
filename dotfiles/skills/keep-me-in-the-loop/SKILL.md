@@ -1,9 +1,9 @@
 ---
-name: roadmap-chunks
+name: keep-me-in-the-loop
 description: Execute an existing roadmap in coherent chunks with upfront phase approval, continuous peer review, project-status updates, and TL;DR progress reports. Use when the user wants sustained roadmap execution with control between substantial phases; not for a one-off task or initial open-ended project discovery.
 ---
 
-# Roadmap Chunks
+# Keep Me in the Loop
 
 Turn the next substantial phase of an existing plan into a few meaningful chunks.
 Obtain approval for that phase's chunk plan once, then implement, review, verify,
