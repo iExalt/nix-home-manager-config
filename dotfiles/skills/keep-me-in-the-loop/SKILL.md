@@ -6,7 +6,8 @@ description: Execute an existing roadmap in coherent chunks with upfront phase a
 # Keep Me in the Loop
 
 Turn the next substantial phase of an existing plan into a few meaningful chunks.
-Obtain approval for that phase's chunk plan once, then implement, review, verify,
+Shape that chunk plan with the reviewer, obtain the user's approval once, then
+implement, review, verify,
 commit, and push each chunk autonomously. Report between chunks and continue;
 seek approval for the next phase after finishing the current one. Preserve explicit
 user overrides and repository rules.
@@ -25,6 +26,9 @@ directories. Keep this skill responsible for phase boundaries and user reports,
 leaving status semantics and reviewer mechanics to those skills. If a required
 skill or native review capability is unavailable, explain the limitation and
 resolve the execution approach before claiming the workflow can proceed.
+
+Start the `continuous-peer-review` reviewer before drafting the first phase
+proposal, and reuse it across chunks and phases while the harness supports it.
 
 Reuse one project-wide status document and the active plan/checklist. Create a
 status document through `maintain-project-status` when one is missing, using the
@@ -57,6 +61,15 @@ Do not infer permission for unrelated external actions, destructive operations,
 or infrastructure spending from the publication default. Carry forward existing
 authorization and identify any additional authority actually needed.
 
+Jointly shape the proposal with the reviewer before presenting it. Send the draft
+chunk plan, its acceptance checks, deferral gates, risks, and requested authority
+with the raw roadmap and evidence locations, so the reviewer can challenge the
+boundaries, ordering, and verification independently. Revise until you agree or
+the disagreement is clear. Present the reviewer's position in the proposal: its
+agreement, material amendments it secured, and any unresolved disagreement with
+both positions and your recommendation. A reviewer notification or an
+unacknowledged draft does not count as review.
+
 Obtain phase approval before implementation unless the current instructions
 already approve that concrete scope. Silence is not approval. Use a permitted
 native dialog when available, respecting its restrictions on permission requests.
@@ -72,9 +85,11 @@ checks clear. Work through the approved chunks in dependency order.
 Within each chunk:
 
 1. Use `continuous-peer-review` to jointly shape and review small implementation
-   increments. A user-facing chunk may contain several reviewer increments.
-   Reuse reviewer context across the phase when the harness supports it. Do not
-   add a separate peer-review loop or duplicate the review skill's controls.
+   increments within the approved chunk plan. A user-facing chunk may contain
+   several reviewer increments. Do not add a separate peer-review loop or
+   duplicate the review skill's controls. If an agreed design amendment changes
+   an approved outcome, acceptance check, deferral, risk, or external action,
+   return it to the user before affected work proceeds.
 2. Implement and resolve routine technical decisions and necessary fixes
    autonomously within the approved outcome. Record unrelated improvements and
    pre-existing bugs for later; ask before materially expanding scope.
@@ -175,6 +190,7 @@ the increment-outcome updates above and use interruptible waits.
 
 At phase completion, reconcile the phase's full exit criteria with current
 evidence and report results, accepted deferrals, and remaining boundaries.
-Propose the next phase's chunks and await approval before implementing them,
+Shape the next phase's chunks with the reviewer, propose them, and await approval
+before implementing them,
 unless the user has explicitly authorized that next phase already. If the roadmap
 is finished, report completion and remaining limitations without inventing work.
