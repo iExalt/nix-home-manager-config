@@ -38,14 +38,17 @@ workflow, or delegate another peer review.
      --cwd /absolute/workspace
    ```
 
-5. Reuse a session only when its artifact, feature, bug, or PR stack establishes
-   continuity. Sharing a repository is insufficient. Explain the match with
-   `--reuse-reason`; when relevance is uncertain, start a new session. If the
-   provider reports that a session is unavailable, start a new one with the raw
-   artifact and essential context. Preserve the old registry entry; do not
-   treat authentication or other execution failures as a reason to retry new.
-6. Conduct the dialogue in review rounds. Use `turn --session-id ID` to resume
-   or `turn --new` when no relevant, available session exists. Send prompts on stdin.
+5. Start a fresh reviewer session for each independently scoped milestone or
+   review campaign. A shared repository, roadmap, feature, or PR stack alone
+   does not justify carrying an old conversation forward. Carry only a compact
+   summary of relevant prior decisions, constraints, and evidence references.
+   Reuse the session for discussion and repair verification within this campaign;
+   explain that continuity with `--reuse-reason`. If the session is unavailable,
+   start new with the artifact and compact ledger, preserving the old entry.
+   Authentication or execution failures alone do not justify a new session.
+6. Use `turn --new` for discovery of a new campaign and `turn --session-id ID`
+   for its follow-ups. Pass `--stage discovery`, `--stage discussion`, or
+   `--stage verification` as appropriate. Send prompts on stdin.
    Pass each external artifact parent with `--add-dir /absolute/path`.
 7. Require the facilitator to return a self-contained consensus record, session
    ID, and turn ID to the parent. Record disposition counts with `record` below.
@@ -92,6 +95,7 @@ Resolve this skill directory before invoking the helper. Typical commands:
 cat prompt.txt | mise exec -- python scripts/provider_turn.py turn \
   --provider claude \
   --new \
+  --stage discovery \
   --topic "repository: feature or PR" \
   --artifact-kind code \
   --cwd /absolute/workspace \
@@ -102,6 +106,7 @@ cat prompt.txt | mise exec -- python scripts/provider_turn.py turn \
   --provider claude \
   --session-id SESSION_UUID \
   --reuse-reason "Recheck fixes for the same PR" \
+  --stage verification \
   --topic "repository: feature or PR" \
   --artifact-kind code \
   --cwd /absolute/workspace
@@ -111,6 +116,7 @@ cat prompt.txt | mise exec -- python scripts/provider_turn.py turn \
   --provider codex \
   --session-id SESSION_UUID \
   --reuse-reason "Reconcile findings for the same plan" \
+  --stage discussion \
   --topic "repository: feature or PR" \
   --artifact-kind plan \
   --cwd /absolute/workspace
@@ -122,7 +128,9 @@ opaque. Never hand-edit provider conversation files. Concurrent registry updates
 are locked; provider calls run outside the lock.
 
 The registry also stores compact per-turn records: status, timing, model/effort,
-artifact revision, session selection, and failure type. It does not store prompt,
+artifact revision, session selection, stage, and failure type. Successful output
+also includes these metrics, including elapsed seconds and available provider
+usage. Missing provider metrics are null, not zero; see the shared protocol. It does not store prompt,
 response, or error bodies. Use `--artifact-revision` for an external artifact or
 an identifiable working-tree snapshot; the default Git HEAD plus `+dirty` marker
 is only a checkout hint, not an exact snapshot. Failed calls are recorded but do
@@ -155,12 +163,16 @@ scripts/provider_turn.py to converse with <provider> in read-only mode.
 
 Artifact: <path, diff range, PR, or complete plan>
 Original task: <task and acceptance criteria>
+Boundaries: <supported configurations, explicit exclusions, unresolved scope decisions>
+Verification: <available harnesses, feasible probes, deferred live checks>
 Workspace: <absolute path>
 Authoring provider: <provider>
 
-Inspect the registry; reuse only a session for the same artifact or workstream,
-and give --reuse-reason. A repository match alone is insufficient. Otherwise
-start new. Follow the supplied shared review protocol. Complete discovery
+Start a fresh session for this independently scoped campaign; reuse only for
+its discussion and repairs, with --reuse-reason. Carry relevant prior decisions
+in a compact brief rather than resuming an entire roadmap's conversation.
+Pass --stage discovery/discussion/verification. Follow the shared protocol's
+brief, early scope escalation, and concise response rules. Complete discovery
 coverage and batch findings before returning; verify claims against source.
 Require actionable repair proposals: a suggested diff for easy fixes, a bounded
 sketch and counterexamples for complex ones, with checked versus untested claims.
