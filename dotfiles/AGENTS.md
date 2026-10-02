@@ -10,4 +10,4 @@
 * Only place truly temporary files in /tmp
 * Do not use /tmp as a staging ground for WIP changes
 * Commit only a small number of reciepts directly inlined in documents/status updates
-* When I request edits to skills, validate the changes, reload Home Manager, then commit and push the scoped changes automatically unless I explicitly say otherwise.
+* When I request edits to skills, validate the changes, reload Home Manager if skills were added, removed, or renamed, then commit and push the scoped changes automatically unless I explicitly say otherwise.
