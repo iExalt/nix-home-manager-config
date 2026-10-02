@@ -204,6 +204,22 @@ an identifiable working-tree snapshot; the default Git HEAD plus `+dirty` marker
 is only a checkout hint, not an exact snapshot. Failed calls are recorded but do
 not create successful session entries. Interrupted processes may leave no record.
 
+Summarize recorded timing without invoking a provider or changing the registry:
+
+```bash
+mise exec -- python scripts/provider_turn.py summary \
+  --provider codex --session-id SESSION_UUID
+```
+
+The JSON reports call counts, success/failure counts, duration totals by stage,
+and the elapsed span of valid recorded intervals, with unknown timing counts.
+Legacy untagged turns appear under `unspecified`. Selection is by provider and
+session, so an old session spanning milestones is not a single-campaign summary.
+Durations can overlap; their sum is not wall-clock time. The recorded span omits
+work before/after calls and is not end-to-end campaign time. Unrecorded attempts
+and failures without that session ID cannot be included. No matching records is
+an error, not evidence of a zero-cost review. Token usage is not aggregated.
+
 After reconciliation, record counts for that turn's findings (not cumulative
 session totals); keep finding IDs, rationale, and evidence in the consensus:
 

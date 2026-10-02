@@ -1,0 +1,4 @@
+interface:
+  display_name: "Continuous Peer Review"
+  short_description: "Design together and review increments during implementation"
+  default_prompt: "Use $continuous-peer-review to implement this task with a native reviewer subagent, joint design, and concurrent review of small increments."
