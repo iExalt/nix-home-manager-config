@@ -403,9 +403,12 @@ Threads: 1 done · 2 chunk 3/3 · 3 chunk 1/2 · 4 waiting on 2
 A request for the user goes in a dialog of its own, as "Relay human
 interventions" describes, never in a status update.
 
-Stay silent between updates. When you must end a turn to wait, close it with
-one short line naming what you await, once per wait. Worker messages, idle
-notices and completion notifications wake you.
+Stay silent between updates. Worker messages, idle notices and finish
+notifications wake you, and most change nothing the user needs to know. When
+a turn ends without an update, a request or an answer to the user, end it
+with no text at all: no line saying what you are waiting on, and no
+acknowledgement. Your checklist holds what you await, and your next update's
+roll call shows it.
 
 When the threads you oversee finish, report with a **TL;DR**: each thread's
 outcome and publication, evidence limits and deferrals, the judgment calls
