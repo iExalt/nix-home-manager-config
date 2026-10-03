@@ -204,6 +204,13 @@ In priority order, the reviewer may:
    changes or relies on.
 5. Review unrelated repository areas, only when the user authorized it.
 
+Some harnesses end the reviewer's run after each reply and resume it only for the
+next message; Claude Code does. The reviewer then has no idle time of its own.
+In that case the author assigns bounded idle work from this list when it
+acknowledges a review result and expects no request soon, naming the item and
+its scope. The reviewer stops that work at the next inbound message and reports
+only actionable results.
+
 Keep idle-time probes, fixtures, and build outputs in the reviewer's session
 verification environment; never add them to the author's tree. Prefer lightweight
 scripts and targeted tests, building only when a probe requires it. Reviewer probes remain independent evidence
