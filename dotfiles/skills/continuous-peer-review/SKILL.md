@@ -8,8 +8,8 @@ description: Collaboratively design and implement small increments with a persis
 Use two roles: the main agent owns implementation and integration; one native
 reviewer subagent jointly shapes increments and independently reviews their code.
 Communicate directly through native agent messages. Keep the reviewer involved
-through the milestone, with relevant goal, design, and finding context. There is
-no facilitator, external provider CLI, or nested review team in this workflow.
+through the milestone, with relevant goal, design, and finding context. This
+workflow has no facilitator, external provider CLI, or nested review team.
 Use the user's model preferences or the native tool's inherited/default model;
 cross-provider review is not required.
 
@@ -129,12 +129,12 @@ finding affects; invalidate dependent acceptance where its assumptions no longer
 hold. Review revisions of an existing increment do not consume another slot.
 
 The reviewer examines correctness, affected callers, failure paths, regressions,
-and acceptance coverage proportional to the increment. Treat the author's checklist
-as evidence, not the boundary of review: seek independent counterexamples to shared
+and acceptance coverage proportional to the increment. The author's checklist is
+evidence and does not bound the review: seek independent counterexamples to shared
 assumptions and use targeted probes where they add confidence beyond rerunning the
-author's tests. It sends an actionable finding as soon as evidence establishes it,
-rather than waiting for a final batch; then continues review and explicitly reports
-completion and coverage limits.
+author's tests. The reviewer sends each actionable finding as soon as evidence
+establishes it instead of holding it for a final batch, then continues reviewing
+and explicitly reports completion and coverage limits.
 Silence or a preliminary finding is neither acceptance nor completed review.
 Use targeted source reads, bounded output, and references to unchanged evidence.
 Re-review a revision from its delta against the previously reviewed snapshot,
@@ -183,7 +183,7 @@ completion notifications; avoid polling loops and unchanged-status messages.
 
 ## Reviewer idle time
 
-Spare reviewer capacity is what keeps handoff turnaround fast, so idle work must
+Spare reviewer capacity keeps handoff turnaround fast, so idle work must
 never delay a response. Inbound messages always take priority. Work in short,
 interruptible steps without long-running commands so messages are handled at the
 next tool boundary. Idle work may run read-only checks against live or shared
@@ -204,17 +204,17 @@ In priority order, the reviewer may:
    changes or relies on.
 5. Review unrelated repository areas, only when the user authorized it.
 
-Some harnesses end the reviewer's run after each reply and resume it only for the
-next message; Claude Code does. The reviewer then has no idle time of its own.
-In that case the author assigns bounded idle work from this list when it
+Some harnesses, including Claude Code, end the reviewer's run after each reply and
+resume it only for the next message, so the reviewer has no idle time of its own.
+In those harnesses the author assigns bounded idle work from this list when it
 acknowledges a review result and expects no request soon, naming the item and
 its scope. The reviewer stops that work at the next inbound message and reports
 only actionable results.
 
 Keep idle-time probes, fixtures, and build outputs in the reviewer's session
 verification environment; never add them to the author's tree. Prefer lightweight
-scripts and targeted tests, building only when a probe requires it. Reviewer probes remain independent evidence
-rather than the author's test suite. Suggest a probe worth retaining as a
+scripts and targeted tests, building only when a probe requires it. Reviewer probes stay independent evidence
+and do not become part of the author's test suite. Suggest a probe worth retaining as a
 regression test in a finding or review result; the author decides whether to adopt
 and write it.
 

@@ -70,7 +70,7 @@ its findings raise to the user through the dialog.
 - **The user's thinking time:** before asking a round, assign the reviewer
   bounded idle work for the wait, such as reading sources for the next branch,
   checking the draft's claims or preparing counterexamples to your leading
-  recommendations. A dialog may block you, but not the reviewer.
+  recommendations, so the reviewer keeps working while a dialog blocks you.
 
 Implementation keeps the same discipline: every script thread runs under
 `keep-me-in-the-loop`, which brings its own continuous reviewer.
@@ -87,7 +87,7 @@ asking for the rest:
   run records and incident notes; decision records; the Git history of the
   affected area; issues; and status documents. Read earlier agent sessions'
   transcripts when they are accessible and relevant. Fan wide reading out to
-  subagents and keep their conclusions, not their dumps.
+  subagents and keep only their conclusions.
 - Inventory the present: live resources, what they cost, what can't be
   replaced, and work in flight in other sessions or worktrees.
 - Draft what you believe, with sources, marking what you inferred.
@@ -179,7 +179,7 @@ able to resume the interview from the draft alone.
 Grill breadth-first across the whole space, then deepen each branch: the north
 star and the first useful result; hard constraints, ranked preferences and
 later work; what is out of scope; milestones and their gates; the decisions;
-the key uncertainties and their spikes; and the triggers for reassessment.
+the main uncertainties and their spikes; and the triggers for reassessment.
 
 Write it from [assets/plan-template.md](assets/plan-template.md), adapted to
 the project. Err toward verbosity: the plan is the context store that the
@@ -264,9 +264,9 @@ threads.
 Group roadmap steps into threads:
 
 - A thread is one `keep-me-in-the-loop` invocation and one approval, sized to
-  its substantial phase of about 2–4 chunks, which run in order. Front-load the
-  thread's decisions, authority and spending to that approval so it can run to
-  the end.
+  its substantial phase of about 2 to 4 chunks, which run in order. Front-load
+  the thread's decisions, authority and spending to that approval so it can run
+  to the end.
 - Cut where the user must decide; where a live resource's life begins and ends,
   so it is brought up, used fully and torn down rather than left idle between
   threads; at external dates such as lease ends, quota windows and the user's
@@ -354,10 +354,10 @@ Revise the affected tier and propagate downward when a thread ends with
 deviations, a parallel session changes a dependency, a gate fails or a decision
 changes. Keep the decision history in the plan, update the roadmap's steps, and
 re-derive the script's dependencies, ready threads and human interventions,
-with a dated entry in its revision log. Return to the
-user with a grilling round when outcomes, scope, priorities, acceptance
-criteria or spending change; propose routine re-sequencing within confirmed
-decisions directly. Never weaken a gate silently to finish.
+with a dated entry in its revision log. Return to the user with a grilling
+round when outcomes, scope, priorities, acceptance criteria or spending change;
+propose routine re-sequencing within confirmed decisions directly. Never weaken
+a gate silently to finish.
 
 ## Hand off each tier
 

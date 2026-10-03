@@ -45,7 +45,7 @@ workflow, or delegate another peer review.
    summary of relevant prior decisions, constraints, and evidence references.
    Reuse the session for discussion and repair verification within this campaign;
    explain that continuity with `--reuse-reason`. If the session is unavailable,
-   start new with the artifact and compact ledger, preserving the old entry.
+   start a new one with the artifact and compact ledger, preserving the old entry.
    Authentication or execution failures alone do not justify a new session.
 6. Use `turn --new` for discovery of a new campaign and `turn --session-id ID`
    for its follow-ups. Pass `--stage discovery`, `--stage discussion`, or
@@ -62,25 +62,25 @@ workflow, or delegate another peer review.
    facilitator and provider session. Follow the repair loop below until both
    the main agent and reviewer agree there are no outstanding findings.
 
-## Review Rounds
+## Review rounds
 
 Before dispatch, read [the shared review protocol](references/review-protocol.md)
 and give it to the facilitator. It governs discovery coverage, repair
 proposals and facilitator challenges, agreed criteria, focused follow-up review,
 finding classification, immediate discussion of implementation-discovered design
-conflicts, per-criterion repair evidence, and design reassessment
-after two incomplete repair reviews, reliable execution of long provider turns,
-and explicit closure accounting. Include
-its applicable instructions in provider prompts; do not assume the external
-reviewer has loaded this skill or can access the reference.
+conflicts, per-criterion repair evidence, design reassessment after two
+incomplete repair reviews, reliable execution of long provider turns, and
+explicit closure accounting. Include its applicable instructions in provider
+prompts; do not assume the external reviewer has loaded this skill or can access
+the reference.
 
 Start with a complete independent discovery pass and reconcile the batch of
 findings. The facilitator may return an agreed record without another call to
-restate it. That completes a review round, not proof that accepted fixes were
-implemented or verified. Preserve accepted, rejected, and unresolved dispositions
+restate it. That completes a review round; it does not show that accepted fixes
+were implemented or verified. Preserve accepted, rejected, and unresolved dispositions
 separately from implementation and reviewer closure.
 
-## Repair Loop and Completion
+## Repair loop and completion
 
 After each review round:
 
@@ -95,8 +95,9 @@ After each review round:
    behavior against each agreed closure criterion, recording expected and observed
    results and limits. If implementation exposes a design conflict, return the
    counterexample and amendment through the facilitator before implementing the
-   replacement design. Repair failures within the agreed design before resubmitting. For a plan,
-   revise and validate the plan rather than implementing the planned project.
+   replacement design. Repair failures within the agreed design before
+   resubmitting. For a plan, revise and validate the plan rather than
+   implementing the planned project.
 3. Resubmit the current artifact for independent inspection, with the original
    review scope, a diff or exact revised content, a per-finding account of
    changes, verification results and limits, and any newly discovered issues.
@@ -137,7 +138,7 @@ verification limits, identifies the final review session/turn and artifact,
 and lists any blockers if incomplete. Do not claim runtime verification from
 review agreement alone.
 
-## Provider Turns
+## Provider turns
 
 The helper defaults to GPT-6 Astra (`gpt-6-astra`) with `medium` reasoning
 effort for Codex and Opus 5.5 (`claude-opus-5-5`) with `high` effort for Claude
@@ -151,10 +152,11 @@ If it only references a plan or promises future work, request a self-contained
 record in the same session before accepting the review.
 
 Resolve this skill directory before invoking the helper. Its `scripts` directory
-links to `../peer-review/scripts`, sharing the implementation, regression tests,
-and registry with peer-review. Its `references` directory likewise links to
-`../peer-review/references`, keeping the review protocol identical. Install both
-sibling skill directories together; no registry migration or copy is needed.
+links to `../peer-review/scripts`, so it shares the implementation, regression
+tests, and registry with peer-review. Its `references` directory links to
+`../peer-review/references`, so both skills use the same review protocol.
+Install both sibling skill directories together; no registry migration or copy
+is needed.
 Typical commands:
 
 ```bash
@@ -196,12 +198,14 @@ are locked; provider calls run outside the lock.
 
 The registry also stores compact per-turn records: status, timing, model/effort,
 artifact revision, session selection, stage, and failure type. Successful output
-also includes these metrics, including elapsed seconds and available provider
-usage with explicit scope and valid baseline deltas. Never sum cumulative
-usage snapshots. Missing provider metrics are null, not zero; see the shared protocol. It does not store prompt,
-response, or error bodies. Use `--artifact-revision` for an external artifact or
-an identifiable working-tree snapshot; the default Git HEAD plus `+dirty` marker
-is only a checkout hint, not an exact snapshot. Failed calls are recorded but do
+also reports these metrics, among them elapsed seconds and available provider
+usage with explicit scope and valid baseline deltas. Never sum cumulative usage
+snapshots. Missing provider metrics are null, not zero; see the shared protocol.
+The registry does not store prompt, response, or error bodies.
+
+Use `--artifact-revision` for an external artifact or an identifiable
+working-tree snapshot; the default Git HEAD plus `+dirty` marker is only a
+checkout hint, not an exact snapshot. Failed calls are recorded but do
 not create successful session entries. Interrupted processes may leave no record.
 
 Summarize recorded timing without invoking a provider or changing the registry:
@@ -237,7 +241,7 @@ closure. Missing counts mean unrecorded, not zero.
 For helper changes, run `mise exec -- python -B -m unittest discover -s
 scripts -p 'test_*.py'` from this skill directory, then skill-creator validation.
 
-## Facilitator Prompt
+## Facilitator prompt
 
 Give the subagent a prompt with this structure:
 

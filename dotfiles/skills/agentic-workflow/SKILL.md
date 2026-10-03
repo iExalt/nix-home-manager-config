@@ -10,7 +10,7 @@ Facilitate the human decisions in the
 outcomes and tradeoffs; the agent investigates technical options and owns routine
 execution. Finish with a concise decision record and a concrete next step.
 
-The primer is a human companion, not another instruction file. For a Home Manager
+The primer is written for humans; do not treat it as another instruction file. For a Home Manager
 installation, resolve this `SKILL.md` through its symlinks before following the
 relative link. Read its main body for context; consult appendices only when useful.
 If the skill was copied without the primer, the workflow below is self-contained.
@@ -24,7 +24,7 @@ the dialog.
 
 - Prefer `request_user_input_async` when available. Otherwise use
   `request_user_input` only when the current mode permits it. An equivalent
-  native dialog tool, such as `AskUserQuestion`, is suitable when actually exposed.
+  native dialog tool, such as `AskUserQuestion`, is suitable when the harness exposes it.
   Follow the live tool schema and its restrictions, including any limits on
   permission requests. Do not claim to switch modes or invent a tool call.
 - Ask one consequential question at a time by default; bundle up to three closely
@@ -85,7 +85,7 @@ Use a permitted dialog tool if authorization is needed; do not use a tool that
 forbids permission requests for that purpose.
 
 Treat a falsified assumption or identified missing capability as a valid discovery
-result. Record what actually ran and what remains unproven. A toy or stubbed probe
+result. Record what ran and what remains unproven. A toy or stubbed probe
 must disclose the production conditions it bypasses. Do not expand the spike
 into a reusable subsystem to make it pass, or use it to replace required final
 correctness or statistical validation.
@@ -101,13 +101,13 @@ Keep later milestones coarse. Specify the next item's behavior, dependencies,
 acceptance check, exclusions, and conditions for reconsideration. Optional ideas
 enter the backlog unless the user chooses to change their priority. If an
 expensive or ambiguous choice warrants independent review, scope that review to
-the route decision and use delegation only when authorized; it is not a mandatory
-extra layer for every item.
+the route decision and use delegation only when authorized. Do not require
+independent review for every item.
 
 ### 4. Hand off autonomous execution
 
 Return a compact decision record: outcome, first deliverable, constraints and
-priorities, scope and authorization, key uncertainty, probe/evidence, route,
+priorities, scope and authorization, main uncertainty, probe/evidence, route,
 next item and acceptance check, and reconsideration triggers. Distinguish
 proposed work from executed and verified results. Use the conversation or an
 existing project document; create a new document only when requested or needed.
@@ -119,8 +119,8 @@ a final confirmation just because this interview has ended. When the request is
 planning only, finish with the next action and its boundary instead of silently
 starting a campaign.
 
-Ask for progress in terms of capabilities and uncertainties as well as checklist
-items: what can the user now run, observe, or decide, and what remains? Routine
+Ask for progress reported as capabilities and uncertainties as well as checklist
+items: what the user can now run, observe, or decide, and what remains. Routine
 technical proposals, reviews, tests, and repairs stay within the agent team.
 
 ### 5. Reassess when evidence changes
