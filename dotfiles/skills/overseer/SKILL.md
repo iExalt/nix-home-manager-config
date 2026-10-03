@@ -287,21 +287,61 @@ When a request for a human comes due, whether planned or raised by a worker:
 2. Otherwise ask the user. Say which thread it is for, the context and
    tradeoffs, what waits on the answer, and by when. Batch requests that come
    due together.
-3. Ask asynchronously, and keep the plan moving until it is blocked on the
-   answer. Use an async input dialog, such as `request_user_input_async`, when
-   one is available. When the only dialog blocks your session, as Claude
-   Code's `AskUserQuestion` does, send the request as a message that leads
-   with it, with a push notification if you have one. Open the blocking
-   dialog only when nothing useful remains that doesn't depend on the answer.
-   Meanwhile, launch ready workers, relay other requests, and let the asking
-   worker continue its independent work.
+3. Ask through an async dialog, and keep the plan moving until it is blocked
+   on the answer. When your harness has a native async input dialog, such as
+   Codex's `request_user_input_async`, use it. When your only dialog blocks
+   your session, as Claude Code's `AskUserQuestion` does, launch a question
+   session to ask for you, as "Ask through a question session" describes.
+   Put every decision in a dialog. For an action, such as minting a token,
+   send the steps as a message and ask for confirmation in the dialog. Send a
+   push notification with each request when you have the tool. Meanwhile,
+   launch ready workers, relay other requests, and let the asking worker
+   continue its independent work.
 4. Relay the answer to the worker, quoting the user.
+
+Answer a question from the user before anything else. When they ask whether
+you can do something, such as ask asynchronously, say what your harness
+allows and what it lacks.
 
 A worker's message is the worker's, never the user's approval. Never ask a
 worker to do something that your session's permissions or the user denied.
 Approve a pending permission request, as Paseo's `respond_to_permission`
 allows, only for a class of action the user authorized for that thread;
-otherwise relay it.
+otherwise relay it. A pending request of kind `question` is a dialog for the
+user, whether a question session or a worker raised it; never answer it.
+
+### Ask through a question session
+
+A question session is a short-lived session whose only job is to put one
+dialog to the user and carry the answer back. It blocks while the user
+decides, and you keep working. Name it `Question: <topic>`.
+
+- **Launch** it like a worker, but light: a fast model, your permission mode
+  and no worktree.
+  - In Paseo, give it a local workspace on the checkout and clear its
+    `paseo.parent-agent-id` label, as "Paseo" describes for workers, so the
+    user sees it as a thread of its own. Paseo flags it as needing the user
+    when its dialog opens.
+  - In Claude Code, launch it from the main checkout with
+    `claude --bg -n "Question: <topic>" --permission-mode <your mode> "<prompt>"`.
+    `claude agents` shows it as waiting for input, and the user answers with
+    `claude attach <id>`, so put that command in your push notification.
+- **Prompt** it with the finished dialog: each question, its options with
+  their consequences, and your recommendation. It calls `AskUserQuestion`
+  with exactly those, does nothing else, and sends you the answer verbatim,
+  with any notes the user typed. Put questions that come due together in one
+  session; its dialog takes up to four.
+- **Archive** it once its answer arrives. In Paseo, it archives itself: its
+  last action is `archive_workspace` on its own workspace, which archives the
+  session with it. Paseo can reopen an archived session that the user is
+  viewing, so check it with `get_agent_status` and call `archive_agent` if it
+  is still active. In Claude Code, a session can't remove itself; run
+  `claude stop <id>`, then `claude rm <id>`. If the user answers some other
+  way, archive the question session yourself.
+- **Fallback:** if a question session can't be launched or its dialog never
+  appears, send the request as a message that leads with it, with a push
+  notification, and open your own blocking dialog only when nothing useful
+  remains that doesn't depend on the answer.
 
 ## Keep the user in the loop
 
@@ -335,8 +375,8 @@ alone, and end with the roll call:
 Threads: 1 done · 2 chunk 3/3 · 3 chunk 1/2 · 4 waiting on 2
 ```
 
-A request for the user is its own message, not a line in a status update. Lead
-with what you need, as "Relay human interventions" describes.
+A request for the user goes in a dialog of its own, as "Relay human
+interventions" describes, never in a status update.
 
 Stay silent between updates. When you must end a turn to wait, close it with
 one short line naming what you await, once per wait. Worker messages, idle
