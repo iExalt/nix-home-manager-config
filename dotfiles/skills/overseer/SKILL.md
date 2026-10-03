@@ -32,9 +32,10 @@ in a new worker after a crash. Never let two workers run the same thread at
 once. Never implement a thread yourself, and never hand one to a native
 subagent, such as one from Claude Code's Agent tool or a Codex spawned agent.
 A native subagent shares your session's lifetime and context budget; a worker
-needs a session of its own. Paseo calls the agents its `create_agent` tool
-launches subagents, but each is a full session with its own conversation, so
-they can serve as workers. The continuous reviewer that a worker starts inside its own
+needs a session of its own. Paseo files the agents its `create_agent` tool
+launches as your subagents, but each is a full session with its own
+conversation, so it can serve as a worker once you detach it into a thread of
+its own, as "Paseo" describes. The continuous reviewer that a worker starts inside its own
 session is part of that worker's job.
 
 Keep a checklist of the threads you oversee, each with its worker and state:
@@ -138,10 +139,15 @@ When you are running in Paseo with its built-in tools (`create_agent`,
   with `create_workspace`, branching off the remote main branch, such as
   `origin/main` rather than the local `main`, and name it after the worker.
   Use the repository's `paseo.json` setup for ignored files when it provides
-  them.
+  them. A lone worker in the main checkout still gets a workspace of its own:
+  `create_workspace` with local isolation, the checkout's path and its
+  project's `projectId`. Never launch a worker into your own workspace.
 - **Launch:** call `create_agent` with the worker's `workspaceId` and the
   brief as its initial prompt, and name it with `update_agent` if the launch
-  can't. Choose the provider and model as Paseo's guidance says: the profile
+  can't. Paseo labels the new agent with `paseo.parent-agent-id` and shows it
+  as your subagent; right after the launch, call `update_agent` with
+  `labels: {"paseo.parent-agent-id": ""}` so it appears as a top-level thread
+  in its project. You still get its finish notifications. Choose the provider and model as Paseo's guidance says: the profile
   the user named, or the one from `list_profiles` whose notes fit
   implementation, otherwise your own provider. Name yourself with
   `update_agent` too.
