@@ -130,7 +130,9 @@ silently weaken acceptance criteria or treat sunk effort as a reason to continue
 ## Update at increment outcomes
 
 The user follows outcomes, not activity. This skill overrides default guidance
-to announce actions before tool calls or narrate work as it happens. Between the
+to announce actions before tool calls or narrate work as it happens. Do not write
+lines that announce your next step, such as `Now the status document.` or
+`Publishing A3a-2.`; let tool calls proceed without commentary. Between the
 phase proposal and chunk reports, send an update only when:
 
 - a chunk's increment design is agreed and implementation starts;
@@ -143,12 +145,15 @@ Check each reviewer message against these events when it arrives, including one
 queued during a tool loop; report a qualifying event at the next tool boundary
 rather than folding it into later work.
 
-Write each update as one status line: the chunk, accepted increments out of those
-planned, then what is now true and what follows. For example:
+Write each update as one sentence after the status prefix: the chunk, accepted
+increments out of those planned, then what is now true and what follows. Move
+anything longer into the chunk report. For example:
 `Chunk A · 0/4 — design agreed; A1, mini's inventory, first.` or
 `Chunk B · 3/5 accepted — Ceph pools are now selected by node label; B4 next.`
-State the outcome and why it matters, not the work that produced it. Omit routine
-fixes, retries, lint, commit mechanics, review handoffs, and test counts; carry
+State the outcome and why it matters, not the work that produced it. Work sent to
+the reviewer, awaiting sign-off, or returned with fixes is not an outcome; report
+the acceptance or finding when it arrives. Omit routine fixes, retries, lint,
+commit mechanics, review handoffs, and test counts; carry
 consequential details into the chunk report. Combine checklist changes with an
 update rather than announcing them separately.
 
@@ -162,8 +167,17 @@ is costly because a turn almost always ends with text.
 
 Stay silent between these events, including during long implementation stretches
 and waits. When a monitor event, completion notification, or silent-turn reminder
-wakes you without one of these events, continue or end the turn without text.
-Never repeat or paraphrase an earlier update to fill a turn.
+wakes you without one of these events, continue without text. Never repeat or
+paraphrase an earlier update to fill a turn.
+
+Some harnesses force a visible reply when a turn ends without text; Claude Code
+does. Avoid ending turns with nothing to say. Wait for an external process or
+live operation inside a bounded blocking check that returns on its next qualifying
+event or a timeout within the tool's limit, rather than ending the turn and being
+woken. Reviewer and user replies arrive only between turns, so continue
+independent work while they are pending. When a turn must end to await one with
+nothing new to report, close it with one short line naming what you await, such
+as `Waiting on the reviewer for C3.`, and write it once per wait.
 
 ## Report for quick reading
 
