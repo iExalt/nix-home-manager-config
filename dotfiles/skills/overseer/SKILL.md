@@ -34,7 +34,7 @@ subagent, such as one from Claude Code's Agent tool or a Codex spawned agent.
 A native subagent shares your session's lifetime and context budget; a worker
 needs a session of its own. Paseo calls the agents its `create_agent` tool
 launches subagents, but each is a full session with its own conversation, so
-they qualify. The continuous reviewer that a worker starts inside its own
+they can serve as workers. The continuous reviewer that a worker starts inside its own
 session is part of that worker's job.
 
 Keep a checklist of the threads you oversee, each with its worker and state:
@@ -84,8 +84,8 @@ re-sequencing, waits until they do.
 ## Time each request for a human
 
 Ask for every intervention asynchronously, as "Relay human interventions"
-describes, and keep the plan moving until it is blocked on the answer. What
-differs is when you ask:
+describes, and keep the plan moving until it is blocked on the answer. The
+three kinds differ only in when you ask:
 
 - **Planned, any time:** the user can act whenever they like, such as creating
   a token or an OAuth client, settling a decision, provisioning access,
@@ -110,13 +110,11 @@ Keep the name the user gave you at launch, such as
 `claude --bg -n "Overseer: <task>"`. Otherwise, where you can't rename your
 own session, as in Claude Code, ask the user to rename it (Claude Code's
 `/rename`) as a planned any-time item. Send running workers your new address
-if it changes. Where a harness has no session names,
-as with `codex exec`, keep the worker's name beside its session ID in your
-checklist.
+if it changes. Where a harness has no session names, as with `codex exec`,
+keep the worker's name beside its session ID in your checklist.
 
-Give each worker its own worktree. It is the recommended default, though not
-a rule: a lone worker may use the main checkout when nothing else runs there.
-Outside Paseo, reuse the sibling convention from `continuous-peer-review`: a
+By default, give each worker its own worktree. A lone worker may use the main
+checkout when nothing else runs there. Outside Paseo, reuse the sibling convention from `continuous-peer-review`: a
 worktree at `../<repo>-worker-<slug>/` on branch `worker/<slug>`, created from
 the freshly fetched remote main branch with
 `git worktree add ../<repo>-worker-<slug> -b worker/<slug> origin/main`. Keep
@@ -303,8 +301,8 @@ otherwise relay it.
 
 The user isn't watching. They want to know where things stand when they look,
 not a play-by-play. Keep them in the loop with status updates that are short,
-high-signal and readable on their own after hours away; with several workers
-running at once, that matters most. This follows `keep-me-in-the-loop`'s
+high-signal and readable on their own after hours away. With several workers
+running at once, one update has to say where each thread stands. This follows `keep-me-in-the-loop`'s
 reporting discipline at the level of the whole run.
 
 Send a status update when:
@@ -350,5 +348,5 @@ session with `claude rm`, or end its Codex session, only after its work is
 pushed and verified. Inspect a worktree before removing it, and force a
 removal only when nothing in it is work, such as a file a Git filter
 normalized. Delete a `worker/<slug>` branch once its commits are on the
-remote main branch. Say what you removed in the final report. Never discard unpushed
-commits or uncommitted changes without asking the user.
+remote main branch. Say what you removed in the final report. Never discard
+unpushed commits or uncommitted changes without asking the user.
