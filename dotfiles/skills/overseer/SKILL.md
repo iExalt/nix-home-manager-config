@@ -130,6 +130,21 @@ Use the first mechanism that applies, and name it in the opening message.
 Outside Paseo, launch workers in your own harness, so that messages travel
 natively.
 
+Never deliver a message by interrupting a running session. An interrupt
+cancels the tool call in flight, which may be a live operation, and in Claude
+Code it also stops the session's background subagents for good, including a
+worker's continuous reviewer. Message a session through the receiver's own
+harness, which delivers without interrupting:
+
+- **To a Claude Code session:** `SendMessage` from another Claude Code
+  session, addressed by the peer name `ListAgents` shows. It arrives after
+  the receiver's current tool call.
+- **To a Codex session:** `codex queue --thread <session ID or name> --message <text>`
+  from any shell. The session runs it as its next turn once the current turn
+  ends.
+- **From a Codex session to a Claude Code one:** there is no such channel.
+  The sender ends its turn with its message, as "Codex" describes.
+
 ### Paseo
 
 When you are running in Paseo with its built-in tools (`create_agent`,
@@ -151,9 +166,16 @@ When you are running in Paseo with its built-in tools (`create_agent`,
   the user named, or the one from `list_profiles` whose notes fit
   implementation, otherwise your own provider. Name yourself with
   `update_agent` too.
-- **Address:** your agent ID, from `$PASEO_AGENT_ID` in your shell or from
-  `list_agents`. Workers message you with `send_agent_prompt`, and you reach
-  them the same way.
+- **Address:** `send_agent_prompt` interrupts a running agent, so use it
+  only to start an agent that `get_agent_status` shows idle. Otherwise
+  message as above. A Claude agent is a Claude Code peer session: give
+  workers the peer name `ListAgents` reports for you, and take each worker's
+  peer name from the `from` attribute of its acknowledgement. A Codex agent's
+  session ID is `persistence.metadata.threadId` in `get_agent_status`.
+  Workers reach you the same way. A Codex worker reporting to a Claude
+  overseer ends its turn with its message; Paseo's finish notification
+  brings it to you without interrupting, and you answer with
+  `send_agent_prompt` once it is idle.
 - **Watch:** Paseo notifies you when a worker finishes a run. At decision
   points, read `get_agent_status` and `get_agent_activity`, and check
   `list_pending_permissions` for a worker stuck on a permission request.
@@ -192,10 +214,12 @@ and approval policy the user authorized, and resume it with
 `codex exec resume <session> "<message>"`. Exec mode can't answer an approval
 prompt, so a policy that asks for approval blocks the worker.
 
-`codex queue --thread <session> --message <text>` queues a message for an
-existing session. When a worker has no way to message you, its final message
-is the channel: it ends its turn with the request once its independent work
-is done, and you resume it with the answer.
+A Codex overseer's workers reach it with `codex queue` on its session. A
+`codex exec` worker exits when its turn ends, so a message queued for it sits
+in its history unanswered; reply to an exec worker by resuming it instead.
+When a worker has no way to message you, its final message is the channel:
+it ends its turn with the request once its independent work is done, and you
+resume it with the answer.
 
 ### Elsewhere
 
@@ -242,7 +266,8 @@ filled in for the worker:
   for example by rebasing onto the remote main branch and pushing, and
   reconcile shared documents without overwriting another thread's entries.
 - Don't launch other workers. Your continuous reviewer is part of your own
-  work.
+  work. If it stops when neither you nor the user stopped it, tell the
+  overseer at once.
 - When the phase is complete, mark the thread done in the script, record any
   deviation, tell the overseer, and stop.
 
@@ -328,8 +353,8 @@ decides, and you keep working. Name it `Question: <topic>`.
     `claude attach <id>`, so put that command in your push notification.
 - **Prompt** it with the finished dialog: each question, its options with
   their consequences, and your recommendation. It calls `AskUserQuestion`
-  with exactly those, does nothing else, and sends you the answer verbatim,
-  with any notes the user typed. Put questions that come due together in one
+  with exactly those, does nothing else, and sends you the answer verbatim
+  with `SendMessage`, with any notes the user typed. Put questions that come due together in one
   session; its dialog takes up to four.
 - **Archive** it once its answer arrives. In Paseo, it archives itself: its
   last action is `archive_workspace` on its own workspace, which archives the
