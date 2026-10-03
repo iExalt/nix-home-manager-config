@@ -448,9 +448,18 @@ normalized. Delete a `worker/<slug>` branch once its commits are on the
 remote main branch. Say what you removed in the final report. Never discard
 unpushed commits or uncommitted changes without asking the user.
 
-When every thread in a Paseo run project is done and cleaned up, delete the
-project with `paseo project delete <project-id>`. That only unregisters the
-project and its workspaces; it leaves their worktrees, directories and
-branches in place. Remove those as above: each worker's worktree under
-`~/.paseo/worktrees/`, then the run checkout and its `overseer/<slug>`
-branch.
+A Paseo run project is the exception: leave its workers' agents, workspaces
+and worktrees in place until the run's goal is complete, so the user can look
+through the threads. After the final report, ask the user in a blocking
+dialog, such as `AskUserQuestion`, whether to clean up the run project; with
+nothing left to run, the dialog blocks nothing. Name what cleanup would
+remove and anything unpushed it would keep.
+
+- **Clean up:** archive each worker's agent and workspace, then delete the
+  project with `paseo project delete <project-id>`. That only unregisters the
+  project and its workspaces; it leaves their worktrees, directories and
+  branches in place. Remove those as above: each worker's worktree under
+  `~/.paseo/worktrees/`, then the run checkout and its `overseer/<slug>`
+  branch. Then say what you removed.
+- **Keep:** leave it all, and tell the user the project ID and the commands
+  that would remove it later.
