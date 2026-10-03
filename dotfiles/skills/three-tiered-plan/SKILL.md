@@ -1,6 +1,6 @@
 ---
 name: three-tiered-plan
-description: "Grill the user about a campaign that will span days or weeks, then write and maintain, with a continuous peer reviewer, three planning documents: a verbose, history-grounded plan (what and why), a concise roadmap of steps with proofs (how), and a script of literal keep-me-in-the-loop threads to open in order. Use when starting or re-planning such a campaign, or when deriving or revising its roadmap or script; not for work one session can hold (use agentic-workflow) or for executing a script thread (use keep-me-in-the-loop)."
+description: "Grill the user about a campaign that will span days or weeks, then write and maintain, with a continuous peer reviewer, three planning documents: a verbose, history-grounded plan (what and why), a concise roadmap of steps with proofs (how), and a script of literal keep-me-in-the-loop threads with explicit dependencies and human interventions. Use when starting or re-planning such a campaign, or when deriving or revising its roadmap or script; not for work one session can hold (use agentic-workflow) or for executing a script thread (use keep-me-in-the-loop)."
 ---
 
 # Three-Tiered Plan
@@ -11,8 +11,8 @@ documents, each more concise and more literal than the last:
 | Tier | Answers | Shape |
 | --- | --- | --- |
 | **Plan** | What and why: north star, scope, exclusions, decisions, history, milestones and gates | Verbose; history and rationale are the point |
-| **Roadmap** | How: ordered steps, what proves each, which plan boxes each ticks | A fraction of the plan |
-| **Script** | Which implementation threads to open, in order, with what prompt | A page or two; literal |
+| **Roadmap** | How: steps, what each needs, what proves it, which plan boxes it ticks, where a human acts | A fraction of the plan |
+| **Script** | Which implementation threads to open, with what prompt, after what, and when a human is needed | A page or two; literal |
 
 Grill each tier out of the user, then write it with a continuous reviewer and
 confirm it before deriving the next. The user owns outcomes, scope and
@@ -63,9 +63,10 @@ its findings raise to the user through the dialog.
   recommendations. Brief agreement suffices for a routine round.
 - **Drafts:** hand over each drafted section as a stable snapshot. The reviewer
   checks fidelity to the user's recorded answers, internal consistency,
-  coverage of the tier above, evaluable gates and unstated assumptions.
-- **Script:** shape the thread boundaries with the reviewer before the user sees
-  them, as `keep-me-in-the-loop` does for chunk plans.
+  coverage of the tier above, evaluable gates, unstated assumptions, missing
+  dependencies and human actions left unmarked.
+- **Script:** shape the thread boundaries and dependencies with the reviewer
+  before the user sees them, as `keep-me-in-the-loop` does for chunk plans.
 - **The user's thinking time:** before asking a round, assign the reviewer
   bounded idle work for the wait, such as reading sources for the next branch,
   checking the draft's claims or preparing counterexamples to your leading
@@ -196,34 +197,63 @@ history cites its sources.
 Derive the roadmap from the confirmed plan and the current state; the plan's
 own status may be stale. Grill only what the plan leaves open about how:
 ordering tradeoffs, grouping steps across milestones, live-resource lifetimes
-and budgets, and which decisions agents must stop for. Often that is nothing.
+and budgets, and which human interventions can be settled now.
 
 Write it from [assets/roadmap-template.md](assets/roadmap-template.md):
 
 - A **step** is one unit of agent work: a few commits ending in its proof.
-  Order steps by dependency and evidence production, spikes before the work
-  they de-risk. Group steps from different milestones when that improves flow,
-  such as steps that share one live environment.
-- Each step states what changes, its **Proof** (offline, or live with named
-  resources and a retained record) and its **Ticks** (the plan's boxes and
-  items it closes). Agents tick a step and its plan boxes in the same commit.
+  List steps in a workable order, spikes before the work they de-risk. Group
+  steps from different milestones when that improves flow, such as steps that
+  share one live environment.
+- Each step states what changes, its **Needs**, its **Proof** (offline, or live
+  with named resources and a retained record) and its **Ticks** (the plan's
+  boxes and items it closes). Agents tick a step and its plan boxes in the same
+  commit.
+- **Needs** names the steps, gates or decisions the step depends on, or
+  "nothing". It is the constraint; list order is only a suggestion. The script
+  derives which threads can run in parallel from it, so never leave a
+  dependency implied by the order.
 - Lead with a progress table, a table of the live runs where time and money go,
   and a point-form summary per phase whose bullets cite step numbers and end
-  with the phase's gate. End with the decisions agents will stop for.
+  with the phase's gate. End with every human intervention.
 
 Check coverage both ways: every open plan box and item maps to a step, and
-every step ticks something or says what it enables. Fix gaps rather than
-listing them. Keep steps beyond the current evidence coarse and marked
-provisional instead of inventing detail. Surface what the roadmap had to add
-that the plan doesn't say, such as an ordering hazard, a check that works
-before any host exists or a cost above budget, and fold any resulting decision
-back into the plan.
+every step ticks something or says what it enables. Check that the Needs graph
+has no cycle. Fix gaps rather than listing them. Keep steps beyond the current
+evidence coarse and marked provisional instead of inventing detail. Surface
+what the roadmap had to add that the plan doesn't say, such as an ordering
+hazard, a check that works before any host exists or a cost above budget, and
+fold any resulting decision back into the plan.
+
+### Make human interventions explicit
+
+Plan for implementation that runs away from the keyboard. Mark every point
+where a person must act:
+
+- a decision only the user can make;
+- access only they can grant, such as creating a token or an OAuth client;
+- presence, such as a browser login or being online at a set time;
+- a manual action, such as clicks in a web console;
+- approval of spending, a destructive operation or an external publication.
+
+Give each step that needs one a **Human** line naming the kind, what the user
+does and when: before the step starts, at its thread's approval, or at a named
+point mid-step, saying whether the step waits or continues around it. Never
+bury a human action in a step's prose. A step without a Human line runs
+without anyone once its thread is approved. Collect every intervention in the
+roadmap's closing table.
+
+Then grill the user to shrink that table: settle decisions now, provision
+access ahead of time, and move mid-step interventions to the thread's
+approval. Record each answer in the table; what remains is the planned human
+work.
 
 ## Tier 3: the script
 
-The script turns the roadmap into the implementation threads to open, in
-order, each with a literal opening prompt, so neither the user nor an
-orchestrating agent has to guess the next grouping.
+The script turns the roadmap into the implementation threads to open, each
+with a literal opening prompt, its dependencies and its human interventions,
+so neither the user nor an orchestrating agent has to guess the next grouping,
+what can run at once, or when a person is needed.
 
 Read the roadmap, the status document, `keep-me-in-the-loop`'s current
 instructions and the live state: resources that are up, leases and their
@@ -234,9 +264,9 @@ threads.
 Group roadmap steps into threads:
 
 - A thread is one `keep-me-in-the-loop` invocation and one approval, sized to
-  its substantial phase of about 2–4 chunks. Front-load the thread's decisions,
-  authority and spending to that approval so it can run to the end, and name
-  any expected mid-run return.
+  its substantial phase of about 2–4 chunks, which run in order. Front-load the
+  thread's decisions, authority and spending to that approval so it can run to
+  the end.
 - Cut where the user must decide; where a live resource's life begins and ends,
   so it is brought up, used fully and torn down rather than left idle between
   threads; at external dates such as lease ends, quota windows and the user's
@@ -248,21 +278,50 @@ Group roadmap steps into threads:
 - When a thread's work can't run inside the loop's own session, such as a final
   check that needs a fresh agent with only the docs, say how the loop session
   launches that agent, checks each attempt and fixes root causes between them.
-- Default to one sequence in one working tree. Name any safe parallel lane and
-  how it is isolated, such as a sibling worktree.
 - Put steps that fit no thread in a deferred list with the reason and trigger.
 
-Grill only what grouping needs from the user: their availability, tolerance for
-parallel sessions, spending pace, and whether to approve at a gate.
+### Order threads only by explicit dependencies
+
+Threads run in parallel unless the script says otherwise. Give every thread a
+**Depends on** entry, derived from its steps' Needs and the resources it
+shares, with the reason for each dependency:
+
+- **after** thread N: it needs that thread's outcome, which the entry names;
+- **not alongside** thread N: both use a live resource, a quota, a credential's
+  validity window, the user's attention, or files both edit heavily, so they
+  can run in either order but not at once;
+- **not before** a date or external event, such as a lease ending.
+
+Write "none: runs in parallel with any thread" when nothing applies. Check the
+graph for cycles, and draw it at the top of the script with its critical path.
+State how parallel threads stay isolated: each works in its own sibling
+worktree, rebases before every push, and reconciles shared documents (roadmap
+ticks, status, the script) without overwriting another thread's entries.
+
+### List each thread's human interventions
+
+Give every thread a **Human** entry, drawn from the roadmap's interventions
+and grouped by timing: before opening, at approval, mid-run at a named point
+(saying whether the thread pauses affected work or continues around it), and
+after. The approval is itself an intervention; list what it settles. Aim for
+nothing mid-run, and write "none after approval" when that holds so the user
+knows the thread runs away from the keyboard. Collect every intervention with
+a date, a time or a mid-run point into the script's "when a human is needed"
+list.
+
+Grill only what grouping needs from the user: their availability for the
+listed interventions, how many threads they will run at once, spending pace,
+and whether to approve at a gate.
 
 Write it from [assets/script-template.md](assets/script-template.md), covering
 every thread to the plan's final gate; threads past the current evidence stay
 coarse and provisional. Keep each opening prompt short and stable: invoke
-`keep-me-in-the-loop`, point at the thread's entry and roadmap steps rather
-than restating facts that will go stale, and end with the obligation to mark
-the thread done and record deviations that change later threads. When a status
-document exists, make its recommended next sequence point at the script's next
-threads instead of keeping a second sequence.
+`keep-me-in-the-loop`, point at the script's rules and the thread's entry
+rather than restating facts that will go stale, and end with the obligation to
+mark the thread done and record deviations that change other threads. When a
+status document exists, make its recommended next sequence point at the
+script's ready threads, those whose dependencies are met, instead of keeping a
+second sequence.
 
 ## Confirm each tier
 
@@ -294,7 +353,8 @@ instructions at the roadmap's tick rule when nothing does yet.
 Revise the affected tier and propagate downward when a thread ends with
 deviations, a parallel session changes a dependency, a gate fails or a decision
 changes. Keep the decision history in the plan, update the roadmap's steps, and
-re-sequence the script with a dated entry in its revision log. Return to the
+re-derive the script's dependencies, ready threads and human interventions,
+with a dated entry in its revision log. Return to the
 user with a grilling round when outcomes, scope, priorities, acceptance
 criteria or spending change; propose routine re-sequencing within confirmed
 decisions directly. Never weaken a gate silently to finish.
@@ -304,5 +364,5 @@ decisions directly. Never weaken a gate silently to finish.
 Begin with a one- or two-line **TL;DR**. Then give the document's path and
 publication state, how it is laid out, what it adds that the tier above
 doesn't say, the reviewer's closing position, which decisions remain open and
-who owns them, and the next action: the next tier, or the script's first
-thread and its prompt.
+who owns them, and the next action: the next tier, or the script's ready
+threads with their prompts and when a human is next needed.
