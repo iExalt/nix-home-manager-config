@@ -97,6 +97,10 @@ in
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/three-tiered-plan";
   home.file.".claude/skills/three-tiered-plan".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/three-tiered-plan";
+  home.file.".codex/skills/prose-fix".source =
+    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/prose-fix";
+  home.file.".claude/skills/prose-fix".source =
+    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/prose-fix";
   home.file.".vibe/config.toml".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/.vibe/config.toml";
   xdg.configFile."ccstatusline/settings.json".source =
