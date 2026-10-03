@@ -4,3 +4,5 @@ alias reload='source "${ZDOTDIR:-$HOME}/.zshrc"'
 alias gbd!="git branch -D"
 alias gdc="git diff --cached"
 alias glow="glow -p -w 120"
+# SSH through Tailscale's own name lookup, bypassing GlobalProtect's DNS.
+alias tssh="ssh -o ProxyCommand='tailscale nc %h %p'"
