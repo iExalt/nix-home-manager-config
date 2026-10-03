@@ -20,7 +20,7 @@ Reserve capacity for the lead and at least one pilot. Serialize rather than bypa
 this structure. If subagent tools or required capacity are unavailable, report the
 limitation; do not claim delegation or silently take over implementation.
 
-## Required Models and Routing
+## Required models and routing
 
 These requirements apply to all descendants, replacements, reviewers, and discovery
 workers unless the user explicitly authorizes an exception:
@@ -57,7 +57,7 @@ still send substantive results to the lead and keep automatic parent completion
 brief. Route accidental direct reports back without reviewing them; the lead
 corrects routing. If the route fails, report through the normal parent response.
 
-## Assign and Accept Work
+## Assign and accept work
 
 1. Inspect the workspace, instructions, relevant source, and existing changes.
    Establish the user's outcome and constraints, reusing settled decisions. Show a
@@ -88,14 +88,14 @@ corrects routing. If the route fails, report through the normal parent response.
    integration checks through the team and continue until the user's outcome is
    achieved or further authorized work is blocked.
 
-## Navigator Judgment and Escalation
+## Navigator judgment and escalation
 
 Own whether the team is doing the right work. Guide the lead through outcomes,
 priorities, constraints, and acceptance boundaries. At meaningful handoffs or
 route-changing events, judge whether the next prerequisite is necessary and sized
 appropriately, and whether implementation, verification, or preservation effort
-remains worthwhile. Accept, narrow, redirect, or stop as warranted; neither rubber
-stamping nor ritual disagreement is useful. Reuse route decisions when evidence
+remains worthwhile. Accept, narrow, redirect, or stop as warranted; do not rubber
+stamp or disagree by ritual. Reuse route decisions when evidence
 has not changed, accounting for switching costs.
 
 Set rigor proportional to the user's needs and consequences of failure. Challenge
@@ -103,8 +103,8 @@ both insufficient checks and effort that exceeds its value. Reviews must not
 silently expand acceptance requirements.
 
 Do not diagnose routine failures, inspect intermediate patches, prescribe repairs,
-or rerun delegated checks. Sending a navigator-derived fix through Sol still
-duplicates its work. Inspect implementation only for a specific escalation or
+or rerun delegated checks. Deriving a fix yourself and sending it through Sol
+still duplicates the lead's work. Inspect implementation only for a specific escalation or
 acceptance concern. While execution is delegated, independent navigator work is
 limited to the next item's contract or a named strategic/cross-item uncertainty
 that could change direction. Otherwise park.
@@ -129,7 +129,7 @@ user only for missing information/authority or changes to priorities, hard
 constraints, or substantial effort commitments; keep independent work moving.
 Agent approval cannot expand user authorization.
 
-## Pilot and Lead Discipline
+## Pilot and lead discipline
 
 Include these rules in pilot briefs; do not assume inherited context:
 
@@ -167,7 +167,7 @@ may make small factual documentation corrections after taking file ownership,
 without changing behavior or weakening claims. Preserve substantive code review
 and user-requested publication checkpoints.
 
-## Evidence and Time to Useful Results
+## Evidence and time to useful results
 
 Settle acceptance details that could invalidate the result before implementation:
 actual execution path, comparison baseline, workload, and integration boundary.
@@ -198,10 +198,11 @@ next item. Distinguish working prerequisites from delivered capabilities. Keep
 walkthroughs and raw logs in team context or working evidence; never omit failures
 or inflate partial results for brevity.
 
-## Dispatch, Then Park
+## Dispatch, then park
 
-This applies to navigator–lead and lead–pilot coordination. After dispatch and any
-permitted independent work, use completion notifications or the longest suitable
+The navigator follows these rules after dispatching to the lead, and the lead
+follows them after dispatching to pilots. After dispatch and any permitted
+independent work, use completion notifications or the longest suitable
 interruptible wait. This skill overrides **recommended** 60-second wait limits;
 respect mandatory tool limits and remain responsive to incoming events.
 
@@ -218,7 +219,7 @@ For external processes, prefer completion notifications. Otherwise designate one
 monitor, run handle, cadence, and stall/failure conditions; a monitoring subagent
 uses Luna low. Do not add an agent merely to watch the lead or duplicate monitoring.
 
-## User-Facing Updates
+## User-facing updates
 
 Periodic commentary is a non-goal. This skill overrides default or recommended
 commentary intervals, including 60 seconds. After the initial checklist, update
@@ -243,7 +244,7 @@ not require a reply under this skill. When a notification or reminder wakes you
 without an appropriate lead event, continue or end the turn without text. Never
 repeat or paraphrase an earlier update, or inspect workers, just to fill a message.
 
-## Documentation Footprint
+## Documentation footprint
 
 Use the existing project status/progress document and active implementation plan.
 Follow [maintain-project-status](../maintain-project-status/SKILL.md) when updating
@@ -264,7 +265,7 @@ approval stage. Rigorous verification does not require retaining every output.
 Keep handoffs/checkpoints in agent context by default; clean only task-owned
 disposable data within authorization.
 
-## Parallel Work, Continuity, and Publication
+## Parallel work, continuity, and publication
 
 - Overlap independent work only when it shortens delivery. Dependent work remains
   sequenced; independent checklist items need explicit navigator assignments.

@@ -28,7 +28,7 @@ in any conflict, the user's latest word.
 
 ## Summary
 
-<!-- The plan in one screen of point-form bullets: the north star, the shape of the solution, the key decisions. -->
+<!-- The plan in one screen of point-form bullets: the north star, the shape of the solution, the main decisions. -->
 
 ## 1. North star and scope
 

@@ -8,7 +8,7 @@ description: "Work as the implementation pilot in a user-guided pair-programming
 Act as the pilot who operates the tools and writes the code. Treat the user as
 the navigator who must understand, review, and steer the implementation.
 
-## Work Item Size
+## Work item size
 
 Treat a plan milestone as roadmap context, not one implementation assignment.
 Work on one component-level checklist item at a time. Group a few only when they
@@ -16,12 +16,12 @@ share a tightly coupled implementation boundary and a common acceptance check;
 sharing a milestone label is not enough. Split umbrella checkboxes with several
 independent outcomes or unresolved design decisions before implementation.
 
-Choose a reviewable behavior change or related compiler-error family rather
-than one approval per mechanical fix. Keep batching inside the approved item.
+Size each approval to a reviewable behavior change or a related compiler-error
+family, not to a single mechanical fix. Keep batching inside the approved item.
 If the boundary is unclear, investigate first and propose a bounded item; do
 not turn discovery into authority to implement the surrounding milestone.
 
-## Core Loop
+## Core loop
 
 1. Establish the goal, constraints, and completion criteria. Inspect the
    workspace and relevant source before choosing an implementation.
@@ -67,7 +67,7 @@ not turn discovery into authority to implement the surrounding milestone.
 
 Repeat this loop until the agreed task is complete.
 
-## Approval Rules
+## Approval rules
 
 - Accept clear approval such as "approved", "go ahead", or an unambiguous
   instruction to implement the proposed increment.
@@ -85,7 +85,7 @@ Repeat this loop until the agreed task is complete.
   approved proposal conflicts with them. Surface the conflict and renegotiate
   the increment.
 
-## Code Walkthrough
+## Code walkthrough
 
 Do more than summarize changed files. Teach and defend the implementation:
 
@@ -103,7 +103,7 @@ Do more than summarize changed files. Teach and defend the implementation:
 Keep the walkthrough proportional to the increment, but never replace it with a
 diffstat or terse bullet summary.
 
-## Verification and Continuity
+## Verification and continuity
 
 Record exact commands, outcomes, relevant revision or diff identity, and any
 configuration or environment needed to interpret the result. Link to long logs
@@ -125,7 +125,7 @@ item, accepted work, outstanding changes, active processes, verification evidenc
 and next decision. Resume from that checkpoint after checking current workspace
 state. A pause means stop productive work until directed to resume.
 
-## Pilot Judgment
+## Pilot judgment
 
 Do not follow guidance blindly. Challenge directions that create correctness,
 security, maintenance, or scope problems. Ground disagreements in source

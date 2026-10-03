@@ -1,4 +1,4 @@
-# Review Protocol
+# Review protocol
 
 Use this protocol in both peer-review and peer-review-loop. The invoking skill
 controls whether the main agent automatically repairs and repeats review.
@@ -21,17 +21,17 @@ as an implicit prerequisite for closing a finding.
 When a proposed remedy requires a consequential scope, supported-behavior, or
 verification-infrastructure decision, the facilitator returns that question to
 the main agent early, with evidence and bounded alternatives, before elaborating
-or negotiating the design. Send the question when discovered, rather than saving
-it for the final findings handoff; continue independent review where possible. The main
-agent decides within the user's authorized scope and asks the user only when
-necessary. Relay the decision to the reviewer for scrutiny; it does not override
+or negotiating the design. Send the question when discovered, rather than
+saving it for the final findings handoff; continue independent review where
+possible. The main agent decides within the user's authorized scope and asks the
+user only when necessary. Relay the decision to the reviewer for scrutiny; it does not override
 a valid finding. Batch other technical objections into the same discussion.
 
 Keep discovery complete but concise: one coverage record and actionable findings.
 Start with changed-path summaries and targeted symbol/line reads. Bound tool
 output; narrow a truncated read instead of dumping the whole file again. Reuse
-prior evidence by path, revision, and turn ID. Read unchanged code again only to
-resolve a concrete dependency or new question, stating why.
+prior evidence by path, revision, and turn ID. Reread unchanged code only to
+resolve a concrete dependency or new question, and state why.
 Follow-up responses give changed decisions, remaining questions, new evidence,
 and explicit open/closed IDs. Refer to unchanged designs by finding and turn ID
 instead of restating them. The facilitator maintains the full ledger and returns
@@ -44,7 +44,8 @@ Pass `--stage discovery|discussion|verification` on every helper turn. The helpe
 records start/end timestamps, monotonic elapsed seconds, model/effort, stage,
 and available numeric provider usage in the registry and returns metrics with
 successful responses. Use these records instead of hand-written timestamp files.
-The default `unspecified` stage exists for compatibility, not new invocations.
+The default `unspecified` stage exists only for compatibility; do not use it
+for new invocations.
 Usage fields have explicit scope: Claude reports call usage; Codex reports a
 session-cumulative snapshot in `usage`. Never sum cumulative snapshots.
 `usage_delta` is available for a new session or a valid consecutive recorded
@@ -116,8 +117,9 @@ challenges it before implementation. Relay substantive changes or objections
 back to the reviewer. The facilitator cannot accept on the main agent's behalf.
 Reviewer and facilitator remain read-only: suggested diffs go in their responses;
 the main agent owns application and tests. Design agreement is not fix closure.
-Use the existing three-discussion-round unresolved rule for stalled disagreement;
-the goal is fewer failed repairs and less total work, not an unbounded inner loop.
+Use the existing three-discussion-round unresolved rule for stalled disagreement.
+The inner dialogue exists to reduce failed repairs and total work, so keep it
+bounded.
 
 ## Agree on the repair's acceptance criteria
 
@@ -139,16 +141,18 @@ If discovery already specifies the bounded correction and sufficient criteria,
 the main agent can accept those without another call. Otherwise batch the proposed
 design, boundaries, and counterexamples into a pre-repair discussion in the
 same reviewer session, using the inner dialogue above. Do not label unconfirmed
-proposals "agreed" or defer agreement until review of the implemented repair. Simple fixes need no extra call.
+proposals "agreed" or defer agreement until review of the implemented repair.
+Simple fixes need no extra call.
 
 Counterexamples must exercise the invariant across related representations,
 not just repeat the reported examples. For identifier transformations, for
 example, distinguish identifiers from literal values even when both occur inside
 one expression. Prefer a bounded implementation or refusal where uncertain
-inputs cannot be handled safely. The main agent implements and verifies the whole
-agreed batch, including related cases found locally, before resubmission. Do not
-weaken original task requirements or safety guarantees to manufacture agreement. Existing defects,
-new guarantees introduced by a repair, and optional future hardening are distinct.
+inputs cannot be handled safely. The main agent implements and verifies the
+whole agreed batch, including related cases found locally, before resubmission.
+Do not weaken original task requirements or safety guarantees to manufacture
+agreement. Keep existing defects, new guarantees introduced by a repair, and
+optional future hardening distinct.
 
 ## Implementation discoveries and evidence
 
