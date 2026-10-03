@@ -150,13 +150,26 @@ harness, which delivers without interrupting:
 When you are running in Paseo with its built-in tools (`create_agent`,
 `send_agent_prompt` and the rest), use them:
 
+- **Run project:** keep the run's threads together in a temporary Paseo
+  project of their own. The built-in tools can't create projects, but the
+  `paseo` CLI can; the macOS app bundles it at
+  `/Applications/Paseo.app/Contents/Resources/bin/paseo`. Once the user
+  agrees to the plan, add a checkout for the run with
+  `git worktree add ../<repo>-overseer-<slug> -b overseer/<slug> origin/main`,
+  register it with `paseo project create ../<repo>-overseer-<slug> --json`,
+  and name it with `paseo project rename <project-id> "Overseer: <task>"`.
+  Your own session stays where the user started it. If the CLI is missing or
+  fails, use the repository's existing project instead and say so in your
+  next update.
 - **Isolation:** create a workspace with worktree isolation for each worker
-  with `create_workspace`, branching off the remote main branch, such as
+  with `create_workspace`, passing the run checkout as `path` and the run
+  project's `projectId`, branching off the remote main branch, such as
   `origin/main` rather than the local `main`, and name it after the worker.
-  Use the repository's `paseo.json` setup for ignored files when it provides
-  them. A lone worker in the main checkout still gets a workspace of its own:
-  `create_workspace` with local isolation, the checkout's path and its
-  project's `projectId`. Never launch a worker into your own workspace.
+  Paseo puts these worktrees under `~/.paseo/worktrees/`. Use the
+  repository's `paseo.json` setup for ignored files when it provides them. A
+  lone worker may use the run checkout itself: `create_workspace` with local
+  isolation, its path and the run project's `projectId`. Never launch a worker
+  into your own workspace.
 - **Launch:** call `create_agent` with the worker's `workspaceId` and the
   brief as its initial prompt, and name it with `update_agent` if the launch
   can't. Paseo labels the new agent with `paseo.parent-agent-id` and shows it
@@ -350,7 +363,8 @@ decides, and you keep working. Name it `Question: <topic>`.
 
 - **Launch** it like a worker, but light: a fast model, your permission mode
   and no worktree.
-  - In Paseo, give it a local workspace on the checkout and clear its
+  - In Paseo, give it a local workspace on the run checkout, in the run
+    project, and clear its
     `paseo.parent-agent-id` label, as "Paseo" describes for workers, so the
     user sees it as a thread of its own. Paseo flags it as needing the user
     when its dialog opens.
@@ -433,3 +447,10 @@ removal only when nothing in it is work, such as a file a Git filter
 normalized. Delete a `worker/<slug>` branch once its commits are on the
 remote main branch. Say what you removed in the final report. Never discard
 unpushed commits or uncommitted changes without asking the user.
+
+When every thread in a Paseo run project is done and cleaned up, delete the
+project with `paseo project delete <project-id>`. That only unregisters the
+project and its workspaces; it leaves their worktrees, directories and
+branches in place. Remove those as above: each worker's worktree under
+`~/.paseo/worktrees/`, then the run checkout and its `overseer/<slug>`
+branch.
