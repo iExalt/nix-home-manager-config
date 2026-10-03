@@ -97,6 +97,10 @@ in
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/three-tiered-plan";
   home.file.".claude/skills/three-tiered-plan".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/three-tiered-plan";
+  home.file.".codex/skills/overseer".source =
+    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/overseer";
+  home.file.".claude/skills/overseer".source =
+    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/overseer";
   home.file.".codex/skills/prose-fix".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/prose-fix";
   home.file.".claude/skills/prose-fix".source =

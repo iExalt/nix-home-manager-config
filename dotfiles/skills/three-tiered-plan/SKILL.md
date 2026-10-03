@@ -294,9 +294,9 @@ shares, with the reason for each dependency:
 
 Write "none: runs in parallel with any thread" when nothing applies. Check the
 graph for cycles, and draw it at the top of the script with its critical path.
-State how parallel threads stay isolated: each works in its own sibling
-worktree, rebases before every push, and reconciles shared documents (roadmap
-ticks, status, the script) without overwriting another thread's entries.
+State how parallel threads stay isolated: each works in its own worktree,
+rebases before every push, and reconciles shared documents (roadmap ticks,
+status, the script) without overwriting another thread's entries.
 
 ### List each thread's human interventions
 
@@ -365,4 +365,5 @@ Begin with a one- or two-line **TL;DR**. Then give the document's path and
 publication state, how it is laid out, what it adds that the tier above
 doesn't say, the reviewer's closing position, which decisions remain open and
 who owns them, and the next action: the next tier, or the script's ready
-threads with their prompts and when a human is next needed.
+threads with their prompts and when a human is next needed. Mention that
+`overseer` can run the ready threads as separate sessions.
