@@ -176,9 +176,13 @@ When you are running in Paseo with its built-in tools (`create_agent`,
   overseer ends its turn with its message; Paseo's finish notification
   brings it to you without interrupting, and you answer with
   `send_agent_prompt` once it is idle.
-- **Watch:** Paseo notifies you when a worker finishes a run. At decision
-  points, read `get_agent_status` and `get_agent_activity`, and check
-  `list_pending_permissions` for a worker stuck on a permission request.
+- **Watch:** Paseo notifies you once when a run started by `create_agent` or
+  `send_agent_prompt` finishes, errors or needs permission. Add no idle
+  subscriptions on top. Whenever something wakes you, check the other
+  workers with `get_agent_status`, and look into one that is idle without
+  having reported or is stuck in `list_pending_permissions`. In case nothing
+  wakes you, keep one hourly `create_heartbeat` while workers run, and delete
+  it when they finish. At decision points, read `get_agent_activity`.
 
 ### Claude Code
 
@@ -200,9 +204,12 @@ claude --bg -n "Worker: <subtask>" --permission-mode <your mode> "<brief>"
   cross-session messages for its user's approval. A background session that
   hits a permission prompt waits until someone runs `claude attach <id>`;
   treat that as a human intervention.
-- **Watch:** send each worker `notify_when_idle: true`, and renew it after
-  each notice, so you learn when a worker stops without reporting.
-  `claude agents --json` shows each session's state, and the transcripts under
+- **Watch:** don't keep `notify_when_idle` subscriptions running; a notice
+  usually lands right after the worker's own message and wakes you for
+  nothing. Whenever something wakes you, check `claude agents --json` for a
+  worker that stopped without reporting. In case nothing wakes you, schedule
+  one hourly `CronCreate` check while workers run, and delete it when they
+  finish; such jobs expire after 7 days. The transcripts under
   `~/.claude/projects/` show what happened. `claude logs` prints raw terminal
   output, so don't parse it.
 
@@ -403,12 +410,14 @@ Threads: 1 done · 2 chunk 3/3 · 3 chunk 1/2 · 4 waiting on 2
 A request for the user goes in a dialog of its own, as "Relay human
 interventions" describes, never in a status update.
 
-Stay silent between updates. Worker messages, idle notices and finish
-notifications wake you, and most change nothing the user needs to know. When
-a turn ends without an update, a request or an answer to the user, end it
-with no text at all: no line saying what you are waiting on, and no
-acknowledgement. Your checklist holds what you await, and your next update's
-roll call shows it.
+Stay silent between updates. Worker messages, notifications and checks wake
+you, and most change nothing the user needs to know; keep such wakes few, as
+"Watch" describes for your mechanism. When a turn ends without an update, a
+request or an answer to the user, end it with no text where your harness
+allows. Claude Code doesn't: it re-prompts a turn that ends without visible
+text, so end such a turn with exactly `No news.` Never write a line saying
+what you are waiting on, or an acknowledgement. Your checklist holds what you
+await, and your next update's roll call shows it.
 
 When the threads you oversee finish, report with a **TL;DR**: each thread's
 outcome and publication, evidence limits and deferrals, the judgment calls
