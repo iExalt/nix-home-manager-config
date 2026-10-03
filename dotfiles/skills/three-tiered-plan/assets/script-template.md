@@ -16,10 +16,10 @@ This script groups the [roadmap](<ROADMAP>.md)'s steps; the [plan](<PLAN>.md) sa
   authority and live spending up front, so it can run to the end with its continuous reviewer. Its chunks run in
   order.
 - **Threads run in parallel unless their Depends on entry says otherwise.** Open any thread whose dependencies are
-  met: start a fresh chat and paste its prompt.
-- A thread running beside another works in its own sibling worktree (`../<repo>-thread-<n>/`), rebases before every
-  push, and reconciles shared documents (roadmap ticks, status, this script) without overwriting another thread's
-  entries.
+  met: start a fresh chat and paste its prompt, or have `/overseer` run the ready threads as separate sessions.
+- A thread running beside another works in its own worktree (the one `/overseer` creates, or a sibling
+  `../<repo>-thread-<n>/` when opened by hand), rebases before every push, and reconciles shared documents (roadmap
+  ticks, status, this script) without overwriting another thread's entries.
 - **Human** lists every planned intervention. "None after approval" means the thread runs with nobody at the keyboard
   once it is approved.
 - When a thread finishes, its agent marks it done here, records any deviation that changes other threads, and marks
