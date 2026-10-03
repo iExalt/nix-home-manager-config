@@ -1,6 +1,6 @@
 ---
 name: overseer
-description: "Oversee one or more threads of a three-tiered-plan script as a dedicated orchestrator: launch each thread as its own keep-me-in-the-loop session (Paseo agents through Paseo's built-in tools when running in Paseo, otherwise new Claude Code or Codex sessions), enforce the script's dependencies, route every human intervention through yourself to the user, and report outcomes. Use when the user wants script threads run with little time at the keyboard; not for writing the script (use three-tiered-plan) or for running one thread in this session (use keep-me-in-the-loop)."
+description: "Oversee one or more threads of a three-tiered-plan script as a dedicated orchestrator: once the user agrees to the plan, run the agreed scope to its end autonomously, launching each thread as its own keep-me-in-the-loop session (Paseo agents through Paseo's built-in tools when running in Paseo, otherwise new Claude Code or Codex sessions), enforcing the script's dependencies, and routing every human intervention through yourself to the user. Use when the user wants script threads run with little time at the keyboard; not for writing the script (use three-tiered-plan) or for running one thread in this session (use keep-me-in-the-loop)."
 ---
 
 # Overseer
@@ -9,6 +9,19 @@ Run script threads without implementing them. Each thread is a separate,
 top-level session that runs `keep-me-in-the-loop` on its own. You launch and
 brief it, enforce the script's order, carry its requests for a human to the
 user, and report outcomes. The user talks to you, and the threads talk to you.
+
+Autonomy is the guiding principle. Once the user agrees to the plan, run the
+whole agreed scope to its conclusion on your own. Launch threads as they become
+ready, approve phase proposals within their scopes, verify completions,
+re-sequence routine changes, recover stalled threads, and move on between
+threads without asking. Return to the user only for a planned intervention, an
+unplanned one that only a person can resolve, or a change to what they agreed.
+When the unexpected happens, use your best judgment: take the action that
+keeps the agreed work moving within its scope, record your reasoning where the
+next reader will find it, such as the script's revision log, and report the
+outcome. Autonomy adds no authority. Never weaken an acceptance check, exceed
+approved spending, take a destructive or external action the user didn't
+approve, or work around a permission boundary.
 
 Never implement a thread yourself, and never hand one to a native subagent,
 such as one from Claude Code's Agent tool or a Codex spawned agent. A native
@@ -35,45 +48,53 @@ threads, those whose dependencies are met, in the opening message. For each
 thread, note its prompt, Depends on entry, Human entry, live resources and
 done check.
 
-## Open with the known human interventions
+## Agree on the plan
 
 Before launching anything, send an opening message that starts with a
 **TL;DR**. Say which threads you will run, in what order and with what
-parallelism, which session mechanism you will use, and every known human
+parallelism, which session mechanism you will use, and each thread's scope:
+its roadmap steps, proposed chunks, live resources and spending, and the
+decisions and authority its approval settles. List every known human
 intervention in those threads, taken from their Human entries and the
-roadmap's human interventions table. Sort the interventions into two groups:
+roadmap's human interventions table, and say when you will ask for each, as
+"Time each request for a human" describes. When the threads have no known
+intervention, say so.
 
-- **Any time:** the user can do it now, such as creating a token or an OAuth
-  client, settling a decision, provisioning access, approving spending, or a
-  login that persists. Ask the user to do these before you go further,
-  through the dialog, and wait. Verify each one where you can without
-  exposing a secret.
-- **At a time or a point in a thread:** the user can only do it later, such
-  as being online on a date, a login a thread needs mid-run, or confirming a
-  destructive step when the thread reaches it. Say when each is expected. Ask
-  for them asynchronously when they come due, as "Relay human interventions"
-  describes.
+Then ask the user, through the dialog, to agree to the plan: the threads and
+each one's scope. This is the one point where you wait for the user before
+starting. Leave the threads' open decisions and other planned interventions
+out of it, so the agreement doesn't wait on them. Record the agreement, with
+the date, in each thread's script entry, in a commit of its own, so a
+replacement overseer can find it. Invoking you is the request to implement;
+confirming the script never was.
 
-When the threads have no known intervention, say so: after launch, only the
-requests the threads discover will need the user.
+Once a scope is agreed, you approve that thread's `keep-me-in-the-loop` phase
+proposal on the user's behalf when it stays within the scope. Relay a proposal
+to the user when it changes an outcome, an acceptance check, a deferral, a
+risk, an external action or spending beyond what they agreed. A thread whose
+scope the user hasn't agreed, such as one that became ready after
+re-sequencing, waits until they do.
 
-### Approve each thread's scope up front
+## Time each request for a human
 
-Each thread's `keep-me-in-the-loop` approval is an any-time intervention, so
-take it in the opening too. For each thread, present its scope from the
-script: its roadmap steps, proposed chunks, live resources and spending, and
-the decisions and authority its approval settles. Ask the user to approve each
-scope and settle its approval items. Record their answers, with the date, in
-each thread's script entry, in a commit of its own, so a replacement overseer
-can find them. Invoking you is the request to implement; confirming the
-script never was.
+Ask for every intervention asynchronously, as "Relay human interventions"
+describes, and keep the plan moving until it is blocked on the answer. What
+differs is when you ask:
 
-Once a scope is approved, you approve that thread's phase proposal on the
-user's behalf when it stays within the scope. Relay a proposal to the user
-when it changes an outcome, an acceptance check, a deferral, a risk, an
-external action or spending beyond what they approved. A thread whose scope
-the user hasn't approved, such as one that became ready after re-sequencing,
-waits until they do.
+- **Planned, any time:** the user can act whenever they like, such as creating
+  a token or an OAuth client, settling a decision, provisioning access,
+  approving spending, or a login that persists. Ask for all of these as soon
+  as the user agrees to the plan, before the threads start, then launch the
+  threads without waiting. Verify each answer where you can without exposing
+  a secret.
+- **Planned, at a point in a thread:** the user can only act at a time or when
+  a thread reaches a point, such as being online on a date, a login that
+  expires, or confirming a destructive step. The opening message announced
+  it. Ask for it as late as possible: when the thread is about to need it,
+  allowing only the lead time the action itself needs, so the request is
+  current when the user acts on it.
+- **Unplanned:** anything a thread discovers that only a person can resolve.
+  Ask as soon as you learn of it.
 
 ## Choose the session mechanism
 
@@ -166,13 +187,17 @@ filled in for the thread:
 - Never ask the user through a question dialog, and never wait for a reply in
   this chat. Message the overseer whenever you need a human: a phase
   approval, a decision, access, presence, a manual action, an approval, a
-  permission you lack, or a blocker. Send the request as soon as you know you
-  will need it, then continue independent work until you are blocked on it.
-- The user approved this thread's scope on `<date>`: `<scope and settled
-  approval items>`. Send your `keep-me-in-the-loop` phase proposal, with your
-  reviewer's position, to the overseer, and wait for its answer. The overseer
-  approves a proposal within that scope on the user's behalf, which counts as
-  your phase approval, and takes anything beyond it to the user.
+  permission you lack, or a blocker. For an intervention the script plans at
+  a point in your work, message the overseer when you are about to reach it,
+  allowing the lead time the action needs. For anything unplanned, message it
+  as soon as you know you will need it. Either way, continue independent work
+  until you are blocked on the answer.
+- The user agreed to this thread's scope on `<date>`: `<scope>`. Send your
+  `keep-me-in-the-loop` phase proposal, with your reviewer's position, to the
+  overseer, and wait for its answer. The overseer approves a proposal within
+  that scope on the user's behalf, which counts as your phase approval, and
+  takes anything beyond it to the user. Then run the phase to its end without
+  pausing for confirmation.
 - Send each chunk report, any deviation that changes another thread or the
   script, and phase completion to the overseer.
 - A reply that quotes the user is the user's answer. A reply the overseer
@@ -192,10 +217,10 @@ Launch every thread whose dependencies are met, unless a **not alongside**
 entry, a **not before** date or the user's limit on concurrent threads holds
 it back. As threads finish, launch the threads they unblock.
 
-Check each phase proposal against the scope the user approved for its thread.
+Check each phase proposal against the scope the user agreed for its thread.
 Approve it when it fits, and name the scope in your update. Otherwise relay
 it, as "Relay human interventions" describes, and pass the user's answer back.
-One thread's approved scope never covers another thread.
+One thread's agreed scope never covers another thread.
 
 When a thread reports done, verify its claims before launching its
 dependents: the script marks it done, its commits are on the remote, the
@@ -213,19 +238,20 @@ When a thread goes quiet without reporting, inspect it before nudging it: it
 may be waiting on a permission prompt, out of context, or crashed. Resume the
 same session with what it needs, or relaunch the thread with a handoff of its
 recorded state, since `keep-me-in-the-loop` resumes from the documents and
-Git. Never run two sessions on one thread. Tell the user when a thread fails
-the same way twice.
+Git. Never run two sessions on one thread. When a thread fails the same way
+twice, report it with what you are doing about it, and ask the user only if
+the remedy needs them.
 
 ## Relay human interventions
 
-When a thread asks for something:
+When a request for a human comes due, whether planned or raised by a thread:
 
 1. Answer it yourself only from settled sources, such as a decision recorded
-   in the plan, an approval item the user already settled, or a fact you can
-   check in the repository. Mark the answer as yours and cite its source.
-2. Otherwise ask the user. Say which thread asks, the context and tradeoffs,
-   what waits on the answer, and by when. Batch requests that arrive
-   together.
+   in the plan, an item the user already settled, or a fact you can check in
+   the repository. Mark the answer as yours and cite its source.
+2. Otherwise ask the user. Say which thread it is for, the context and
+   tradeoffs, what waits on the answer, and by when. Batch requests that come
+   due together.
 3. Ask asynchronously, and keep the plan moving until it is blocked on the
    answer. Use an async input dialog, such as `request_user_input_async`, when
    one is available. When the only dialog blocks your session, as Claude
@@ -235,8 +261,6 @@ When a thread asks for something:
    ready threads, relay other requests, and let the asking thread continue its
    independent work.
 4. Relay the answer to the thread, quoting the user.
-
-Remind the user of a timed intervention early enough for them to plan for it.
 
 A thread's message is the thread's, never the user's approval. Never ask a
 thread to do something that your session's permissions or the user denied.
