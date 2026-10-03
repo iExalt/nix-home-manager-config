@@ -7,14 +7,13 @@ and rationale stay in the plan. Delete these comments.
 
 Status: **<progress in a line>, <date>.** The [plan](<PLAN>.md) says what the campaign delivers. This roadmap says how
 agents get there: the steps, what each one needs, what proves it, which of the plan's boxes it ticks, and where a
-person must act. The
-[script](<SCRIPT>.md) groups the steps into threads, and the [status document](<STATUS>.md) tracks the evidence. It
-starts from <the starting point>.
+person must act. The [script](<SCRIPT>.md) groups the steps into threads, and the [status document](<STATUS>.md)
+tracks the evidence. The roadmap starts from <the starting point>.
 
 ## How to read it
 
-- A **step** is one unit of agent work: a few commits, ending with its proof. Steps are listed in a workable order,
-  but only **Needs** constrains it.
+- A **step** is one unit of agent work: a few commits, ending with its proof. The list follows a workable order, but
+  only **Needs** constrains the order.
 - **Needs** names the steps, gates or decisions a step depends on, or "nothing". Steps that don't need each other can
   run in parallel.
 - **Proof** is what must pass before the step is ticked. "Offline" needs no live resources. A live proof names its

@@ -13,7 +13,7 @@ It records the evidence-backed current state, incomplete boundary, intermediate
 outcome gates, dependencies, next sequence, deferrals, and active risks. It is
 not a second exhaustive checklist.
 
-## Current Snapshot
+## Current snapshot
 
 | Field | Status |
 | --- | --- |
@@ -27,7 +27,7 @@ not a second exhaustive checklist.
 [Summarize the transition from established foundations to the largest remaining
 gap. Do not imply that partial progress passes a milestone gate.]
 
-## Accomplishments With Evidence
+## Accomplishments with evidence
 
 ### [Outcome Group]
 
@@ -54,7 +54,7 @@ Evidence:
 
 - [Decision record, source path, partial test, or worktree-only artifact]
 
-## Current Boundary
+## Current boundary
 
 The following are not complete:
 
@@ -64,7 +64,7 @@ The following are not complete:
 - [Decision remains provisional.]
 - [Downstream subsystem has not started.]
 
-## Intermediate Goals
+## Intermediate goals
 
 ### I0 - [Outcome-Oriented Goal]
 
@@ -120,7 +120,7 @@ Evidence:
 
 - None yet.
 
-## Recommended Next Sequence
+## Recommended next sequence
 
 1. [Produce the first missing prerequisite or verification evidence.]
 2. [Complete the next dependency-ready outcome.]
@@ -129,7 +129,7 @@ Evidence:
 
 [Explain bounded parallel work or an intentionally early, discardable spike.]
 
-## Explicitly Deferred
+## Explicitly deferred
 
 Do not start these until their named prerequisites exist:
 
@@ -137,13 +137,13 @@ Do not start these until their named prerequisites exist:
   condition].
 - **[Deferred work]:** blocked on [prerequisite].
 
-## Active Risks And Decisions
+## Active risks and decisions
 
 | Risk or decision | Evidence or uncertainty | Consequence | Mitigation or next evidence | Owner |
 | --- | --- | --- | --- | --- |
 | [Risk] | [Observed fact or missing evidence] | [Impact on correctness, sequence, or feasibility] | [Concrete validation or decision] | [Owner] |
 
-## Update Protocol
+## Update protocol
 
 Update this document after a meaningful implementation increment, changed
 decision, measured result, newly discovered blocker, or invalidated claim.
@@ -171,7 +171,7 @@ Status terms:
 - **implemented:** code or artifacts exist without full exit verification; and
 - **verified:** the exit condition has current, reproducible evidence.
 
-## Progress Log
+## Progress log
 
 ### [YYYY-MM-DD]
 
@@ -180,7 +180,7 @@ Status terms:
 - [Changed boundary, decision, dependency, or risk.]
 - [Verification commands and concise results.]
 
-## Appendix: Supporting Results (Optional)
+## Appendix: Supporting results (optional)
 
 [Omit this section when unnecessary. Use it for moderately larger useful tables,
 with conditions and limitations, not raw logs or datasets. Summarize bulky output

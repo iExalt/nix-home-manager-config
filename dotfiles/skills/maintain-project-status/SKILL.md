@@ -3,7 +3,7 @@ name: maintain-project-status
 description: "Create or maintain an evidence-backed project status document that bridges strategic plans and exhaustive implementation checklists. Use when Codex must reconstruct current progress from plans, Git history, source, tests, benchmarks, artifacts, and worktree state; define intermediate outcome gates and dependencies; distinguish designed, implemented, verified, active, blocked, and future work; recommend the next sequence; track deferrals and risks; or audit unsupported milestone-completion claims."
 ---
 
-# Maintain Project Status
+# Maintain project status
 
 Create a durable project-status bridge between governing strategy and detailed
 implementation tasks. Keep it concise enough to guide current execution without
@@ -13,7 +13,7 @@ Use [assets/status-document-template.md](assets/status-document-template.md) as
 the starting structure when creating a document. Adapt headings to the project,
 but preserve the evidence, boundary, dependency, and update semantics.
 
-## Core Invariants
+## Core invariants
 
 - Treat governing plans and contracts as authoritative for intent and milestone
   gates.
@@ -33,14 +33,13 @@ but preserve the evidence, boundary, dependency, and update semantics.
 - Preserve unrelated worktree changes and identify evidence that exists only in
   the uncommitted tree.
 
-## Documentation And Evidence Retention
+## Documentation and evidence retention
 
 Default to one project-wide status/progress document and the active implementation
 plan, which may contain its checklist. Reuse these documents instead of creating
 per-item reports, acceptance receipts, benchmark writeups, or handoff documents.
-Component READMEs and `docs` directories are appropriate for durable usage,
-interfaces, and design knowledge; their existence does not make them a destination
-for run logs. Add a separate document only for a distinct ongoing reader need
+Component READMEs and `docs` directories suit durable usage, interface, and
+design knowledge, but their existence does not make them a place for run logs. Add a separate document only for a distinct ongoing reader need
 that the existing documents cannot reasonably serve.
 
 Choose the smallest useful retained representation:
@@ -49,10 +48,10 @@ Choose the smallest useful retained representation:
   small number of decisive receipts, with enough conditions and limitations to
   interpret the result.
 - Put moderately larger useful tables or details in an appendix to that same
-  document. An appendix is not a place to paste raw logs or unbounded datasets.
+  document. Do not paste raw logs or unbounded datasets into an appendix.
 - For larger output, retain the conclusion and relevant reproduction command or
-  source reference; omit raw output from the commit by default. Say when exact
-  raw results were not retained rather than linking disposable local files as
+  source reference; omit raw output from the commit by default. If exact raw
+  results were not retained, say so; do not link disposable local files as
   durable evidence.
 - Only when preserving exact files is essential to an explicit requirement or
   named future use, consolidate them into a benchmark/evidence `.tar.zstd` archive.
@@ -65,12 +64,13 @@ Choose the smallest useful retained representation:
 Verification and retention are separate decisions: running a rigorous benchmark
 does not require committing all its outputs. Keep reusable tests, benchmark
 harnesses, and required runtime/test fixtures as normal source files. This policy
-concerns generated evidence, not hiding source in archives or weakening checks.
+covers generated evidence; it does not permit hiding source in archives or
+weakening checks.
 Keep working evidence only as long as needed for review; remove only task-owned
 disposable material within the authorized scope. Do not turn a status update into
 an unsolicited repository-wide cleanup or create preservation machinery by default.
 
-## Status Model
+## Status model
 
 Track workflow status separately from evidence state.
 
@@ -96,7 +96,7 @@ promoting the whole goal.
 
 ## Workflow
 
-### 1. Establish The Document Hierarchy
+### 1. Establish the document hierarchy
 
 Identify:
 
@@ -109,7 +109,7 @@ Identify:
 Read the status document first when updating an existing one. Then inspect its
 linked sources and verify that the hierarchy is still accurate.
 
-### 2. Inspect The Evidence Surface
+### 2. Inspect the evidence surface
 
 Inspect before writing:
 
@@ -132,7 +132,7 @@ working context or the existing status document, not a new receipt file:
 Do not attribute pre-existing uncommitted changes to a commit. If evidence is
 worktree-only, say so.
 
-### 3. Reconstruct Accomplishments
+### 3. Reconstruct accomplishments
 
 Group accomplishments by coherent outcome, not by commit chronology. For each
 group:
@@ -148,7 +148,7 @@ group:
 Move an outcome into accomplishments only when the wording is no stronger than
 its evidence.
 
-### 4. State The Current Boundary
+### 4. State the current boundary
 
 Write a direct list of what is not complete. Include:
 
@@ -161,7 +161,7 @@ Write a direct list of what is not complete. Include:
 Use explicit negatives. Avoid vague phrases such as "mostly done" or
 "essentially complete."
 
-### 5. Define Intermediate Goals
+### 5. Define intermediate goals
 
 Insert outcome gates between strategic milestones and low-level tasks. Give each
 goal:
@@ -178,7 +178,7 @@ Keep intermediate goals large enough to represent meaningful outcomes and small
 enough to unblock sequencing. A goal should normally combine related checklist
 tasks that produce one reviewable capability, evidence package, or decision.
 
-### 6. Audit Dependencies And Claims
+### 6. Audit dependencies and claims
 
 Perform these checks before recommending work:
 
@@ -201,16 +201,16 @@ Perform these checks before recommending work:
    exit gates. Checked subtasks may support an accomplishment but cannot
    override an incomplete exit gate.
 
-### 7. Recommend The Next Sequence
+### 7. Recommend the next sequence
 
-Recommend normally three to seven concrete steps. Order them by dependency and
+Normally recommend three to seven concrete steps. Order them by dependency and
 evidence production, not by convenience. Explain any bounded parallelism or
 early spike that intentionally crosses a milestone boundary.
 
 List explicitly deferred work separately. Name the missing prerequisite or
 intermediate exit condition for each deferred group.
 
-### 8. Track Risks Without Duplicating Tasks
+### 8. Track risks without duplicating tasks
 
 Track only active risks, provisional decisions, and evidence gaps that can
 change sequencing or invalidate a claim. For each risk, state:
@@ -223,7 +223,7 @@ change sequencing or invalidate a claim. For each risk, state:
 Remove resolved risks or record their resolution in the progress log. Leave
 exhaustive implementation tasks in the checklist.
 
-### 9. Write Or Update The Document
+### 9. Write or update the document
 
 When creating:
 
@@ -248,7 +248,7 @@ Update after a meaningful implementation increment, changed decision, measured
 result, newly discovered blocker, or invalidated claim. Do not churn the
 document for inconsequential edits.
 
-### 10. Verify Before Finishing
+### 10. Verify before finishing
 
 Verify:
 
@@ -265,7 +265,7 @@ Record exact commands and results in the handoff or progress log when useful.
 If a relevant test or factual claim cannot be verified, state that limitation
 and do not classify the affected outcome as verified.
 
-## Output Standard
+## Output standard
 
 Finish with:
 

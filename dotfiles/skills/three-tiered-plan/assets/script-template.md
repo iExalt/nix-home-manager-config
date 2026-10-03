@@ -7,7 +7,7 @@ when a human is needed. A page or two. Delete these comments.
 
 **TL;DR:** <n> threads from here to <the final gate>. <The critical path, and what runs alongside it.>
 
-It groups the [roadmap](<ROADMAP>.md)'s steps; the [plan](<PLAN>.md) says why, and the
+This script groups the [roadmap](<ROADMAP>.md)'s steps; the [plan](<PLAN>.md) says why, and the
 [status document](<STATUS>.md) holds the evidence.
 
 ## How to use it

@@ -7,10 +7,9 @@ description: Execute an existing roadmap in coherent chunks with upfront phase a
 
 Turn the next substantial phase of an existing plan into a few meaningful chunks.
 Shape that chunk plan with the reviewer, obtain the user's approval once, then
-implement, review, verify,
-commit, and push each chunk autonomously. Report between chunks and continue;
-seek approval for the next phase after finishing the current one. Preserve explicit
-user overrides and repository rules.
+implement, review, verify, commit, and push each chunk autonomously. Report
+between chunks and continue; seek approval for the next phase after finishing
+the current one. Preserve explicit user overrides and repository rules.
 
 ## Establish the current boundary
 
@@ -23,7 +22,7 @@ Use `maintain-project-status` for the durable progress record and
 `continuous-peer-review` for implementation and review. Read their current
 instructions; resolve them from the available skill catalog or sibling skill
 directories. Keep this skill responsible for phase boundaries and user reports,
-leaving status semantics and reviewer mechanics to those skills. If a required
+and leave status semantics and reviewer mechanics to those skills. If a required
 skill or native review capability is unavailable, explain the limitation and
 resolve the execution approach before claiming the workflow can proceed.
 
@@ -41,9 +40,9 @@ Start with a one- or two-line **TL;DR** stating the current outcome and proposed
 next result. Briefly explain what has been accomplished in the phase or plan so
 far, including its verification boundary.
 
-Propose roughly **2–4 coherent chunks** for a substantial phase. This is a sizing
-guide, not a quota. Group related steps by a useful capability, evidence gate, or
-decision. Split at consequential dependencies or where a checkpoint offers useful
+Propose roughly 2 to 4 coherent chunks for a substantial phase. Treat that range
+as a sizing guide, not a quota. Group related steps by a useful capability,
+evidence gate, or decision. Split at consequential dependencies or where a checkpoint offers useful
 feedback; avoid both approval per small task and one oversized uninterrupted phase.
 Keep more distant phases coarse.
 
@@ -129,8 +128,9 @@ silently weaken acceptance criteria or treat sunk effort as a reason to continue
 
 ## Update at increment outcomes
 
-The user follows outcomes, not activity. This skill overrides default guidance
-to announce actions before tool calls or narrate work as it happens. Do not write
+Tell the user about outcomes and leave activity out. This skill overrides
+default guidance to announce actions before tool calls or narrate work as it
+happens. Do not write
 lines that announce your next step, such as `Now the status document.` or
 `Publishing A3a-2.`; let tool calls proceed without commentary. Between the
 phase proposal and chunk reports, send an update only when:
@@ -205,6 +205,5 @@ the increment-outcome updates above and use interruptible waits.
 At phase completion, reconcile the phase's full exit criteria with current
 evidence and report results, accepted deferrals, and remaining boundaries.
 Shape the next phase's chunks with the reviewer, propose them, and await approval
-before implementing them,
-unless the user has explicitly authorized that next phase already. If the roadmap
-is finished, report completion and remaining limitations without inventing work.
+before implementing them, unless the user has explicitly authorized that next
+phase already. If the roadmap is finished, report completion and remaining limitations without inventing work.
