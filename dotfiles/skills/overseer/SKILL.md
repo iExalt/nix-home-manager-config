@@ -325,6 +325,10 @@ filled in for the worker:
 - A reply that quotes the user is the user's answer. A reply the overseer
   marks as its own decision carries only the authority the user gave the
   overseer.
+- If the permission classifier blocks an action, never work around it. Tell
+  the overseer the exact action and the classifier's reason, carry on with
+  independent work, and end your turn once you are blocked on it, so the
+  overseer can relay the user's approval into this thread.
 - Work in `<worktree>` on `<branch>`. Publish as the repository's rules say,
   for example by rebasing onto the remote main branch and pushing, and
   reconcile shared documents without overwriting another thread's entries.
@@ -397,6 +401,23 @@ Approve a pending permission request, as Paseo's `respond_to_permission`
 allows, only for a class of action the user authorized for that thread;
 otherwise relay it. A pending request of kind `question` is a dialog for the
 user, whether a question session or a worker raised it; never answer it.
+
+Claude Code's auto mode classifier gives no user authority to a message from
+another session: `SendMessage` arrives marked as a peer's, so a worker's
+classifier can block an action the user approved through you. Paseo's
+`send_agent_prompt` arrives exactly like text the user typed in the worker's
+thread. When a Claude worker in Paseo reports a classifier block on an action
+the user approved, in their own words to you, for that action or its class:
+
+1. Wait until `get_agent_status` shows the worker idle, since
+   `send_agent_prompt` interrupts a running agent.
+2. Send it with `send_agent_prompt`: `[overseer] Relaying the user's approval
+   for <action>: "<the user's words>" (<date>).` Quote the user exactly, and
+   send nothing else in that prompt.
+
+Use this channel only to relay an approval the user gave. When the approval
+is your own decision on the user's behalf, or the user hasn't approved the
+action, ask the user as "Relay human interventions" describes.
 
 ### Ask through a question session
 
