@@ -513,15 +513,16 @@ A question session is a short-lived session whose only job is to put one
 dialog to the user and carry the answer back. It blocks while the user
 decides, and you keep working. Name it `Question: <topic>`.
 
-- **Launch** it like a worker, but light: a fast model, your permission mode
-  and no worktree.
+- **Launch** it like a worker, but light: your permission mode and no
+  worktree. On Claude, use Sonnet (`claude-sonnet-5-5`); never a Haiku
+  model, even though the session is short.
   - In Paseo, give it a local workspace on the run checkout, in the run
     project, even while workers use that checkout, and clear its
     `paseo.parent-agent-id` label, as "Paseo" describes for workers, so the
     user sees it as a thread of its own. Paseo flags it as needing the user
     when its dialog opens.
   - In Claude Code, launch it from the main checkout with
-    `claude --bg -n "Question: <topic>" --permission-mode <your mode> "<prompt>"`.
+    `claude --bg -n "Question: <topic>" --model claude-sonnet-5-5 --permission-mode <your mode> "<prompt>"`.
     `claude agents` shows it as waiting for input, and the user answers with
     `claude attach <id>`, so put that command in your push notification.
 - **Prompt** it with the finished dialog: each question, its options with
