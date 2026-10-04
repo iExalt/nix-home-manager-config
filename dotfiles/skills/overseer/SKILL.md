@@ -5,6 +5,37 @@ description: "Oversee one or more threads of a three-tiered-plan script as a ded
 
 # Overseer
 
+## First, in Paseo: move into a run project
+
+In Paseo, the overseer runs inside a temporary run project with its workers,
+as "Paseo" describes. Before any other overseer work, including reading the
+script, the plan or the repository's instructions, check where you are: find
+your `workspaceId` with `get_agent_status` on your own agent ID, then your
+workspace's project and checkout in `list_workspaces`. If your checkout is a
+run checkout, `../<repo>-overseer-<slug>`, you are the overseer; skip to the
+rest of this skill. Otherwise the user started you in the repository's own
+project, and your whole job is the hand-off, done straight away:
+
+1. Create the run project and its checkout, as "Paseo" describes, taking
+   `<task>` and `<slug>` from the user's request.
+2. Create a workspace there with `create_workspace`: local isolation, the run
+   checkout as `path`, the run project's `projectId` and the title
+   `Overseer: <task>`.
+3. Launch the overseer in it with `create_agent`, titled `Overseer: <task>`,
+   with your own provider, model, mode and thinking option from
+   `get_agent_status`. Its prompt invokes this skill and carries the user's
+   request verbatim, with anything else they said in this thread. Clear its
+   `paseo.parent-agent-id` label, as "Paseo" describes for workers.
+4. Right after the launch, without waiting on the overseer, ask the user in a
+   blocking dialog whether to archive this thread, naming the overseer thread
+   and its project. On yes, call `archive_workspace` on your workspace when
+   `list_agents` shows no other agent in it, and `archive_agent` on yourself
+   otherwise. On no, stay idle: the overseer's finish notifications still
+   reach you, and you answer each with no text, or `No news.` in Claude Code.
+
+If the `paseo` CLI is missing or fails, skip the hand-off, say so, and oversee
+from this thread in the repository's existing project.
+
 Run script threads without implementing them. You launch **workers**, separate
 top-level sessions that each run `keep-me-in-the-loop`, usually one per
 thread. You brief them, enforce the script's order, carry their requests for a
@@ -41,36 +72,6 @@ session is part of that worker's job.
 Keep a checklist of the threads you oversee, each with its worker and state:
 waiting, ready, running, awaiting approval, awaiting a human, blocked, done.
 Your status updates show it as a one-line roll call.
-
-## Move into a run project
-
-In Paseo, the overseer runs inside the run project with its workers, as
-"Paseo" describes. Check where you are before anything else: find your
-`workspaceId` with `get_agent_status` on your own agent ID, then your
-workspace's project and checkout in `list_workspaces`. If your checkout is a
-run checkout, `../<repo>-overseer-<slug>`, you are the overseer; go on to
-"Establish what you oversee". Otherwise the user started you in the
-repository's own project, and you only hand off:
-
-1. Create the run project and its checkout, as "Paseo" describes.
-2. Create a workspace there with `create_workspace`: local isolation, the run
-   checkout as `path`, the run project's `projectId` and the title
-   `Overseer: <task>`.
-3. Launch the overseer in it with `create_agent`, titled `Overseer: <task>`,
-   with your own provider, model, mode and thinking option from
-   `get_agent_status`. Its prompt invokes this skill and carries the user's
-   request verbatim, with anything else they said in this thread. Clear its
-   `paseo.parent-agent-id` label, as "Paseo" describes for workers.
-4. Ask the user in a blocking dialog whether to archive this thread, naming
-   the overseer thread and its project. On yes, call `archive_workspace` on
-   your workspace when `list_agents` shows no other agent in it, and
-   `archive_agent` on yourself otherwise. On no, stay idle: the overseer's
-   finish notifications still reach you, and you answer each with no text,
-   or `No news.` in Claude Code.
-
-Don't read the script or plan in this thread; the overseer does. If the
-`paseo` CLI is missing or fails, skip the hand-off, say so, and oversee from
-here in the repository's existing project.
 
 ## Establish what you oversee
 
@@ -189,7 +190,7 @@ When you are running in Paseo with its built-in tools (`create_agent`,
   register it with `paseo project create ../<repo>-overseer-<slug> --json`,
   and name it with `paseo project rename <project-id> "Overseer: <task>"`.
   The session the user started does this and hands off to an overseer
-  inside the project, as "Move into a run project" describes. If the user
+  inside the project, as "First, in Paseo: move into a run project" describes. If the user
   doesn't agree to the plan, offer to clean up the project, as "Clean up"
   describes.
 - **Isolation:** create a workspace with worktree isolation for each worker
