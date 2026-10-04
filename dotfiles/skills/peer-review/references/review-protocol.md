@@ -82,6 +82,18 @@ checks/probes performed, and gaps or limits. Unchecked areas are not clean.
 Resolve material coverage gaps before calling discovery complete; if blocked,
 return a partial review rather than starting repairs under a false clean claim.
 
+When reviewing test changes, assess recurring cost as well as missing coverage.
+Prefer most behavioral coverage in fast unit tests, fewer integration tests for
+component contracts, and a small end-to-end set for critical journeys. Challenge
+repeated case matrices at higher layers, oversized fixtures and expensive setup;
+judge the pyramid by runtime as well as count, without a fixed ratio. Request
+existing required-run timings against the project's stable baseline and budget
+when relevant, rather than adding redundant benchmark runs. Treat confirmed
+material or cumulative growth as work to resolve in the change, or a necessary
+increase to justify. Preserve required proofs while consolidating tests or
+moving logic down a layer; reducing test count is not itself a coverage loss.
+Do not retain every investigative probe as a permanent regression test.
+
 Batch findings with stable IDs, severity, location/evidence, impact, and proposed
 correction. The facilitator verifies them against source. Challenge unsupported
 claims and distinguish required fixes from optional improvements. Assign each
