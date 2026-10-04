@@ -105,6 +105,15 @@ diffstat or terse bullet summary.
 
 ## Verification and continuity
 
+Include test design in the increment proposal: most logic and edge cases belong
+in fast unit tests, fewer integration tests establish component contracts, and
+only critical journeys need end-to-end coverage. Justify higher-layer repetition
+and expensive fixtures or setup. Use required-run timings to compare routine
+checks with the project's stable baseline and budget under comparable conditions.
+Repair confirmed runtime regressions within the approved increment; explain any
+necessary remaining increase. Consolidating tests or lowering their execution
+cost need not change acceptance criteria; preserve every required proof and gate.
+
 Record exact commands, outcomes, relevant revision or diff identity, and any
 configuration or environment needed to interpret the result. Link to long logs
 rather than repeating them. Reuse evidence while it remains applicable; rerun

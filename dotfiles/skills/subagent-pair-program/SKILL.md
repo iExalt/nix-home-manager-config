@@ -147,6 +147,16 @@ Include these rules in pilot briefs; do not assume inherited context:
   is insufficient. Use the lead exchange, not new receipt documents.
 - Do not spawn pilots or reassign ownership without lead coordination.
 
+Include the routine-check command, stable timing baseline, budget and execution
+conditions in pilot briefs when tests will grow or change. Pilots should put
+most coverage in fast unit tests, fewer integration tests at component boundaries,
+and a small end-to-end set for critical journeys. The lead challenges redundant
+case matrices, oversized fixtures and expensive setup, considering runtime as
+well as test count. Reuse required-run timings; have the pilot address confirmed
+material or cumulative growth in the work item rather than accumulating cleanup
+work. Preserve required proofs and gates when consolidating or lowering tests;
+do not move the baseline or make checks optional to conceal a regression.
+
 The lead follows four review rules:
 
 1. **One discovery owner.** Judge the pilot's findings and critical assumptions;

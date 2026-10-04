@@ -140,6 +140,19 @@ Use targeted source reads, bounded output, and references to unchanged evidence.
 Re-review a revision from its delta against the previously reviewed snapshot,
 limited to affected paths; reread whole files only where the delta is insufficient.
 
+When tests change, author and reviewer assess their recurring cost as well as
+their coverage. Prefer many fast unit tests for logic, fewer integration tests
+for contracts, and a small set of end-to-end journeys. Keep detailed case
+matrices at the lowest reliable layer; challenge redundant higher-layer tests,
+oversized fixtures and repeated expensive setup as readily as missing coverage.
+Judge the pyramid by runtime as well as count, without a fixed ratio. Ordinary
+logic that requires a browser or deployment to test may need a cleaner boundary.
+Use required-run timings against the project's stable baseline and budget;
+resolve confirmed material or cumulative regressions in the increment, or
+justify a necessary increase within the agreed authority. Preserve the behavior
+and proof required, not the historical test count or implementation. Do not make
+required checks optional to meet a runtime target.
+
 ## Messages and attention
 
 Use native direct messaging (for example `collaboration.send_message` in Codex,
