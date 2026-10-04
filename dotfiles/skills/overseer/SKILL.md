@@ -407,7 +407,7 @@ decides, and you keep working. Name it `Question: <topic>`.
 - **Launch** it like a worker, but light: a fast model, your permission mode
   and no worktree.
   - In Paseo, give it a local workspace on the run checkout, in the run
-    project, and clear its
+    project, even while workers use that checkout, and clear its
     `paseo.parent-agent-id` label, as "Paseo" describes for workers, so the
     user sees it as a thread of its own. Paseo flags it as needing the user
     when its dialog opens.
@@ -422,7 +422,13 @@ decides, and you keep working. Name it `Question: <topic>`.
   session; its dialog takes up to four.
 - **Archive** it once its answer arrives. In Paseo, it archives itself: its
   last action is `archive_workspace` on its own workspace, which archives the
-  session with it. Paseo can reopen an archived session that the user is
+  session with it. Archiving a workspace is intentional and safe here: it
+  discards only the thread's agent and subagent state, never the directory,
+  worktree or any change in it (the result reports `removedDirectory: false`),
+  even when `list_workspaces` shows the workspace as `kind: worktree` and a
+  worker is busy in the same run checkout. Don't skip it or fall back to
+  `archive_agent` alone out of caution; that leaves a stale workspace in the
+  run project. Paseo can reopen an archived session that the user is
   viewing, so check it with `get_agent_status` and call `archive_agent` if it
   is still active. In Claude Code, a session can't remove itself; run
   `claude stop <id>`, then `claude rm <id>`. If the user answers some other
