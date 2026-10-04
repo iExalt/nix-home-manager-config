@@ -1,6 +1,6 @@
 ---
 name: subagent-pair-program
-description: "Coordinate autonomous pair programming with the main agent as navigator, a required Sol work item lead, and Luna implementation pilots. Use when the user wants delegated implementation with agent-to-agent proposal, review, and verification loops without approving each increment. For interactive sessions where the user navigates, use pair-program instead."
+description: "Coordinate autonomous pair programming with the main agent as navigator, a required work item lead, and implementation pilots. Use when the user wants delegated implementation with agent-to-agent proposal, review, and verification loops without approving each increment. For interactive sessions where the user navigates, use pair-program instead."
 ---
 
 # Subagent Pair Program
@@ -9,9 +9,9 @@ Coordinate through three roles:
 
 - **Main navigator:** own direction, cross-item design, the user-visible checklist,
   work assignments, proportionality, and final acceptance.
-- **Required Sol lead:** own delivery of one bounded item, including pilot proposals,
+- **Required work item lead:** own delivery of one bounded item, including pilot proposals,
   diagnosis, repairs, review, and verification.
-- **Luna pilots:** inspect, propose, implement approved changes, verify, and explain
+- **Implementation pilots:** inspect, propose, implement approved changes, verify, and explain
   the result to the lead.
 
 Keep routine approval and review between agents. Assign a lead for every item,
@@ -24,6 +24,8 @@ limitation; do not claim delegation or silently take over implementation.
 
 These requirements apply to all descendants, replacements, reviewers, and discovery
 workers unless the user explicitly authorizes an exception:
+
+### Codex
 
 | Assignment | Model | Effort |
 | --- | --- | --- |
@@ -43,14 +45,44 @@ correct unintended settings. Reuse an agent only at a compatible model/effort;
 
 Do not spawn Astra or use unlisted combinations without explicit user permission.
 Difficulty, failed checks, slot pressure, and "keep going" are not exceptions.
-Difficult Luna work goes to the Sol lead. If selection or routing is unavailable,
-report it and continue only independent read-only preparation until resolved.
+Difficult Luna work goes to the Sol lead.
 
-Every pilot brief names the lead's canonical agent path and uses
+### Claude Code
+
+Use the installed user agents in `~/.claude/agents/` with a scoped assignment:
+
+| Assignment | Agent profile | Model | Effort |
+| --- | --- | --- | --- |
+| Routine coordination, bounded implementation, mechanical edits, discovery, external monitoring | `developer-routine` | `claude-sonnet-5-5` | `medium` |
+| Substantive lead review, complex diagnosis, concurrency/lifecycle decisions, demanding integration, explicitly escalated implementation | `developer-demanding` | `claude-sonnet-5-5` | `high` |
+
+Select the profile through the Agent tool's `subagent_type`; omit a conflicting
+per-invocation model override. Medium is the default for routine work. Assign high
+when the item requires it, including a lead expected to perform substantive review.
+A pilot escalates difficult work to its lead, who may assign a demanding pilot;
+do not silently change effort or treat “think harder” as a setting. Keep the same
+navigator–lead–pilot structure and pass the relevant workflow rules in each brief.
+Do not preload this entire orchestration skill into every pilot or launch extra
+agents simply because a profile exists.
+
+These profiles inherit tools and permissions; they grant no additional authority.
+Verify the effective model and effort in returned configuration or `/tasks` when
+available, especially after resuming. Do not silently fall back to an expensive
+inherited model. If selection or routing is unavailable in either harness, report
+it and continue only independent read-only preparation until resolved.
+
+### Internal coordination
+
+In Codex, every pilot brief names the lead's canonical agent path and uses
 `collaboration.send_message(target="<lead path>", ...)` for proposals, questions,
 blockers, and results. Call collaboration tools directly, not through
 `functions.exec`. Never use desktop `list_threads`, `send_message_to_thread`, or
 the main task UUID for internal coordination.
+
+In Claude Code, use the native Agent and SendMessage tools with the lead's
+actual returned agent identifier. Include that address and the required proposal,
+approval, and result exchange in the pilot brief; do not invent Codex tool names
+or substitute a separate session for a native subagent.
 
 If only the main agent can spawn pilots, it may spawn on the lead's behalf; pilots
 still send substantive results to the lead and keep automatic parent completion
@@ -103,7 +135,7 @@ both insufficient checks and effort that exceeds its value. Reviews must not
 silently expand acceptance requirements.
 
 Do not diagnose routine failures, inspect intermediate patches, prescribe repairs,
-or rerun delegated checks. Deriving a fix yourself and sending it through Sol
+or rerun delegated checks. Deriving a fix yourself and sending it through the lead
 still duplicates the lead's work. Inspect implementation only for a specific escalation or
 acceptance concern. While execution is delegated, independent navigator work is
 limited to the next item's contract or a named strategic/cross-item uncertainty
@@ -227,7 +259,8 @@ do not take over debugging or repeatedly poll while the lead responds.
 
 For external processes, prefer completion notifications. Otherwise designate one
 monitor, run handle, cadence, and stall/failure conditions; a monitoring subagent
-uses Luna low. Do not add an agent merely to watch the lead or duplicate monitoring.
+uses Luna low in Codex or `developer-routine` in Claude Code. Do not add an agent
+merely to watch the lead or duplicate monitoring.
 
 ## User-facing updates
 

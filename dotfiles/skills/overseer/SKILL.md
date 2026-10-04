@@ -249,7 +249,8 @@ When you are running in Paseo with its built-in tools (`create_agent`,
   `labels: {"paseo.parent-agent-id": ""}` so it appears as a top-level thread
   in its project. You still get its finish notifications. Choose the provider and model as Paseo's guidance says: the profile
   the user named, or the one from `list_profiles` whose notes fit
-  implementation, otherwise your own provider. Name yourself with
+  implementation, otherwise your own provider. For Claude workers, apply
+  "Claude development worker routing" below when choosing the model and effort. Name yourself with
   `update_agent` too.
 - **Address:** `send_agent_prompt` interrupts a running agent, so use it
   only to start an agent that `get_agent_status` shows idle. Otherwise
@@ -269,13 +270,39 @@ When you are running in Paseo with its built-in tools (`create_agent`,
   wakes you, keep one hourly `create_heartbeat` while workers run, and delete
   it when they finish. At decision points, read `get_agent_activity`.
 
+### Claude development worker routing
+
+Unless the user selected another model, use Sonnet 5.5 medium for routine,
+bounded development and high for demanding diagnosis, concurrency/lifecycle work,
+complex integration, or substantive review. Record the choice in the worker brief.
+Keep medium as the default; escalate deliberately based on the work, not simply
+because the campaign is long. Preserve explicit user model/provider choices.
+
+In Paseo, select a matching Claude profile from `list_profiles`, or use the
+advertised launch overrides for `claude-sonnet-5-5` and the chosen effort. Claude's
+`~/.claude/agents/developer-routine.md` and `developer-demanding.md` are native
+subagent definitions, not Paseo launch profiles. Verify the effective provider,
+model and thinking option returned by the launcher; report unsupported routing
+rather than silently inheriting another model. Do not modify existing live workers.
+
+For standalone Claude workers, use explicit model and effort flags as below.
+Keep the normal Claude Code system prompt and the `keep-me-in-the-loop` brief:
+`--agent` with a nonempty custom prompt would replace the default system prompt.
+Native subagents inside a Claude worker may use `developer-routine` or
+`developer-demanding` when their assignment fits; pass the relevant workflow rules
+and preserve any reviewer model explicitly required by the active review skill.
+
+Compare elapsed time and total model usage per accepted work item, including
+review and repairs, before claiming savings. Do not add recurring benchmarks just
+to measure orchestration; reuse session usage and existing acceptance evidence.
+
 ### Claude Code
 
 Launch each worker as a background session from its worktree:
 
 ```sh
 cd ../<repo>-worker-<slug>
-claude --bg -n "Worker: <subtask>" --permission-mode <your mode> "<brief>"
+claude --bg -n "Worker: <subtask>" --model claude-sonnet-5-5 --effort <medium-or-high> --permission-mode <your mode> "<brief>"
 ```
 
 - **Trust:** the launch fails with "Workspace not trusted" unless the
