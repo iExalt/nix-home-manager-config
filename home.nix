@@ -57,6 +57,10 @@ in
     ./dotfiles/zsh/completions/_kubectl;
   home.file.".claude/settings.json".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/.claude/settings.json";
+  home.file.".claude/agents/developer-routine.md".source =
+    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/.claude/agents/developer-routine.md";
+  home.file.".claude/agents/developer-demanding.md".source =
+    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/.claude/agents/developer-demanding.md";
   home.file.".claude/CLAUDE.md".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/AGENTS.md";
   home.file.".codex/AGENTS.md".source =
