@@ -21,6 +21,9 @@
 
 ["plugins"]
 
+["plugins"."code-review@openai-bundled"]
+"enabled" = true
+
 ["plugins"."codex-app-tools@openai-bundled"]
 "enabled" = true
 
