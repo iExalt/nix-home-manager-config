@@ -109,6 +109,15 @@ roadmap's human interventions table, and say when you will ask for each, as
 "Time each request for a human" describes. When the threads have no known
 intervention, say so.
 
+For compute-heavy work, include where it runs, CPU and memory limits, and
+how many jobs may run together across workers and their reviewers. Propose
+budgets for routine test runs and expensive evidence checks separately,
+using existing timings where available. Reuse settled limits; include any
+new limits in this plan's approval rather than adding a separate ceremony.
+Have workers measure a baseline before expanding a workload. If a budget is
+exceeded or sustained growth threatens it, reduce concurrency or optimize
+within scope; ask before exceeding agreed limits or changing required checks.
+
 Then ask the user, through the dialog, to agree to the plan: the threads and
 each one's scope. This is the one point where you wait for the user before
 starting. Leave the threads' open decisions and other planned interventions
@@ -166,6 +175,13 @@ ignored files such as `.env` and local artifacts, so provide what a worker
 needs or let it work in the main checkout. Remove each worktree as "Clean up"
 describes.
 
+Give each worker a directory inside its permitted checkout for operational
+logs and artifacts that must survive a resume. Include it in the brief and
+have the worker confirm it can write and read there before a long operation.
+Check access to required ignored inputs and tools at the same time, without
+printing secrets. Resolve missing access before dependent work starts;
+changing paths or tools is not a way around an existing permission denial.
+
 ## Choose the session mechanism
 
 Use the first mechanism that applies, and name it in the opening message.
@@ -179,8 +195,9 @@ worker's continuous reviewer. Message a session through the receiver's own
 harness, which delivers without interrupting:
 
 - **To a Claude Code session:** `SendMessage` from another Claude Code
-  session, addressed by the peer name `ListAgents` shows. It arrives after
-  the receiver's current tool call.
+  session, using a session reference where supported, otherwise a unique
+  peer name verified through `ListAgents`. It arrives after the receiver's
+  current tool call.
 - **To a Codex session:** `codex queue --thread <session ID or name> --message <text>`
   from any shell. The session runs it as its next turn once the current turn
   ends.
@@ -291,7 +308,13 @@ none, say so, give the user each worker's brief to open by hand, and keep
 overseeing through what they relay.
 
 Confirm each channel before relying on it: a worker's first action is to
-acknowledge its brief to you. If no acknowledgement arrives, find out why,
+acknowledge its brief to you. Record both ends' immutable session IDs and
+the harness-specific delivery addresses in your checklist and the brief.
+Use a session ID or session reference for delivery where supported. If the
+harness only accepts peer names, verify a unique name-to-session mapping;
+never route through an ambiguous display name. Confirm the return channel
+with your reply to the acknowledgement, and recheck the mapping after a
+resume or handoff. If no acknowledgement arrives, find out why,
 such as a wrong address, a held message or a permission prompt, before
 launching more workers.
 
@@ -321,7 +344,9 @@ filled in for the worker:
   pausing for confirmation.
 - Send each chunk report, any deviation that changes another thread or the
   script, and phase completion to the overseer. Skip running commentary; the
-  overseer needs outcomes, not activity.
+  overseer needs outcomes, not activity. Before claiming a check passed,
+  finalize its evidence and limitations with your reviewer, as "Run the
+  threads" describes. Label earlier results provisional.
 - A reply that quotes the user is the user's answer. A reply the overseer
   marks as its own decision carries only the authority the user gave the
   overseer.
@@ -332,6 +357,10 @@ filled in for the worker:
 - Work in `<worktree>` on `<branch>`. Publish as the repository's rules say,
   for example by rebasing onto the remote main branch and pushing, and
   reconcile shared documents without overwriting another thread's entries.
+- Keep operational logs and retained artifacts in `<artifact directory>`;
+  confirm access before long operations. Run compute and checks within
+  `<agreed execution location, resource limits and runtime budgets>`, where
+  applicable. Report overruns and measured growth before expanding the work.
 - Don't launch other workers. Your continuous reviewer is part of your own
   work. If it stops when neither you nor the user stopped it, tell the
   overseer at once.
@@ -350,6 +379,16 @@ Approve it when it fits. Otherwise relay it, as "Relay human interventions"
 describes, and pass the user's answer back. One thread's agreed scope never
 covers another thread.
 
+Before reporting an acceptance result or using it to unblock a dependent,
+require a finalized handoff: the check and revision tested, the result and
+evidence location, the reviewer's acceptance, and the limitations or unmet
+checks. For statistical claims, include what was counted, its denominator,
+exclusions or abstentions, and what the sample represents. Check the claim
+against that evidence; a passing gate does not establish broader accuracy
+or coverage. If reviewer disclosures are still pending, keep the result
+provisional. Carry material limits into the user-facing report and correct
+any overstatement promptly.
+
 When a worker reports its thread done, verify the claims before launching
 dependents: the script marks the thread done, its commits are on the remote,
 the status document is updated, and its done check passed. If a worker can't
@@ -361,6 +400,16 @@ affected threads that haven't launched. Re-sequence routine changes yourself,
 following three-tiered-plan's "Revise when evidence changes", and report them
 in your next update. Take any change to outcomes, scope, acceptance checks,
 spending or risk to the user before the affected work proceeds.
+
+An unavailable or permission-blocked proof stays unmet. Keep its acceptance
+gate open in the script and status document, even while independent work
+continues. Reusing earlier evidence, substituting a check or moving it to a
+later phase needs the user's approval unless that alternative was already
+agreed. Ask through the human-intervention dialog with the proposed evidence
+and what remains unproven; do not announce the change as settled or make the
+user opt back into the original check. Record the answer before changing the
+gate or launching work that depends on it. Approval of a deferral does not
+authorize an action rejected by the permission system.
 
 When a worker goes quiet without reporting, inspect it before nudging it: it
 may be waiting on a permission prompt, out of context, or crashed. Resume the
