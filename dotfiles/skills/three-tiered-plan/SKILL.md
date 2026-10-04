@@ -14,8 +14,9 @@ documents, each more concise and more literal than the last:
 | **Roadmap** | How: steps, what each needs, what proves it, which plan boxes it ticks, where a human acts | A fraction of the plan |
 | **Script** | Which implementation threads to open, with what prompt, after what, and when a human is needed | A page or two; literal |
 
-Grill each tier out of the user, then write it with a continuous reviewer and
-confirm it before deriving the next. The user owns outcomes, scope and
+Grill each tier out of the user, then write it with a continuous reviewer.
+Draft and review the tiers in order, then ask the user to confirm the complete
+set in one dialog. The user owns outcomes, scope and
 tradeoffs, and holds history and expertise the repository doesn't record. You
 find facts, propose, challenge and write; the reviewer challenges you.
 
@@ -194,8 +195,8 @@ history cites its sources.
 
 ## Tier 2: the roadmap
 
-Derive the roadmap from the confirmed plan and the current state; the plan's
-own status may be stale. Grill only what the plan leaves open about how:
+Derive the roadmap from the reviewer-accepted plan and the current state;
+the plan's own status may be stale. Grill only what the plan leaves open about how:
 ordering tradeoffs, grouping steps across milestones, live-resource lifetimes
 and budgets, and which human interventions can be settled now.
 
@@ -331,18 +332,31 @@ status document exists, make its recommended next sequence point at the
 script's ready threads, those whose dependencies are met, instead of keeping a
 second sequence.
 
-## Confirm each tier
+## Confirm the tiers together
 
-Present a tier for confirmation only after the reviewer has reviewed its final
-snapshot and you agree, or the disagreement is clear. Present the reviewer's
+By default, derive the next tier from the reviewer-accepted draft without an
+intermediate confirmation dialog. Keep unconfirmed tiers marked as drafts.
+Ask unresolved user decisions when needed; batching confirmation does not
+authorize you to settle them. If the user requests approval between tiers,
+honor that cadence instead.
+
+Present the complete set for confirmation only after the reviewer has reviewed
+the final snapshots and their consistency across tiers, and you agree, or the
+disagreement is clear. Present the reviewer's
 position: its agreement, the material amendments it secured, and any
 unresolved disagreement with both positions and your recommendation. A
 reviewer notification or an unacknowledged draft does not count as review.
 
-Ask for confirmation through the dialog, with a reading guide: which sections
-to check first, starting with the summary and every Decided row. Don't derive
-the next tier, or start implementation, until the user confirms. Silence, a
-timeout or a preselected option is not confirmation. Offer a diagram-led
+Ask one confirmation question covering all three tiers in one dialog, with
+links and a reading guide for each: which sections to check first, starting
+with the summary and every Decided row. Offer confirmation of the complete set
+or a request for revisions; don't ask three separate approval questions. When
+revising an existing set, identify which tiers changed and include those in
+the same confirmation. If revisions affect an upstream tier, propagate them
+downward and have the reviewer check the updated set before asking again.
+Don't publish the tiers or start implementation until the user explicitly
+confirms them. Silence, a timeout or a preselected option is not confirmation.
+Offer a diagram-led
 companion, such as a lifecycle with Mermaid diagrams, when the design is
 cheaper to disagree with visually.
 
@@ -367,11 +381,11 @@ round when outcomes, scope, priorities, acceptance criteria or spending change;
 propose routine re-sequencing within confirmed decisions directly. Never weaken
 a gate silently to finish.
 
-## Hand off each tier
+## Hand off the confirmed set
 
-Begin with a one- or two-line **TL;DR**. Then give the document's path and
+Begin with a one- or two-line **TL;DR**. Then give each document's path and
 publication state, how it is laid out, what it adds that the tier above
 doesn't say, the reviewer's closing position, which decisions remain open and
-who owns them, and the next action: the next tier, or the script's ready
+who owns them, and the next action: any remaining tier, or the script's ready
 threads with their prompts and when a human is next needed. Mention that
 `overseer` can run the ready threads as separate sessions.
