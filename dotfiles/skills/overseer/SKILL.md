@@ -42,6 +42,36 @@ Keep a checklist of the threads you oversee, each with its worker and state:
 waiting, ready, running, awaiting approval, awaiting a human, blocked, done.
 Your status updates show it as a one-line roll call.
 
+## Move into a run project
+
+In Paseo, the overseer runs inside the run project with its workers, as
+"Paseo" describes. Check where you are before anything else: find your
+`workspaceId` with `get_agent_status` on your own agent ID, then your
+workspace's project and checkout in `list_workspaces`. If your checkout is a
+run checkout, `../<repo>-overseer-<slug>`, you are the overseer; go on to
+"Establish what you oversee". Otherwise the user started you in the
+repository's own project, and you only hand off:
+
+1. Create the run project and its checkout, as "Paseo" describes.
+2. Create a workspace there with `create_workspace`: local isolation, the run
+   checkout as `path`, the run project's `projectId` and the title
+   `Overseer: <task>`.
+3. Launch the overseer in it with `create_agent`, titled `Overseer: <task>`,
+   with your own provider, model, mode and thinking option from
+   `get_agent_status`. Its prompt invokes this skill and carries the user's
+   request verbatim, with anything else they said in this thread. Clear its
+   `paseo.parent-agent-id` label, as "Paseo" describes for workers.
+4. Ask the user in a blocking dialog whether to archive this thread, naming
+   the overseer thread and its project. On yes, call `archive_workspace` on
+   your workspace when `list_agents` shows no other agent in it, and
+   `archive_agent` on yourself otherwise. On no, stay idle: the overseer's
+   finish notifications still reach you, and you answer each with no text,
+   or `No news.` in Claude Code.
+
+Don't read the script or plan in this thread; the overseer does. If the
+`paseo` CLI is missing or fails, skip the hand-off, say so, and oversee from
+here in the repository's existing project.
+
 ## Establish what you oversee
 
 Read the script, the roadmap, the status document, the parts of the plan the
@@ -153,14 +183,15 @@ When you are running in Paseo with its built-in tools (`create_agent`,
 - **Run project:** keep the run's threads together in a temporary Paseo
   project of their own. The built-in tools can't create projects, but the
   `paseo` CLI can; the macOS app bundles it at
-  `/Applications/Paseo.app/Contents/Resources/bin/paseo`. Once the user
-  agrees to the plan, add a checkout for the run with
+  `/Applications/Paseo.app/Contents/Resources/bin/paseo`. Add a checkout for
+  the run with
   `git worktree add ../<repo>-overseer-<slug> -b overseer/<slug> origin/main`,
   register it with `paseo project create ../<repo>-overseer-<slug> --json`,
   and name it with `paseo project rename <project-id> "Overseer: <task>"`.
-  Your own session stays where the user started it. If the CLI is missing or
-  fails, use the repository's existing project instead and say so in your
-  next update.
+  The session the user started does this and hands off to an overseer
+  inside the project, as "Move into a run project" describes. If the user
+  doesn't agree to the plan, offer to clean up the project, as "Clean up"
+  describes.
 - **Isolation:** create a workspace with worktree isolation for each worker
   with `create_workspace`, passing the run checkout as `path` and the run
   project's `projectId`, branching off the remote main branch, such as
@@ -455,11 +486,14 @@ dialog, such as `AskUserQuestion`, whether to clean up the run project; with
 nothing left to run, the dialog blocks nothing. Name what cleanup would
 remove and anything unpushed it would keep.
 
-- **Clean up:** archive each worker's agent and workspace, then delete the
-  project with `paseo project delete <project-id>`. That only unregisters the
-  project and its workspaces; it leaves their worktrees, directories and
-  branches in place. Remove those as above: each worker's worktree under
-  `~/.paseo/worktrees/`, then the run checkout and its `overseer/<slug>`
-  branch. Then say what you removed.
+- **Clean up:** archive each worker's and question session's agent and
+  workspace, and remove each worker's worktree under `~/.paseo/worktrees/`
+  as above. Say what you removed and what goes next, since your own thread
+  goes with it. Then, as your last action, remove the run checkout and its
+  `overseer/<slug>` branch with `git -C <main checkout>`, since you are
+  running in it, and delete the project with
+  `paseo project delete <project-id>`. That only unregisters the project and
+  its workspaces, your own included; their worktrees, directories and
+  branches stay unless you remove them first.
 - **Keep:** leave it all, and tell the user the project ID and the commands
   that would remove it later.
