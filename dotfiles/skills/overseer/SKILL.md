@@ -24,17 +24,28 @@ project, and your whole job is the hand-off, done straight away:
 3. Launch the overseer in it with `create_agent`, titled `Overseer: <task>`,
    with your own provider, model, mode and thinking option from
    `get_agent_status`. Its prompt invokes this skill and carries the user's
-   request verbatim, with anything else they said in this thread. Clear its
-   `paseo.parent-agent-id` label, as "Paseo" describes for workers.
+   request verbatim, with anything else they said in this thread, and your
+   agent ID as the launcher's. Clear its `paseo.parent-agent-id` label, as
+   "Paseo" describes for workers.
 4. Right after the launch, without waiting on the overseer, ask the user in a
    blocking dialog whether to archive this thread, naming the overseer thread
-   and its project. On yes, call `archive_workspace` on your workspace when
-   `list_agents` shows no other agent in it, and `archive_agent` on yourself
-   otherwise. On no, stay idle: the overseer's finish notifications still
-   reach you, and you answer each with no text, or `No news.` in Claude Code.
+   and its project. Record the answer on yourself with `update_agent`, as the
+   label `overseer.launcher` set to `archive` or `keep`. On yes, call
+   `archive_workspace` on your workspace when `list_agents` shows no other
+   agent in it, and `archive_agent` on yourself otherwise. On no, stay idle:
+   the overseer's finish notifications still reach you, and you answer each
+   with no text, or `No news.` in Claude Code.
 
 If the `paseo` CLI is missing or fails, skip the hand-off, say so, and oversee
 from this thread in the repository's existing project.
+
+The user answers that dialog while viewing the launcher's thread, and Paseo
+reopens an archived session the user is viewing, so the launcher's own archive
+doesn't stick. As the overseer, finish it: whenever you wake, including when a
+dialog returns, read the launcher's labels with `get_agent_status`. Once
+`overseer.launcher` is `archive` and its status isn't `closed`, call
+`archive_agent` on it. Stop checking once it is closed or the label is
+`keep`.
 
 Run script threads without implementing them. You launch **workers**, separate
 top-level sessions that each run `keep-me-in-the-loop`, usually one per
@@ -495,6 +506,8 @@ remove and anything unpushed it would keep.
   running in it, and delete the project with
   `paseo project delete <project-id>`. That only unregisters the project and
   its workspaces, your own included; their worktrees, directories and
-  branches stay unless you remove them first.
+  branches stay unless you remove them first. Deleting your own workspace
+  kills your session mid-command, so put the deletion last in that command;
+  Paseo then drops your agent from every list.
 - **Keep:** leave it all, and tell the user the project ID and the commands
   that would remove it later.
