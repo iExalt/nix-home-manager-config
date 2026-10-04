@@ -81,6 +81,17 @@ them before turning a speculative route into an implementation commitment.
 Keep a visible checklist of phase chunks, with the current chunk and outstanding
 checks clear. Work through the approved chunks in dependency order.
 
+For changes that grow or restructure tests, carry the repository's routine-check
+command, wall-clock budget and stable accepted baseline into the chunk plan.
+If absent, establish them proportionately before substantial suite growth,
+using existing timings or the next required run. Record machine, cache and
+concurrency assumptions with the baseline; do not reset it each chunk. Reuse
+required-run timings to expose cumulative growth and its largest contributors.
+Have the author and reviewer address confirmed regressions in the current chunk
+through cheaper fixtures, less redundant coverage and the testing pyramid.
+Preserve required proofs and named execution gates; do not create a cleanup
+milestone or increase the budget merely to close the chunk.
+
 Within each chunk:
 
 1. Use `continuous-peer-review` to jointly shape and review small implementation

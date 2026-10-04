@@ -199,6 +199,14 @@ own status may be stale. Grill only what the plan leaves open about how:
 ordering tradeoffs, grouping steps across milestones, live-resource lifetimes
 and budgets, and which human interventions can be settled now.
 
+For implementation campaigns, include a testing strategy with most behavioral
+coverage in fast unit tests, fewer integration tests for contracts, and a small
+end-to-end set for critical journeys. Define the routine-check command, runtime
+budget, stable baseline and comparable execution conditions, using existing
+evidence or a named early measurement. Keep expensive evidence checks attached
+to explicit gates. Make suite-runtime maintenance part of each implementing
+step; do not plan indefinite test growth followed by a cleanup milestone.
+
 Write it from [assets/roadmap-template.md](assets/roadmap-template.md):
 
 - A **step** is one unit of agent work: a few commits ending in its proof.

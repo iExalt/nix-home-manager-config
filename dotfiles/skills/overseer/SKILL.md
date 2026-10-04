@@ -118,6 +118,18 @@ Have workers measure a baseline before expanding a workload. If a budget is
 exceeded or sustained growth threatens it, reduce concurrency or optimize
 within scope; ask before exceeding agreed limits or changing required checks.
 
+Carry the routine-check command, stable accepted timing baseline, budget and
+machine/cache/concurrency assumptions between workers. Compare across the run,
+not just against the previous chunk; do not reset the baseline at each handoff.
+Assign test-runtime regressions to the worker introducing them while its change
+is still in progress. Keep coverage mainly in fast unit tests, with fewer
+integration tests and a small end-to-end set; judge cost as well as test count.
+Consolidating duplicate tests or moving logic checks down a layer is ordinary
+maintenance when the required proof is preserved. Moving a required proof to a
+later gate or making it optional remains an acceptance change. Do not turn
+routine suite maintenance into a separate milestone by default, or hide growth
+by increasing concurrency beyond the agreed resource limits.
+
 Then ask the user, through the dialog, to agree to the plan: the threads and
 each one's scope. This is the one point where you wait for the user before
 starting. Leave the threads' open decisions and other planned interventions
