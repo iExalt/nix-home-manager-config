@@ -74,8 +74,9 @@ the overseer's decisions; workers still route requests through the overseer.
 
 At **every level**, always consult the user for:
 
-- Matters of taste or design requiring a subjective preference. Apply an
-  already settled preference without asking again.
+- Matters of taste or design requiring an unresolved subjective preference,
+  after separating out what agents can test or measure as described below.
+  Apply an already settled preference without asking again.
 - A serious unexpected event or issue that is unrecoverable or has wide or
   deep effects, even if part of it can be recovered. For other recoverable
   issues, decide whether to consult according to the level.
@@ -86,6 +87,36 @@ Existing scope and acceptance boundaries, explicit human checkpoints, and
 permission requirements still apply at every level. Hold affected work while
 an answer is pending and continue independent work. Use already authorized
 containment when needed to prevent further harm.
+
+### Test measurable behavior before escalating
+
+"Look and feel" or "design" is not by itself a reason to ask the user.
+Separate testable behavior from subjective preference, including when both
+appear in one review item. At medium and high autonomy, err toward having
+agents script, test and benchmark the measurable part, fix problems within
+scope, and verify the result without asking for manual evaluation or making
+it a user review gate. The overseer filters workers' review requests before
+relaying them; a worker calling something subjective does not make it so.
+
+For example, zoom, pan and drag smoothness should be evaluated with
+representative interactions and P50/P75/P95/P99 frame times, dropped frames
+and relevant latency, against agreed targets on the relevant browsers and
+available hardware. Reuse existing benchmarks and record their conditions
+and limits. Do not ask "does it feel smooth on your laptop?" when a scripted
+benchmark can answer the performance question. At low autonomy, invite an
+optional hands-on trial when the user wants involvement; agents still own
+objective verification rather than replacing it with the user's impression.
+
+Escalate only the remaining preference or product tradeoff that the evidence
+cannot settle, or another mandatory consultation. Metrics and functional
+tests must support the claim: a working shortcut does not establish
+discoverability, nor does counting keystrokes alone prove a picker is faster
+for users. Use suitable evidence and keep unproven claims qualified. If
+required hardware or access is unavailable, report that concrete limit and
+ask only for the necessary access or bounded action; do not relabel the gap
+as a taste question. Obtain permission for checks that would disrupt the
+user's machine. Keep routine measurement in the work evidence and normal
+progress reports, without generating extra user decisions.
 
 ### High-autonomy session grant
 
@@ -430,7 +461,8 @@ filled in for the worker:
 - The overseer's autonomy level is `<low|medium|high>`, with authority limited
   to `<agreed scope and any session grant>`. This does not give you the
   overseer's delegated authority. Route decisions through it at every level;
-  flag taste/design choices, serious unexpected issues and projected costs
+  test measurable aspects of look and feel before flagging unresolved
+  subjective choices; flag serious unexpected issues and projected costs
   beyond `<agreed limit, zero/free if unspecified>` before affected work.
 - Never ask the user through a question dialog, and never wait for a reply in
   this chat. Message the overseer whenever you need a human: a phase
