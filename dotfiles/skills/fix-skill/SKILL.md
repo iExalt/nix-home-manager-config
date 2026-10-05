@@ -21,9 +21,14 @@ Tell the subagent to:
    Resolve the active skill's symlink or catalog location when necessary; do
    not edit a generated or installed copy when a maintained source exists.
    If multiple copies disagree, establish which one the current thread uses.
-2. Read the repository instructions, Git state, full skill, and relevant
-   supporting files. Use the available skill-creation guidance. Maintain a
-   checklist and make the requested scoped edit while preserving unrelated work.
+2. Read the applicable `AGENTS.md` files from the source repository root down
+   to the target skill. When editing skills in
+   `$HOME/Projects/nix-home-manager-config/dotfiles/skills`, explicitly read
+   `$HOME/Projects/nix-home-manager-config/dotfiles/AGENTS.md`. Do not assume
+   these instructions were automatically loaded when invoked from another
+   repository. Read the Git state, full skill, and relevant supporting files.
+   Use the available skill-creation guidance. Maintain a checklist and make
+   the requested scoped edit while preserving unrelated work.
 3. Validate the skill and any changed executable behavior. Follow the source
    repository's provisioning and publication rules, including Home Manager
    reload for added, removed, or renamed skills and scoped commits/pushes where
