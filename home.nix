@@ -3,6 +3,13 @@
 let
   repoRoot = "${config.home.homeDirectory}/Projects/nix-home-manager-config";
   rootHome = if pkgs.stdenv.isDarwin then "/var/root" else "/root";
+  frontendDesignSource = pkgs.fetchFromGitHub {
+    owner = "anthropics";
+    repo = "claude-code";
+    rev = "2bfb629dfaff0c8318047a4beb93cf1dc5b58b18";
+    hash = "sha256-qD7zEVcuPhwGbpknmsWKwCiR4XMc63iUumP7vLok704=";
+  };
+  frontendDesignSkill = "${frontendDesignSource}/plugins/frontend-design/skills/frontend-design";
   miseTools = [
     "node@26"
     "bun@latest"
@@ -65,6 +72,9 @@ in
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/AGENTS.md";
   home.file.".codex/AGENTS.md".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/AGENTS.md";
+  # feat(skills): share the pinned upstream skill without a client plugin cache.
+  home.file.".agents/skills/frontend-design".source = frontendDesignSkill;
+  home.file.".claude/skills/frontend-design".source = frontendDesignSkill;
   home.file.".codex/skills/peer-review".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/peer-review";
   home.file.".claude/skills/peer-review".source =
