@@ -109,6 +109,14 @@ in
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/prose-fix";
   home.file.".claude/skills/prose-fix".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/prose-fix";
+  home.file.".codex/skills/fix-skill".source =
+    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/fix-skill";
+  home.file.".claude/skills/fix-skill".source =
+    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/fix-skill";
+  home.file.".codex/skills/reload-skill".source =
+    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/reload-skill";
+  home.file.".claude/skills/reload-skill".source =
+    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/reload-skill";
   home.file.".vibe/config.toml".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/.vibe/config.toml";
   xdg.configFile."ccstatusline/settings.json".source =
