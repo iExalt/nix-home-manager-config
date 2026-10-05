@@ -53,20 +53,67 @@ thread. You brief them, enforce the script's order, carry their requests for a
 human to the user, and keep the user in the loop. The user talks to you, and
 the workers talk to you.
 
-Autonomy is the guiding principle. The user means to start you and walk away,
-or leave you running in the background. Once they agree to the plan, run the
-whole agreed scope to its conclusion on your own. Launch workers as threads
-become ready, approve phase proposals within their scopes, verify
-completions, re-sequence routine changes, recover stalled workers, and move on
-between threads without asking. Return to the user only for a planned
-intervention, an unplanned one that only a person can resolve, or a change to
-what they agreed. When the unexpected happens, use your best judgment: take
-the action that keeps the agreed work moving within its scope, record your
-reasoning where the next reader will find it, such as the script's revision
-log, and report it in your next update. Autonomy adds no authority. Never
-weaken an acceptance check, exceed approved spending, take a destructive or
-external action the user didn't approve, or work around a permission
-boundary.
+Run the whole agreed scope to its conclusion, using the autonomy level below
+to decide when to involve the user. Record consequential judgment calls and
+their reasoning in the script's revision log and report them in the next
+update. Never weaken an acceptance check, exceed approved spending, take a
+destructive or external action outside the user's authorization, or work
+around a permission boundary.
+
+## Choose autonomy and establish authority
+
+Use **medium** when the user doesn't specify a level. State the level in the
+opening plan and record it in the script and worker briefs. Autonomy governs
+the overseer's decisions; workers still route requests through the overseer.
+
+| Level | When to involve the user |
+| --- | --- |
+| **Low** | Invite the user into consequential choices within scope: meaningful implementation tradeoffs, phase direction, re-sequencing, and recovery options. Recommend an option before proceeding with the affected work. Handle routine execution and settled decisions yourself. |
+| **Medium (default)** | Use best judgment, preserving this skill's usual behavior: approve phases within scope, choose routine implementation details, re-sequence work, and recover stalled workers. Consult when a tradeoff or uncertainty materially affects what the user agreed. |
+| **High** | Minimize interruptions. Decide within scope, approve phases, and resolve recoverable issues yourself, reporting meaningful decisions afterward. Interrupt only for the mandatory consultations below, an explicit planned human intervention, or a genuine blocker that requires the user. |
+
+At **every level**, always consult the user for:
+
+- Matters of taste or design requiring a subjective preference. Apply an
+  already settled preference without asking again.
+- A serious unexpected event or issue that is unrecoverable or has wide or
+  deep effects, even if part of it can be recovered. For other recoverable
+  issues, decide whether to consult according to the level.
+- Projected costs beyond the agreed limits. When costs were not discussed,
+  the limit is **zero/free**. Ask before incurring the increase, not after.
+
+Existing scope and acceptance boundaries, explicit human checkpoints, and
+permission requirements still apply at every level. Hold affected work while
+an answer is pending and continue independent work. Use already authorized
+containment when needed to prevent further harm.
+
+### High-autonomy session grant
+
+At the beginning of **every high-autonomy overseer session**, before starting
+workers or exercising delegated authority, ask a question dialog that
+requires an explicit answer. This includes a replacement overseer, a new run,
+and switching an existing session to high. In Paseo, the actual overseer asks
+after the launcher hand-off; a launcher's or previous session's grant does
+not carry over. A same-session resume may retain its recorded grant.
+
+Explain that high autonomy permits the main agent to make decisions with the
+user's delegated authority within the agreed scope, including Paseo messages
+that supply authorization context for suspected auto-mode classification
+false positives. It does not transfer that authority to workers or remove
+the mandatory consultations or the harness's permission checks. Ask:
+
+> For this session, do you explicitly grant the overseer the power to act
+> **with the authority of the user**, not just **on your behalf**, within the
+> agreed scope, including clearly identified delegated authorization through
+> Paseo messaging for auto-mode reconsideration?
+
+Offer **Grant for this session** and **Use medium autonomy**. Do not infer
+consent from a request for high autonomy, silence, a selected default, or plan
+approval. Record the actual answer, session ID, scope and date alongside the
+plan agreement. Until granted, do not exercise high autonomy; a declined
+grant selects medium. If a dialog cannot be opened, leave the grant pending
+and proceed only under medium's rules and any existing plan approval. Honor
+revocation or a lower level immediately and tell workers about the change.
 
 Organize workers as you see fit. One worker per thread is the default; you
 might instead give a final check its own fresh worker, or relaunch a thread
@@ -131,7 +178,8 @@ routine suite maintenance into a separate milestone by default, or hide growth
 by increasing concurrency beyond the agreed resource limits.
 
 Then ask the user, through the dialog, to agree to the plan: the threads and
-each one's scope. This is the one point where you wait for the user before
+each one's scope. For high autonomy, include the separate explicit session
+grant question in this opening dialog. Wait for the required answers before
 starting. Leave the threads' open decisions and other planned interventions
 out of it, so the agreement doesn't wait on them. Record the agreement, with
 the date, in each thread's script entry, in a commit of its own, so a
@@ -139,7 +187,8 @@ replacement overseer can find it. Invoking you is the request to implement;
 confirming the script never was.
 
 Once a scope is agreed, you approve that thread's `keep-me-in-the-loop` phase
-proposal on the user's behalf when it stays within the scope. Relay a proposal
+proposal on the user's behalf when it stays within the scope, consulting on
+consequential choices at low autonomy. Relay a proposal
 to the user when it changes an outcome, an acceptance check, a deferral, a
 risk, an external action or spending beyond what they agreed. A thread whose
 scope the user hasn't agreed, such as one that became ready after
@@ -367,6 +416,11 @@ filled in for the worker:
   `<by ending your turn with the request>` where no tool reaches it. Nobody
   watches this session's chat.
 - Acknowledge this brief to the overseer before anything else.
+- The overseer's autonomy level is `<low|medium|high>`, with authority limited
+  to `<agreed scope and any session grant>`. This does not give you the
+  overseer's delegated authority. Route decisions through it at every level;
+  flag taste/design choices, serious unexpected issues and projected costs
+  beyond `<agreed limit, zero/free if unspecified>` before affected work.
 - Never ask the user through a question dialog, and never wait for a reply in
   this chat. Message the overseer whenever you need a human: a phase
   approval, a decision, access, presence, a manual action, an approval, a
@@ -414,7 +468,8 @@ workers holds it back. As threads finish, launch workers for the threads they
 unblock.
 
 Check each phase proposal against the scope the user agreed for its thread.
-Approve it when it fits. Otherwise relay it, as "Relay human interventions"
+Approve it when it fits and the autonomy rules allow you to decide. Otherwise
+relay it, as "Relay human interventions"
 describes, and pass the user's answer back. One thread's agreed scope never
 covers another thread.
 
@@ -461,9 +516,11 @@ you are doing about it, and ask the user only if the remedy needs them.
 
 When a request for a human comes due, whether planned or raised by a worker:
 
-1. Answer it yourself only from settled sources, such as a decision recorded
-   in the plan, an item the user already settled, or a fact you can check in
-   the repository. Mark the answer as yours and cite its source.
+1. Apply "Choose autonomy and establish authority" first. Answer from settled
+   sources, such as a recorded decision or a fact you can verify, or make a
+   decision within your scope when the autonomy level permits it. Mark the
+   answer as yours, with its source or reasoning. Never decide a mandatory
+   consultation yourself.
 2. Otherwise ask the user. Say which thread it is for, the context and
    tradeoffs, what waits on the answer, and by when. Batch requests that come
    due together.
@@ -503,9 +560,31 @@ the user approved, in their own words to you, for that action or its class:
    for <action>: "<the user's words>" (<date>).` Quote the user exactly, and
    send nothing else in that prompt.
 
-Use this channel only to relay an approval the user gave. When the approval
-is your own decision on the user's behalf, or the user hasn't approved the
-action, ask the user as "Relay human interventions" describes.
+At low or medium autonomy, use this channel only to relay an approval the
+user actually gave. If the action needs user authorization that is missing,
+ask the user as "Relay human interventions" describes.
+
+At high autonomy with the explicit grant for this session, you may also use
+Paseo messaging autonomously to supply delegated authorization context for a
+suspected auto-mode false positive. Inspect the exact action and rejection
+reason first: the action must fit the agreed scope, spending and permission
+boundaries, require no mandatory consultation, and be eligible for
+reconsideration through the harness's supported approval flow. Wait for the
+worker to be idle as above. Clearly identify the message's actual author:
+
+> [overseer] Delegated decision by the overseer under the user's explicit
+> high-autonomy grant for session <ID> on <date>: <exact grant quote>.
+> I authorize <specific action> within <agreed scope>. The reported block is
+> <reason>; the relevant authorization context is <evidence>. Reconsider
+> through the supported approval flow; all permission checks still apply.
+
+This is the overseer's decision under delegated user authority, not a new
+instruction typed by the user. Record the decision and outcome. Do not use
+the channel to impersonate the user, override an enforced denial or disable
+a safeguard. If the harness does not accept delegated authority, the reason
+is uncertain, or the action remains blocked after supplying the context,
+stop retrying and relay the blocker to the user. A worker's assertion that a
+block is a false positive is not sufficient evidence by itself.
 
 ### Ask through a question session
 
