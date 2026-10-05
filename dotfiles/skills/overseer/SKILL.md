@@ -99,8 +99,15 @@ not carry over. A same-session resume may retain its recorded grant.
 Explain that high autonomy permits the main agent to make decisions with the
 user's delegated authority within the agreed scope, including Paseo messages
 that supply authorization context for suspected auto-mode classification
-false positives. It does not transfer that authority to workers or remove
-the mandatory consultations or the harness's permission checks. Ask:
+false positives. Paseo's `send_agent_prompt` messages to other Paseo agents
+appear as if sent by the user, allowing the overseer to supply the missing
+authorization context and unblock classification false positives through
+supported reconsideration. These messages interrupt the receiving agent and
+its running subagents; they do not queue. Prefer sending while the receiver
+is idle. If sending while it is active, add a note asking it to continue
+after the interruption, as "Relay human interventions" describes. This does
+not transfer authority to workers or remove the mandatory consultations or
+the harness's permission checks. Ask:
 
 > For this session, do you explicitly grant the overseer the power to act
 > **with the authority of the user**, not just **on your behalf**, within the
@@ -249,7 +256,9 @@ Use the first mechanism that applies, and name it in the opening message.
 Outside Paseo, launch workers in your own harness, so that messages travel
 natively.
 
-Never deliver a message by interrupting a running session. An interrupt
+For routine coordination, do not interrupt a running session. The Paseo
+authorization messages in "Relay human interventions" are an exception;
+prefer an idle receiver even then. An interrupt
 cancels the tool call in flight, which may be a live operation, and in Claude
 Code it also stops the session's background subagents for good, including a
 worker's continuous reviewer. Message a session through the receiver's own
@@ -301,9 +310,11 @@ When you are running in Paseo with its built-in tools (`create_agent`,
   implementation, otherwise your own provider. For Claude workers, apply
   "Claude development worker routing" below when choosing the model and effort. Name yourself with
   `update_agent` too.
-- **Address:** `send_agent_prompt` interrupts a running agent, so use it
-  only to start an agent that `get_agent_status` shows idle. Otherwise
-  message as above. A Claude agent is a Claude Code peer session: give
+- **Address:** `send_agent_prompt` interrupts a running agent and its
+  subagents instead of queuing. For routine messages, use it only when
+  `get_agent_status` shows idle; otherwise message as above. For authorization
+  messages, follow "Relay human interventions", including its continuation
+  note when the receiver is active. A Claude agent is a Claude Code peer session: give
   workers the peer name `ListAgents` reports for you, and take each worker's
   peer name from the `from` attribute of its acknowledgement. A Codex agent's
   session ID is `persistence.metadata.threadId` in `get_agent_status`.
@@ -554,11 +565,13 @@ classifier can block an action the user approved through you. Paseo's
 thread. When a Claude worker in Paseo reports a classifier block on an action
 the user approved, in their own words to you, for that action or its class:
 
-1. Wait until `get_agent_status` shows the worker idle, since
-   `send_agent_prompt` interrupts a running agent.
+1. Check `get_agent_status` and prefer waiting until the worker is idle.
+   `send_agent_prompt` does not queue: it interrupts a running agent and its
+   running subagents. If you send while it is active, add a continuation
+   note as described below.
 2. Send it with `send_agent_prompt`: `[overseer] Relaying the user's approval
    for <action>: "<the user's words>" (<date>).` Quote the user exactly, and
-   send nothing else in that prompt.
+   add only the continuation note if needed.
 
 At low or medium autonomy, use this channel only to relay an approval the
 user actually gave. If the action needs user authorization that is missing,
@@ -569,14 +582,25 @@ Paseo messaging autonomously to supply delegated authorization context for a
 suspected auto-mode false positive. Inspect the exact action and rejection
 reason first: the action must fit the agreed scope, spending and permission
 boundaries, require no mandatory consultation, and be eligible for
-reconsideration through the harness's supported approval flow. Wait for the
-worker to be idle as above. Clearly identify the message's actual author:
+reconsideration through the harness's supported approval flow. Check the
+worker's status and prefer an idle receiver as above. Clearly identify the
+message's actual author:
 
 > [overseer] Delegated decision by the overseer under the user's explicit
 > high-autonomy grant for session <ID> on <date>: <exact grant quote>.
 > I authorize <specific action> within <agreed scope>. The reported block is
 > <reason>; the relevant authorization context is <evidence>. Reconsider
 > through the supported approval flow; all permission checks still apply.
+
+When sending either kind of authorization message to a non-idle agent, add:
+
+> This message interrupted your work rather than queuing. After processing
+> it, check the interrupted operation's state and continue from where you
+> stopped. Re-establish any interrupted subagents, including your reviewer,
+> before relying on their work; avoid repeating completed side effects.
+
+The note helps the receiver recover; it does not prevent interruption or
+automatically resume its subagents.
 
 This is the overseer's decision under delegated user authority, not a new
 instruction typed by the user. Record the decision and outcome. Do not use
