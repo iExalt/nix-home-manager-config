@@ -17,7 +17,8 @@ tracks the evidence. The roadmap starts from <the starting point>.
 - **Needs** names the steps, gates or decisions a step depends on, or "nothing". Steps that don't need each other can
   run in parallel.
 - **Proof** is what must pass before the step is ticked. "Offline" needs no live resources. A live proof names its
-  resources and leaves a record under `<records path>`.
+  resources and leaves a record under `<records path>`. Records are deleted when the campaign closes, so anything
+  lasting goes into the living docs too.
 - **Ticks** lists the plan's boxes, by phase and opening words (P2 "Make…"), and the plan items the step closes.
 - **Human** says what a person must do for the step, and when. A step without one runs with nobody at the keyboard
   once its thread is approved. [Human interventions](#human-interventions) lists them all.
