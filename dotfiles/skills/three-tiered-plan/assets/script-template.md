@@ -24,6 +24,7 @@ This script groups the [roadmap](<ROADMAP>.md)'s steps; the [plan](<PLAN>.md) sa
   once it is approved.
 - When a thread finishes, its agent marks it done here, records any deviation that changes other threads, and marks
   the threads it unblocks ready.
+- Once the user confirms the final gate, close the campaign with `/three-tiered-plan`'s "Close a finished campaign".
 - <Standing hazards that apply to every thread.>
 
 ## Where things stand
