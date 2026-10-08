@@ -53,11 +53,12 @@ Use the installed user agents in `~/.claude/agents/` with a scoped assignment:
 
 | Assignment | Agent profile | Model | Effort |
 | --- | --- | --- | --- |
-| Routine coordination, bounded implementation, mechanical edits, discovery, external monitoring | `developer-routine` | `claude-sonnet-5-5` | `medium` |
-| Substantive lead review, complex diagnosis, concurrency/lifecycle decisions, demanding integration, explicitly escalated implementation | `developer-demanding` | `claude-sonnet-5-5` | `high` |
+| Trivial lookups, single-file mechanical edits, simple external monitoring | `developer-trivial` | `claude-haiku-5-5` | `medium` |
+| Routine coordination, bounded implementation, mechanical refactors, focused discovery | `developer-routine` | `claude-sonnet-5-5` | `medium` |
+| Substantive lead review, complex diagnosis, concurrency/lifecycle decisions, demanding integration, explicitly escalated implementation | `developer-demanding` | `claude-opus-5-5` | `medium` |
 
 Select the profile through the Agent tool's `subagent_type`; omit a conflicting
-per-invocation model override. Medium is the default for routine work. Assign high
+per-invocation model override. Routine is the default tier. Assign demanding
 when the item requires it, including a lead expected to perform substantive review.
 A pilot escalates difficult work to its lead, who may assign a demanding pilot;
 do not silently change effort or treat “think harder” as a setting. Keep the same
@@ -259,7 +260,7 @@ do not take over debugging or repeatedly poll while the lead responds.
 
 For external processes, prefer completion notifications. Otherwise designate one
 monitor, run handle, cadence, and stall/failure conditions; a monitoring subagent
-uses Luna low in Codex or `developer-routine` in Claude Code. Do not add an agent
+uses Luna low in Codex or `developer-trivial` in Claude Code. Do not add an agent
 merely to watch the lead or duplicate monitoring.
 
 ## User-facing updates
