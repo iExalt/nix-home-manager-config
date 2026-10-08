@@ -400,7 +400,7 @@ because the campaign is long. Preserve explicit user model/provider choices.
 
 In Paseo, select a matching Claude profile from `list_profiles`, or use the
 advertised launch overrides for `claude-sonnet-5-5` and the chosen effort. Claude's
-`~/.claude/agents/developer-routine.md` and `developer-demanding.md` are native
+`~/.claude/agents/developer-{trivial,routine,demanding}.md` are native
 subagent definitions, not Paseo launch profiles. Verify the effective provider,
 model and thinking option returned by the launcher; report unsupported routing
 rather than silently inheriting another model. Do not modify existing live workers.
@@ -408,8 +408,8 @@ rather than silently inheriting another model. Do not modify existing live worke
 For standalone Claude workers, use explicit model and effort flags as below.
 Keep the normal Claude Code system prompt and the `keep-me-in-the-loop` brief:
 `--agent` with a nonempty custom prompt would replace the default system prompt.
-Native subagents inside a Claude worker may use `developer-routine` or
-`developer-demanding` when their assignment fits; pass the relevant workflow rules
+Native subagents inside a Claude worker may use `developer-trivial`,
+`developer-routine`, or `developer-demanding` when their assignment fits; pass the relevant workflow rules
 and preserve any reviewer model explicitly required by the active review skill.
 
 Compare elapsed time and total model usage per accepted work item, including
