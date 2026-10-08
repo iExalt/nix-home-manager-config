@@ -1,0 +1,4 @@
+interface:
+  display_name: "Assign"
+  short_description: "Size a ticket and route it to the matching implementation workflow"
+  default_prompt: "Use $assign to read this issue, size it, and implement it with the matching workflow."
