@@ -1,4 +1,4 @@
 interface:
   display_name: "Overseer"
-  short_description: "Run script threads as worker sessions while you're away"
+  short_description: "Run script threads or workstreams as worker sessions while you're away"
   default_prompt: "Use $overseer to run the ready threads of this script as worker sessions on keep-me-in-the-loop, bring me their human interventions, and send me concise status updates."
