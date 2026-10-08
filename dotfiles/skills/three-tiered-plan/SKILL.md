@@ -1,6 +1,6 @@
 ---
 name: three-tiered-plan
-description: "Grill the user about a campaign that will span days or weeks, then write and maintain, with a continuous peer reviewer, three planning documents: a verbose, history-grounded plan (what and why), a concise roadmap of steps with proofs (how), and a script of literal keep-me-in-the-loop threads with explicit dependencies and human interventions. Use when starting or re-planning such a campaign, when deriving or revising its roadmap or script, or when closing a finished one; not for work one session can hold (use agentic-workflow) or for executing a script thread (use keep-me-in-the-loop)."
+description: "Grill the user about a campaign that will span days or weeks, then write and maintain, with a continuous peer reviewer, three planning tiers: a verbose, history-grounded plan (what and why), a concise roadmap of steps with proofs (how), and keep-me-in-the-loop threads with explicit dependencies and human interventions, written as a literal script or as workstream issues in the repository's tracker. Use when starting or re-planning such a campaign, when deriving or revising its roadmap, script or workstreams, or when closing a finished one; not for work one session can hold (use agentic-workflow) or for executing a thread (use keep-me-in-the-loop)."
 ---
 
 # Three-Tiered Plan
@@ -14,6 +14,10 @@ documents, each more concise and more literal than the last:
 | **Roadmap** | How: steps, what each needs, what proves it, which plan boxes it ticks, where a human acts | A fraction of the plan |
 | **Script** | Which implementation threads to open, with what prompt, after what, and when a human is needed | A page or two; literal |
 
+Tier 3 can instead live in the repository's issue tracker as **workstreams**,
+one issue per thread ("Keep tier 3 as tracker workstreams"). Where this skill
+says script or thread, read workstream issues and workstreams in that form.
+
 Grill each tier out of the user, then write it with a continuous reviewer.
 Draft and review the tiers in order, then ask the user to confirm the complete
 set in one dialog. The user owns outcomes, scope and
@@ -23,12 +27,12 @@ find facts, propose, challenge and write; the reviewer challenges you.
 ## Start from the right tier
 
 Read the repository's instructions and documentation conventions, any existing
-plan, roadmap, status document and script, and the Git state. Start at the
-first tier that is missing or invalidated:
+plan, roadmap, status document and script or workstream issues, and the Git
+state. Start at the first tier that is missing or invalidated:
 
 - no plan: the plan;
 - a plan without a roadmap: the roadmap;
-- a roadmap without a script: the script;
+- a roadmap without a script or workstreams: tier 3;
 - all three: the highest tier that new evidence affects (see "Revise when
   evidence changes");
 - all three, and the user has confirmed the final gate or closed the campaign:
@@ -334,6 +338,56 @@ status document exists, make its recommended next sequence point at the
 script's ready threads, those whose dependencies are met, instead of keeping a
 second sequence.
 
+### Keep tier 3 as tracker workstreams
+
+When the repository's issue tracker can link issues as blocked by others, such
+as GitHub issues in a Project, tier 3 can live there as workstreams instead of
+a script document. For a new campaign, ask in tier 3's grilling round which
+form to use. A script is one readable page and needs no tooling. Workstreams
+let the tracker block, claim and close threads, and let a tool compute which
+can start, but they need that tool to be read as a whole. Once a repository
+uses workstreams, its instructions settle the issue type, fields, labels,
+approval state and commands. Where they say otherwise, they override this
+section.
+
+- **Threads:** one issue per thread, of a dedicated type, named after its main
+  work rather than numbered, since workstreams open in whatever order their
+  blockers clear. Its body holds the script entry: scope (the roadmap steps,
+  whose proofs are its acceptance criteria), proposed chunks, Depends on,
+  Human, Live and Done when. Use the repository's issue form for it, or derive
+  one from the script template's thread entry. Its work items carry its name
+  in a tracker field, so membership can be queried.
+- **Order:** **after** becomes a blocked-by link: between workstream issues for
+  whole-workstream order, and between the items themselves for a wait on part
+  of another workstream's output. **Not alongside** and **not before** have no
+  link form, so keep them in the Depends on section. Put exclusions that span
+  many workstreams, such as a shared GPU, in a table in the repository's
+  instructions. Links are the floor; Depends on may be stricter, never looser.
+- **Readiness:** never draw the order graph or mark ready threads by hand. A
+  readiness tool reads the links and membership. It writes what can start and
+  what each workstream waits on into tracker fields, and a pinned summary
+  issue, so the user sees what needs them. The summary replaces the script's
+  Order, "When a human is needed" list and state markers, and the status
+  document's recommended sequence points at it. Mark workstreams past the
+  current evidence with a provisional label.
+- **Prompt:** one stable form, such as `/keep-me-in-the-loop Run workstream
+  #<N>`, since the issue holds the entry and the repository's instructions
+  hold the rules.
+- **Approval and finish:** the user approves a workstream through the tracker
+  state the repository names, such as a status of Approved. A finished
+  workstream closes, with its roadmap ticks and status evidence in the same
+  change. Write a deviation into the issue bodies of the workstreams it
+  changes, with a comment on each saying what changed and why.
+- **Revision log:** the issues' timelines and comments; also log a re-cut of
+  workstreams in the status document.
+- **Alignment:** the roadmap keeps a table from each step to its issues and
+  workstream. A change on either side updates the other in the same change.
+  Prefer a check that reports drift between them, such as one in the
+  readiness tool, over memory.
+
+Draft the workstreams in the conversation or a scratch file, not the tracker:
+creating issues publishes them, so it waits for confirmation.
+
 ## Confirm the tiers together
 
 By default, derive the next tier from the reviewer-accepted draft without an
@@ -372,16 +426,22 @@ the repository's Markdown formatter and linter. Link the plan, roadmap, script
 and status document to each other, and point the repository's agent
 instructions at the roadmap's tick rule when nothing does yet.
 
+For workstreams, publish by creating the confirmed issues, their links,
+labels and membership fields, then running the readiness tool and its drift
+check. Commit the roadmap's mapping table with them. Leave approval to the
+user: confirming the tiers doesn't approve a workstream.
+
 ## Revise when evidence changes
 
 Revise the affected tier and propagate downward when a thread ends with
 deviations, a parallel session changes a dependency, a gate fails or a decision
 changes. Keep the decision history in the plan, update the roadmap's steps, and
 re-derive the script's dependencies, ready threads and human interventions,
-with a dated entry in its revision log. Return to the user with a grilling
-round when outcomes, scope, priorities, acceptance criteria or spending change;
-propose routine re-sequencing within confirmed decisions directly. Never weaken
-a gate silently to finish.
+with a dated entry in its revision log. For workstreams, update the affected
+issues' bodies and links and rerun the readiness tool. Return to the user with
+a grilling round when outcomes, scope, priorities, acceptance criteria or
+spending change; propose routine re-sequencing within confirmed decisions
+directly. Never weaken a gate silently to finish.
 
 ## Close a finished campaign
 
@@ -397,7 +457,9 @@ working documents from crowding the repository's current docs:
    the living docs the campaign touched and align them with each other.
 3. Move the plan, roadmap, script and status document to
    `docs/complete-campaigns/<campaign-name>/`, or the repository's own
-   equivalent, and fix their relative links.
+   equivalent, and fix their relative links. For workstreams, check that every
+   workstream issue is closed. Then close and unpin the readiness summary with
+   a final comment linking the moved documents.
 4. Delete the campaign's temporary records: dated run records, and the probe
    scripts and fixtures kept only as evidence. Before deleting, pin the last
    commit that has them and re-point every surviving link and code comment at
@@ -417,5 +479,6 @@ Begin with a one- or two-line **TL;DR**. Then give each document's path and
 publication state, how it is laid out, what it adds that the tier above
 doesn't say, the reviewer's closing position, which decisions remain open and
 who owns them, and the next action: any remaining tier, or the script's ready
-threads with their prompts and when a human is next needed. Mention that
-`overseer` can run the ready threads as separate sessions.
+threads with their prompts and when a human is next needed. For workstreams,
+link the readiness summary and name the ones awaiting the user's approval.
+Mention that `overseer` can run the ready threads as separate sessions.

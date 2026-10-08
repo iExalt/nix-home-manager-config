@@ -18,6 +18,12 @@ Inspect current source, relevant verification evidence, Git state, and repositor
 instructions to establish what is complete and what remains. Do not infer phase
 completion from checked subtasks or prior summaries alone. Preserve unrelated work.
 
+When invoked for a workstream issue, such as `Run workstream #<N>`, the issue
+is the phase's entry: its scope, proposed chunks, dependencies, human
+interventions, live resources and done check. Claim it, work in the worktree
+it implies, and finish it as the repository's instructions say. Record a
+deviation that changes another workstream on that workstream's issue.
+
 Use `maintain-project-status` for the durable progress record and
 `continuous-peer-review` for implementation and review. Read their current
 instructions; resolve them from the available skill catalog or sibling skill
