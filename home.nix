@@ -125,6 +125,10 @@ in
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/fix-skill";
   home.file.".claude/skills/fix-skill".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/fix-skill";
+  home.file.".codex/skills/assign".source =
+    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/assign";
+  home.file.".claude/skills/assign".source =
+    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/assign";
   home.file.".codex/skills/reload-skill".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/reload-skill";
   home.file.".claude/skills/reload-skill".source =
