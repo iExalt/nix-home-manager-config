@@ -1,4 +1,4 @@
 interface:
   display_name: "Three-Tiered Plan"
-  short_description: "Grill a campaign into a plan, roadmap and script"
+  short_description: "Grill a campaign into a plan, roadmap and script or workstreams"
   default_prompt: "Use $three-tiered-plan to grill me about this campaign through the Q&A dialog, then write its plan, roadmap and script of implementation threads."

@@ -1,6 +1,6 @@
 ---
 name: overseer
-description: "Oversee one or more threads of a three-tiered-plan script as a dedicated orchestrator: once the user agrees to the plan, run the agreed scope to its end autonomously, launching worker sessions that run keep-me-in-the-loop (Paseo agents through Paseo's built-in tools when running in Paseo, otherwise new Claude Code or Codex sessions), enforcing the script's dependencies, routing every human intervention through yourself to the user, and keeping them in the loop with concise status updates. Use when the user wants script threads run while they are away from the keyboard; not for writing the script (use three-tiered-plan) or for running one thread in this session (use keep-me-in-the-loop)."
+description: "Oversee one or more threads of a three-tiered-plan script, or workstreams in the repository's tracker, as a dedicated orchestrator: once the user agrees to the plan, run the agreed scope to its end autonomously, launching worker sessions that run keep-me-in-the-loop (Paseo agents through Paseo's built-in tools when running in Paseo, otherwise new Claude Code or Codex sessions), enforcing the script's dependencies, routing every human intervention through yourself to the user, and keeping them in the loop with concise status updates. Use when the user wants script threads run while they are away from the keyboard; not for writing the script (use three-tiered-plan) or for running one thread in this session (use keep-me-in-the-loop)."
 ---
 
 # Overseer
@@ -181,6 +181,35 @@ Oversee the threads the user named. When they named none, propose the ready
 threads, those whose dependencies are met, in the opening message. For each
 thread, note its prompt, Depends on entry, Human entry, live resources and
 done check.
+
+### Workstreams in a tracker
+
+When the campaign keeps tier 3 as workstream issues (three-tiered-plan's
+"Keep tier 3 as tracker workstreams"), each workstream is a thread and its
+issue is the thread's entry. Where this skill says script, read the tracker,
+and follow the repository's instructions for its fields and commands:
+
+- **Ready set:** run the repository's readiness tool, read-only where it has
+  a dry run, rather than deriving readiness yourself. Propose workstreams it
+  reports ready, or in flight with ready items, and take **not alongside**
+  rules from their Depends on sections and the repository's exclusion table.
+  A workstream the tool calls provisional waits for its refinement.
+- **Agreement and approval:** record the user's agreement as a signed comment
+  on each workstream issue that quotes the dialog answer. When the repository
+  makes approval a tracker state, such as a status of Approved, set it from
+  that agreement only where its instructions let an agent record the user's
+  approval; otherwise ask the user to set it, as a planned any-time
+  intervention. A workstream without its approval state doesn't launch.
+- **Workers:** brief each with the workstream prompt, such as
+  `/keep-me-in-the-loop Run workstream #<N>`. The worker claims the issue as
+  the repository's instructions say and keeps the sibling worktree they name.
+  Name it after the workstream, such as `Worker: <name> #<N>`.
+- **Judgment calls and deviations:** record them as signed comments on the
+  affected workstream issues, update those issues' bodies or links, and rerun
+  the readiness tool before launching their dependents.
+- **Done:** besides the checks in "Run the threads", the workstream issue is
+  closed, the readiness tool has run, and the summary shows its dependents
+  unblocked. Report its drift check with the done check.
 
 ## Agree on the plan
 
@@ -706,7 +735,7 @@ land together, send one update covering all of them.
 Each update answers three questions in a few lines: what did we just
 accomplish, what happens next, and did anything unexpected occur? Leave the
 third out when nothing did. Name threads by number and outcome, not by number
-alone, and end with the roll call:
+alone (workstreams by name and issue number), and end with the roll call:
 
 ```text
 **Done:** thread 2 (station pilot) published chunk 2 of 3: the driver handoff works on dev-1.
