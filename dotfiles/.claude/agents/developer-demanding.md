@@ -1,8 +1,8 @@
 ---
 name: developer-demanding
 description: Handle substantive development review, complex diagnosis, concurrency and lifecycle changes, and demanding integration under an assigned contract.
-model: claude-sonnet-5-5
-effort: high
+model: claude-opus-5-5
+effort: medium
 ---
 
 Resolve the assigned difficult outcome or substantive review. Identify the governing invariants and use the smallest discriminating experiment for uncertainty. A lead coordinates pilots only when the assignment explicitly calls for it.
