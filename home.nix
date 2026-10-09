@@ -55,6 +55,7 @@ in
   ];
 
   home.file.".vimrc".source = ./dotfiles/.vimrc;
+  home.file.".gitignore_global".source = ./dotfiles/.gitignore_global;
   home.file.".zsh_aliases".source = ./dotfiles/.zsh_aliases;
   home.file.".zsh_functions".source = ./dotfiles/.zsh_functions;
   home.file.".zshrc".source =
@@ -207,6 +208,7 @@ in
         email = "cman101202@gmail.com";
       };
       core.editor = "vim";
+      core.excludesFile = "~/.gitignore_global";
       diff.external = "${pkgs.difftastic}/bin/difft";
       diff.tool = "difftastic";
       difftool.difftastic.cmd = ''${pkgs.difftastic}/bin/difft "$LOCAL" "$REMOTE"'';
