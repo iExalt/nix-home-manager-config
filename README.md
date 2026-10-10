@@ -8,8 +8,8 @@ The easiest path is the quickstart script, which installs Determinate Nix and
 applies the flake:
 
 ```sh
-git clone https://github.com/clliaw/nix-home-manager-config.git ~/Projects/nix-home-manager-config
-cd ~/Projects/nix-home-manager-config
+git clone https://github.com/clliaw/nix-home-manager-config.git ~/dev/Projects/nix-home-manager-config
+cd ~/dev/Projects/nix-home-manager-config
 ./quickstart.sh
 ```
 
@@ -22,14 +22,14 @@ cd ~/Projects/nix-home-manager-config
    curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --determinate
    ```
 
-2. Clone this repo to `~/Projects/nix-home-manager-config` (the path matters
+2. Clone this repo to `~/dev/Projects/nix-home-manager-config` (the path matters
    for a few `mkOutOfStoreSymlink` dotfiles referenced from `home.nix`).
 
 3. Apply the config:
 
    ```sh
-   nix run --inputs-from path:$HOME/Projects/nix-home-manager-config home-manager -- \
-     switch --flake path:$HOME/Projects/nix-home-manager-config#x86_64-linux -b backup --impure
+   nix run --inputs-from path:$HOME/dev/Projects/nix-home-manager-config home-manager -- \
+     switch --flake path:$HOME/dev/Projects/nix-home-manager-config#x86_64-linux -b backup --impure
    ```
 
    Replace `x86_64-linux` with your system (`aarch64-linux`, `aarch64-darwin`).

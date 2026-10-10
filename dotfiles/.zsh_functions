@@ -45,7 +45,7 @@ review-commit() {
 }
 
 switch() {
-  local repo_root="${HOME}/Projects/nix-home-manager-config"
+  local repo_root="${HOME}/dev/Projects/nix-home-manager-config"
   local system
 
   system="$(nix eval --impure --raw --expr 'builtins.currentSystem')" || return
