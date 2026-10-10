@@ -3,7 +3,7 @@
 let
   cfg = config.my.claude;
   jsonFormat = pkgs.formats.json { };
-  repoRoot = "${config.home.homeDirectory}/Projects/nix-home-manager-config";
+  repoRoot = "${config.home.homeDirectory}/dev/Projects/nix-home-manager-config";
   claudeConfigFile = "${repoRoot}/dotfiles/.claude/claude.json";
   generatedConfig = jsonFormat.generate "claude-config.json" cfg.settings;
 in

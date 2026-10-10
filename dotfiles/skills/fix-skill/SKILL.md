@@ -17,14 +17,14 @@ thread, and the main agent's address. Avoid copying unrelated task history.
 Tell the subagent to:
 
 1. Locate the authoritative source, starting with
-   `$HOME/Projects/nix-home-manager-config/dotfiles/skills/<skill>/SKILL.md`.
+   `$HOME/dev/Projects/nix-home-manager-config/dotfiles/skills/<skill>/SKILL.md`.
    Resolve the active skill's symlink or catalog location when necessary; do
    not edit a generated or installed copy when a maintained source exists.
    If multiple copies disagree, establish which one the current thread uses.
 2. Read the applicable `AGENTS.md` files from the source repository root down
    to the target skill. When editing skills in
-   `$HOME/Projects/nix-home-manager-config/dotfiles/skills`, explicitly read
-   `$HOME/Projects/nix-home-manager-config/dotfiles/AGENTS.md`. Do not assume
+   `$HOME/dev/Projects/nix-home-manager-config/dotfiles/skills`, explicitly read
+   `$HOME/dev/Projects/nix-home-manager-config/dotfiles/AGENTS.md`. Do not assume
    these instructions were automatically loaded when invoked from another
    repository. Read the Git state, full skill, and relevant supporting files.
    Use the available skill-creation guidance. Maintain a checklist and make
