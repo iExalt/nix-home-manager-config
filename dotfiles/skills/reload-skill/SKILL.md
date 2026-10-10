@@ -13,7 +13,7 @@ instructions; it does not itself edit files or run Home Manager.
 
 1. Resolve the current authoritative `SKILL.md` from the supplied path or skill
    catalog, following symlinks. For personal skills, also check
-   `$HOME/Projects/nix-home-manager-config/dotfiles/skills/<skill>/SKILL.md`.
+   `$HOME/dev/Projects/nix-home-manager-config/dotfiles/skills/<skill>/SKILL.md`.
    Confirm it is the intended skill rather than a stale duplicate.
 2. Read the entire current file carefully from its source, even if an older
    version is already in context. Use a diff summary to focus attention, never

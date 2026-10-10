@@ -3,7 +3,7 @@
 let
   cfg = config.my.codex;
   tomlFormat = pkgs.formats.toml { };
-  repoRoot = "${config.home.homeDirectory}/Projects/nix-home-manager-config";
+  repoRoot = "${config.home.homeDirectory}/dev/Projects/nix-home-manager-config";
   codexConfigFile = "${repoRoot}/dotfiles/.codex/config.toml";
   generatedConfig = tomlFormat.generate "codex-config.toml" cfg.settings;
 in

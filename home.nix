@@ -1,7 +1,7 @@
 { config, pkgs, lib, ... }:
 
 let
-  repoRoot = "${config.home.homeDirectory}/Projects/nix-home-manager-config";
+  repoRoot = "${config.home.homeDirectory}/dev/Projects/nix-home-manager-config";
   rootHome = if pkgs.stdenv.isDarwin then "/var/root" else "/root";
   frontendDesignSource = pkgs.fetchFromGitHub {
     owner = "anthropics";
