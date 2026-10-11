@@ -4,6 +4,7 @@
 * Prefer native editing tools (such as apply_patch or Edit) to make file changes explicit and reviewable. Use Python, sed, shell redirection, or other editing methods only when they offer a concrete benefit (such as regex replacements, repetitive bulk edits, or structured data transformations) or native editing tools are unavailable. Briefly explain why you chose an alternative.
 * Run tools that require internet access or elevated permissions outside the sandbox.
 * Always keep a checklist for implementation tasks.
+* My default shell is zsh, ensure that your shell idioms work in zsh.
 * Avoid clobbering important shell variables such as `path` in zsh.
 * My GitHub username is iExalt.
 * Push to my repositories without requesting permission if my instructions explicitly or implicitly require commits or pushes.
