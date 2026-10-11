@@ -1,0 +1,1 @@
+* When I request edits to skills, validate the changes. Reload Home Manager if skills were added, removed, or renamed. Then commit and push the scoped changes automatically unless I explicitly say otherwise.
