@@ -1,6 +1,6 @@
 ---
 name: continuous-peer-review
-description: Collaboratively design and implement small increments with a persistent native reviewer subagent, reviewing completed snapshots while implementation continues. Use when the user wants continuous, concurrent review with direct agent messaging throughout implementation. For a standalone cross-provider review or sequential repair loop, use peer-review or peer-review-loop instead.
+description: Collaboratively design and implement small increments with a persistent native reviewer subagent, reviewing completed snapshots while implementation continues. Use when the user wants continuous, concurrent review with direct agent messaging throughout implementation.
 ---
 
 # Continuous Peer Review
