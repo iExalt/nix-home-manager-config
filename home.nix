@@ -78,14 +78,6 @@ in
   # feat(skills): share the pinned upstream skill without a client plugin cache.
   home.file.".agents/skills/frontend-design".source = frontendDesignSkill;
   home.file.".claude/skills/frontend-design".source = frontendDesignSkill;
-  home.file.".codex/skills/peer-review".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/peer-review";
-  home.file.".claude/skills/peer-review".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/peer-review";
-  home.file.".codex/skills/peer-review-loop".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/peer-review-loop";
-  home.file.".claude/skills/peer-review-loop".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/peer-review-loop";
   home.file.".codex/skills/continuous-peer-review".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/continuous-peer-review";
   home.file.".claude/skills/continuous-peer-review".source =
