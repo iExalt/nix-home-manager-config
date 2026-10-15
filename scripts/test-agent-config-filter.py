@@ -60,6 +60,28 @@ example = 4
         })
         self.assertEqual(output, FILTER.clean(output, "claude"))
 
+    def test_claude_instruction_files_excludes_other_plugin_state(self):
+        source = json.dumps({"pluginConfigs": {
+            "cc-plugin-agents-md@builtin": {
+                "options": {
+                    "instructionFiles": "claude-md-and-agents-md",
+                    "unknownOption": "private value",
+                },
+                "privateState": "secret",
+            },
+            "other@plugin": {"options": {"instructionFiles": "private value"}},
+        }})
+        output = FILTER.clean(source, "claude")
+        self.assertEqual(json.loads(output), {"pluginConfigs": {
+            "cc-plugin-agents-md@builtin": {
+                "options": {"instructionFiles": "claude-md-and-agents-md"},
+            },
+        }})
+        self.assertEqual(output, FILTER.clean(output, "claude"))
+        self.assertEqual(json.loads(FILTER.clean(
+            source.replace("claude-md-and-agents-md", "/private/instructions"), "claude"
+        )), {})
+
     def test_git_clean_status_private_edits_and_required_failure(self):
         with tempfile.TemporaryDirectory(prefix="agent-filter-test-") as directory:
             root = Path(directory)
