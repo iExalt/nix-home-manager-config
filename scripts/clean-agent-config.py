@@ -32,6 +32,9 @@ CLAUDE.update({
     "permissions": {"defaultMode": None},
     "statusLine": {"type": None, "command": None, "padding": None},
     "enabledPlugins": {"*": None},
+    "pluginConfigs": {
+        "cc-plugin-agents-md@builtin": {"options": {"instructionFiles": None}},
+    },
     "sandbox": {"enabled": None},
     "modelSettings": {"*": {"effortLevel": None}},
 })
