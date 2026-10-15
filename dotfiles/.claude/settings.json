@@ -7,17 +7,27 @@
   "enabledPlugins": {
     "rust-analyzer-lsp@claude-plugins-official": true
   },
-  "model": "opus",
+  "model": "haiku",
   "modelSettings": {
     "claude-fable-5-1": {
       "effortLevel": "high"
     },
     "claude-opus-5-5": {
       "effortLevel": "high"
+    },
+    "claude-sonnet-5-5": {
+      "effortLevel": "medium"
     }
   },
   "permissions": {
     "defaultMode": "bypassPermissions"
+  },
+  "pluginConfigs": {
+    "cc-plugin-agents-md@builtin": {
+      "options": {
+        "instructionFiles": "claude-md-and-agents-md"
+      }
+    }
   },
   "sandbox": {
     "enabled": false
