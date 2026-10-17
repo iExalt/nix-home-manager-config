@@ -1,0 +1,33 @@
+#!/bin/zsh
+# Send a push notification to the user's phone through Paseo's Expo push token.
+# Usage: push <title> <body>
+# The token is read and used here only; it is never printed.
+emulate -L zsh
+set -euo pipefail
+
+if (( $# != 2 )); then
+  print -u2 "usage: ${0:t} <title> <body>"
+  exit 2
+fi
+
+store="${PASEO_HOME:-$HOME/.paseo}/push-tokens.json"
+[[ -r $store ]] || { print -u2 "no push-token store at $store"; exit 1; }
+
+# Pick the newest subscription that hasn't expired. expiresAt is an ISO 8601
+# timestamp; epoch seconds or milliseconds and absence are tolerated too.
+token=$(jq -r --argjson now "$(date +%s)" '
+  def epoch: if type == "string" then sub("\\.[0-9]+Z$"; "Z") | fromdateiso8601
+             elif . > 1e12 then . / 1000 else . end;
+  [.subscriptions[]?
+   | select(.token | startswith("ExponentPushToken["))
+   | select(.expiresAt == null or (.expiresAt | epoch) > $now)]
+  | last | .token // empty' "$store")
+[[ -n $token ]] || { print -u2 "no unexpired Expo push token in $store"; exit 1; }
+
+response=$(jq -n --arg to "$token" --arg title "$1" --arg body "$2" \
+    '{to: $to, title: $title, body: $body, sound: "default", priority: "high"}' |
+  curl -sS --max-time 20 https://exp.host/--/api/v2/push/send \
+    -H 'Accept: application/json' -H 'Content-Type: application/json' --data-binary @-)
+
+print -r -- "${response//$token/<token>}"
+[[ $(jq -r '.data.status // .data[0].status // empty' <<<"$response") == ok ]]

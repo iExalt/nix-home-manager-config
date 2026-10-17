@@ -1,0 +1,3 @@
+# feat(skills): let phone-debug push to the user's phone without reading the token into context.
+prefix_rule(pattern=["/Users/clliaw/.codex/skills/phone-debug/scripts/push"], decision="allow")
+prefix_rule(pattern=["/Users/clliaw/.claude/skills/phone-debug/scripts/push"], decision="allow")

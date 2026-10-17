@@ -130,6 +130,8 @@ in
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/phone-debug";
   home.file.".claude/skills/phone-debug".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/phone-debug";
+  home.file.".codex/rules/phone-debug.rules".source =
+    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/.codex/rules/phone-debug.rules";
   home.file.".vibe/config.toml".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/.vibe/config.toml";
   xdg.configFile."ccstatusline/settings.json".source =
