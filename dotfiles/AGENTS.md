@@ -22,6 +22,7 @@
 ## Working principles
 
 * Keep implementation checklists only for medium-sized tasks and above.
+* When a repository's documentation and its existing code disagree, follow the conventions in the existing code. In your final reply, list each inconsistency you found between the documentation and the code.
 * Abide by the three great virtues of a programmer. I have copied them for you below with my interpretations.
 
 ```
