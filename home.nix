@@ -2,7 +2,7 @@
 
 let
   repoRoot = "${config.home.homeDirectory}/dev/Projects/nix-home-manager-config";
-  rootHome = if pkgs.stdenv.isDarwin then "/var/root" else "/root";
+  rootHome = if pkgs.stdenv.hostPlatform.isDarwin then "/var/root" else "/root";
   frontendDesignSource = pkgs.fetchFromGitHub {
     owner = "anthropics";
     repo = "claude-code";
