@@ -158,6 +158,15 @@ focus check as part of every input action:
   `dumpsys input_method | grep mInputShown` first.
 - Over wireless, `exec-out screencap -p` can hang. Use
   `shell screencap -p /sdcard/s.png`, `pull`, then `shell rm`.
+- `input tap` sends down and up with no hold. For a press that needs one,
+  use `input swipe X Y X Y 120`.
+- `uiautomator dump` fails with `could not get idle state` while the app is
+  animating (lists loading, an agent running). Wait and retry; fall back to
+  a screenshot only for that read.
+
+For Paseo, read `docs/agent-testing.md` on the fork's `dev` branch first: package names,
+which deep links work cold and warm, and how to read the selected tab from a
+dump. Open screens by deep link instead of tapping through the app.
 
 ## Tell the user what's happening
 
