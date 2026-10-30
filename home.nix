@@ -126,6 +126,10 @@ in
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/reload-skill";
   home.file.".claude/skills/reload-skill".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/reload-skill";
+  home.file.".codex/skills/triage-bugfix".source =
+    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/triage-bugfix";
+  home.file.".claude/skills/triage-bugfix".source =
+    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/triage-bugfix";
   home.file.".codex/skills/phone-debug".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/phone-debug";
   home.file.".claude/skills/phone-debug".source =
