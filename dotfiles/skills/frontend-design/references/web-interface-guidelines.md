@@ -112,6 +112,7 @@ React/Next.js tools.
 - **Spellcheck selectively.** Disable for emails, codes, usernames, etc.
 - **Correct types & input modes.** Use the right `type` & `inputmode` for better keyboards & validation.
 - **Placeholders signal emptiness.** End with an ellipsis.
+  > **Override:** end with an ellipsis only for open-ended prompts or truncated examples (`Search…`, `sk-012345679…`), not complete example values.
 - **Placeholder value.** Set placeholder to an example value or pattern e.g., `+1 (123) 456-7890` & `sk-012345679…`
 - **Unsaved changes.** Warn before navigation when data could be lost.
 - **Password managers & 2FA.** Ensure compatibility & allow pasting one-time codes.
@@ -142,6 +143,7 @@ React/Next.js tools.
 
 - **Layered shadows.** Mimic ambient + direct light with at least two layers.
 - **Crisp borders.** Combine borders & shadows; semi-transparent borders improve edge clarity.
+  > **Override:** pair a shadow only with a subtle semi-transparent border; an opaque 1px border under a wide soft shadow reads as a ghost card.
 - **Nested radii.** Child radius ≤ parent radius & concentric so curves align.
 - **Hue consistency.** On non-neutral backgrounds, tint borders/shadows/text toward the same hue.
 - **Accessible charts.** Use color-blind-friendly palettes.

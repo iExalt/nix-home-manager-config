@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["playwright>=1.45"]
+# dependencies = ["playwright==1.64.1"]  # bump together with --install-browser
 # ///
 """Screenshot named UI states at several widths in headless Chromium.
 
@@ -84,8 +84,9 @@ def static_server(directory, spa):
 def load(page, url, label, args, problems):
     """Navigate and wait until the state is settled; return False if it failed to load."""
     response = page.goto(url)
-    if response is None or response.status >= 400:
-        problems.append(f"{label}: {url} returned {response.status if response else 'no response'}")
+    # goto returns None for same-document navigations such as hash-route changes.
+    if response is not None and response.status >= 400:
+        problems.append(f"{label}: {url} returned {response.status}")
         return False
     with contextlib.suppress(PlaywrightTimeout):
         page.wait_for_load_state("networkidle", timeout=5000)
@@ -98,10 +99,25 @@ def load(page, url, label, args, problems):
     return True
 
 
+def report_console(message, label, problems):
+    # Failed requests are reported once, with their URL, by report_response.
+    if message.type == "error" and not message.text.startswith("Failed to load resource"):
+        problems.append(f"{label}: console: {message.text}")
+
+
+def report_response(response, label, problems):
+    # The page's own document status is checked in load(); a missing favicon is noise.
+    request = response.request
+    if (response.status >= 400 and request.resource_type != "document"
+            and not urllib.parse.urlsplit(response.url).path.endswith("/favicon.ico")):
+        problems.append(f"{label}: HTTP {response.status} {response.url}")
+
+
 def capture(browser, base, states, label, context_options, args, problems):
     context = browser.new_context(**context_options)
     page = context.new_page()
-    page.on("console", lambda m: m.type == "error" and problems.append(f"{label}: {m.text}"))
+    page.on("console", lambda m: report_console(m, label, problems))
+    page.on("response", lambda r: report_response(r, label, problems))
     page.on("pageerror", lambda e: problems.append(f"{label}: {e}"))
     for name, state_path in states:
         if not load(page, base + state_path, f"{label}/{name}", args, problems):
