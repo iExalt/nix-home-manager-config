@@ -108,20 +108,20 @@ Build one flow end to end before broadening. Read the "Craft floor" in
 ### 4. Verify in a browser
 
 Run the app and drive it with browser automation: Playwright, a browser MCP, or the harness's
-browser tools. [scripts/browser_check.py](scripts/browser_check.py) handles the repeatable part.
-It serves a static build or targets a running URL, screenshots named states at each width, runs
+browser tools. [scripts/browser_check.py](scripts/browser_check.py) handles the repeatable part. It
+serves a static build or targets a running URL, screenshots named states at each width, runs
 reduced-motion and 200%-zoom passes on the first (key) state, counts Tab presses to a target
 control, and reports HTTP errors, failed requests, console errors, and horizontal overflow. Install
 its browser once with `mise exec -- uv run <skill-dir>/scripts/browser_check.py --install-browser`,
 then see `--help`. Useful options: `--spa` for client-routed static builds; `--ready NAME=SELECTOR`
 for a state whose data loads after the page or that is transient; `--status NAME=404` for error
 pages the server returns with an error status (not client-rendered SPA 404s, which return 200);
-`--idle-timeout 0` for streaming UIs; `--tab-to WIDTH=SELECTOR` when a control moves (into a menu
-on phones, say); and `--all-passes` to run reduced motion and zoom on every state. Narrow widths
-emulate a phone (viewport meta tag, touch, coarse pointer). Script the app-specific interactions separately. Give transient
-states (posting, slow loads) a URL or fixture switch so they stay on screen long enough to capture.
-Ask before anything that would disrupt the user's machine, such as installing system browsers,
-taking over their open browser, or binding common ports.
+`--idle-timeout 0` for streaming UIs; `--tab-to WIDTH=SELECTOR` when a control moves (into a menu on
+phones, say); and `--all-passes` to run reduced motion and zoom on every state. Narrow widths
+emulate a phone (viewport meta tag, touch, coarse pointer). Script the app-specific interactions
+separately. Give transient states (posting, slow loads) a URL or fixture switch so they stay on
+screen long enough to capture. Ask before anything that would disrupt the user's machine, such as
+installing system browsers, taking over their open browser, or binding common ports.
 
 - **Widths:** desktop (about 1440px) and narrow (about 375px), plus any width where the layout
   changes. Check 200% zoom on key screens (headless: half the CSS width at 2x density).
