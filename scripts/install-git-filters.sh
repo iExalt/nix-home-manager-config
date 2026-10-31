@@ -10,15 +10,17 @@ quote() {
   "$FILTER_PYTHON" -c 'import shlex, sys; print(shlex.join(sys.argv[1:]))' "$@"
 }
 # fix(privacy): a plain assignment trips set -e; a failing substitution in a for list would not.
-KINDS="$("$FILTER_PYTHON" scripts/clean-agent-config.py kinds)"
+SCRIPT=("$FILTER_PYTHON" scripts/clean-agent-config.py)
+KINDS="$("${SCRIPT[@]}" kinds)"
 [ -n "$KINDS" ]
 for kind in $KINDS; do
-  FILTER_COMMAND="$(quote "$FILTER_PYTHON" scripts/clean-agent-config.py "$kind")"
+  FILTER_COMMAND="$(quote "${SCRIPT[@]}" "$kind")"
   git config --local "filter.agent-$kind.clean" "$FILTER_COMMAND"
   git config --local "filter.agent-$kind.smudge" cat
   git config --local "filter.agent-$kind.required" true
 done
-SCRIPT_COMMAND="$(quote "$FILTER_PYTHON" scripts/clean-agent-config.py)"
+# Git and sh re-parse these strings, so they are shell-quoted once here.
+SCRIPT_COMMAND="$(quote "${SCRIPT[@]}")"
 RESTORE_COMMAND="$SCRIPT_COMMAND restore"
 HOOK_COMMAND="$RESTORE_COMMAND --if-wiped"
 # Show status even if refresh reports a problem. A git alias runs from the top level;
@@ -38,7 +40,7 @@ if [ -n "$HOOKS_SCOPE" ] && [ "$HOOKS_SCOPE" != local ] && [ "$HOOKS_SCOPE" != w
     "post-rewrite hooks by hand." >&2
 else
   HOOKS_DIR="$(git rev-parse --git-path hooks)"
-  mkdir -p "$HOOKS_DIR"
+  mkdir -p "$HOOKS_DIR" || echo "warning: could not create $HOOKS_DIR." >&2
   for hook in post-checkout post-merge post-rewrite; do
     hook_path="$HOOKS_DIR/$hook"
     if [ -e "$hook_path" ] && ! grep -qxF "$HOOK_MARKER" "$hook_path"; then
@@ -53,7 +55,7 @@ if [ -d "$git_dir/rebase-merge" ] || [ -d "$git_dir/rebase-apply" ]; then exit 0
 '
     fi
     # Write whole, then rename, so a failure never leaves a partial hook without the marker.
-    cat > "$hook_path.tmp" <<HOOK
+    if ! cat > "$hook_path.tmp" <<HOOK
 #!/bin/sh
 $HOOK_MARKER
 cd "\$(git rev-parse --show-toplevel)" || exit 0
@@ -63,10 +65,20 @@ ${REBASE_GUARD}$HOOK_COMMAND
 # Restore reports its own problems; never fail the Git command that ran this hook.
 exit 0
 HOOK
-    chmod +x "$hook_path.tmp"
-    mv "$hook_path.tmp" "$hook_path"
+    then
+      echo "warning: could not write $hook_path; call 'git agent-restore' after rewrites." >&2
+      rm -f "$hook_path.tmp"
+      continue
+    fi
+    if ! { chmod +x "$hook_path.tmp" && mv "$hook_path.tmp" "$hook_path"; }; then
+      echo "warning: could not install $hook_path; call 'git agent-restore' after rewrites." >&2
+      rm -f "$hook_path.tmp"
+    fi
   done
 fi
 
 # Seed the private backups now rather than waiting for the next edit.
-$SCRIPT_COMMAND seed
+if ! "${SCRIPT[@]}" seed; then
+  echo "warning: could not back up the agent config files; fix their syntax, then rerun" \
+    "this installer." >&2
+fi
