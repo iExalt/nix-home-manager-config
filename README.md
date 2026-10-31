@@ -123,7 +123,8 @@ command-line config), which other repositories may share, or when a hook it
 did not write already exists. A hook also restores after `git checkout --
 <file>` and `git restore <file>`, which wipe every private key; to discard one
 private edit, edit the file instead. Commands that rewrite the file without a
-hook, such as `git reset --hard`, `git cherry-pick`, `git merge --abort`, `git
+hook, such as `git reset --hard`, `git cherry-pick`, `git revert`, `git am`,
+`git apply`, `git checkout -p` and `git restore -p`, `git merge --abort`, `git
 rebase --abort`, a merge that stops on a conflict in any file, and `git
 stash`, `git stash pop`, or `git pull --autostash`, need a manual step: `git
 agent-status` restores a wiped file before showing status, and `git
