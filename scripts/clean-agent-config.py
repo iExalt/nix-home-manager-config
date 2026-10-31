@@ -15,7 +15,12 @@ CODEX = {
     )
 }
 CODEX.update({
-    "desktop": {"dock-icon-preference": None, "followUpQueueMode": None},
+    "desktop": {
+        key: None for key in (
+            "conversationDetailMode", "dock-icon-preference", "followUpQueueMode",
+            "preventSleepWhileRunning", "show-context-window-usage",
+        )
+    },
     "features": {"goals": None, "memories": None},
     "memories": {"generate_memories": None, "use_memories": None},
     "plugins": {"*": {"enabled": None}},
@@ -24,11 +29,13 @@ CODEX.update({
 CLAUDE = {
     key: None for key in (
         "model", "effortLevel", "tui", "skipDangerousModePermissionPrompt",
-        "theme", "switchModelsOnFlag",
+        "theme", "switchModelsOnFlag", "autoCompactWindow",
     )
 }
 CLAUDE.update({
     "attribution": {"commit": None, "pr": None},
+    # fix(privacy): name each variable; env commonly holds secrets.
+    "env": {"CLAUDE_CODE_SILENT_TURN_REMINDER_TEXT": None},
     "permissions": {"defaultMode": None},
     "statusLine": {"type": None, "command": None, "padding": None},
     "enabledPlugins": {"*": None},
