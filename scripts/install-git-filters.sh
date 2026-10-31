@@ -15,8 +15,11 @@ for kind in codex claude; do
   git config --local "filter.agent-$kind.smudge" cat
   git config --local "filter.agent-$kind.required" true
 done
-git config --local alias.agent-status '!bash scripts/agent-status.sh'
-RESTORE_COMMAND="$(quote "$FILTER_PYTHON" scripts/clean-agent-config.py restore)"
+SCRIPT_COMMAND="$(quote "$FILTER_PYTHON" scripts/clean-agent-config.py)"
+RESTORE_COMMAND="$SCRIPT_COMMAND restore"
+# A git alias runs from the top level; return to the caller's directory for its pathspecs.
+git config --local alias.agent-status \
+  "!f() { $SCRIPT_COMMAND refresh && cd \"\${GIT_PREFIX:-.}\" && git status \"\$@\"; }; f"
 git config --local alias.agent-restore "!$RESTORE_COMMAND"
 
 # fix(config): put back private keys after Git rewrites the config files. Hook problems
@@ -48,7 +51,10 @@ if [ -d "$git_dir/rebase-merge" ] || [ -d "$git_dir/rebase-apply" ]; then exit 0
     cat > "$hook_path.tmp" <<HOOK
 #!/bin/sh
 $HOOK_MARKER
-${REBASE_GUARD}cd "\$(git rev-parse --show-toplevel)" && $RESTORE_COMMAND
+cd "\$(git rev-parse --show-toplevel)" || exit 0
+# An older checkout may predate restore; skip quietly rather than fail every checkout.
+grep -q restore_main scripts/clean-agent-config.py 2>/dev/null || exit 0
+${REBASE_GUARD}$RESTORE_COMMAND
 # Restore reports its own problems; never fail the Git command that ran this hook.
 exit 0
 HOOK
