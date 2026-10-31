@@ -67,6 +67,7 @@ all nested entries, and remain only on disk:
 | `dotfiles/.codex/config.toml` | `marketplaces` | Marketplace registrations and source paths |
 | `dotfiles/.codex/config.toml` | `mcp_servers` | MCP server commands, endpoints, and configuration |
 | `dotfiles/.codex/config.toml` | `projects` | Project directories and trust settings |
+| `dotfiles/.codex/config.toml` | `hooks` | Hook trust hashes, approved per machine with `/hooks` |
 | `dotfiles/.codex/config.toml` | `tui.screen_reader_detection_done` | Machine-specific detection state |
 | `dotfiles/.codex/config.toml` | `tui.model_availability_nux` | Model onboarding state |
 | `dotfiles/.claude/settings.json` | `extraKnownMarketplaces` | Local marketplace registrations |
@@ -76,7 +77,11 @@ The allowlists in `scripts/clean-agent-config.py` define what is shared. All
 unlisted keys at every nesting level are also omitted, including future keys.
 Even an allowed key is omitted if its name or value contains a path separator
 or a home-directory marker (`~`, `$HOME`, or `${HOME}`); a list containing such
-a value is omitted in full. Empty sections are dropped. Review and extend the
+a value is omitted in full. The one exception is a quoted path under
+`"$HOME/.config/agent-hooks/`, the shared hook scripts that Home Manager links
+from `dotfiles/agent-hooks`, so reviewed Claude `hooks` entries that run them
+stay in Git. A hook entry is kept whole or omitted whole: one unlisted key or
+private path drops the entry. Empty sections are dropped. Review and extend the
 allowlists when adding a new portable preference, and keep this table current
 when excluding additional sections. Output is canonicalized, so formatting
 and local-only changes produce no content diff after renormalization.
