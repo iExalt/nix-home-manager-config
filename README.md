@@ -133,10 +133,13 @@ settings; Codex may write to its file meanwhile, so run `git agent-restore`
 after `git stash pop`.
 
 `git agent-restore` adds back only private keys and private list items that
-are missing; values already in the file win, and portable preferences removed
-in Git stay removed. It rewrites a file only when it adds keys, in canonical
-form, so hand-written comments in `config.toml` are lost then. If an agent
-saves the file while restore runs, restore starts over, but an agent that
+are missing; a hook list that already holds a private item is left as it is,
+so after a stash during which an agent added a private hook, restore other
+hooks by hand; values already in the file win, and portable preferences
+removed in Git stay removed. It rewrites a file only when it adds keys, in
+canonical form, so hand-written comments in `config.toml` are lost then. If an
+agent saves the file while restore runs, restore starts over (a save in the
+instant before restore replaces the file can still be lost), but an agent that
 later writes back settings it read before the restore can still undo it. A
 backup is saved only when Git runs the clean filter on the file, as `git
 agent-status` and `git diff` do; plain `git status` skips it when the file's

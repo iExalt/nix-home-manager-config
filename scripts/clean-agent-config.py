@@ -176,7 +176,8 @@ def private(data, kept):
     result = {}
     for key, value in data.items():
         if key not in kept:
-            result[key] = value
+            if value != {} and value != []:  # An empty section holds nothing to protect.
+                result[key] = value
         elif isinstance(value, dict) and isinstance(kept[key], dict):
             dropped = private(value, kept[key])
             if dropped:
@@ -193,6 +194,20 @@ def portable_item(item, rule):
     return isinstance(item, dict) and project(item, rule[0]) == item
 
 
+def restorable(value, rule):
+    """Drop the portable items of per-item tracked lists from a backed-up section."""
+    if isinstance(value, dict) and isinstance(rule, dict):
+        result = {}
+        for key, item in value.items():
+            kept = restorable(item, rule.get(key, rule.get("*")))
+            if kept != {} and kept != []:
+                result[key] = kept
+        return result
+    if isinstance(value, list) and isinstance(rule, list):
+        return [item for item in value if not portable_item(item, rule)]
+    return value
+
+
 def add_missing(live, extra, policy, path=()):
     """Add keys from extra that live lacks; live values always win."""
     added = []
@@ -200,8 +215,12 @@ def add_missing(live, extra, policy, path=()):
         name = ".".join((*path, key))
         rule = policy.get(key, policy.get("*")) if isinstance(policy, dict) else None
         if key not in live:
-            live[key] = value
-            added.append(name)
+            # fix(config): private() keeps whole lists for ordering; never bring back the
+            # portable items Git deleted along with the list or its section.
+            value = restorable(value, rule)
+            if value != {} and value != []:
+                live[key] = value
+                added.append(name)
         elif isinstance(live[key], dict) and isinstance(value, dict):
             added += add_missing(live[key], value, rule or {}, (*path, key))
         # fix(config): only lists with an item policy are tracked per item; appending to
@@ -209,6 +228,10 @@ def add_missing(live, extra, policy, path=()):
         elif isinstance(rule, list) and isinstance(live[key], list) and isinstance(value, list):
             # Private items were never in Git; restore the ones a pulled list lacks, each after
             # its nearest preceding neighbour from the backup, so hook order survives.
+            # fix(config): Git never holds private items, so a list that still has one was not
+            # wiped; it wins whole, and an edited private item is not duplicated.
+            if not all(portable_item(item, rule) for item in live[key]):
+                continue
             merged = list(live[key])
             for index, item in enumerate(value):
                 if item in merged or portable_item(item, rule):
@@ -227,6 +250,10 @@ def git(*args, cwd=None, check=True, text=True):
     if result.returncode:
         return None
     return result.stdout.strip() if text else result.stdout
+
+
+def backup_dir_at(root):
+    return Path(git("rev-parse", "--absolute-git-dir", cwd=root)) / "agent-config-private"
 
 
 def backup_dir():
@@ -294,9 +321,9 @@ def rotate(directory, kind, now):
 
 
 def back_up(text, kind, data, projected, directory=None):
-    # fix(config): a file that already equals its projection holds nothing to protect,
-    # so a wiped file never replaces a good backup.
-    if data == projected:
+    # fix(config): a file without private content holds nothing to protect, so a wiped
+    # file never replaces a good backup. holds_private() uses the same test.
+    if not private(data, projected):
         return
     directory = directory or backup_dir()
     directory.mkdir(mode=0o700, exist_ok=True)
@@ -310,24 +337,32 @@ def back_up(text, kind, data, projected, directory=None):
     rotate(directory, kind, now)
 
 
-def filter_main(kind):
-    text = sys.stdin.read()
+def clean_text(text, kind, directory=None):
+    """Do what the clean filter does: back up the raw text and return Git's copy.
+
+    Parse errors propagate; backup failures and reviewed keys kept local only warn.
+    """
+    data = parse(text, kind)
+    kept_local = []
+    projected = project(data, POLICY[kind], kept_local)
+    output = dump(projected, kind)
     try:
-        data = parse(text, kind)
-        kept_local = []
-        projected = project(data, POLICY[kind], kept_local)
-        output = dump(projected, kind)
-    except Exception:
-        # fix(privacy): do not echo configuration contents on parse failures.
-        sys.exit("Agent config clean filter failed; check syntax and filter policy.")
-    try:
-        back_up(text, kind, data, projected)
+        back_up(text, kind, data, projected, directory)
     except Exception:
         print(f"warning: agent config backup failed for {kind}; restore will not cover recent edits.",
               file=sys.stderr)
     for note in kept_local:
         # feat(config): a reviewed preference that silently stops syncing is easy to miss.
         print(f"warning: kept {note}.", file=sys.stderr)
+    return output
+
+
+def filter_main(kind):
+    try:
+        output = clean_text(sys.stdin.read(), kind)
+    except Exception:
+        # fix(privacy): do not echo configuration contents on parse failures.
+        sys.exit("Agent config clean filter failed; check syntax and filter policy.")
     sys.stdout.write(output)
 
 
@@ -339,11 +374,19 @@ def refresh(root, relatives):
     for relative in relatives:
         if not (root / relative).is_file():
             continue
+        kind = next(name for name, path in FILES.items() if path == relative)
         try:
             indexed = git("rev-parse", "-q", "--verify", f":{relative}", cwd=root, check=False)
-            if indexed and indexed == git("hash-object", f"--path={relative}", relative, cwd=root):
+            if not indexed:  # Unmerged or untracked: nothing to refresh, and no error.
+                continue
+            # fix(perf): clean in-process, as the filter would, rather than start it once more.
+            # No eol or ident attribute applies to these paths, so Git's copy is exactly this.
+            output = clean_text((root / relative).read_text(), kind, backup_dir_at(root))
+            cleaned = subprocess.run(["git", "hash-object", "--no-filters", "--stdin"], cwd=root,
+                                     input=output, capture_output=True, text=True, check=True)
+            if indexed == cleaned.stdout.strip():
                 git("add", "--renormalize", "--", relative, cwd=root)
-        except subprocess.CalledProcessError:  # One broken file must not skip the others.
+        except (subprocess.CalledProcessError, ValueError, OSError):  # Skip only this file.
             failed.append(relative)
     return failed
 
