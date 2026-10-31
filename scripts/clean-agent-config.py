@@ -11,6 +11,7 @@ import datetime
 import json
 import math
 import os
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -92,7 +93,8 @@ def project(data, policy, kept_local=None, path=()):
                 # fix(config): keep the portable items, so a private item beside them
                 # neither hides them from Git nor makes them look deleted after a restore.
                 # Keep the projected copy, whose keys are sorted, so Git's copy stays canonical.
-                kept = [project(item, rule[0]) for item in value if portable_item(item, rule)]
+                kept = [projected for item in value if isinstance(item, dict)
+                        and (projected := project(item, rule[0])) == item]
                 if kept:
                     result[key] = kept
         elif portable(value):
@@ -208,7 +210,9 @@ def restorable(value, rule):
         result = {}
         for key, item in value.items():
             kept = restorable(item, rule.get(key, rule.get("*")))
-            if kept != {} and kept != []:
+            # fix(config): keep a named entry that was empty to begin with, as holds_values()
+            # counts it; drop only what filtering emptied.
+            if (kept != {} and kept != []) or item == {}:
                 result[key] = kept
         return result
     if isinstance(value, list) and isinstance(rule, list):
@@ -225,8 +229,8 @@ def add_missing(live, extra, policy, path=()):
         if key not in live:
             # fix(config): private() keeps whole lists for ordering; never bring back the
             # portable items Git deleted along with the list or its section.
-            value = restorable(value, rule)
-            if value != {} and value != []:
+            original, value = value, restorable(value, rule)
+            if (value != {} and value != []) or original == {}:
                 live[key] = value
                 added.append(name)
         elif isinstance(live[key], dict) and isinstance(value, dict):
@@ -318,7 +322,7 @@ def rotate(directory, kind, now):
         try:
             data = parse(saved.read_text(), kind)
             # private() keeps whole lists for ordering; drop their portable items here.
-            names = paths(private_part(data, kind)) - paths(project(data, POLICY[kind]))
+            names = paths(restorable(private_part(data, kind), POLICY[kind]))
         except (ValueError, FileNotFoundError):  # Unparsable, or rotated by another run.
             names = set()
         young = now - int(saved.suffix[1:]) < KEEP_UNIQUE_SECONDS * 10**9
@@ -479,6 +483,12 @@ def unrestored(older, live, kind):
     return result
 
 
+def sections(names):
+    # fix(privacy): name top-level sections only; deeper names can be private paths or
+    # environment variable names that end up in IDE and terminal logs.
+    return ", ".join(sorted({re.split(r"[.\[]", name, maxsplit=1)[0] for name in names}))
+
+
 def restore_main(arguments, refresh_restored=True):
     parser = argparse.ArgumentParser(prog="git agent-restore")
     parser.add_argument("--from", dest="source", type=Path,
@@ -489,9 +499,11 @@ def restore_main(arguments, refresh_restored=True):
                         help="with --if-wiped, skip files whose index copy matches commit OLD")
     parser.add_argument("--forget", choices=FILES,
                         help="delete this file's backups, keeping only its current content")
+    parser.add_argument("--yes", action="store_true",
+                        help="with --forget, proceed although the file holds no private keys")
     options = parser.parse_args(arguments)
     if options.forget:
-        return forget(options.forget)
+        return forget(options.forget, options.yes)
     source = options.source
     if source:
         # A git alias runs from the top level; resolve paths as typed by the user.
@@ -540,8 +552,8 @@ def restore_main(arguments, refresh_restored=True):
             continue
         added, live = result
         if added:
-            print(f"agent-restore: restored {', '.join(added)} in {relative}; if you removed them on "
-                  f"purpose, run: git agent-restore --forget {kind}", file=sys.stderr)
+            print(f"agent-restore: restored {sections(added)} in {relative}; if you removed them on "
+                  f"purpose, remove them again and run: git agent-restore --forget {kind}", file=sys.stderr)
             if refresh_restored and refresh(root, [relative]):
                 print(f"agent-restore: could not refresh {relative}; run git agent-status.",
                       file=sys.stderr)
@@ -557,7 +569,7 @@ def restore_main(arguments, refresh_restored=True):
             failed = True
             continue
         for older, names in lost:
-            print(f"agent-restore: {older} also has {', '.join(names)}; if you did not delete them "
+            print(f"agent-restore: {older} also has {sections(names)}; if you did not delete them "
                   f"on purpose, run: git agent-restore --from {older}", file=sys.stderr)
     return 1 if failed else 0
 
@@ -574,7 +586,7 @@ def holds_private(text, kind):
         return False
 
 
-def forget(kind):
+def forget(kind, confirmed=False):
     """Purge a file's backups, so a deliberately removed private key (or secret) stays gone."""
     # fix(privacy): a removed secret may be revoked or rotated; every worktree keeps its own
     # backups, so purge them all, including those of worktrees whose directory is gone.
@@ -585,6 +597,19 @@ def forget(kind):
         except ValueError:  # Conflict markers, say; its backups are the only good copies.
             print(f"agent-restore: {FILES[kind]} does not parse; fix it before --forget.",
                   file=sys.stderr)
+            return 1
+    # fix(config): a wiped or missing file (mid-stash, say) looks the same as one emptied on
+    # purpose; name what would be lost and ask for confirmation.
+    latest = backups(backup_dir(), kind)
+    if not confirmed and not holds_private(read_or_none(here) or "", kind) and latest:
+        try:
+            lost = sections(paths(private_part(parse(read_or_none(latest[-1]) or "", kind), kind)))
+        except ValueError:
+            lost = ""
+        if lost:
+            print(f"agent-restore: {FILES[kind]} holds no private keys, so --forget would delete the "
+                  f"last copies of {lost}. If it was wiped, run git agent-restore first; to forget "
+                  "them anyway, add --yes.", file=sys.stderr)
             return 1
     common = Path(git("rev-parse", "--path-format=absolute", "--git-common-dir"))
     stale = {common, *(common / "worktrees").glob("*")}

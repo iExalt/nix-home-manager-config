@@ -152,8 +152,10 @@ you deleted the last private key, `git agent-status` would restore it too; run
 private key is never saved, so a later restore brings it back. To remove
 private keys for good, such as a revoked secret, delete them and run `git
 agent-restore --forget codex` or `--forget claude`: it deletes that file's
-backups in every worktree and keeps only each worktree's current content,
-except that it keeps, and names, the backups of a linked worktree whose file
+backups in every worktree and keeps only each worktree's current content. If
+the file holds no private keys, which is also how a wiped file looks, it names
+the sections the backups would lose and asks you to add `--yes`. It keeps, and
+names, the backups of a linked worktree whose file
 is missing or holds no private keys, since they may be its only copy. Remove
 the keys from each linked worktree's copy of the file first, or its next
 backup saves them again. Each restore message repeats this hint. When older
