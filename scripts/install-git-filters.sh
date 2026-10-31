@@ -50,10 +50,13 @@ else
     # fix(config): restore only files whose index copy changed from the commit Git left.
     case "$hook" in
       post-checkout)
-        # A rebase checks out commits one by one; post-rewrite restores once at the end.
-        # A file checkout ($3 = 0) names no commits.
+        # During a rebase, a restore before the remaining picks would make them refuse to
+        # touch the file; post-rewrite restores at the end instead. A rebase with nothing
+        # left to pick (a fast-forward, or every commit already upstream) runs no
+        # post-rewrite, so restore here. A file checkout ($3 = 0) names no commits.
         HOOK_BODY='git_dir="$(git rev-parse --git-dir)"
-if [ -d "$git_dir/rebase-merge" ] || [ -d "$git_dir/rebase-apply" ]; then exit 0; fi
+if [ -d "$git_dir/rebase-apply" ]; then exit 0; fi
+if grep -qv -e "^#" -e "^\$" "$git_dir/rebase-merge/git-rebase-todo" 2>/dev/null; then exit 0; fi
 if [ "$3" = 1 ]; then set -- --changed "$1"; else set --; fi' ;;
       post-merge) HOOK_BODY='set -- --changed ORIG_HEAD' ;;
       post-rewrite) HOOK_BODY='[ "$1" = rebase ] || exit 0
@@ -65,7 +68,7 @@ set -- --changed ORIG_HEAD' ;;
 $HOOK_MARKER
 cd "\$(git rev-parse --show-toplevel)" || exit 0
 # An older checkout may predate restore; skip quietly rather than fail every checkout.
-grep -q -- --changed scripts/clean-agent-config.py 2>/dev/null || exit 0
+grep -qx 'HOOK_API = 1' scripts/clean-agent-config.py 2>/dev/null || exit 0
 if [ ! -x $(quote "$FILTER_PYTHON") ]; then
   echo "warning: agent config hooks cannot find their Python; rerun scripts/install-git-filters.sh." >&2
   exit 0

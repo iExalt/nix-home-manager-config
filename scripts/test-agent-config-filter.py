@@ -306,7 +306,9 @@ accountId = "private"
             git(directory, "init", "-q", str(origin))
             (origin / ".gitattributes").write_text(f"/{config_path} filter=agent-codex\n")
             (origin / config_path).parent.mkdir(parents=True)
-            (origin / config_path).write_text(FILTER.clean('model = "one"', "codex"))
+            # Keys between model and service_tier let a local pick and a pulled change merge.
+            portable = '\nsandbox_mode = "x"\nservice_tier = "t1"'
+            (origin / config_path).write_text(FILTER.clean('model = "one"' + portable, "codex"))
             git(origin, "add", ".")
             git(origin, "commit", "-qm", "test: base")
 
@@ -317,30 +319,54 @@ accountId = "private"
             self.assertEqual(git(clone, "agent-status", "--porcelain", "--", "dotfiles").stdout, "")
 
             def publish(model):
-                (origin / config_path).write_text(FILTER.clean(f'model = "{model}"', "codex"))
+                (origin / config_path).write_text(FILTER.clean(f'model = "{model}"' + portable, "codex"))
                 git(origin, "commit", "-qam", f"test: {model}")
 
             def assert_restored(model, projects=("/private/one", "/private/two")):
-                self.assertEqual(tomllib.loads(config.read_text()), {
-                    "model": model, "projects": {name: trusted for name in projects}})
+                data = tomllib.loads(config.read_text())
+                self.assertEqual((data["model"], data.get("projects")),
+                                 (model, {name: trusted for name in projects}))
 
             publish("two")
             git(clone, "pull", "-q", "--no-rebase")
             assert_restored("two")
 
-            (clone / "note").write_text("local\n")
-            git(clone, "add", "note")
-            git(clone, "commit", "-qm", "test: local")
+            # The local commit touches the config, so a restore before its pick would make
+            # the rebase refuse; post-rewrite restores once the pick is done.
+            config.write_text(config.read_text().replace('"t1"', '"t2"'))
+            git(clone, "commit", "-qam", "test: local tier")
             publish("three")
             git(clone, "pull", "-q", "--rebase")
+            assert_restored("three")
+            self.assertIn('"t2"', config.read_text())
+
+            # A rebase that rewrites no commits fires no post-rewrite; post-checkout restores.
+            git(clone, "fetch", "-q", "origin")
+            git(clone, "checkout", "-q", "-b", "fresh", "FETCH_HEAD")
+            publish("four")
+            git(clone, "fetch", "-q", "origin")
+            git(clone, "rebase", "-q", "FETCH_HEAD")
+            assert_restored("four")
+            # Rebase rewrites the index after its hooks, so refresh before the next checkout.
+            git(clone, "agent-status", "--porcelain")
+            git(clone, "checkout", "-q", "-")
             assert_restored("three")
 
             # Hooks leave a file with private content alone, so a deletion sticks even when
             # no clean ran since the latest backup.
+            # A staged change makes the index differ from HEAD although Git rewrote nothing;
+            # the hook then only hints instead of merging the deleted key back.
             data = tomllib.loads(config.read_text())
+            data["model"] = "staged"
+            config.write_text(FILTER.dump(data, "codex"))
+            git(clone, "add", config_path)
             del data["projects"]["/private/two"]
             config.write_text(FILTER.dump(data, "codex"))
-            git(clone, "checkout", "-q", "-b", "side")
+            switched = git(clone, "checkout", "-q", "-b", "side")
+            self.assertIn("already holds private keys", switched.stderr)
+            git(clone, "reset", "-q", "--", config_path)
+            data["model"] = "three"
+            config.write_text(FILTER.dump(data, "codex"))
             assert_restored("three", ["/private/one"])
             # Once agent-status has backed up the deletion, a forced rewrite restores without it.
             git(clone, "agent-status", "--porcelain")
@@ -417,13 +443,17 @@ accountId = "private"
             linked_config.write_text(FILTER.clean(linked_config.read_text(), "codex"))
             notice = git(clone, "agent-restore", "--forget", "codex").stderr
             self.assertRegex(notice, r"kept the backups of \S*linked,")
+            linked_config.unlink()  # A missing file counts as wiped too.
+            notice = git(clone, "agent-restore", "--forget", "codex").stderr
+            self.assertRegex(notice, r"kept the backups of \S*linked,")
+            git(linked, "checkout", "-q", "--", config_path)
             self.assertTrue(any("/linked" in item.read_text()
                                 for item in FILTER.backups(linked_dir, "codex")))
             git(clone, "agent-status", "--porcelain")
             self.assertNotIn("projects", config.read_text())
             self.assertFalse(any("private" in item.read_text()
                                  for item in FILTER.backups(backup_dir, "codex")))
-            linked_config.write_text(linked_config.read_text() + linked_private)
+            self.assertIn("/linked", linked_config.read_text())  # Restored by the file checkout.
             git(clone, "agent-restore", "--forget", "codex")
             self.assertEqual([item.read_text() for item in FILTER.backups(linked_dir, "codex")],
                              [linked_config.read_text()])
