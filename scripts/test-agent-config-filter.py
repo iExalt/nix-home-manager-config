@@ -130,6 +130,14 @@ accountId = "private"
         self.assertEqual(live["model"], "new")
         self.assertNotIn("switchModelsOnFlag", live)
         self.assertEqual(live["permissions"]["defaultMode"], "plan")
+        # A named empty entry was saved, so it comes back; messages name sections only.
+        live = {"extraKnownMarketplaces": {}}
+        self.assertEqual(FILTER.add_missing(live, {"extraKnownMarketplaces": {"m": {}}},
+                                            FILTER.CLAUDE), ["extraKnownMarketplaces.m"])
+        self.assertEqual(live, {"extraKnownMarketplaces": {"m": {}}})
+        self.assertEqual(FILTER.sections(["env.SECRET", "projects./private.trust",
+                                          "env.OTHER", 'hooks[{"a.b": 1}]']),
+                         "env, hooks, projects")
 
     def test_refresh_skips_files_without_a_stage_zero_entry(self):
         with tempfile.TemporaryDirectory(prefix="agent-refresh-test-") as directory:
@@ -516,10 +524,16 @@ accountId = "private"
             linked_dir = Path(git(linked, "rev-parse", "--absolute-git-dir").stdout.strip(),
                               "agent-config-private")
             linked_config.write_text(FILTER.clean(linked_config.read_text(), "codex"))
-            notice = git(clone, "agent-restore", "--forget", "codex").stderr
+            # With no private keys left, which a wipe looks like too, forget names what
+            # it would lose and waits for --yes.
+            refused = git(clone, "agent-restore", "--forget", "codex", check=False)
+            self.assertNotEqual(refused.returncode, 0)
+            self.assertIn("last copies of projects. ", refused.stderr)
+            self.assertNotIn("/private", refused.stderr)
+            notice = git(clone, "agent-restore", "--forget", "codex", "--yes").stderr
             self.assertRegex(notice, r"kept the backups of \S*linked,")
             linked_config.unlink()  # A missing file counts as wiped too.
-            notice = git(clone, "agent-restore", "--forget", "codex").stderr
+            notice = git(clone, "agent-restore", "--forget", "codex", "--yes").stderr
             self.assertRegex(notice, r"kept the backups of \S*linked,")
             git(linked, "checkout", "-q", "--", config_path)
             self.assertTrue(any("/linked" in item.read_text()
@@ -531,7 +545,7 @@ accountId = "private"
             self.assertIn("/linked", linked_config.read_text())  # Restored by the file checkout.
             leftover = linked_config.parent / f".{linked_config.name}.abc.agent-restore-tmp"
             leftover.write_text(linked_private)  # A killed restore's temp copy.
-            git(clone, "agent-restore", "--forget", "codex")
+            git(clone, "agent-restore", "--forget", "codex", "--yes")
             self.assertFalse(leftover.exists())
             self.assertEqual([item.read_text() for item in FILTER.backups(linked_dir, "codex")],
                              [linked_config.read_text()])

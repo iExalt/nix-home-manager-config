@@ -29,9 +29,12 @@ RESTORE_COMMAND="$SCRIPT_COMMAND restore"
 HOOK_COMMAND="$RESTORE_COMMAND --if-wiped"
 # Show status even if refresh reports a problem. A git alias runs from the top level;
 # return to the caller's directory for its pathspecs.
+# fix(config): an older checkout's script would read stdin as a filter; skip it there.
+API_CHECK="grep -qx 'HOOK_API = 1' scripts/clean-agent-config.py 2>/dev/null"
 git config --local alias.agent-status \
-  "!f() { $SCRIPT_COMMAND refresh; cd \"\${GIT_PREFIX:-.}\" && git status \"\$@\"; }; f"
-git config --local alias.agent-restore "!$RESTORE_COMMAND"
+  "!f() { ! $API_CHECK || $SCRIPT_COMMAND refresh < /dev/null; cd \"\${GIT_PREFIX:-.}\" && git status \"\$@\"; }; f"
+git config --local alias.agent-restore \
+  "!f() { $API_CHECK || { echo 'agent-restore: this checkout predates it.' >&2; return 1; }; $RESTORE_COMMAND \"\$@\" < /dev/null; }; f"
 
 # fix(config): put back private keys after Git rewrites the config files. Hook problems
 # only warn, so quickstart still installs the filters, which guard privacy.
