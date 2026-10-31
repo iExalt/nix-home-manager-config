@@ -137,14 +137,19 @@ _STOPWORDS = frozenset(
     "use keep make let via per its our your you yes are was has have as is to on in of or no".split())
 
 
-def _content_words(text):
-    """Content words, stemmed to five characters so "deleting" matches "delete"."""
+def _words(text):
+    """Content words of text, unstemmed."""
     words = []
     for token in _TOKEN.findall(text):
         for part in token.split("-") if "-" in token else [token]:
             if (len(part) >= 3 or part.isdigit()) and part not in _STOPWORDS:
-                words.append(part[:5])
+                words.append(part)
     return words
+
+
+def _content_words(text):
+    """Content words, stemmed to five characters so "deleting" matches "delete"."""
+    return [word[:5] for word in _words(text)]
 
 
 # Options made only of these words (stop, defer, approve as proposed, change
@@ -190,12 +195,13 @@ def is_explained(label, haystack, haystack_words):
 
 
 def missing_by_question(questions, prose):
-    """[(question text, [unexplained labels])] for questions with any."""
+    """[(question text, [(unexplained label, [its words absent from the prose])])] for questions with any."""
     out = []
     for text, labels in questions:
         haystack = normalize(prose + "\n" + text)
         haystack_words = set(_content_words(haystack))
-        missing = [label for label in labels if not is_explained(label, haystack, haystack_words)]
+        missing = [(label, [w for w in _words(normalize_label(label)) if w[:5] not in haystack_words])
+                   for label in labels if not is_explained(label, haystack, haystack_words)]
         if missing:
             out.append((text, missing))
     return out
@@ -204,7 +210,7 @@ def missing_by_question(questions, prose):
 def missing_labels(questions, prose):
     missing = []
     for _, labels in missing_by_question(questions, prose):
-        missing.extend(label for label in labels if label not in missing)
+        missing.extend(label for label, _ in labels if label not in missing)
     return missing
 
 
@@ -241,21 +247,29 @@ def _short(text, limit=80):
 
 
 def deny_reason(gaps, thinking):
-    """Name each question's unexplained options, and say so when the explanation sits in thinking."""
+    """Name each unexplained option and the label words the prose lacks, and flag explanations in thinking.
+
+    Agents paraphrase labels ("Overpass, a little bolder" for "Overpass,
+    heavier") and, told only that an option is unexplained, conclude the hook
+    can't see their text. Naming the absent words makes one retry enough.
+    """
     parts = []
     for text, labels in gaps:
-        names = ", ".join('"%s"' % label for label in labels)
-        parts.append('%s (question "%s")' % (names, _short(text)) if text else names)
+        names = ", ".join('"%s"%s' % (label, " (your text lacks %s)" % ", ".join('"%s"' % w for w in absent)
+                                       if absent else "") for label, absent in labels)
+        parts.append('%s in question "%s"' % (names, _short(text)) if text else names)
     reason = (
         "Standing rule: before a multiple-choice question, explain each option in prose, with its "
         "rationale and tradeoffs, naming it by its label. Not yet explained: %s. " % "; ".join(parts))
-    hidden = [label for _, labels in gaps for label in labels
+    hidden = [label for _, labels in gaps for label, _ in labels
               if thinking and not missing_labels([("", [label])], thinking)]
     if hidden:
         reason += ("Your thinking mentions %s, but thinking is hidden from the user; only text you write "
                    "outside thinking counts. " % ", ".join('"%s"' % label for label in hidden))
-    return reason + ("Write the explanation as a visible message in this turn, then ask again. "
-                     "Option descriptions in the dialog don't count.")
+    return reason + ("The check looks for each label's words in your visible text since the user's last "
+                     "message. If you already explained the option under other words, rename the option "
+                     "to those words and ask again; otherwise write the explanation as a visible message, "
+                     "then ask again. Option descriptions in the dialog don't count.")
 
 
 def decide(event, wait_s=TRANSCRIPT_WAIT_S):
