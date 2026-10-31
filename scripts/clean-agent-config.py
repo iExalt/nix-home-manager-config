@@ -120,6 +120,8 @@ def toml_dump(data, prefix=()):
 FILES = {"codex": "dotfiles/.codex/config.toml", "claude": "dotfiles/.claude/settings.json"}
 POLICY = {"codex": CODEX, "claude": CLAUDE}
 KEEP_BACKUPS = 10
+# Older backups that alone hold a private section survive rotation this long.
+KEEP_UNIQUE_SECONDS = 30 * 24 * 60 * 60
 
 
 def parse(text, kind):
@@ -221,19 +223,46 @@ def write_private(target, text, mode=0o600):
         raise
 
 
-def back_up(directory, text, kind, data, projected):
+def paths(data, prefix=()):
+    """Name the sections of a nested dict, two levels deep, as restore reports them."""
+    names = set()
+    for key, value in data.items():
+        if isinstance(value, dict) and value and len(prefix) < 1:
+            names |= paths(value, (*prefix, key))
+        else:
+            names.add(".".join((*prefix, key)))
+    return names
+
+
+def rotate(directory, kind, now):
+    # fix(config): keep the newest backups, plus older ones that alone still hold a private
+    # section, so a run of small private sets after a wipe cannot evict the complete one.
+    seen = set()
+    for index, saved in enumerate(reversed(backups(directory, kind))):
+        try:
+            names = paths(private_part(parse(saved.read_text(), kind), kind))
+        except ValueError:
+            names = set()
+        young = now - int(saved.suffix[1:]) < KEEP_UNIQUE_SECONDS * 10**9
+        if index < KEEP_BACKUPS or (young and names - seen):
+            seen |= names
+        else:
+            saved.unlink()
+
+
+def back_up(text, kind, data, projected, directory=None):
     # fix(config): a file that already equals its projection holds nothing to protect,
     # so a wiped file never replaces a good backup.
     if data == projected:
         return
+    directory = directory or backup_dir()
     directory.mkdir(mode=0o700, exist_ok=True)
     existing = backups(directory, kind)
     if existing and existing[-1].read_text() == text:
         return
-    write_private(directory / f"{kind}.{time.time_ns()}", text)
-    # fix(config): rotate rather than overwrite, so a smaller private set stays recoverable.
-    for old in backups(directory, kind)[:-KEEP_BACKUPS]:
-        old.unlink()
+    now = time.time_ns()
+    write_private(directory / f"{kind}.{now}", text)
+    rotate(directory, kind, now)
 
 
 def filter_main(kind):
@@ -246,8 +275,7 @@ def filter_main(kind):
         # fix(privacy): do not echo configuration contents on parse failures.
         sys.exit("Agent config clean filter failed; check syntax and filter policy.")
     try:
-        if data != projected:  # fix(perf): only files with private content need the Git directory.
-            back_up(backup_dir(), text, kind, data, projected)
+        back_up(text, kind, data, projected)
     except Exception:
         print(f"warning: agent config backup failed for {kind}; restore will not cover recent edits.",
               file=sys.stderr)
@@ -309,13 +337,17 @@ def unrestored(older, live, kind):
     return result
 
 
-def restore_main(arguments):
+def restore_main(arguments, refresh_restored=True):
     parser = argparse.ArgumentParser(prog="git agent-restore")
     parser.add_argument("--from", dest="source", type=Path,
                         help="a backup file such as codex.<n> or claude.<n>")
     parser.add_argument("--if-wiped", action="store_true",
                         help="only restore files that hold no private content (used by hooks)")
+    parser.add_argument("--forget", choices=FILES,
+                        help="delete this file's backups, keeping only its current content")
     options = parser.parse_args(arguments)
+    if options.forget:
+        return forget(options.forget)
     source = options.source
     if source:
         # A git alias runs from the top level; resolve paths as typed by the user.
@@ -344,8 +376,15 @@ def restore_main(arguments):
             continue
         added, live = result
         if added:
-            print(f"agent-restore: restored {', '.join(added)} in {relative}", file=sys.stderr)
-            refresh(root, [relative])
+            print(f"agent-restore: restored {', '.join(added)} in {relative}; if you removed them on "
+                  f"purpose, run: git agent-restore --forget {kind}", file=sys.stderr)
+            try:
+                if refresh_restored:
+                    refresh(root, [relative])
+            except subprocess.CalledProcessError:
+                print(f"agent-restore: could not refresh {relative}; run git agent-status.",
+                      file=sys.stderr)
+                failed = True
         if source:
             continue
         try:
@@ -362,12 +401,34 @@ def restore_main(arguments):
     return 1 if failed else 0
 
 
+def forget(kind):
+    """Purge a file's backups, so a deliberately removed private key (or secret) stays gone."""
+    # fix(privacy): a removed secret may be revoked or rotated; keep no copies of it.
+    root = Path(git("rev-parse", "--show-toplevel"))
+    directory = backup_dir()
+    old = backups(directory, kind)
+    target = root / FILES[kind]
+    if target.is_file():  # Save the new backup first, so a failed write keeps the old ones.
+        directory.mkdir(mode=0o700, exist_ok=True)
+        write_private(directory / f"{kind}.{time.time_ns()}", target.read_text())
+    for saved in old:
+        saved.unlink()
+    print(f"agent-restore: kept only the current {FILES[kind]} as its backup.", file=sys.stderr)
+    return 0
+
+
 def seed():
     """Run the clean filter once per file, so its backup exists before any rewrite."""
     root = Path(git("rev-parse", "--show-toplevel"))
+    failed = False
     for relative in FILES.values():
         if (root / relative).is_file():
-            git("hash-object", f"--path={relative}", relative, cwd=root)
+            try:
+                git("hash-object", f"--path={relative}", relative, cwd=root)
+            except subprocess.CalledProcessError:
+                print(f"agent-seed: could not back up {relative}.", file=sys.stderr)
+                failed = True
+    return 1 if failed else 0
 
 
 if __name__ == "__main__":
@@ -376,8 +437,12 @@ if __name__ == "__main__":
         sys.exit(restore_main(sys.argv[2:]))
     if command == "refresh":
         # fix(config): also a catch-all for rewrites that fire no hook, such as cherry-pick.
-        exit_code = restore_main(["--if-wiped"])
-        refresh(Path(git("rev-parse", "--show-toplevel")), FILES.values())
+        exit_code = restore_main(["--if-wiped"], refresh_restored=False)
+        try:
+            refresh(Path(git("rev-parse", "--show-toplevel")), FILES.values())
+        except subprocess.CalledProcessError:
+            print("agent-status: could not refresh the agent config files.", file=sys.stderr)
+            exit_code = 1
         sys.exit(exit_code)
     if command == "seed":
         sys.exit(seed())
