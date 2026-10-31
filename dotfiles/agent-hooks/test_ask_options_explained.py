@@ -84,6 +84,7 @@ class DecideTest(unittest.TestCase):
         reason = self.run_hook("AskUserQuestion", CLAUDE_INPUT, records)
         self.assertIn('"Merge" (your visible text lacks "merge") in question "Which approach?"', reason)
         self.assertTrue(reason.startswith('Your explanation of "Merge" is in your thinking'))
+        self.assertIn('The last visible text the user saw from you is: "Rebase keeps history linear."', reason)
         first = self.run_hook("AskUserQuestion", CLAUDE_INPUT, records[:4], tool_use_id="t0")
         self.assertNotIn("thinking", first)  # reasoning before the visible text isn't the explanation
 

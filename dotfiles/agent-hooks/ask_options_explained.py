@@ -258,7 +258,7 @@ def _short(text, limit=80):
     return text if len(text) <= limit else text[:limit - 1].rstrip() + "\u2026"
 
 
-def deny_reason(gaps, thinking):
+def deny_reason(gaps, thinking, prose=""):
     """Name each unexplained option and the label words the prose lacks, and flag explanations in thinking.
 
     Agents paraphrase labels ("Overpass, a little bolder" for "Overpass,
@@ -277,6 +277,10 @@ def deny_reason(gaps, thinking):
         # Lead with it: agents that explained only in thinking skimmed past it mid-message (sessions 1a97f603, 8bbb28d3).
         reason = ("Your explanation of %s is in your thinking, which the user never sees. Write it as an "
                   "ordinary reply, outside thinking, then ask again. " % ", ".join('"%s"' % label for label in hidden))
+        # Agents disbelieve the diagnosis ("my text was in the same response", session 2d366d27); show what the user saw.
+        lines = [line for line in prose.splitlines() if line.strip()]
+        reason += ('The last visible text the user saw from you is: "%s". ' % _short(lines[-1], 120) if lines
+                   else "The user has seen no text from you since their last message. ")
     reason += (
         "Standing rule: before a multiple-choice question, explain each option in prose, with its "
         "rationale and tradeoffs, naming it by its label. Not yet explained: %s. " % "; ".join(parts))
@@ -302,7 +306,7 @@ def decide(event, wait_s=TRANSCRIPT_WAIT_S):
     if prose is None:
         return None
     gaps = missing_by_question(questions, prose)
-    return deny_reason(gaps, thinking) if gaps else None
+    return deny_reason(gaps, thinking, prose) if gaps else None
 
 
 def main():
