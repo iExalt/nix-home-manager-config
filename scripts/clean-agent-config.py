@@ -5,6 +5,7 @@ As a clean filter, also back up the raw file under the Git directory so that
 `restore` can put back private keys that a checkout, pull, or stash removed.
 """
 
+import argparse
 import json
 import os
 from pathlib import Path
@@ -53,7 +54,7 @@ CLAUDE.update({
     },
     "sandbox": {"enabled": None},
     "modelSettings": {"*": {"effortLevel": None}},
-    # feat(config): lists hold one item policy; an item is kept whole or not at all.
+    # feat(config): lists hold one item policy; each item is kept whole or dropped whole.
     "hooks": {"*": [{"matcher": None, "hooks": [{"type": None, "command": None, "timeout": None}]}]},
 })
 # Shared hook scripts live at this fixed path, which identifies nothing.
@@ -84,9 +85,12 @@ def project(data, policy):
                     result[key] = selected
         elif isinstance(rule, list):
             if isinstance(value, list) and value:
-                items = [project(item, rule[0]) if isinstance(item, dict) else {} for item in value]
-                if all(items[i] == value[i] for i in range(len(value))):
-                    result[key] = items
+                # fix(config): keep the portable items, so a private item beside them
+                # neither hides them from Git nor makes them look deleted after a restore.
+                kept = [item for item in value
+                        if isinstance(item, dict) and project(item, rule[0]) == item]
+                if kept:
+                    result[key] = kept
         elif portable(value):
             result[key] = value
     return result
@@ -146,23 +150,49 @@ def private(data, kept):
             dropped = private(value, kept[key])
             if dropped:
                 result[key] = dropped
+        elif isinstance(value, list) and isinstance(kept[key], list):
+            dropped = [item for item in value if item not in kept[key]]
+            if dropped:
+                result[key] = dropped
     return result
 
 
-def add_missing(live, extra, path=()):
+def add_missing(live, extra, policy, path=()):
     """Add keys from extra that live lacks; live values always win."""
     added = []
     for key, value in extra.items():
+        name = ".".join((*path, key))
+        rule = policy.get(key, policy.get("*")) if isinstance(policy, dict) else None
         if key not in live:
             live[key] = value
-            added.append(".".join((*path, key)))
+            added.append(name)
         elif isinstance(live[key], dict) and isinstance(value, dict):
-            added += add_missing(live[key], value, (*path, key))
+            added += add_missing(live[key], value, rule or {}, (*path, key))
+        # fix(config): only lists with an item policy are tracked per item; appending to
+        # any other list would make Git's whole copy of it look deleted.
+        elif isinstance(rule, list) and isinstance(live[key], list) and isinstance(value, list):
+            # Private items were never in Git; append the ones a pulled list lacks.
+            missing = [item for item in value if item not in live[key]]
+            if missing:
+                live[key] = live[key] + missing
+                added.append(name)
     return added
 
 
-def git(*args):
-    return subprocess.run(["git", *args], check=True, capture_output=True, text=True).stdout.strip()
+def absent(extra, live, path=()):
+    """Name the sections of extra that live lacks."""
+    names = []
+    for key, value in extra.items():
+        if key not in live:
+            names.append(".".join((*path, key)))
+        elif isinstance(value, dict) and isinstance(live[key], dict):
+            names += absent(value, live[key], (*path, key))
+    return names
+
+
+def git(*args, cwd=None):
+    return subprocess.run(["git", *args], check=True, capture_output=True, text=True,
+                          cwd=cwd).stdout.strip()
 
 
 def backup_dir():
@@ -170,8 +200,8 @@ def backup_dir():
     return Path(git("rev-parse", "--absolute-git-dir")) / "agent-config-private"
 
 
-def backups(kind):
-    found = [item for item in backup_dir().glob(f"{kind}.*") if item.suffix[1:].isdigit()]
+def backups(directory, kind):
+    found = [item for item in directory.glob(f"{kind}.*") if item.suffix[1:].isdigit()]
     return sorted(found, key=lambda item: int(item.suffix[1:]))
 
 
@@ -187,19 +217,18 @@ def write_private(target, text, mode=0o600):
         raise
 
 
-def back_up(text, kind, data, projected):
+def back_up(directory, text, kind, data, projected):
     # fix(config): a file that already equals its projection holds nothing to protect,
     # so a wiped file never replaces a good backup.
     if data == projected:
         return
-    directory = backup_dir()
     directory.mkdir(mode=0o700, exist_ok=True)
-    existing = backups(kind)
+    existing = backups(directory, kind)
     if existing and existing[-1].read_text() == text:
         return
     write_private(directory / f"{kind}.{time.time_ns()}", text)
     # fix(config): rotate rather than overwrite, so a smaller private set stays recoverable.
-    for old in backups(kind)[:-KEEP_BACKUPS]:
+    for old in backups(directory, kind)[:-KEEP_BACKUPS]:
         old.unlink()
 
 
@@ -213,33 +242,83 @@ def filter_main(kind):
         # fix(privacy): do not echo configuration contents on parse failures.
         sys.exit("Agent config clean filter failed; check syntax and filter policy.")
     try:
-        back_up(text, kind, data, projected)
+        back_up(backup_dir(), text, kind, data, projected)
     except Exception:
         print(f"warning: agent config backup failed for {kind}; restore will not cover recent edits.",
               file=sys.stderr)
     sys.stdout.write(output)
 
 
+def refresh(root, relatives):
+    # fix(config): refresh stat data only when the filtered content matches the index,
+    # so Git stops reporting a byte-size change without staging a real one.
+    for relative in relatives:
+        if not (root / relative).is_file():
+            continue
+        indexed = subprocess.run(["git", "rev-parse", "--verify", "-q", f":{relative}"],
+                                 cwd=root, capture_output=True, text=True).stdout.strip()
+        if indexed and indexed == git("hash-object", f"--path={relative}", relative, cwd=root):
+            git("add", "--renormalize", "--", relative, cwd=root)
+
+
+def restore_file(target, saved, kind):
+    """Merge private keys from saved into target; return the names added."""
+    backup = parse(saved.read_text(), kind)
+    extra = private(backup, project(backup, POLICY[kind]))
+    for _ in range(3):
+        before = target.stat()
+        live = parse(target.read_text(), kind)
+        added = add_missing(live, extra, POLICY[kind])
+        if not added:
+            return [], live
+        output = dump(live, kind)
+        # fix(config): an agent may save the file meanwhile; start over rather than drop its write.
+        now = target.stat()
+        if (now.st_mtime_ns, now.st_size) == (before.st_mtime_ns, before.st_size):
+            write_private(target, output, before.st_mode & 0o777)
+            return added, live
+    raise OSError("file kept changing")
+
+
+def unrestored(older, live, kind):
+    """Pair each older backup, newest first, with private sections live still lacks."""
+    reported, result = set(), []
+    for saved in reversed(older):
+        backup = parse(saved.read_text(), kind)
+        names = [name for name in absent(private(backup, project(backup, POLICY[kind])), live)
+                 if name not in reported]
+        if names:
+            reported.update(names)
+            result.append((saved, names))
+    return result
+
+
 def restore_main(arguments):
-    source = Path(arguments[arguments.index("--from") + 1]) if "--from" in arguments else None
-    if source and not any(source.name.startswith(f"{kind}.") for kind in FILES):
-        print("agent-restore: --from expects a backup named codex.<n> or claude.<n>.", file=sys.stderr)
-        return 1
+    parser = argparse.ArgumentParser(prog="git agent-restore")
+    parser.add_argument("--from", dest="source", type=Path,
+                        help="a backup file such as codex.<n> or claude.<n>")
+    options = parser.parse_args(arguments)
+    source = options.source
+    if source:
+        # A git alias runs from the top level; resolve paths as typed by the user.
+        source = Path(os.environ.get("GIT_PREFIX", "")) / source
+        if not any(source.name.startswith(f"{kind}.") for kind in FILES) or not source.is_file():
+            parser.error("--from expects an existing backup named codex.<n> or claude.<n>")
     root = Path(git("rev-parse", "--show-toplevel"))
+    directory = Path(git("rev-parse", "--absolute-git-dir")) / "agent-config-private"
     failed = False
     for kind, relative in FILES.items():
         if source and not source.name.startswith(f"{kind}."):
             continue
-        saved = source or (backups(kind) or [None])[-1]
+        saved = backups(directory, kind)
         target = root / relative
-        if saved is None or not target.exists():
+        if not (source or saved) or not target.exists():
             continue
         try:
-            live = parse(target.read_text(), kind)
-            backup = parse(saved.read_text(), kind)
-            added = add_missing(live, private(backup, project(backup, POLICY[kind])))
-            if added:
-                write_private(target, dump(live, kind), target.stat().st_mode & 0o777)
+            added, live = restore_file(target, source or saved[-1], kind)
+            # fix(config): a wipe followed by new private keys yields small latest backups;
+            # name what older backups still hold instead of losing it silently.
+            lost = [] if source else unrestored(saved[:-1], live, kind)
         except Exception:
             # fix(privacy): name the file, never its contents.
             print(f"agent-restore: skipped {relative}; it or its backup could not be parsed or written.",
@@ -248,16 +327,18 @@ def restore_main(arguments):
             continue
         if added:
             print(f"agent-restore: restored {', '.join(added)} in {relative}", file=sys.stderr)
-            # fix(config): like agent-status, refresh stat data only when the filtered
-            # content still matches the index, so Git does not report a phantom change.
-            indexed = subprocess.run(["git", "rev-parse", "--verify", "-q", f":{relative}"],
-                                     cwd=root, capture_output=True, text=True).stdout.strip()
-            if indexed and indexed == git("-C", str(root), "hash-object", f"--path={relative}", relative):
-                git("-C", str(root), "add", "--renormalize", "--", relative)
+            refresh(root, [relative])
+        for older, names in lost:
+            print(f"agent-restore: {older} also has {', '.join(names)}; if you did not delete them "
+                  f"on purpose, run: git agent-restore --from {older}", file=sys.stderr)
     return 1 if failed else 0
 
 
 if __name__ == "__main__":
-    if sys.argv[1:2] == ["restore"]:
+    command = sys.argv[1] if len(sys.argv) > 1 else ""
+    if command == "restore":
         sys.exit(restore_main(sys.argv[2:]))
-    filter_main(sys.argv[1] if len(sys.argv) > 1 else "")
+    if command == "refresh":
+        refresh(Path(git("rev-parse", "--show-toplevel")), FILES.values())
+        sys.exit(0)
+    filter_main(command)
