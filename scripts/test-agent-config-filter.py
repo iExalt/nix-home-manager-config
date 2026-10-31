@@ -45,6 +45,27 @@ example = 4
         })
         self.assertEqual(output, FILTER.clean(output, "codex"))
 
+    def test_named_preferences_without_their_private_siblings(self):
+        codex = FILTER.clean('''[desktop]
+preventSleepWhileRunning = true
+show-context-window-usage = true
+conversationDetailMode = "STEPS_PROSE"
+[desktop.daybreak-enabled]
+accountId = "private"
+''', "codex")
+        self.assertEqual(tomllib.loads(codex), {"desktop": {
+            "preventSleepWhileRunning": True, "show-context-window-usage": True,
+            "conversationDetailMode": "STEPS_PROSE",
+        }})
+        claude = FILTER.clean(json.dumps({
+            "autoCompactWindow": 500000,
+            "env": {"CLAUDE_CODE_SILENT_TURN_REMINDER_TEXT": "Update me.", "API_TOKEN": "secret"},
+        }), "claude")
+        self.assertEqual(json.loads(claude), {
+            "autoCompactWindow": 500000,
+            "env": {"CLAUDE_CODE_SILENT_TURN_REMINDER_TEXT": "Update me."},
+        })
+
     def test_claude_paths_and_unknown_state(self):
         source = json.dumps({
             "model": "example", "extraKnownMarketplaces": {"private": {"path": "/private"}},
