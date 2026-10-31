@@ -6,6 +6,7 @@ As a clean filter, also back up the raw file under the Git directory so that
 """
 
 import argparse
+import copy
 import datetime
 import json
 import math
@@ -90,8 +91,7 @@ def project(data, policy, kept_local=None, path=()):
             if isinstance(value, list) and value:
                 # fix(config): keep the portable items, so a private item beside them
                 # neither hides them from Git nor makes them look deleted after a restore.
-                kept = [item for item in value
-                        if isinstance(item, dict) and project(item, rule[0]) == item]
+                kept = [item for item in value if portable_item(item, rule)]
                 if kept:
                     result[key] = kept
         elif portable(value):
@@ -143,6 +143,8 @@ def toml_dump(data, prefix=()):
 FILES = {"codex": "dotfiles/.codex/config.toml", "claude": "dotfiles/.claude/settings.json"}
 POLICY = {"codex": CODEX, "claude": CLAUDE}
 KEEP_BACKUPS = 10
+# Installed hooks probe for this exact line before passing restore their arguments.
+HOOK_API = 1
 # Older backups that alone hold a private section survive rotation this long.
 KEEP_UNIQUE_SECONDS = 30 * 24 * 60 * 60
 
@@ -186,9 +188,14 @@ def private(data, kept):
     return result
 
 
+def portable_item(item, rule):
+    """Whether an item of a per-item tracked list survives projection unchanged."""
+    return isinstance(item, dict) and project(item, rule[0]) == item
+
+
 def private_items(value, rule):
     """The items of a per-item tracked list that the projection would drop."""
-    return [item for item in value if not (isinstance(item, dict) and project(item, rule[0]) == item)]
+    return [item for item in value if not portable_item(item, rule)]
 
 
 def add_missing(live, extra, policy, path=()):
@@ -219,21 +226,6 @@ def add_missing(live, extra, policy, path=()):
     return added
 
 
-def absent(extra, live, policy, path=()):
-    """Name the sections of extra that live lacks and add_missing could restore."""
-    names = []
-    for key, value in extra.items():
-        rule = policy.get(key, policy.get("*")) if isinstance(policy, dict) else None
-        if key not in live:
-            names.append(".".join((*path, key)))
-        elif isinstance(value, dict) and isinstance(live[key], dict):
-            names += absent(value, live[key], rule or {}, (*path, key))
-        elif isinstance(rule, list) and isinstance(value, list) and isinstance(live[key], list):
-            if any(item not in live[key] for item in private_items(value, rule)):
-                names.append(".".join((*path, key)))
-    return names
-
-
 def git(*args, cwd=None, check=True, text=True):
     """Run git; return its output, or None on failure when check is false."""
     result = subprocess.run(["git", *args], check=check, capture_output=True, text=text, cwd=cwd)
@@ -253,7 +245,10 @@ def backups(directory, kind):
 
 
 def write_private(target, text, mode=0o600):
-    descriptor, temporary = tempfile.mkstemp(dir=target.parent, prefix=f".{target.name}.")
+    # fix(privacy): .gitignore covers this suffix, so a temp copy left by a killed process
+    # beside a tracked config is never staged unfiltered.
+    descriptor, temporary = tempfile.mkstemp(dir=target.parent, prefix=f".{target.name}.",
+                                             suffix=".agent-restore-tmp")
     try:
         with os.fdopen(descriptor, "w") as handle:
             handle.write(text)
@@ -407,7 +402,9 @@ def unrestored(older, live, kind):
             backup = private_part(parse(text, kind), kind)
         except ValueError:  # One unreadable backup must not hide the others.
             continue
-        names = [name for name in absent(backup, live, POLICY[kind]) if name not in reported]
+        # The names add_missing would restore are exactly the ones live still lacks.
+        names = [name for name in add_missing(copy.deepcopy(live), backup, POLICY[kind])
+                 if name not in reported]
         if names:
             reported.update(names)
             result.append((saved, names))
@@ -458,6 +455,12 @@ def restore_main(arguments, refresh_restored=True):
             failed = True
             continue
         if result is None:
+            if options.changed:
+                # fix(config): Git changed the file, yet it already holds private keys (an agent
+                # saved one meanwhile, or a staged change); merging could revive a deleted
+                # key, so say so instead of staying silent.
+                print(f"agent-restore: {relative} changed in Git but already holds private keys "
+                      "or does not parse; run git agent-restore if any are missing.", file=sys.stderr)
             continue
         added, live = result
         if added:
@@ -520,10 +523,12 @@ def forget(kind):
         text = read_or_none(target) if target.is_file() else None
         # fix(config): another worktree whose file was wiped (mid-stash, say) still needs
         # its backups to recover unrelated private keys; keep them and say so.
-        if (git_dir != current and text is not None and not holds_private(text, kind)
+        # A missing file (a branch that predates it, say) counts as wiped too.
+        if (git_dir != current and not holds_private(text or "", kind)
                 and old and holds_private(read_or_none(old[-1]) or "", kind)):
-            print(f"agent-restore: kept the backups of {worktree}, whose {FILES[kind]} holds no "
-                  "private keys; run git agent-restore there, then --forget there.", file=sys.stderr)
+            print(f"agent-restore: kept the backups of {worktree}, whose {FILES[kind]} is missing "
+                  "or holds no private keys; restore it there, then run --forget there.",
+                  file=sys.stderr)
             continue
         if text is not None:
             # fix(config): save the current file as the only backup, so this worktree keeps its

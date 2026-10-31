@@ -15,3 +15,6 @@ result-*
 
 # chore(claude): keep account, project, and runtime state on this machine.
 /dotfiles/.claude/claude.json
+
+# fix(privacy): temp copies of agent configs left by a killed restore.
+*.agent-restore-tmp
