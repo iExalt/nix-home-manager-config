@@ -130,6 +130,11 @@ in
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/phone-debug";
   home.file.".codex/rules/phone-debug.rules".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/.codex/rules/phone-debug.rules";
+  # Hooks shared by Claude Code (settings.json) and Codex (hooks.json).
+  xdg.configFile."agent-hooks".source =
+    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/agent-hooks";
+  home.file.".codex/hooks.json".source =
+    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/.codex/hooks.json";
   home.file.".vibe/config.toml".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/.vibe/config.toml";
   xdg.configFile."ccstatusline/settings.json".source =

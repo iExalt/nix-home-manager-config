@@ -7,6 +7,20 @@
   "enabledPlugins": {
     "rust-analyzer-lsp@claude-plugins-official": true
   },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "command": "python3 -I \"$HOME/.config/agent-hooks/ask_options_explained.py\"",
+            "timeout": 10,
+            "type": "command"
+          }
+        ],
+        "matcher": "AskUserQuestion"
+      }
+    ]
+  },
   "model": "haiku",
   "modelSettings": {
     "claude-fable-5-1": {

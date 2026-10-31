@@ -37,12 +37,17 @@ CLAUDE.update({
     },
     "sandbox": {"enabled": None},
     "modelSettings": {"*": {"effortLevel": None}},
+    # feat(config): lists hold one item policy; an item is kept whole or not at all.
+    "hooks": {"*": [{"matcher": None, "hooks": [{"type": None, "command": None, "timeout": None}]}]},
 })
+# Shared hook scripts live at this fixed path, which identifies nothing.
+SHARED_HOOKS = '"$HOME/.config/agent-hooks/'
 
 
 def portable(value):
     # fix(privacy): conservatively omit strings containing any path separator.
     if isinstance(value, str):
+        value = value.replace(SHARED_HOOKS, '"')
         return not any(part in value for part in ("/", "\\", "$HOME", "${HOME}", "~"))
     if isinstance(value, list):
         return all(portable(item) for item in value)
@@ -61,6 +66,11 @@ def project(data, policy):
                 selected = project(value, rule)
                 if selected:
                     result[key] = selected
+        elif isinstance(rule, list):
+            if isinstance(value, list) and value:
+                items = [project(item, rule[0]) if isinstance(item, dict) else {} for item in value]
+                if all(items[i] == value[i] for i in range(len(value))):
+                    result[key] = items
         elif portable(value):
             result[key] = value
     return result
