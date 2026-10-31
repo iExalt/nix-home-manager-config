@@ -101,7 +101,8 @@ Git stores only the filtered content, so a pull, checkout, reset, or stash
 that rewrites either file writes the filtered content back and drops the
 private keys. To recover them, the clean filter also saves each raw version
 that holds private keys to `agent-config-private/` in the Git directory,
-keeping the last 10 (mode 0600, per worktree, never committed). A file that
+keeping the last 10 plus, for 30 days, any older one that alone still holds a
+private section (mode 0600, per worktree, never committed). A file that
 already equals its filtered content is not saved, so a wiped file never
 replaces a good backup. The installer adds `post-checkout`, `post-merge`, and
 `post-rewrite` hooks to Git's hooks directory (honouring a repository-local
@@ -133,14 +134,17 @@ agent-status` and `git diff` do; plain `git status` skips it when the file's
 size changed. After deleting a private key, run `git agent-status` before `git
 reset --hard`, `git checkout -f`, or `git checkout`/`git restore -- <file>`,
 which overwrite without comparing; otherwise a restore brings the key back.
-Deleting the last private key is never saved, so `git agent-status` and later
-restores bring it back; remove that file's backups to drop it for good. When
-older backups hold private sections that the file and the latest backup both
-lack, as after a stash during which an agent saved a new key, restore names
-them and the backup to recover them from, run as `git agent-restore --from
-"$(git rev-parse --absolute-git-dir)/agent-config-private/<file>"`. After a
-deliberate deletion, that note repeats until the backup rotates out or you
-delete it.
+Deleting the last private key is never saved, so a later restore brings it
+back. To remove private keys for good, such as a revoked secret, delete them
+and run `git agent-restore --forget codex` or `--forget claude`: it deletes
+that file's backups and keeps only its current content. Each restore message
+repeats this hint. When older backups hold private sections that the file and
+the latest backup both lack, as after a stash during which an agent saved a
+new key, restore names them and the backup to recover them from, run as `git
+agent-restore --from "$(git rev-parse
+--absolute-git-dir)/agent-config-private/<file>"`. After a deliberate
+deletion, that note repeats until the backup rotates out, for up to 30 days,
+or until you run `--forget`.
 
 Filters are clone-local Git configuration: install them in every clone before
 staging these files. Rerun the installer if the Mise Python installation is

@@ -9,6 +9,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import tomllib
 import unittest
 
@@ -141,24 +142,28 @@ accountId = "private"
                 "hooks": {"tables": [{"name": "x", "nested": {"on": True}}]}}
         self.assertEqual(tomllib.loads(FILTER.dump(data, "codex")), data)
 
-    def test_backup_skips_filtered_input_and_rotates(self):
+    def test_backup_skips_wiped_input_and_rotates(self):
         with tempfile.TemporaryDirectory(prefix="agent-backup-test-") as directory:
             directory = Path(directory)
 
             def save(text):
                 data = tomllib.loads(text)
-                FILTER.back_up(directory, text, "codex", data, FILTER.project(data, FILTER.CODEX))
+                FILTER.back_up(text, "codex", data, FILTER.project(data, FILTER.CODEX), directory)
 
             full = 'model = "a"\n[projects."/one"]\nx = 1\n[projects."/two"]\nx = 2\n'
             save(full)
             save('model = "a"\n')  # A wiped file never replaces the backup.
             save(full)  # Unchanged content adds no version.
             self.assertEqual([item.read_text() for item in FILTER.backups(directory, "codex")], [full])
-            for index in range(FILTER.KEEP_BACKUPS):
-                save(f'model = "{index}"\n[projects."/one"]\nx = 1\n')
-            kept = FILTER.backups(directory, "codex")
-            self.assertEqual(len(kept), FILTER.KEEP_BACKUPS)
-            self.assertNotIn(full, [item.read_text() for item in kept])
+            for index in range(FILTER.KEEP_BACKUPS + 2):
+                save(f'model = "{index}"\n[projects."/one"]\nx = 1\n'
+                     f'[tui.model_availability_nux]\nm{index} = 1\n')
+            kept = [item.read_text() for item in FILTER.backups(directory, "codex")]
+            # The only backup holding /two survives rotation while it is young.
+            self.assertEqual(kept[0], full)
+            self.assertEqual(len(kept), FILTER.KEEP_BACKUPS + 1)
+            FILTER.rotate(directory, "codex", time.time_ns() + FILTER.KEEP_UNIQUE_SECONDS * 10**9)
+            self.assertNotIn(full, [item.read_text() for item in FILTER.backups(directory, "codex")])
 
     def test_lists_keep_portable_items_and_restore_private_ones(self):
         def hook(command):
@@ -328,6 +333,16 @@ accountId = "private"
             assert_restored("local", ["/private/one"])
             git(clone, "add", config_path)
             self.assertNotIn("private", git(clone, "show", f":{config_path}").stdout)
+
+            # Forget purges every backup of the removed key, so nothing brings it back.
+            config.write_text(FILTER.clean(config.read_text(), "codex"))
+            self.assertIn("--forget codex", git(clone, "agent-status", "--porcelain").stderr)
+            config.write_text(FILTER.clean(config.read_text(), "codex"))
+            git(clone, "agent-restore", "--forget", "codex")
+            git(clone, "agent-status", "--porcelain")
+            self.assertNotIn("projects", config.read_text())
+            self.assertFalse(any("private" in item.read_text()
+                                 for item in FILTER.backups(backup_dir, "codex")))
 
             backups = list(Path(git(clone, "rev-parse", "--absolute-git-dir").stdout.strip(),
                                 "agent-config-private").iterdir())
