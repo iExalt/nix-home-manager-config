@@ -9,7 +9,10 @@ FILTER_PYTHON="${FILTER_PYTHON:-$(mise which python)}"
 quote() {
   "$FILTER_PYTHON" -c 'import shlex, sys; print(shlex.join(sys.argv[1:]))' "$@"
 }
-for kind in codex claude; do
+# fix(privacy): a plain assignment trips set -e; a failing substitution in a for list would not.
+KINDS="$("$FILTER_PYTHON" scripts/clean-agent-config.py kinds)"
+[ -n "$KINDS" ]
+for kind in $KINDS; do
   FILTER_COMMAND="$(quote "$FILTER_PYTHON" scripts/clean-agent-config.py "$kind")"
   git config --local "filter.agent-$kind.clean" "$FILTER_COMMAND"
   git config --local "filter.agent-$kind.smudge" cat
@@ -17,9 +20,11 @@ for kind in codex claude; do
 done
 SCRIPT_COMMAND="$(quote "$FILTER_PYTHON" scripts/clean-agent-config.py)"
 RESTORE_COMMAND="$SCRIPT_COMMAND restore"
-# A git alias runs from the top level; return to the caller's directory for its pathspecs.
+HOOK_COMMAND="$RESTORE_COMMAND --if-wiped"
+# Show status even if refresh reports a problem. A git alias runs from the top level;
+# return to the caller's directory for its pathspecs.
 git config --local alias.agent-status \
-  "!f() { $SCRIPT_COMMAND refresh && cd \"\${GIT_PREFIX:-.}\" && git status \"\$@\"; }; f"
+  "!f() { $SCRIPT_COMMAND refresh; cd \"\${GIT_PREFIX:-.}\" && git status \"\$@\"; }; f"
 git config --local alias.agent-restore "!$RESTORE_COMMAND"
 
 # fix(config): put back private keys after Git rewrites the config files. Hook problems
@@ -53,8 +58,8 @@ if [ -d "$git_dir/rebase-merge" ] || [ -d "$git_dir/rebase-apply" ]; then exit 0
 $HOOK_MARKER
 cd "\$(git rev-parse --show-toplevel)" || exit 0
 # An older checkout may predate restore; skip quietly rather than fail every checkout.
-grep -q restore_main scripts/clean-agent-config.py 2>/dev/null || exit 0
-${REBASE_GUARD}$RESTORE_COMMAND
+grep -q -- --if-wiped scripts/clean-agent-config.py 2>/dev/null || exit 0
+${REBASE_GUARD}$HOOK_COMMAND
 # Restore reports its own problems; never fail the Git command that ran this hook.
 exit 0
 HOOK
@@ -64,8 +69,4 @@ HOOK
 fi
 
 # Seed the private backups now rather than waiting for the next edit.
-for config_file in dotfiles/.codex/config.toml dotfiles/.claude/settings.json; do
-  if [ -f "$config_file" ]; then
-    git hash-object --path="$config_file" "$config_file" > /dev/null
-  fi
-done
+$SCRIPT_COMMAND seed
