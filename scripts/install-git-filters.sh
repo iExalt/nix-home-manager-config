@@ -92,6 +92,6 @@ fi
 
 # Seed the private backups now rather than waiting for the next edit.
 if ! "${SCRIPT[@]}" seed; then
-  echo "warning: could not back up the agent config files; fix their syntax, then rerun" \
-    "this installer." >&2
+  echo "warning: could not back up the agent config files; check their syntax and the Git" \
+    "directory's permissions, then rerun this installer." >&2
 fi

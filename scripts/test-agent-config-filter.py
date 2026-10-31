@@ -184,6 +184,15 @@ accountId = "private"
             self.assertEqual(len(kept), FILTER.KEEP_BACKUPS + 1)
             FILTER.rotate(directory, "codex", time.time_ns() + FILTER.KEEP_UNIQUE_SECONDS * 10**9)
             self.assertNotIn(full, [item.read_text() for item in FILTER.backups(directory, "codex")])
+            # Edits to a portable hook beside a private one are not unique private sections.
+            mine = {"matcher": "", "hooks": [{"type": "command", "command": "/private/x.sh"}]}
+            for timeout in range(FILTER.KEEP_BACKUPS + 5):
+                shared = {"matcher": "", "hooks": [{"type": "command", "timeout": timeout,
+                                                    "command": 'python3 "$HOME/.config/agent-hooks/a.py"'}]}
+                data = {"hooks": {"Stop": [mine, shared]}}
+                FILTER.back_up(json.dumps(data), "claude", data, FILTER.project(data, FILTER.CLAUDE),
+                               directory)
+            self.assertEqual(len(FILTER.backups(directory, "claude")), FILTER.KEEP_BACKUPS)
             # A clock that steps back still names the next backup after the newest.
             newest = FILTER.backups(directory, "codex")[-1]
             future = directory / f"codex.{int(newest.suffix[1:]) + 10**18}"
