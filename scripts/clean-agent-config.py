@@ -345,7 +345,7 @@ def back_up(text, kind, data, projected, directory=None):
     rotate(directory, kind, now)
 
 
-def clean_text(text, kind, directory=None):
+def clean_text(text, kind, directory=None, keep_backup=True):
     """Do what the clean filter does: back up the raw text and return Git's copy.
 
     Parse errors propagate; backup failures and reviewed keys kept local only warn.
@@ -355,7 +355,8 @@ def clean_text(text, kind, directory=None):
     projected = project(data, POLICY[kind], kept_local)
     output = dump(projected, kind)
     try:
-        back_up(text, kind, data, projected, directory)
+        if keep_backup:
+            back_up(text, kind, data, projected, directory)
     except Exception:
         print(f"warning: agent config backup failed for {kind}; restore will not cover recent edits.",
               file=sys.stderr)
@@ -365,9 +366,13 @@ def clean_text(text, kind, directory=None):
     return output
 
 
-def filter_main(kind):
+def filter_main(kind, path=None):
     try:
-        output = clean_text(sys.stdin.read(), kind)
+        text = sys.stdin.read()
+        # fix(config): Git also cleans historical blobs (merge -X renormalize, hash-object
+        # --stdin); back up only the working file's own text.
+        working = read_or_none(Path(path)) if path else text
+        output = clean_text(text, kind, keep_backup=working == text)
     except Exception:
         # fix(privacy): do not echo configuration contents on parse failures.
         sys.exit("Agent config clean filter failed; check syntax and filter policy.")
@@ -393,7 +398,15 @@ def refresh(root, relatives):
             cleaned = subprocess.run(["git", "hash-object", "--no-filters", "--stdin"], cwd=root,
                                      input=output, capture_output=True, text=True, check=True)
             if indexed == cleaned.stdout.strip():
+                mode = git("ls-files", "-s", "--", relative, cwd=root).split()[0]
                 git("add", "--renormalize", "--", relative, cwd=root)
+                # fix(config): renormalize reads the file again; if an agent saved a change
+                # in between, put the old entry back rather than stage it.
+                if git("rev-parse", "-q", "--verify", f":{relative}", cwd=root, check=False) != indexed:
+                    git("update-index", "--cacheinfo", f"{mode},{indexed},{relative}", cwd=root)
+                    print(f"agent-status: {relative} changed while refreshing; run git agent-status "
+                          "again.", file=sys.stderr)
+                    failed.append(relative)
         except (subprocess.CalledProcessError, ValueError, OSError):  # Skip only this file.
             failed.append(relative)
     return failed
@@ -483,7 +496,8 @@ def restore_main(arguments, refresh_restored=True):
     if source:
         # A git alias runs from the top level; resolve paths as typed by the user.
         source = Path(os.environ.get("GIT_PREFIX", "")) / source
-        if not any(source.name.startswith(f"{kind}.") for kind in FILES) or not source.is_file():
+        if (not any(source.name.startswith(f"{kind}.") for kind in FILES)
+                or not source.suffix[1:].isdigit() or not source.is_file()):
             parser.error("--from expects an existing backup named codex.<n> or claude.<n>")
     root = Path(git("rev-parse", "--show-toplevel"))
     directory = backup_dir()
@@ -548,14 +562,9 @@ def restore_main(arguments, refresh_restored=True):
     return 1 if failed else 0
 
 
-def temporaries(directory, kind):
-    """Temp copies a killed backup write left behind; they may hold the same secrets."""
-    return list(directory.glob(f".{kind}.*.agent-restore-tmp"))
-
-
-def restore_temporaries(target):
-    """Temp copies a killed restore left beside a config file."""
-    return list(target.parent.glob(f".{target.name}.*.agent-restore-tmp"))
+def temp_copies(directory, name):
+    """Temp copies a killed write_private left behind; they may hold the same secrets."""
+    return list(directory.glob(f".{name}.*.agent-restore-tmp"))
 
 
 def holds_private(text, kind):
@@ -604,11 +613,11 @@ def forget(kind):
             # recovery. Write first, so a failed write keeps the old ones.
             directory.mkdir(mode=0o700, exist_ok=True)
             write_private(directory / f"{kind}.{time.time_ns()}", text)
-        for saved in [*old, *temporaries(directory, kind), *restore_temporaries(target)]:
+        for saved in [*old, *temp_copies(directory, kind), *temp_copies(target.parent, target.name)]:
             saved.unlink(missing_ok=True)  # A concurrent rotation may have removed it already.
     for git_dir in stale:
         directory = git_dir / "agent-config-private"
-        for saved in [*backups(directory, kind), *temporaries(directory, kind)]:
+        for saved in [*backups(directory, kind), *temp_copies(directory, kind)]:
             saved.unlink(missing_ok=True)
     print(f"agent-restore: kept only each worktree's current {FILES[kind]} as its backup.",
           file=sys.stderr)
@@ -650,4 +659,4 @@ if __name__ == "__main__":
     if command == "kinds":
         print(" ".join(FILES))
         sys.exit(0)
-    filter_main(command)
+    filter_main(command, sys.argv[2] if len(sys.argv) > 2 else None)
