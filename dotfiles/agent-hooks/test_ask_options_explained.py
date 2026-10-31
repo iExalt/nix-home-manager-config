@@ -15,6 +15,10 @@ def claude_text(text):
     return {"type": "assistant", "message": {"role": "assistant", "content": [{"type": "text", "text": text}]}}
 
 
+def claude_thinking(text):
+    return {"type": "assistant", "message": {"role": "assistant", "content": [{"type": "thinking", "thinking": text}]}}
+
+
 def claude_call(tool_use_id, tool_input):
     return {"type": "assistant", "message": {"role": "assistant", "content": [
         {"type": "tool_use", "id": tool_use_id, "name": "AskUserQuestion", "input": tool_input}]}}
@@ -70,6 +74,18 @@ class DecideTest(unittest.TestCase):
         reason = self.run_hook("AskUserQuestion", CLAUDE_INPUT, records)
         self.assertIn('"Merge"', reason)
         self.assertNotIn("Rebase (Recommended)", reason)
+
+    def test_retry_explained_only_in_thinking_is_denied_with_a_pointer(self):
+        # Session 1a97f603: after a denial the agent "explained" the options in thinking and retried.
+        records = [claude_user("fix it"), claude_thinking("Rebase or merge? Plan the reply."),
+                   claude_text("Rebase keeps history linear."), claude_call("t0", CLAUDE_INPUT),
+                   claude_tool_result(), claude_thinking("Merge keeps every commit; rebase is linear."),
+                   claude_call("t1", CLAUDE_INPUT)]
+        reason = self.run_hook("AskUserQuestion", CLAUDE_INPUT, records)
+        self.assertIn('"Merge" (question "Which approach?")', reason)
+        self.assertIn("thinking is hidden", reason)
+        first = self.run_hook("AskUserQuestion", CLAUDE_INPUT, records[:4], tool_use_id="t0")
+        self.assertNotIn("thinking", first)  # reasoning before the visible text isn't the explanation
 
     def test_option_descriptions_do_not_count(self):
         records = [claude_user("fix it"), claude_call("t1", CLAUDE_INPUT)]
