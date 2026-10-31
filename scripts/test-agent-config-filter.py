@@ -131,6 +131,15 @@ accountId = "private"
         self.assertNotIn("switchModelsOnFlag", live)
         self.assertEqual(live["permissions"]["defaultMode"], "plan")
 
+    def test_refresh_skips_files_without_a_stage_zero_entry(self):
+        with tempfile.TemporaryDirectory(prefix="agent-refresh-test-") as directory:
+            root = Path(directory)
+            subprocess.run(["git", "init", "-q", directory], check=True)
+            config = root / FILTER.FILES["codex"]
+            config.parent.mkdir(parents=True)
+            config.write_text("<<<<<<< HEAD\nmodel = 1\n=======\nmodel = 2\n>>>>>>> other\n")
+            self.assertEqual(FILTER.refresh(root, [FILTER.FILES["codex"]]), [])
+
     def test_filter_kinds_match_gitattributes(self):
         attributes = SCRIPT.parents[1].joinpath(".gitattributes").read_text()
         for kind, relative in FILTER.FILES.items():
@@ -217,6 +226,16 @@ accountId = "private"
         self.assertEqual(live, {"hooks": {"Stop": [mine, local, theirs]}})
         # The filtered content still matches what Git holds: no phantom deletion.
         self.assertEqual(FILTER.project(live, FILTER.CLAUDE), {"hooks": {"Stop": [mine, theirs]}})
+        # A list that still holds a private item was not wiped: an edited one wins, unduplicated.
+        edited = hook("/private/hook.sh --edited")
+        live = {"hooks": {"Stop": [mine, edited]}}
+        self.assertEqual(FILTER.add_missing(live, FILTER.private(backup, kept), FILTER.CLAUDE), [])
+        # Upstream deleted the event with its only shared hook: only the private one returns.
+        live = {}
+        self.assertEqual(FILTER.add_missing(live, FILTER.private(backup, kept), FILTER.CLAUDE), ["hooks"])
+        self.assertEqual(live, {"hooks": {"Stop": [local]}})
+        # Empty sections hold nothing private, so they never count as private content.
+        self.assertEqual(FILTER.private({"env": {}, "notify": []}, {}), {})
         # A plain list is tracked whole, so the pulled copy wins over a local one.
         backup = {"tui": {"status_line": ["model", "~/bin/x"]}}
         live = {"tui": {"status_line": ["model", "git-branch"]}}
@@ -482,6 +501,12 @@ accountId = "private"
             self.assertEqual(skipped.returncode, 0)
             self.assertIn(b"core.hooksPath", skipped.stderr)
             self.assertFalse(shared.exists())
+            # Nor a repository-local one inside the worktree, where the hooks could be committed.
+            git(clone, "config", "core.hooksPath", ".githooks")
+            skipped = subprocess.run(["bash", str(clone / "scripts/install-git-filters.sh")],
+                                     capture_output=True, env={**isolated, "FILTER_PYTHON": sys.executable})
+            self.assertIn(b"inside this worktree", skipped.stderr)
+            self.assertFalse((clone / ".githooks").exists())
 
             config.write_text('model = "broken')
             self.assertNotEqual(git(clone, "add", config_path, check=False).returncode, 0)

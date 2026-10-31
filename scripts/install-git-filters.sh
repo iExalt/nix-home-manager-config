@@ -13,14 +13,17 @@ quote() {
 SCRIPT=("$FILTER_PYTHON" scripts/clean-agent-config.py)
 read -ra KINDS <<< "$("${SCRIPT[@]}" kinds)"
 [ "${#KINDS[@]}" -gt 0 ]
+# Git and sh re-parse these strings, so they are shell-quoted once here.
+# fix(config): name the fix when Mise prunes this Python, instead of Git's "cannot run".
+GUARD='python=$1; shift; [ -x "$python" ] || { echo "agent config: $python is missing;" \
+  "rerun scripts/install-git-filters.sh" >&2; exit 1; }; exec "$python" scripts/clean-agent-config.py "$@"'
+SCRIPT_COMMAND="$(quote sh -c "$GUARD" agent-config "$FILTER_PYTHON")"
 for kind in "${KINDS[@]}"; do
-  FILTER_COMMAND="$(quote "${SCRIPT[@]}" "$kind")"
+  FILTER_COMMAND="$SCRIPT_COMMAND $kind"
   git config --local "filter.agent-$kind.clean" "$FILTER_COMMAND"
   git config --local "filter.agent-$kind.smudge" cat
   git config --local "filter.agent-$kind.required" true
 done
-# Git and sh re-parse these strings, so they are shell-quoted once here.
-SCRIPT_COMMAND="$(quote "${SCRIPT[@]}")"
 RESTORE_COMMAND="$SCRIPT_COMMAND restore"
 HOOK_COMMAND="$RESTORE_COMMAND --if-wiped"
 # Show status even if refresh reports a problem. A git alias runs from the top level;
@@ -40,6 +43,18 @@ if [ -n "$HOOKS_SCOPE" ] && [ "$HOOKS_SCOPE" != local ] && [ "$HOOKS_SCOPE" != w
     "post-rewrite hooks by hand." >&2
 else
   HOOKS_DIR="$(git rev-parse --git-path hooks)"
+fi
+realpath_of() { "$FILTER_PYTHON" -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$1"; }
+COMMON_DIR="$(realpath_of "$(git rev-parse --git-common-dir)")"
+HOOKS_REAL="$(realpath_of "${HOOKS_DIR:-.}")"
+if [ -n "${HOOKS_DIR:-}" ] && [[ "$HOOKS_REAL/" == "$(realpath_of .)/"* ]] \
+  && [[ "$HOOKS_REAL/" != "$COMMON_DIR/"* ]]; then
+  # fix(privacy): hooks embed this machine's Python path; never write them into the worktree,
+  # where they could be committed.
+  echo "warning: core.hooksPath points inside this worktree, so no restore hooks were" \
+    "installed; call 'git agent-restore' from its post-checkout, post-merge, and" \
+    "post-rewrite hooks by hand." >&2
+elif [ -n "${HOOKS_DIR:-}" ]; then
   mkdir -p "$HOOKS_DIR" || echo "warning: could not create $HOOKS_DIR." >&2
   for hook in post-checkout post-merge post-rewrite; do
     hook_path="$HOOKS_DIR/$hook"
