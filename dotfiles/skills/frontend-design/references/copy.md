@@ -49,9 +49,7 @@ information or disappear.
 - **Destructive actions.** Name the object and consequence. Prefer Undo over confirmation when
   recovery is safe; when confirmation is necessary, name the action on both the message and the
   button instead of "Yes", "OK", or "Submit".
-- **Forms.** Persistent labels; placeholders show an example value or pattern
-  (`+1 (123) 456-7890`), never the label. An ellipsis marks only an open-ended prompt or a truncated
-  example (`Search…`, `sk-012345679…`). State format and eligibility requirements before
+- **Forms.** Persistent labels; placeholders follow SKILL.md › Conflicts › Placeholders. State format and eligibility requirements before
   submission. Validation says what needs attention and how to fix it without blaming the user.
 - **Errors.** What failed, why when known and useful, and how to recover: "Your API key is
   incorrect or expired. Generate a new key in Settings → API keys," not "Invalid API key." Never
@@ -61,8 +59,8 @@ information or disappear.
 - **Empty.** Distinguish first use, no results, filters, permissions, and failure, and give the next
   action.
 - **Success.** Confirm the outcome briefly.
-- **Help.** Prefer inline explanation; tooltips are a last resort. Helper text answers an implicit
-  question instead of restating the control. Link text makes sense out of context.
+- **Help.** Where help lives follows SKILL.md › Conflicts › Help and onboarding. Helper text
+  answers an implicit question instead of restating the control. Link text makes sense out of context.
 
 ## Mechanics
 
