@@ -109,21 +109,13 @@ To pull in newer package versions (nixpkgs + home-manager track rolling
 unstable), run `nix flake update` then re-switch. Commit `flake.lock`
 to pin inputs between updates.
 
-### Shared frontend-design skill
+### frontend-design skill
 
-Home Manager fetches a pinned revision of `anthropics/claude-code` and links its
-unchanged `plugins/frontend-design/skills/frontend-design` directory into
-`~/.agents/skills/frontend-design` for Codex and
-`~/.claude/skills/frontend-design` for Claude Code. Both clients use the same
-Nix store source, independently of Claude's plugin cache. Keep the Claude
-`frontend-design@claude-code-plugins` plugin disabled to avoid duplicate loading.
-
-To update the skill, change `frontendDesignSource.rev` and its `hash` in
-`home.nix`, then run `mise exec -- ./reload.sh`. Obtain the unpacked hash with
-`mise exec -- nix-prefetch-url --unpack https://github.com/anthropics/claude-code/archive/<revision>.tar.gz`
-and convert it with `mise exec -- nix hash convert --hash-algo sha256 --to sri <hash>`.
-This pin is separate from `flake.lock`; `nix flake update` does not advance it.
-Restart a client if the skill does not appear after reloading Home Manager.
+`dotfiles/skills/frontend-design` merges Impeccable, Vercel's Web Interface
+Guidelines, and Anthropic's frontend-design skill into one workflow; it replaces
+the upstream Anthropic skill. Its `NOTICE.md` records the source revisions and
+licenses. Keep the Claude `frontend-design@claude-code-plugins` plugin disabled
+so the upstream skill does not load alongside it.
 
 ## Optional Overlays
 

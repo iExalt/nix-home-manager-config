@@ -1,0 +1,4 @@
+interface:
+  display_name: "Frontend Design"
+  short_description: "Design, verify, and refine usable, polished UIs"
+  default_prompt: "Use $frontend-design to plan, build, browser-verify, and critique this interface, asking me only about goals and preferences."
