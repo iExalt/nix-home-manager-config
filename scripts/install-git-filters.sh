@@ -19,7 +19,8 @@ GUARD='python=$1; shift; [ -x "$python" ] || { echo "agent config: $python is mi
   "rerun scripts/install-git-filters.sh" >&2; exit 1; }; exec "$python" scripts/clean-agent-config.py "$@"'
 SCRIPT_COMMAND="$(quote sh -c "$GUARD" agent-config "$FILTER_PYTHON")"
 for kind in "${KINDS[@]}"; do
-  FILTER_COMMAND="$SCRIPT_COMMAND $kind"
+  # Git replaces %f with the path, so the filter backs up only the working file's text.
+  FILTER_COMMAND="$SCRIPT_COMMAND $kind %f"
   git config --local "filter.agent-$kind.clean" "$FILTER_COMMAND"
   git config --local "filter.agent-$kind.smudge" cat
   git config --local "filter.agent-$kind.required" true
@@ -74,14 +75,16 @@ elif [ -n "${HOOKS_DIR:-}" ]; then
         HOOK_BODY='git_dir="$(git rev-parse --git-dir)"
 if [ -d "$git_dir/rebase-apply" ]; then exit 0; fi
 case " $(ps -o command= -p "$PPID" 2>/dev/null) " in
-  *"git rebase "*" --apply "*|*"git rebase "*" --whitespace"*|*"git rebase "*" -C"*) exit 0 ;;
+  *"git rebase"*" --apply"*|*"git rebase"*" --whitespace"*|*"git rebase"*" -C"*) exit 0 ;;
   *"git rebase "*) [ "$(git config rebase.backend)" = apply ] && exit 0 ;;
 esac
 if grep -qv -e "^#" -e "^\$" "$git_dir/rebase-merge/git-rebase-todo" 2>/dev/null; then exit 0; fi
 if [ "$3" = 1 ]; then set -- --changed "$1"; else set --; fi' ;;
       post-merge) HOOK_BODY='set -- --changed ORIG_HEAD' ;;
+      # A rebase rewrites the file at its onto checkout and at each pick, so the final copy
+      # may equal ORIG_HEAD's although the file was wiped; rely on the wiped check alone.
       post-rewrite) HOOK_BODY='[ "$1" = rebase ] || exit 0
-set -- --changed ORIG_HEAD' ;;
+set --' ;;
     esac
     # Write whole, then rename, so a failure never leaves a partial hook without the marker.
     if ! cat > "$hook_path.tmp" <<HOOK
@@ -90,10 +93,6 @@ $HOOK_MARKER
 cd "\$(git rev-parse --show-toplevel)" || exit 0
 # An older checkout may predate restore; skip quietly rather than fail every checkout.
 grep -qx 'HOOK_API = 1' scripts/clean-agent-config.py 2>/dev/null || exit 0
-if [ ! -x $(quote "$FILTER_PYTHON") ]; then
-  echo "warning: agent config hooks cannot find their Python; rerun scripts/install-git-filters.sh." >&2
-  exit 0
-fi
 $HOOK_BODY
 $HOOK_COMMAND "\$@"
 # Restore reports its own problems; never fail the Git command that ran this hook.

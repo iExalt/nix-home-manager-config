@@ -140,6 +140,24 @@ accountId = "private"
             config.write_text("<<<<<<< HEAD\nmodel = 1\n=======\nmodel = 2\n>>>>>>> other\n")
             self.assertEqual(FILTER.refresh(root, [FILTER.FILES["codex"]]), [])
 
+    def test_filter_backs_up_only_the_working_files_text(self):
+        with tempfile.TemporaryDirectory(prefix="agent-filter-path-test-") as directory:
+            subprocess.run(["git", "init", "-q", directory], check=True)
+            config = Path(directory, "config.toml")
+            config.write_text('model = "a"\n[projects."/now"]\nx = 1\n')
+            historical = 'model = "a"\n[projects."/old"]\nx = 1\n'
+
+            def run(text):
+                return subprocess.run([sys.executable, str(SCRIPT), "codex", "config.toml"], cwd=directory,
+                                      input=text, capture_output=True, text=True, check=True).stdout
+
+            self.assertEqual(run(historical), FILTER.clean(historical, "codex"))
+            backup_dir = Path(directory, ".git", "agent-config-private")
+            self.assertFalse(backup_dir.exists())  # A historical blob is cleaned, not backed up.
+            run(config.read_text())
+            self.assertEqual([item.read_text() for item in FILTER.backups(backup_dir, "codex")],
+                             [config.read_text()])
+
     def test_filter_kinds_match_gitattributes(self):
         attributes = SCRIPT.parents[1].joinpath(".gitattributes").read_text()
         for kind, relative in FILTER.FILES.items():
@@ -384,6 +402,18 @@ accountId = "private"
             git(clone, "pull", "-q", "--rebase")
             assert_restored("three")
             self.assertIn('"t2"', config.read_text())
+
+            # When only the local commit touches the config, the rebase still rewrites the file
+            # (onto checkout, then the pick), though the result matches ORIG_HEAD.
+            git(clone, "agent-status", "--porcelain")
+            config.write_text(config.read_text().replace('"t2"', '"t3"'))
+            git(clone, "commit", "-qam", "test: local tier again")
+            (origin / "other").write_text("upstream\n")
+            git(origin, "add", "other")
+            git(origin, "commit", "-qm", "test: unrelated")
+            git(clone, "pull", "-q", "--rebase")
+            assert_restored("three")
+            self.assertIn('"t3"', config.read_text())
 
             # A rebase that rewrites no commits fires no post-rewrite; post-checkout restores.
             git(clone, "fetch", "-q", "origin")
