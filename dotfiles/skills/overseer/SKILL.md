@@ -58,7 +58,13 @@ to decide when to involve the user. Record consequential judgment calls and
 their reasoning in the script's revision log and report them in the next
 update. Never weaken an acceptance check, exceed approved spending, take a
 destructive or external action outside the user's authorization, or work
-around a permission boundary.
+around a permission boundary. That includes changing state in the user's own
+checkouts or on machines they own, such as `git stash`, reset or checkout in a
+dirty working tree on a remote host: report the blocker and the options
+instead. Cutting or publishing a release (a release PR merge that publishes,
+`gh release create` or `edit`, making a draft public, a tag) needs the user's
+explicit approval naming that release. Plan approval, a session grant, a
+merge approval or "keep going" never covers it.
 
 ## Choose autonomy and establish authority
 
@@ -125,7 +131,8 @@ workers or exercising delegated authority, ask a question dialog that
 requires an explicit answer. This includes a replacement overseer, a new run,
 and switching an existing session to high. In Paseo, the actual overseer asks
 after the launcher hand-off; a launcher's or previous session's grant does
-not carry over. A same-session resume may retain its recorded grant.
+not carry over. A same-session resume may retain its recorded grant. The
+grant never covers cutting or publishing a release.
 
 Explain that high autonomy permits the main agent to make decisions with the
 user's delegated authority within the agreed scope, including Paseo messages
@@ -543,7 +550,8 @@ Check each phase proposal against the scope the user agreed for its thread.
 Approve it when it fits and the autonomy rules allow you to decide. Otherwise
 relay it, as "Relay human interventions"
 describes, and pass the user's answer back. One thread's agreed scope never
-covers another thread.
+covers another thread, and neither does one thread's answer: when the user
+answers for one thread, tell only that thread, and ask again for the others.
 
 Before reporting an acceptance result or using it to unblock a dependent,
 require a finalized handoff: the check and revision tested, the result and
@@ -553,7 +561,11 @@ exclusions or abstentions, and what the sample represents. Check the claim
 against that evidence; a passing gate does not establish broader accuracy
 or coverage. If reviewer disclosures are still pending, keep the result
 provisional. Carry material limits into the user-facing report and correct
-any overstatement promptly.
+any overstatement promptly. When you relay a worker's finding or fix, keep
+its confidence: a cause the worker calls inferred, or a check it couldn't run,
+stays inferred or unrun in your relay and your report. Name the cause of a
+failure from evidence; if your own messages or interrupts may have caused it,
+say so rather than blaming the harness.
 
 When a worker reports its thread done, verify the claims before launching
 dependents: the script marks the thread done, its commits are on the remote,
@@ -571,11 +583,15 @@ An unavailable or permission-blocked proof stays unmet. Keep its acceptance
 gate open in the script and status document, even while independent work
 continues. Reusing earlier evidence, substituting a check or moving it to a
 later phase needs the user's approval unless that alternative was already
-agreed. Ask through the human-intervention dialog with the proposed evidence
-and what remains unproven; do not announce the change as settled or make the
-user opt back into the original check. Record the answer before changing the
-gate or launching work that depends on it. Approval of a deferral does not
-authorize an action rejected by the permission system.
+agreed. Before asking, check the worker's claim about why the proof is unmet or
+sufficient against its evidence; don't ask the user to accept a gate on an
+unverified claim. Ask through the human-intervention dialog with the proposed
+evidence and what remains unproven; do not announce the change as settled or
+make the user opt back into the original check. Record the answer, quoting
+the user's chosen option and its exact scope (which items, how many), before
+changing the gate or launching work that depends on it; if more items miss
+than the user accepted, ask again about the rest. Approval of a deferral does
+not authorize an action rejected by the permission system.
 
 When a worker goes quiet without reporting, inspect it before nudging it: it
 may be waiting on a permission prompt, out of context, or crashed. Resume the
@@ -606,7 +622,9 @@ When a request for a human comes due, whether planned or raised by a worker:
    push notification with each request when you have the tool. Meanwhile,
    launch ready workers, relay other requests, and let the asking worker
    continue its independent work.
-4. Relay the answer to the worker, quoting the user.
+4. Relay the answer to the worker, quoting the user. Say what they chose and
+   for which thread or item; never write that the user OK'd something they
+   weren't asked, or answered for a different thread.
 
 Answer a question from the user before anything else. When they ask whether
 you can do something, such as ask asynchronously, say what your harness

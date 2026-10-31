@@ -63,8 +63,14 @@ Make the overall phase boundary and important decisions clear. State that approv
 covers autonomous execution across these chunks, progress reports between them,
 and committing/pushing each completed chunk after required checks and review.
 Do not infer permission for unrelated external actions, destructive operations,
-or infrastructure spending from the publication default. Carry forward existing
-authorization and identify any additional authority actually needed.
+or infrastructure spending from the publication default. Cutting or publishing
+a release (a release PR merge that publishes, `gh release create` or `edit`, a
+draft made public, a tag) is not covered by this approval or by "keep going";
+it needs the user's separate explicit approval naming that release. Carry
+forward existing authorization and identify any additional authority actually
+needed. When the user approves with conditions, restate them in the chunk plan
+and check each before committing or pushing; a push that breaches one is a
+decision to return to the user first, not to report afterwards.
 
 Jointly shape the proposal with the reviewer before presenting it. Send the draft
 chunk plan, its acceptance checks, deferral gates, risks, and requested authority
@@ -113,11 +119,25 @@ Within each chunk:
    verification only when the chunk's acceptance criteria permit it. Attach each
    deferral to a specific later roadmap gate, naming what remains unproven and
    the evidence required there. Never silently move a required closure check to
-   a later gate merely to finish or publish the chunk.
+   a later gate merely to finish or publish the chunk. A gate, roadmap item or
+   acceptance criterion whose proof is unmet stays unticked: report it as unmet
+   and ask, even when the rest of the thread is done.
 4. Complete the review skill's milestone/integration closure and required checks
    for the chunk. Distinguish implemented, verified, reviewer-accepted, and
    published states. A deferred live proof does not establish live correctness.
+   "Reviewed" or "accepted" names the revision the reviewer saw; commits after
+   it are "not re-reviewed" until the reviewer sees them, including a fix made
+   to close the reviewer's own gap. Before writing "reviewed" in a status
+   document or report, check the reviewer's last verdict against the head.
 5. Reconcile the plan/checklist and project-status document with the evidence.
+   A check, result or behavior claimed in the status document, a commit
+   message or a hand-off cites its command and result line or its artifact;
+   anything not observed is written as "not run" or "unverified". Do not
+   commit a hand-off that contradicts your own measurement, and state only
+   behavior the code and environment can produce (not "runs every 5 min on
+   prod" for something not deployed). A decision attributed to the user
+   quotes their words or chosen option and its source, with its exact scope;
+   a rule nobody asked them about is Proposed, not theirs.
    Commit scoped changes using conventional commits and push after required
    checks and review pass, unless repository rules or explicit instructions
    override that default. Verify publication before reporting it as complete.
@@ -179,8 +199,10 @@ an unexpected state, an interruption, or a decision, and finally its result.
 Monitor it for those events only: failures, unexpected states, and the whole
 operation's completion. Do not emit successful stage completions, recaps, or
 unchanged polls, and check that failure filters do not match success output such
-as `failed=0`. Keep routine progress in a log read at decision points. A wake-up
-is costly because a turn almost always ends with text.
+as `failed=0`. When the user asks for action-only updates, restart the monitor
+with a filter that matches only events needing action and check its first
+events against that request. Keep routine progress in a log read at decision
+points. A wake-up is costly because a turn almost always ends with text.
 
 Stay silent between these events, including during long implementation stretches
 and waits. When a monitor event, completion notification, or silent-turn reminder
@@ -207,9 +229,11 @@ A typical chunk report covers:
 
 - **Accomplished:** meaningful behavior or evidence gained, with roadmap IDs
   when useful.
-- **Evidence and limits:** decisive checks, required review closure, and named
-  deferred verification gates. State whether newly reported bugs are fixed,
-  still open, or explicitly deferred.
+- **Evidence and limits:** decisive checks with their command and result,
+  required review closure, skipped or unrun checks, known limits, and named
+  deferred verification gates; these go to the user, not only the reviewer.
+  State whether newly reported bugs are fixed, still open, or explicitly
+  deferred.
 - **Publication:** commit/push status with a useful revision reference; disclose
   any publication failure without claiming the chunk is fully delivered.
 - **Next:** the next approved chunk and its outcome, or the specific decision
