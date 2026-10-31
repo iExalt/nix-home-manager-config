@@ -193,11 +193,6 @@ def portable_item(item, rule):
     return isinstance(item, dict) and project(item, rule[0]) == item
 
 
-def private_items(value, rule):
-    """The items of a per-item tracked list that the projection would drop."""
-    return [item for item in value if not portable_item(item, rule)]
-
-
 def add_missing(live, extra, policy, path=()):
     """Add keys from extra that live lacks; live values always win."""
     added = []
@@ -216,7 +211,7 @@ def add_missing(live, extra, policy, path=()):
             # its nearest preceding neighbour from the backup, so hook order survives.
             merged = list(live[key])
             for index, item in enumerate(value):
-                if item in merged or item not in private_items([item], rule):
+                if item in merged or portable_item(item, rule):
                     continue
                 anchors = [merged.index(other) + 1 for other in value[:index] if other in merged]
                 merged.insert(max(anchors, default=0), item)
@@ -286,7 +281,9 @@ def rotate(directory, kind, now):
     seen = set()
     for index, saved in enumerate(reversed(backups(directory, kind))):
         try:
-            names = paths(private_part(parse(saved.read_text(), kind), kind))
+            data = parse(saved.read_text(), kind)
+            # private() keeps whole lists for ordering; drop their portable items here.
+            names = paths(private_part(data, kind)) - paths(project(data, POLICY[kind]))
         except (ValueError, FileNotFoundError):  # Unparsable, or rotated by another run.
             names = set()
         young = now - int(saved.suffix[1:]) < KEEP_UNIQUE_SECONDS * 10**9
@@ -335,14 +332,20 @@ def filter_main(kind):
 
 
 def refresh(root, relatives):
+    """Refresh stat data per file; return the files that could not be refreshed."""
     # fix(config): refresh stat data only when the filtered content matches the index,
     # so Git stops reporting a byte-size change without staging a real one.
+    failed = []
     for relative in relatives:
         if not (root / relative).is_file():
             continue
-        indexed = git("rev-parse", "-q", "--verify", f":{relative}", cwd=root, check=False)
-        if indexed and indexed == git("hash-object", f"--path={relative}", relative, cwd=root):
-            git("add", "--renormalize", "--", relative, cwd=root)
+        try:
+            indexed = git("rev-parse", "-q", "--verify", f":{relative}", cwd=root, check=False)
+            if indexed and indexed == git("hash-object", f"--path={relative}", relative, cwd=root):
+                git("add", "--renormalize", "--", relative, cwd=root)
+        except subprocess.CalledProcessError:  # One broken file must not skip the others.
+            failed.append(relative)
+    return failed
 
 
 def restore_file(target, saved, kind, indexed_bytes=None):
@@ -447,7 +450,14 @@ def restore_main(arguments, refresh_restored=True):
             continue
         try:
             index_copy = (lambda relative=relative: indexed(root, relative)) if options.if_wiped else None
-            result = restore_file(target, source or saved[-1], kind, index_copy)
+            try:
+                result = restore_file(target, source or saved[-1], kind, index_copy)
+            except FileNotFoundError:
+                if source or not target.exists():
+                    raise
+                # A concurrent clean rotated the newest backup away; use the one now newest.
+                saved = backups(directory, kind)
+                result = restore_file(target, saved[-1], kind, index_copy)
         except Exception:
             # fix(privacy): name the file, never its contents.
             print(f"agent-restore: skipped {relative}; it or its backup could not be parsed or written.",
@@ -466,10 +476,7 @@ def restore_main(arguments, refresh_restored=True):
         if added:
             print(f"agent-restore: restored {', '.join(added)} in {relative}; if you removed them on "
                   f"purpose, run: git agent-restore --forget {kind}", file=sys.stderr)
-            try:
-                if refresh_restored:
-                    refresh(root, [relative])
-            except subprocess.CalledProcessError:
+            if refresh_restored and refresh(root, [relative]):
                 print(f"agent-restore: could not refresh {relative}; run git agent-status.",
                       file=sys.stderr)
                 failed = True
@@ -487,6 +494,11 @@ def restore_main(arguments, refresh_restored=True):
             print(f"agent-restore: {older} also has {', '.join(names)}; if you did not delete them "
                   f"on purpose, run: git agent-restore --from {older}", file=sys.stderr)
     return 1 if failed else 0
+
+
+def temporaries(directory, kind):
+    """Temp copies a killed write left behind; they may hold the same secrets."""
+    return list(directory.glob(f".{kind}.*.agent-restore-tmp"))
 
 
 def holds_private(text, kind):
@@ -535,10 +547,11 @@ def forget(kind):
             # recovery. Write first, so a failed write keeps the old ones.
             directory.mkdir(mode=0o700, exist_ok=True)
             write_private(directory / f"{kind}.{time.time_ns()}", text)
-        for saved in old:
+        for saved in [*old, *temporaries(directory, kind)]:
             saved.unlink(missing_ok=True)  # A concurrent rotation may have removed it already.
     for git_dir in stale:
-        for saved in backups(git_dir / "agent-config-private", kind):
+        directory = git_dir / "agent-config-private"
+        for saved in [*backups(directory, kind), *temporaries(directory, kind)]:
             saved.unlink(missing_ok=True)
     print(f"agent-restore: kept only each worktree's current {FILES[kind]} as its backup.",
           file=sys.stderr)
@@ -549,11 +562,16 @@ def seed():
     """Run the clean filter once per file, so its backup exists before any rewrite."""
     root = Path(git("rev-parse", "--show-toplevel"))
     failed = False
-    for relative in FILES.values():
+    for kind, relative in FILES.items():
         if (root / relative).is_file():
             try:
                 git("hash-object", f"--path={relative}", relative, cwd=root)
-            except subprocess.CalledProcessError:
+                text = (root / relative).read_text()
+                # fix(config): the filter only warns when a backup fails, so check for it.
+                saved = backups(backup_dir(), kind)
+                if holds_private(text, kind) and not (saved and read_or_none(saved[-1]) == text):
+                    raise OSError("no backup")
+            except (subprocess.CalledProcessError, OSError):
                 print(f"agent-seed: could not back up {relative}.", file=sys.stderr)
                 failed = True
     return 1 if failed else 0
@@ -566,10 +584,8 @@ if __name__ == "__main__":
     if command == "refresh":
         # fix(config): also a catch-all for rewrites that fire no hook, such as cherry-pick.
         exit_code = restore_main(["--if-wiped"], refresh_restored=False)
-        try:
-            refresh(Path(git("rev-parse", "--show-toplevel")), FILES.values())
-        except subprocess.CalledProcessError:
-            print("agent-status: could not refresh the agent config files.", file=sys.stderr)
+        for relative in refresh(Path(git("rev-parse", "--show-toplevel")), FILES.values()):
+            print(f"agent-status: could not refresh {relative}.", file=sys.stderr)
             exit_code = 1
         sys.exit(exit_code)
     if command == "seed":
