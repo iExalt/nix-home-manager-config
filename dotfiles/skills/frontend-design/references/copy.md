@@ -77,6 +77,7 @@ information or disappear.
   terms span the product.
 - Avoid the generated-page tells: an accent on a single word in a headline, ALL-CAPS labels,
   eyebrow labels above every heading, `A · B · C` meta strings, and `→` appended to every link.
+  > **Override:** see SKILL.md › Conflicts › Generated-look defaults.
 
 ## Accessibility and localization
 

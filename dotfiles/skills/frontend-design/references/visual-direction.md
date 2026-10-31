@@ -85,7 +85,8 @@ Impeccable adds these defaults to the list. Each is legitimate only when the bri
   platform sans) as the display voice of a Persuade or Experience page; sketch-style SVG
   illustration; decorative `repeating-linear-gradient` stripes or grid overlays without a real
   canvas, map, or blueprint under them; geometric masks approximating a photographic subject's
-  outline. Impeccable bans these outright.
+  outline. Impeccable bans eyebrows outright; the rest are its Refuse-list defaults or Codex-only
+  rules.
   > **Override:** see SKILL.md › Conflicts › Generated-look defaults.
 - Unicode glyphs or emoji standing in for an icon system. Use a real icon library or authored SVG
   in one consistent stroke and weight.
