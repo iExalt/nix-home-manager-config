@@ -95,10 +95,13 @@ changes produce no content diff after renormalization.
 
 Git can still report a file as modified when local edits change its byte size,
 even when the filtered content matches the index. Use `git agent-status` (with
-the usual status arguments) to refresh those entries before showing status.
-It refreshes only files whose filtered hash already matches the index, so it
-does not stage new preference changes. Plain `git status` retains this Git
-limitation; the clean filter alone cannot eliminate it.
+the usual status arguments) to refresh those entries before showing status. It
+refreshes only files whose filtered hash already matches the index, so it does
+not stage new preference changes. Plain `git status` retains this Git
+limitation; the clean filter alone cannot eliminate it. This also happens
+after a rebase restores private keys, because the rebase rewrites the index
+after its hooks run; if a later checkout or pull refuses because of local
+changes to these files, run `git agent-status` first.
 
 Git stores only the filtered content, so a pull, checkout, reset, or stash
 that rewrites either file writes the filtered content back and drops the
@@ -138,19 +141,21 @@ backup is saved only when Git runs the clean filter on the file, as `git
 agent-status` and `git diff` do; plain `git status` skips it when the file's
 size changed. After deleting a private key, run `git agent-status` before `git
 reset --hard`, `git checkout -f`, or `git checkout`/`git restore -- <file>`,
-which overwrite without comparing; otherwise a restore brings the key back.
-Deleting the last private key is never saved, so a later restore brings it
-back. To remove private keys for good, such as a revoked secret, delete them
-and run `git agent-restore --forget codex` or `--forget claude`: it deletes
-that file's backups in every worktree and keeps only its current content.
-Remove the keys from each linked worktree's copy of the file first, or its
-next backup saves them again. Each restore message repeats this hint. When
-older backups hold private sections that the file and the latest backup both
-lack, as after a stash during which an agent saved a new key, restore names
-them and the backup to recover them from, run as `git agent-restore --from
-"$(git rev-parse --absolute-git-dir)/agent-config-private/<file>"`. After a
-deliberate deletion, that note repeats until the backup rotates out, for up to
-30 days, or until you run `--forget`.
+which overwrite without comparing; otherwise a restore brings the key back. If
+you deleted the last private key, `git agent-status` would restore it too; run
+`git agent-restore --forget <kind>` instead, as below. Deleting the last
+private key is never saved, so a later restore brings it back. To remove
+private keys for good, such as a revoked secret, delete them and run `git
+agent-restore --forget codex` or `--forget claude`: it deletes that file's
+backups in every worktree and keeps only its current content. Remove the keys
+from each linked worktree's copy of the file first, or its next backup saves
+them again. Each restore message repeats this hint. When older backups hold
+private sections that the file and the latest backup both lack, as after a
+stash during which an agent saved a new key, restore names them and the backup
+to recover them from, run as `git agent-restore --from "$(git rev-parse
+--absolute-git-dir)/agent-config-private/<file>"`. After a deliberate
+deletion, that note repeats until the backup rotates out, for up to 30 days,
+or until you run `--forget`.
 
 Filters are clone-local Git configuration: install them in every clone before
 staging these files. Rerun the installer if the Mise Python installation is
