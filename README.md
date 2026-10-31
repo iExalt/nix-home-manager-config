@@ -57,9 +57,9 @@ bash scripts/install-git-filters.sh
 git add --renormalize dotfiles/.codex/config.toml dotfiles/.claude/settings.json
 ```
 
-The filters keep reviewed preferences from these two files in Git without
-modifying the working files. These sections are cleaned out in full, including
-all nested entries, and remain only on disk:
+The filters keep reviewed preferences from these two files in Git; staging
+never modifies the working files. These sections are cleaned out in full,
+including all nested entries, and remain only on disk:
 
 | File | Omitted key or section | Local state |
 | --- | --- | --- |
@@ -95,6 +95,31 @@ the usual status arguments) to refresh those entries before showing status.
 It refreshes only files whose filtered hash already matches the index, so it
 does not stage new preference changes. Plain `git status` retains this Git
 limitation; the clean filter alone cannot eliminate it.
+
+Git stores only the filtered content, so a pull, checkout, reset, or stash
+that rewrites either file writes the filtered content back and drops the
+private keys. To recover them, the clean filter also saves each raw version
+that holds private keys to `.git/agent-config-private/`, keeping the last 10
+(mode 0600, per worktree, never committed). A file that already equals its
+filtered content is not saved, so a wiped file never replaces a good backup.
+The installer adds `post-checkout`, `post-merge`, and `post-rewrite` hooks
+(under a repository-local `core.hooksPath`; it warns and skips them when the
+hooks directory is shared through global config, or when a hook it did not
+write already exists) that run `git agent-restore`, so pulls, rebases, and
+checkouts restore the keys automatically. No hook runs after `git stash`, `git
+stash pop`, `git pull --autostash`, `git reset --hard`, or resolving a merge
+conflict in either file; run `git agent-restore` yourself afterwards. Between
+`git stash` and `git stash pop`, the agents run without their private
+settings.
+
+`git agent-restore` adds back only private keys that are missing; values
+already in the file win, and portable preferences removed in Git stay removed.
+It rewrites a file only when it adds keys, in canonical form, so hand-written
+comments in `config.toml` are lost then. Deleting a private key is safe while
+others remain, because the next backup lacks it. Deleting the last one is not
+saved, so a later restore brings it back; remove that file's backups to drop it
+for good. To recover an older version, run
+`git agent-restore --from .git/agent-config-private/<file>`.
 
 Filters are clone-local Git configuration: install them in every clone before
 staging these files. Rerun the installer if the Mise Python installation is
