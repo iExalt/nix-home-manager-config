@@ -168,6 +168,15 @@ For Paseo, read `docs/agent-testing.md` on the fork's `dev` branch first: packag
 which deep links work cold and warm, and how to read the selected tab from a
 dump. Open screens by deep link instead of tapping through the app.
 
+Drive Paseo with `python3 scripts/android/agent-adb.py --package <pkg>` from a
+fork checkout (`AGENT_ADB` names the adb command, e.g. with `-s <serial>`)
+rather than writing one-off scripts. Its `tap`, `type` and `key` are the
+focus-checked wrapper above; `dump` keeps ids and the selected/focused flags;
+`wait-turn` waits for an agent's turn to finish without clearing logcat; and
+every command that drives the app (`tap`, `type`, `key`, `open`, `switch`)
+refuses `sh.paseo.iexalt` unless `--allow-user-app` is passed, which you do
+only with the user's go-ahead.
+
 ## Tell the user what's happening
 
 Run `<skill-dir>/scripts/push "<title>" "<body>"`. It picks the newest
