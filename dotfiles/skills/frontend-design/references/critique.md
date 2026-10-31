@@ -242,6 +242,7 @@ Better than good error messages is a design that prevents problems in the first 
 
 **Check for**:
 - Confirmation before destructive actions (delete, overwrite)
+> **Override:** see SKILL.md › Conflicts › Destructive actions.
 - Constraints preventing invalid input (date pickers, dropdowns)
 - Smart defaults that reduce errors
 - Clear labels that prevent misunderstanding
@@ -254,6 +255,7 @@ Minimize memory load. Make objects, actions, and options visible or easily retri
 **Check for**:
 - Visible options (not buried in hidden menus)
 - Contextual help when needed (tooltips, inline hints)
+> **Override:** see SKILL.md › Conflicts › Help and onboarding.
 - Recent items and history
 - Autocomplete and suggestions
 - Labels on icons (not icon-only navigation)

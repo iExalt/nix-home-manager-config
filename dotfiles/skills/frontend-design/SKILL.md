@@ -57,7 +57,8 @@ inside an established design, start at step 3 with the existing conventions.
 
 ### 1. Establish users and tasks
 
-Read DESIGN.md if it exists, then inspect the code, routes, components, tokens, and any data or
+Read DESIGN.md (and PRODUCT.md, if the project keeps users and purpose there) if they exist, then
+inspect the code, routes, components, tokens, and any data or
 API the UI will show. Write down what you can infer, then ask the user to confirm or correct it
 instead of interviewing from scratch. Use a structured question tool when one is available. Ask two
 or three questions per round, usually one round:
@@ -73,9 +74,11 @@ Do not ask for CSS values, component libraries, or other technical choices.
 
 Draft a compact brief: users and primary task, the flow step by step, layout as an ASCII wireframe,
 the states that matter, and what is out of scope. Scale it to the work: a single Operate screen
-needs a few bullets and one wireframe. Only a new project or a redesign gets the full token plan and
-generic-defaults review from [references/visual-direction.md](references/visual-direction.md);
-otherwise inherit the existing look.
+needs a few bullets and one wireframe. When "Decide what is already true" in
+[references/visual-direction.md](references/visual-direction.md) finds no visual authority, an
+incomplete brand, a redesign, or a new surface in a different mode (a marketing page for an
+existing dashboard), add its full token plan and generic-defaults review. Otherwise inherit the
+existing look.
 
 Explain consequential choices in plain language, with the alternative and its tradeoff. Examples:
 "inline editing (fast, but easy to change something by accident) vs. an edit page (safer, one more
@@ -83,10 +86,11 @@ click)", or "undo after delete vs. a confirmation dialog". Show two or three wir
 when the layout is genuinely open, and recommend one. Get the user's go-ahead, then record the
 agreed decisions in DESIGN.md ([references/design-record.md](references/design-record.md)).
 
-When no user can answer (a delegated or autonomous run), record each assumption under DESIGN.md ›
-Open decisions with the option you chose. Then build only if your instructions authorize
-implementation; otherwise return the brief and stop. Either way, list the assumptions in your
-report so the user can overturn them.
+When no user can answer (a delegated or autonomous run), mark each assumption plainly in the
+brief, with the option you chose. If your instructions authorize implementation, also record the
+assumptions under DESIGN.md › Open decisions and build; otherwise return the brief and stop
+without editing files. Either way, list the assumptions in your report so the user can overturn
+them.
 
 ### 3. Build one complete task flow with realistic data
 
@@ -225,17 +229,19 @@ Change a rule here, not at the pointer.
 - **Native controls:** on task surfaces keep standard affordances, including scrollbars. Theme their
   color to the palette, but don't reinvent their behavior.
 - **Motion:** on Persuade and Experience surfaces, at most one authored moment such as a page-load
-  sequence. On Operate and Read surfaces, no page-load choreography: motion answers user actions
-  and shows state changes in 150–250 ms. Default to `transform` and `opacity`; blur, clip-path,
-  mask, and shadow are fine for an authored moment when they stay smooth. Never animate layout
-  properties or use `transition: all`.
+  sequence. On Operate surfaces, no page-load choreography: motion answers user actions and shows
+  state changes in 150–250 ms. On Read surfaces, motion never competes with the text; a quiet
+  entrance is fine, decorative ambient animation is not. Default to `transform` and `opacity`;
+  blur, clip-path, mask, and shadow are fine for an authored moment when they stay smooth. Never
+  animate layout properties or use `transition: all`.
 - **Line length:** 65–75 characters for body prose (Anthropic's "under 80" is the outer limit);
   tables and dense UI may run wider.
 - **Monospace:** use `font-variant-numeric: tabular-nums` for numbers that are compared, including
   metrics and measurements. Reserve monospace for code, IDs, hashes, and paths.
 - **Typefaces:** on Persuade and Experience surfaces, choose faces specific to the brief rather
-  than defaults. On Operate and Read surfaces, a well-tuned system or familiar sans is a deliberate
-  choice, and display faces stay out of UI labels, buttons, and data.
+  than defaults. On Operate surfaces, a well-tuned system or familiar sans is a deliberate choice,
+  and display faces stay out of UI labels, buttons, and data. On Read surfaces, choose a face for
+  long reading; a distinctive text face is welcome when it reads well.
 - **Elevation:** pair a shadow only with a subtle semi-transparent border for edge clarity. An
   opaque 1px border under a wide soft shadow reads as a ghost card.
 - **Placeholders:** show an example value or pattern (`+1 (123) 456-7890`), never the label. An
@@ -255,8 +261,12 @@ Change a rule here, not at the pointer.
   rules apply everywhere. Anthropic's calibration traits (cream and terracotta, near-black with one
   acid accent, and the rest) remain what that list says: legitimate for some briefs, but never the
   way to spend a free axis.
-- **Distinctiveness:** on Operate and Read surfaces, familiarity wins. Spend boldness on one
-  memorable detail, not on unfamiliar controls.
+- **Distinctiveness:** on Operate surfaces, familiarity wins; spend boldness on one memorable
+  detail, not on unfamiliar controls. On Read surfaces, structure for comprehension first, then
+  make the reading experience worth staying in.
+- **Radii and brief:** Craft floor values (such as 12–16px card radii, pills only for small
+  controls) are defaults for when the design leaves them open. A pinned brief or established
+  design overrides them; Conflicts rules still apply.
 
 ## References
 
