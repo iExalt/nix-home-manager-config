@@ -27,7 +27,8 @@ Respect existing implementation and publication authority; invoking this skill
 does not authorize unrelated work.
 
 Spawn the reviewer with a scoped brief: goal, milestone boundaries, supported
-behavior, non-goals, acceptance criteria, repository instructions, baseline,
+behavior, non-goals, acceptance criteria, the materiality bar for blocking
+findings, repository instructions, baseline,
 available tests, deferred verification, the author's native agent address, and
 whether the user authorized idle review of unrelated repository areas.
 Include these skill instructions. Give raw source/evidence locations as well as
@@ -269,6 +270,28 @@ expansion. Preserve IDs and trace incomplete fixes to implementation deviations
 or flaws in the agreed proposal.
 Reassess as soon as a design flaw is apparent instead of repeating partial fixes.
 
+Triage every finding against the materiality bar agreed in the brief: a material
+finding makes the milestone's outcome wrong, unsafe, lossy, or short of its
+acceptance criteria. Verify it against the source before acting, and record each
+finding as material, optional, or rejected with a reason. Output from extra
+one-shot reviewers, such as a user-requested `/code-review`, goes through the
+same triage with the settled decisions; it is not the completion gate.
+Recall-oriented reviewers always report something on a sizable artifact, so "a
+review returned nothing" is never a usable stop condition. Fix material findings;
+batch optional ones for the user as deferrals instead of fixing them in the loop,
+because each extra change gives the next review more to find.
+
+After each review round, add one ledger line with the round's material and total
+finding counts beside the previous round's. Before starting another round, stop
+and ask the user, showing those lines, if the material count did not fall, fixes
+caused new material findings, or findings keep exposing new edge cases of one
+design. Offer accepting with deferrals, a redesign, or an agreed number of further
+rounds; an earlier instruction to keep looping does not waive this check. A
+finding that challenges the design's altitude, or that invalidates the effort,
+risk, or simplicity estimate behind a user's choice, reopens that choice: ask
+before the next round instead of noting it in the final report. Findings about
+other subsystems go to the parking lot, however the loop was requested.
+
 Maintain a compact shared record: goal and boundaries, settled designs and reasons,
 current snapshots, dependencies, finding dispositions, closure evidence, pending
 questions, and next reviewer work. Messages report changes to this record instead
@@ -293,7 +316,8 @@ gap, or new evidence. Run the appropriate combined checks; passing increment tes
 alone is not integration acceptance.
 
 Finish only when the reviewer and main agent agree the final milestone satisfies
-its criteria with no unresolved material findings. Identify accepted deferrals,
+its criteria with no unresolved material findings under the agreed bar; deferred
+optional findings do not block. Identify accepted deferrals,
 verification limits, and the reviewer's parked out-of-scope findings, and put them
 in the report to the user, not only in the exchange with the reviewer. Cite the
 command and result for each check reported as run; write "not run" for the rest.
