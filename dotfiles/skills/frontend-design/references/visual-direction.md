@@ -1,7 +1,8 @@
 # Visual direction and craft
 
 Merged from Anthropic's `frontend-design` skill (Apache-2.0; its design principles, calibration
-list, and planning process are copied verbatim) and Impeccable's craft floor and Operate-mode depth
+list, and planning process are copied verbatim, with quoted **Override** notes where this skill
+differs) and Impeccable's craft floor and Operate-mode depth
 (Apache-2.0; trimmed and deduplicated; the Restraint paragraph drops a quality-floor sentence that
 "Craft floor" now covers). Load this when choosing or changing a visual direction, and
 skim "Craft floor" before any UI edit.
@@ -38,6 +39,8 @@ Typography carries the personality of the page. You don't need a different typef
 
 Choose your typefaces deliberately, not the default families you would reach for on any other project, and set a clear type scale following the default guidance of The Elements of Typographic Style with intentional weights, widths, and spacing. When type is used as a headline or visual element, use the type treatment itself as an active part of the design, not a neutral delivery vehicle for the content.
 
+> **Override:** on Operate and Read surfaces, a well-tuned system or familiar sans is a legitimate deliberate choice; see "Task surfaces".
+
 Default to line lengths of less than 80 characters. Serif typefaces can have slightly longer line lengths; give serif body text slightly more line-height than a sans-serif.
 
 Avoid these default typographic treatments; they are the commonest tells of a generated page:
@@ -48,6 +51,8 @@ Avoid these default typographic treatments; they are the commonest tells of a ge
 Visual structure is information. Structural devices like outlines, borders, numbering, eyebrows, dividers, labels, etc., encode useful information about the content rather than decorate it. Many generic designs use numbered markers (01 / 02 / 03), but that's only appropriate if the content actually is a sequence — like a stepped process or a timeline. Before adding numbered markers, check the content really is a sequence.
 
 Use non-user-triggered motion sparingly and deliberately, only to draw attention. A single orchestrated moment — one page-load sequence or one reveal — lands better than scattered effects; fade-and-slide-up entrances on each section and hover transitions on every card are the generic default and read as AI-generated. Motion that answers a person's action (opening, expanding, confirming) is welcome when it shows what changed.
+
+> **Override:** the page-load moment applies to Persuade and Experience surfaces only; Operate and Read surfaces load straight into the task.
 
 For copy, see [copy.md](copy.md).
 
@@ -109,7 +114,8 @@ Check these on the built result, together, in each look at the render.
   tint secondary text from that hue rather than using gray. Interactive states (hover, active,
   focus) have more contrast than the rest state.
 - **Depth:** shadows carry an offset and a soft blur; layered shadows (ambient plus direct) read
-  more natural. Declare elevation once, border or shadow, not a 1px border under a wide soft shadow.
+  more natural. Pair a shadow only with a subtle semi-transparent border for edge clarity; an opaque 1px border
+  under a wide soft shadow reads as a ghost card.
   Nested radii: a child's radius is no larger than its parent's.
 - **Spacing:** tight groups, generous separation, more space above a heading than below it. Align
   every element to something intentional: a grid, baseline, edge, or optical center.

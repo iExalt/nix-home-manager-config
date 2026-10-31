@@ -115,8 +115,9 @@ installing system browsers, taking over their open browser, or binding common po
 
 - **Widths:** desktop (about 1440px) and narrow (about 375px), plus any width where the layout
   changes. Check 200% zoom on key screens (headless: half the CSS width at 2x density).
-- **Keyboard:** Tab through the whole task. Focus must be visible and in a logical order, never
-  trapped or hidden behind sticky elements. Escape closes overlays, Enter submits, and focus moves
+- **Keyboard:** Tab through the whole task. Focus must be visible, in a logical order, and never
+  hidden behind sticky elements. Only an open modal traps focus, and closing it returns focus to
+  the control that opened it. Escape closes overlays, Enter submits, and focus moves
   sensibly when dialogs open and close.
 - **Interactions and states:** actually click, type, submit, cancel, and retry, using the error,
   empty, and long-data fixtures. Watch the console for errors.
@@ -168,7 +169,8 @@ answer five questions at a glance.
   anywhere: a badge, an attention list, or a notification when the user is elsewhere.
 - An approval states exactly what will happen, what it affects, and whether it can be undone, with
   specific action labels ("Delete 12 files", "Send email to 3 recipients"). Approve and deny are
-  keyboard-reachable, and the safe choice is never pre-focused for destructive actions.
+  keyboard-reachable, and the destructive choice is never pre-focused; default focus goes to the
+  safe one.
 - Separate "needs you" from "FYI". Too many interruptions train users to approve without reading.
 
 **How do I stop it?**

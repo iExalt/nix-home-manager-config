@@ -3,7 +3,7 @@
 Adapted from Impeccable's `critique` and `audit` commands
 ([pbakaus/impeccable](https://github.com/pbakaus/impeccable/tree/b7a89176e4e87422b40f98adabceb051dbb5448b/skill/reference),
 Apache-2.0). The cognitive-load checklist, heuristics, severity scale, and personas are copied
-verbatim; the per-heuristic scoring tables are condensed to one shared scale, and steps that need
+verbatim, except that the working-memory item is reworded so every checklist item passes on "yes"; the per-heuristic scoring tables are condensed to one shared scale, and steps that need
 Impeccable's CLI (detector, snapshot storage, live overlay) are removed.
 
 Contents: [How to run a critique](#how-to-run-a-critique) · [Report](#report) ·
@@ -118,7 +118,7 @@ Evaluate the interface against these 8 items:
 - [ ] **Visual hierarchy**: Is it immediately clear what's most important on the screen?
 - [ ] **One thing at a time**: Can the user focus on a single decision before moving to the next?
 - [ ] **Minimal choices**: Are decisions simplified (≤4 visible options at any decision point)?
-- [ ] **Working memory**: Does the user need to remember information from a previous screen to act on the current one?
+- [ ] **Working memory**: Can the user act on the current screen without remembering information from a previous one?
 - [ ] **Progressive disclosure**: Is complexity revealed only when the user needs it?
 
 **Scoring**: Count the failed items. 0–1 failures = low cognitive load (good). 2–3 = moderate (address soon). 4+ = high cognitive load (critical fix needed).
