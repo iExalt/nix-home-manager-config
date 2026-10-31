@@ -91,7 +91,8 @@ def project(data, policy, kept_local=None, path=()):
             if isinstance(value, list) and value:
                 # fix(config): keep the portable items, so a private item beside them
                 # neither hides them from Git nor makes them look deleted after a restore.
-                kept = [item for item in value if portable_item(item, rule)]
+                # Keep the projected copy, whose keys are sorted, so Git's copy stays canonical.
+                kept = [project(item, rule[0]) for item in value if portable_item(item, rule)]
                 if kept:
                     result[key] = kept
         elif portable(value):
@@ -171,12 +172,19 @@ def private_part(data, kind):
     return private(data, project(data, POLICY[kind]))
 
 
+def holds_values(value):
+    """Whether a section holds anything: a named entry counts even when its table is empty."""
+    if isinstance(value, dict):
+        return any(isinstance(item, dict) or holds_values(item) for item in value.values())
+    return value != []
+
+
 def private(data, kept):
     """Return the parts of data that the projection dropped."""
     result = {}
     for key, value in data.items():
         if key not in kept:
-            if value != {} and value != []:  # An empty section holds nothing to protect.
+            if holds_values(value):  # Empty sections, however nested, hold nothing to protect.
                 result[key] = value
         elif isinstance(value, dict) and isinstance(kept[key], dict):
             dropped = private(value, kept[key])
@@ -253,12 +261,12 @@ def git(*args, cwd=None, check=True, text=True):
 
 
 def backup_dir_at(root):
+    # feat(config): per-worktree Git directory, so other checkouts never touch this backup.
     return Path(git("rev-parse", "--absolute-git-dir", cwd=root)) / "agent-config-private"
 
 
 def backup_dir():
-    # feat(config): per-worktree Git directory, so other checkouts never touch this backup.
-    return Path(git("rev-parse", "--absolute-git-dir")) / "agent-config-private"
+    return backup_dir_at(None)
 
 
 def backups(directory, kind):
@@ -411,7 +419,8 @@ def restore_file(target, saved, kind, indexed_bytes=None):
         # fix(config): hooks also run when Git left the file alone; restoring then would
         # bring back a private key deleted since the latest backup. The index check covers
         # commits whose content another policy filtered.
-        if indexed_bytes and live != project(live, POLICY[kind]) and raw != indexed_bytes():
+        if (indexed_bytes and private(live, project(live, POLICY[kind]))
+                and raw != indexed_bytes()):
             return None
         added = add_missing(live, extra, POLICY[kind])
         if not added:
@@ -540,8 +549,13 @@ def restore_main(arguments, refresh_restored=True):
 
 
 def temporaries(directory, kind):
-    """Temp copies a killed write left behind; they may hold the same secrets."""
+    """Temp copies a killed backup write left behind; they may hold the same secrets."""
     return list(directory.glob(f".{kind}.*.agent-restore-tmp"))
+
+
+def restore_temporaries(target):
+    """Temp copies a killed restore left beside a config file."""
+    return list(target.parent.glob(f".{target.name}.*.agent-restore-tmp"))
 
 
 def holds_private(text, kind):
@@ -590,7 +604,7 @@ def forget(kind):
             # recovery. Write first, so a failed write keeps the old ones.
             directory.mkdir(mode=0o700, exist_ok=True)
             write_private(directory / f"{kind}.{time.time_ns()}", text)
-        for saved in [*old, *temporaries(directory, kind)]:
+        for saved in [*old, *temporaries(directory, kind), *restore_temporaries(target)]:
             saved.unlink(missing_ok=True)  # A concurrent rotation may have removed it already.
     for git_dir in stale:
         directory = git_dir / "agent-config-private"
