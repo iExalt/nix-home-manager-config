@@ -32,6 +32,9 @@ the dialog.
   choices with their consequences, recommending one only when evidence supports
   it. Use a free-text dialog field when the desired outcome is not yet known.
   Follow the tool's handling of custom answers rather than adding an `Other` choice.
+  When a free-text answer is itself a question, answer it in commentary, with
+  evidence where you can, then re-ask only if the choice still stands, revised
+  in light of what you said. Never re-send the same dialog unchanged.
 - Phrase choices in terms of results, effort, fidelity, maintainability, and what
   gets postponed. Investigate technical facts yourself; do not ask a nonexpert
   user to select an API or architecture whose consequences you have not explained.

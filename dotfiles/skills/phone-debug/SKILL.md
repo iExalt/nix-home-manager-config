@@ -150,7 +150,10 @@ focus check as part of every input action:
   stop and work out what happened before you retry.
 - Prefer channels that can't leak into other apps:
   - Chrome DevTools: `a forward tcp:9333 localabstract:chrome_devtools_remote`,
-    then CDP `Input.*` / `Runtime.evaluate` on the right tab;
+    then CDP `Input.*` / `Runtime.evaluate` on the right tab. Never attach
+    Playwright or another framework that scripts every tab (it injects into
+    the user's own open pages); list targets over raw CDP and open a tab of
+    your own to drive;
   - `uiautomator dump` for reading the screen;
   - `logcat --pid=$(a shell pidof <pkg>)`.
 - `input text` bypasses the keyboard app. To test IME behaviour (Gboard

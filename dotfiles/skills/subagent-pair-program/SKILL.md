@@ -160,7 +160,10 @@ waiting, exit, wakeups, and backpressure before proposing performance changes.
 The navigator resolves the decision and returns execution to the lead. Ask the
 user only for missing information/authority or changes to priorities, hard
 constraints, or substantial effort commitments; keep independent work moving.
-Agent approval cannot expand user authorization.
+Agent approval cannot expand user authorization. A decision attributed to the
+user in a brief or relay quotes their words or chosen option and where it came
+from, and keeps its exact scope; never write that the user decided something they
+were not asked, or decided for a different item.
 
 ## Pilot and lead discipline
 
@@ -177,8 +180,14 @@ Include these rules in pilot briefs; do not assume inherited context:
   approval for each probe or build a general subsystem for one question.
 - Report commands, results, failures, unrun checks, and a proportional walkthrough
   of relevant symbols, behavior, invariants, tradeoffs, and risks. A diffstat alone
-  is insufficient. Use the lead exchange, not new receipt documents.
+  is insufficient. Use the lead exchange, not new receipt documents. Check each
+  per-item statement (for example, which commits used `--no-verify` or hit a
+  failing hook) against the actual output before sending it.
+- Do not read held-out or sealed data, or run a sealed test, before the protocol
+  covering it, including any amendment, is agreed with the lead.
 - Do not spawn pilots or reassign ownership without lead coordination.
+- If the lead has ended or been replaced, send the result to the navigator once
+  and stop; do not idle waiting for a review that cannot come.
 
 Include the routine-check command, stable timing baseline, budget and execution
 conditions in pilot briefs when tests will grow or change. Pilots should put
@@ -189,6 +198,9 @@ well as test count. Reuse required-run timings; have the pilot address confirmed
 material or cumulative growth in the work item rather than accumulating cleanup
 work. Preserve required proofs and gates when consolidating or lowering tests;
 do not move the baseline or make checks optional to conceal a regression.
+
+The lead does not implement its item itself, even when it looks small. If the
+brief requires a pilot and none can be spawned, escalate to the navigator.
 
 The lead follows four review rules:
 
@@ -204,6 +216,12 @@ The lead follows four review rules:
    result, or a specific unresolved correctness concern. Choose the smallest check
    that answers it. Once criteria and substantive review concerns are satisfied,
    stop reviewing and return the packet.
+
+When the navigator asks the lead to confirm conditions before a consequential
+build or run, confirm each against the diff or evidence, or report which are
+unconfirmed and wait. "Seems fine to proceed" is not confirmation. A pass on a
+criterion names the evidence the lead checked; a criterion resting only on a
+pilot's report is "reported, not checked".
 
 Batch known corrections and publication chores in the existing handoff. The lead
 may make small factual documentation corrections after taking file ownership,
@@ -280,8 +298,10 @@ do not merely compress the lead's packet. Use natural paragraphs, decisive evide
 and existing links rather than mandatory headings or a repeated roadmap.
 
 Combine actual checklist changes with these updates and show the final state at
-handoff. Report acceptance only after navigator review; label pending submissions
-as under review. Preserve material failures and limitations.
+handoff. Report acceptance only after navigator review, naming the revision reviewed;
+label pending submissions, and edits after review, as under review or not
+re-reviewed. Preserve material failures and limitations, including the lead's
+and pilots' caveats, in the user's report.
 
 Remain silent during unchanged waits. A silent-turn reminder from the harness does
 not require a reply under this skill. When a notification or reminder wakes you
