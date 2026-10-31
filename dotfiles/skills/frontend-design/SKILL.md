@@ -104,20 +104,20 @@ Build one flow end to end before broadening. Read the "Craft floor" in
 
 Run the app and drive it with browser automation: Playwright, a browser MCP, or the harness's
 browser tools. [scripts/browser_check.py](scripts/browser_check.py) handles the repeatable part.
-It serves a static build or targets a running URL, screenshots named states at each width, adds a
-200%-zoom and reduced-motion pass, counts Tab presses to a target control, and reports console
-HTTP errors, console errors, and horizontal overflow. Install its browser once with
-`mise exec -- uv run <skill-dir>/scripts/browser_check.py --install-browser`, then see `--help`. Pass
-`--spa` for client-routed static builds and `--ready <selector>` when data loads after the page.
-Script the app-specific interactions separately. Give transient states (posting, slow loads) a URL or fixture switch so they stay on
-screen long enough to capture. Ask before anything that would disrupt the user's machine, such as
-installing system browsers, taking over their open browser, or binding common ports.
+It serves a static build or targets a running URL, screenshots named states at each width with and
+without reduced motion, adds a 200%-zoom pass, counts Tab presses to a target control, and reports
+HTTP errors, failed requests, console errors, and horizontal overflow. Install its browser once
+with `mise exec -- uv run <skill-dir>/scripts/browser_check.py --install-browser`, then see
+`--help`. Pass `--spa` for client-routed static builds and `--ready <selector>` when data loads
+after the page. Script the app-specific interactions separately. Give transient states (posting,
+slow loads) a URL or fixture switch so they stay on screen long enough to capture. Ask before
+anything that would disrupt the user's machine, such as installing system browsers, taking over
+their open browser, or binding common ports.
 
 - **Widths:** desktop (about 1440px) and narrow (about 375px), plus any width where the layout
   changes. Check 200% zoom on key screens (headless: half the CSS width at 2x density).
 - **Keyboard:** Tab through the whole task. Focus must be visible, in a logical order, and never
-  hidden behind sticky elements. Only an open modal traps focus, and closing it returns focus to
-  the control that opened it. Escape closes overlays, Enter submits, and focus moves
+  hidden behind sticky elements; check traps against Conflicts › Focus traps. Escape closes overlays, Enter submits, and focus moves
   sensibly when dialogs open and close.
 - **Interactions and states:** actually click, type, submit, cancel, and retry, using the error,
   empty, and long-data fixtures. Watch the console for errors.
@@ -169,8 +169,7 @@ answer five questions at a glance.
   anywhere: a badge, an attention list, or a notification when the user is elsewhere.
 - An approval states exactly what will happen, what it affects, and whether it can be undone, with
   specific action labels ("Delete 12 files", "Send email to 3 recipients"). Approve and deny are
-  keyboard-reachable, and the destructive choice is never pre-focused; default focus goes to the
-  safe one.
+  keyboard-reachable, with default focus on the safe choice (Conflicts › Destructive actions).
 - Separate "needs you" from "FYI". Too many interruptions train users to approve without reading.
 
 **How do I stop it?**
@@ -197,24 +196,42 @@ Prefer purpose-built views (status lists, review queues, diff viewers, forms) ov
 transcript the only interface for structured work. Avoid anthropomorphic filler ("I'm thinking
 really hard!"). Precise status builds more trust than personality.
 
-## Resolving conflicts between the sources
+## Conflicts
 
-- **Contrast:** WCAG 2.2 AA (4.5:1 text, 3:1 large text and UI) is the floor. APCA is optional
-  extra guidance.
+This section is the single authority wherever the sources or references disagree. References keep
+upstream wording and point here with a one-line `Override: see SKILL.md › Conflicts › <rule>` note.
+Change a rule here, not at the pointer.
+
+- **Contrast:** WCAG 2.2 AA (4.5:1 text, 3:1 large text and UI components) is the pass/fail floor.
+  APCA is optional extra guidance.
 - **Destructive actions:** prefer Undo when recovery is safe; otherwise confirm, naming the action
-  and the object.
+  and the object. The destructive choice is never pre-focused.
+- **Focus traps:** only an open modal dialog traps focus, and closing it returns focus to the
+  control that opened it. Drawers, popovers, and panels never trap.
 - **Case:** sentence case unless the project already uses Title Case consistently.
-- **Mobile zoom:** never disable zoom (no `maximum-scale=1`). Prevent iOS auto-zoom with input font
-  sizes of at least 16px.
-- **Scrollbars and native controls:** on task surfaces keep standard affordances. Theme their color
-  to the palette, but don't reinvent their behavior.
+- **Zoom:** never disable zoom (no `maximum-scale=1` or `user-scalable=no`). Prevent iOS auto-zoom
+  with input font sizes of at least 16px.
+- **Native controls:** on task surfaces keep standard affordances, including scrollbars. Theme their
+  color to the palette, but don't reinvent their behavior.
 - **Motion:** on Persuade and Experience surfaces, at most one authored moment such as a page-load
   sequence. On Operate and Read surfaces, no page-load choreography: motion answers user actions
   and shows state changes in 150–250 ms.
 - **Line length:** 65–75 characters for body prose (Anthropic's "under 80" is the outer limit);
   tables and dense UI may run wider.
-- **Monospace:** use `font-variant-numeric: tabular-nums` for numbers that are compared. Reserve
-  monospace for code, IDs, hashes, and paths, not as a "technical" costume for labels.
+- **Monospace:** use `font-variant-numeric: tabular-nums` for numbers that are compared, including
+  metrics and measurements. Reserve monospace for code, IDs, hashes, and paths.
+- **Typefaces:** on Persuade and Experience surfaces, choose faces specific to the brief rather
+  than defaults. On Operate and Read surfaces, a well-tuned system or familiar sans is a deliberate
+  choice.
+- **Elevation:** pair a shadow only with a subtle semi-transparent border for edge clarity. An
+  opaque 1px border under a wide soft shadow reads as a ghost card.
+- **Placeholders:** show an example value or pattern (`+1 (123) 456-7890`), never the label. An
+  ellipsis marks only an open-ended prompt or a truncated example (`Search…`, `sk-012345679…`).
+- **Help and onboarding:** inline help first; tooltips are a last resort; tours are optional,
+  skippable, and contextual, never an upfront gate. Score Nielsen's "Help and documentation"
+  against that standard, not by counting tooltips or tours.
+- **Cards:** cards are not the default page structure. Nesting is legitimate only when the
+  structure really is nested (a card inside a kanban column), never as decoration.
 - **Distinctiveness:** on Operate and Read surfaces, familiarity wins. Spend boldness on one
   memorable detail, not on unfamiliar controls.
 
