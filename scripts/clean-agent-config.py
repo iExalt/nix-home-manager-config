@@ -140,6 +140,10 @@ def clean(text, kind):
     return dump(project(parse(text, kind), POLICY[kind]), kind)
 
 
+def private_part(data, kind):
+    return private(data, project(data, POLICY[kind]))
+
+
 def private(data, kept):
     """Return the parts of data that the projection dropped."""
     result = {}
@@ -242,7 +246,8 @@ def filter_main(kind):
         # fix(privacy): do not echo configuration contents on parse failures.
         sys.exit("Agent config clean filter failed; check syntax and filter policy.")
     try:
-        back_up(backup_dir(), text, kind, data, projected)
+        if data != projected:  # fix(perf): only files with private content need the Git directory.
+            back_up(backup_dir(), text, kind, data, projected)
     except Exception:
         print(f"warning: agent config backup failed for {kind}; restore will not cover recent edits.",
               file=sys.stderr)
@@ -261,13 +266,25 @@ def refresh(root, relatives):
             git("add", "--renormalize", "--", relative, cwd=root)
 
 
-def restore_file(target, saved, kind):
-    """Merge private keys from saved into target; return the names added."""
-    backup = parse(saved.read_text(), kind)
-    extra = private(backup, project(backup, POLICY[kind]))
+def restore_file(target, saved, kind, if_wiped=False):
+    """Merge private keys from saved into target; return the names added and the result.
+
+    With if_wiped, leave a file alone unless it holds no private content, the state Git
+    leaves after rewriting it; return None then.
+    """
+    extra = private_part(parse(saved.read_text(), kind), kind)
     for _ in range(3):
         before = target.stat()
-        live = parse(target.read_text(), kind)
+        try:
+            live = parse(target.read_text(), kind)
+        except ValueError:  # tomllib and json errors; conflict markers, for example
+            if if_wiped:  # Git never leaves an unparsable file, so it was not wiped.
+                return None
+            raise
+        # fix(config): hooks also run when Git left the file alone; restoring then would
+        # bring back a private key deleted since the latest backup.
+        if if_wiped and live != project(live, POLICY[kind]):
+            return None
         added = add_missing(live, extra, POLICY[kind])
         if not added:
             return [], live
@@ -284,8 +301,7 @@ def unrestored(older, live, kind):
     """Pair each older backup, newest first, with private sections live still lacks."""
     reported, result = set(), []
     for saved in reversed(older):
-        backup = parse(saved.read_text(), kind)
-        names = [name for name in absent(private(backup, project(backup, POLICY[kind])), live)
+        names = [name for name in absent(private_part(parse(saved.read_text(), kind), kind), live)
                  if name not in reported]
         if names:
             reported.update(names)
@@ -297,6 +313,8 @@ def restore_main(arguments):
     parser = argparse.ArgumentParser(prog="git agent-restore")
     parser.add_argument("--from", dest="source", type=Path,
                         help="a backup file such as codex.<n> or claude.<n>")
+    parser.add_argument("--if-wiped", action="store_true",
+                        help="only restore files that hold no private content (used by hooks)")
     options = parser.parse_args(arguments)
     source = options.source
     if source:
@@ -305,7 +323,7 @@ def restore_main(arguments):
         if not any(source.name.startswith(f"{kind}.") for kind in FILES) or not source.is_file():
             parser.error("--from expects an existing backup named codex.<n> or claude.<n>")
     root = Path(git("rev-parse", "--show-toplevel"))
-    directory = Path(git("rev-parse", "--absolute-git-dir")) / "agent-config-private"
+    directory = backup_dir()
     failed = False
     for kind, relative in FILES.items():
         if source and not source.name.startswith(f"{kind}."):
@@ -315,23 +333,41 @@ def restore_main(arguments):
         if not (source or saved) or not target.exists():
             continue
         try:
-            added, live = restore_file(target, source or saved[-1], kind)
-            # fix(config): a wipe followed by new private keys yields small latest backups;
-            # name what older backups still hold instead of losing it silently.
-            lost = [] if source else unrestored(saved[:-1], live, kind)
+            result = restore_file(target, source or saved[-1], kind, options.if_wiped)
         except Exception:
             # fix(privacy): name the file, never its contents.
             print(f"agent-restore: skipped {relative}; it or its backup could not be parsed or written.",
                   file=sys.stderr)
             failed = True
             continue
+        if result is None:
+            continue
+        added, live = result
         if added:
             print(f"agent-restore: restored {', '.join(added)} in {relative}", file=sys.stderr)
             refresh(root, [relative])
+        if source:
+            continue
+        try:
+            # fix(config): a wipe followed by new private keys yields small latest backups;
+            # name what older backups still hold instead of losing it silently.
+            lost = unrestored(saved[:-1], live, kind)
+        except Exception:
+            print(f"agent-restore: could not check older backups of {relative}.", file=sys.stderr)
+            failed = True
+            continue
         for older, names in lost:
             print(f"agent-restore: {older} also has {', '.join(names)}; if you did not delete them "
                   f"on purpose, run: git agent-restore --from {older}", file=sys.stderr)
     return 1 if failed else 0
+
+
+def seed():
+    """Run the clean filter once per file, so its backup exists before any rewrite."""
+    root = Path(git("rev-parse", "--show-toplevel"))
+    for relative in FILES.values():
+        if (root / relative).is_file():
+            git("hash-object", f"--path={relative}", relative, cwd=root)
 
 
 if __name__ == "__main__":
@@ -339,6 +375,13 @@ if __name__ == "__main__":
     if command == "restore":
         sys.exit(restore_main(sys.argv[2:]))
     if command == "refresh":
+        # fix(config): also a catch-all for rewrites that fire no hook, such as cherry-pick.
+        exit_code = restore_main(["--if-wiped"])
         refresh(Path(git("rev-parse", "--show-toplevel")), FILES.values())
+        sys.exit(exit_code)
+    if command == "seed":
+        sys.exit(seed())
+    if command == "kinds":
+        print(" ".join(FILES))
         sys.exit(0)
     filter_main(command)

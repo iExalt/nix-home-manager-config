@@ -105,30 +105,42 @@ keeping the last 10 (mode 0600, per worktree, never committed). A file that
 already equals its filtered content is not saved, so a wiped file never
 replaces a good backup. The installer adds `post-checkout`, `post-merge`, and
 `post-rewrite` hooks to Git's hooks directory (honouring a repository-local
-`core.hooksPath`) that run `git agent-restore`, so pulls, rebases, and
-checkouts restore the keys automatically. It warns and skips the hooks when
-`core.hooksPath` is set in global config, which other repositories share, or
-when a hook it did not write already exists. A hook also restores after `git
-checkout -- <file>`, which wipes every private key; to discard one private
-edit, edit the file instead. No hook runs after `git stash`, `git stash pop`,
-`git pull --autostash`, `git reset --hard`, or resolving a merge conflict in
-either file; run `git agent-restore` yourself afterwards. Between `git stash`
-and `git stash pop`, the agents run without their private settings.
+`core.hooksPath`) that run `git agent-restore --if-wiped`, so pulls, rebases,
+and checkouts restore the keys automatically. A hook restores only a file that
+holds no private content, which is the state Git leaves after rewriting it; a
+file Git left alone keeps its edits. The installer warns and skips the hooks
+when `core.hooksPath` is set in global config, which other repositories share,
+or when a hook it did not write already exists. A hook also restores after
+`git checkout -- <file>` and `git restore <file>`, which wipe every private
+key; to discard one private edit, edit the file instead. Commands that rewrite
+the file without a hook, such as `git reset --hard`, `git cherry-pick`, `git
+merge --abort`, `git rebase --abort`, a merge that stops on a conflict in any
+file, and `git stash`, `git stash pop`, or `git pull --autostash`, need a
+manual step: `git agent-status` restores a wiped file before showing status,
+and `git agent-restore` also merges into a file an agent has written to since.
+Between `git stash` and `git stash pop`, the agents run without their private
+settings; Codex may write to its file meanwhile, so run `git agent-restore`
+after `git stash pop`.
 
 `git agent-restore` adds back only private keys and private list items that
 are missing; values already in the file win, and portable preferences removed
 in Git stay removed. It rewrites a file only when it adds keys, in canonical
 form, so hand-written comments in `config.toml` are lost then. If an agent
 saves the file while restore runs, restore starts over, but an agent that
-later writes back settings it read before the restore can still undo it.
-Deleting a private key is safe while others remain, because the next backup
-lacks it. Deleting the last one is not saved, so a later restore brings it
-back; remove that file's backups to drop it for good. When older backups hold
-private sections that the file and the latest backup both lack, as after a
-stash during which an agent saved a new key, restore names them and the backup
-to recover them from, run as `git agent-restore --from "$(git rev-parse
---absolute-git-dir)/agent-config-private/<file>"`. After a deliberate
-deletion, that note repeats until the backup rotates out or you delete it.
+later writes back settings it read before the restore can still undo it. A
+backup is saved only when Git runs the clean filter on the file, as `git
+agent-status` and `git diff` do; plain `git status` skips it when the file's
+size changed. After deleting a private key, run `git agent-status` before `git
+reset --hard`, `git checkout -f`, or `git checkout`/`git restore -- <file>`,
+which overwrite without comparing; otherwise a restore brings the key back.
+Deleting the last private key is never saved, so `git agent-status` and later
+restores bring it back; remove that file's backups to drop it for good. When
+older backups hold private sections that the file and the latest backup both
+lack, as after a stash during which an agent saved a new key, restore names
+them and the backup to recover them from, run as `git agent-restore --from
+"$(git rev-parse --absolute-git-dir)/agent-config-private/<file>"`. After a
+deliberate deletion, that note repeats until the backup rotates out or you
+delete it.
 
 Filters are clone-local Git configuration: install them in every clone before
 staging these files. Rerun the installer if the Mise Python installation is
