@@ -132,10 +132,11 @@ Check these on the built result, together, in each look at the render.
   every element to something intentional: a grid, baseline, edge, or optical center.
 - **Type:** body measure per SKILL.md › Conflicts › Line length, display at most 6rem,
   letter-spacing no tighter than -0.04em, balanced headings (`text-wrap: balance`), obvious scale
-  and weight steps, numbers per Conflicts › Monospace. Run the real copy at every breakpoint and fix what overflows.
+  and weight steps, numbers per Conflicts › Monospace. Run the real copy at every breakpoint and fix
+  what overflows.
 - **Motion:** how much and which properties, per SKILL.md › Conflicts › Motion; never scattered
-  effects. Exponential ease-out from an already-visible default. Honor `prefers-reduced-motion` with a
-  reduced variant that still shows state changes.
+  effects. Exponential ease-out from an already-visible default. Honor `prefers-reduced-motion` with
+  a reduced variant that still shows state changes.
 - **States:** hover, focus, active, disabled, loading, error, empty, plus real content, working
   controls, and responsive composition. See [states-and-edge-cases.md](states-and-edge-cases.md).
 - **Browser surfaces:** selection color, caret, focus rings, underline offset, scrollbars, and

@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["playwright==1.64.1"]  # bump together with --install-browser
+# dependencies = ["playwright==1.64.1"]  # after bumping, rerun --install-browser
 # ///
 """Screenshot named UI states at several widths in headless Chromium.
 
@@ -52,6 +52,11 @@ def parse_args():
     parser.add_argument("--ready", action="append", default=[], metavar="NAME=SELECTOR",
                         help="for state NAME, wait for this element instead of network idle; use it "
                              "for data loaded after the page and for transient states; repeatable")
+    parser.add_argument("--status", action="append", default=[], metavar="NAME=CODE",
+                        help="expected HTTP status for state NAME, e.g. notfound=404 for a designed "
+                             "error page; other states must be below 400; repeatable")
+    parser.add_argument("--all-passes", action="store_true",
+                        help="run the reduced-motion and zoom passes on every state, not just the first")
     parser.add_argument("--idle-timeout", type=int, default=2000,
                         help="ms to wait for network idle on states without --ready; 0 skips it "
                              "(streaming and polling UIs never go idle)")
@@ -64,10 +69,16 @@ def parse_args():
     args = parser.parse_args()
     if not args.install_browser and not ((args.serve or args.url) and args.state and args.out):
         parser.error("--serve or --url, at least one --state, and --out are required")
-    pairs = [r.split("=", 1) for r in args.ready]
-    if any(len(r) != 2 for r in pairs):
-        parser.error("--ready must look like NAME=SELECTOR")
-    args.ready = dict(pairs)
+    names = {state.split("=", 1)[0] for state in args.state}
+    for option, metavar in (("ready", "NAME=SELECTOR"), ("status", "NAME=CODE")):
+        pairs = [item.split("=", 1) for item in getattr(args, option)]
+        if any(len(pair) != 2 for pair in pairs):
+            parser.error(f"--{option} must look like {metavar}")
+        unknown = {name for name, _ in pairs} - names
+        if unknown:
+            parser.error(f"--{option} names no --state: {', '.join(sorted(unknown))}")
+        setattr(args, option, dict(pairs))
+    args.status = {name: int(code) for name, code in args.status.items()}
     args.idle_hint_shown = False
     return args
 
@@ -95,16 +106,19 @@ def static_server(directory, spa):
 
 
 def load(page, url, name, label, args, problems):
-    """Navigate and wait until the state is settled; return False if it failed to load."""
+    """Navigate and wait until the state is settled; return False if navigation failed."""
     try:
         response = page.goto(url)
     except PlaywrightError as error:
         problems.append(f"{label}: {url} failed to load: {error.message.splitlines()[0]}")
         return False
     # goto returns None for same-document navigations such as hash-route changes.
-    if response is not None and response.status >= 400:
-        problems.append(f"{label}: {url} returned {response.status}")
-        return False
+    if response is not None:
+        expected = args.status.get(name)
+        unexpected = response.status != expected if expected else response.status >= 400
+        if unexpected:
+            want = f" (expected {expected})" if expected else ""
+            problems.append(f"{label}: {url} returned {response.status}{want}")
     ready = args.ready.get(name)
     if ready:
         try:
@@ -149,8 +163,9 @@ def is_main_document(request):
 
 def report_failure(request, label, problems):
     # Requests that never got a response: refused connections, DNS, CORS, aborted loads.
-    # load() reports the page's own document.
-    if not is_favicon(request.url) and not is_main_document(request):
+    # load() reports the page's own document; ERR_ABORTED is the app cancelling a request.
+    if (request.failure != "net::ERR_ABORTED" and not is_favicon(request.url)
+            and not is_main_document(request)):
         problems.append(f"{label}: request failed ({request.failure}) {request.url}")
 
 
@@ -163,7 +178,7 @@ def new_page(context, label, problems):
     return page
 
 
-def capture(browser, base, states, label, context_options, args, problems):
+def capture(browser, base, states, label, context_options, args, problems, tab=True):
     context = browser.new_context(**context_options)
     for name, state_path in states:
         # A fresh page per state, so hash-route states start from a clean load.
@@ -178,7 +193,7 @@ def capture(browser, base, states, label, context_options, args, problems):
         page.screenshot(path=str(target), full_page=args.full_page)
         print("saved", target)
         page.close()
-    if args.tab_to:
+    if tab and args.tab_to:
         tab_walk(context, base, states[0], label, args, problems)
     context.close()
 
@@ -217,18 +232,22 @@ def main():
     server = static_server(args.serve, args.spa) if args.serve else contextlib.nullcontext(args.url.rstrip("/"))
     with server as base, sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=True)
+        # The extra passes cover the first (key) state unless --all-passes; the Tab walk runs
+        # once per width, since reduced motion and zoom do not change focus order.
+        extra_states = states if args.all_passes else states[:1]
         for width in widths:
             options = {"viewport": {"width": width, "height": 900 if width > 800 else 812},
                        "device_scale_factor": 1 if width > 800 else 2}
             capture(browser, base, states, str(width), options, args, problems)
             if not args.no_reduced_motion:
-                capture(browser, base, states, f"{width}-reduced-motion",
-                        {**options, "reduced_motion": "reduce"}, args, problems)
+                capture(browser, base, extra_states, f"{width}-reduced-motion",
+                        {**options, "reduced_motion": "reduce"}, args, problems, tab=False)
         if not args.no_zoom:
             # Browser zoom at 200% halves the CSS viewport and doubles device pixels.
             zoom_width = max(widths) // 2
             options = {"viewport": {"width": zoom_width, "height": 450}, "device_scale_factor": 2}
-            capture(browser, base, states, f"zoom200-{zoom_width}", options, args, problems)
+            capture(browser, base, extra_states, f"zoom200-{zoom_width}", options, args, problems,
+                    tab=False)
         browser.close()
     if problems:
         print("problems:", *problems, sep="\n  ")
