@@ -103,22 +103,24 @@ Build one flow end to end before broadening. Read the "Craft floor" in
 ### 4. Verify in a browser
 
 Run the app and drive it with browser automation: Playwright, a browser MCP, or the harness's
-browser tools. [scripts/browser_check.py](scripts/browser_check.py) handles the repeatable part.
-It serves a static build or targets a running URL, screenshots named states at each width with and
+browser tools. [scripts/browser_check.py](scripts/browser_check.py) handles the repeatable part. It
+serves a static build or targets a running URL, screenshots named states at each width with and
 without reduced motion, adds a 200%-zoom pass, counts Tab presses to a target control, and reports
-HTTP errors, failed requests, console errors, and horizontal overflow. Install its browser once
-with `mise exec -- uv run <skill-dir>/scripts/browser_check.py --install-browser`, then see
-`--help`. Pass `--spa` for client-routed static builds, `--ready NAME=SELECTOR` for a state whose
-data loads after the page or that is transient, and `--idle-timeout 0` for streaming UIs. Script the app-specific interactions separately. Give transient states (posting,
-slow loads) a URL or fixture switch so they stay on screen long enough to capture. Ask before
-anything that would disrupt the user's machine, such as installing system browsers, taking over
-their open browser, or binding common ports.
+HTTP errors, failed requests, console errors, and horizontal overflow. Install its browser once with
+`mise exec -- uv run <skill-dir>/scripts/browser_check.py --install-browser`, then see `--help`.
+Useful options: `--spa` for client-routed static builds; `--ready NAME=SELECTOR` for a state whose
+data loads after the page or that is transient; `--status NAME=404` for designed error pages;
+`--idle-timeout 0` for streaming UIs; and `--all-passes` to run reduced motion and zoom on every
+state rather than only the first. Script the app-specific interactions separately. Give transient
+states (posting, slow loads) a URL or fixture switch so they stay on screen long enough to capture.
+Ask before anything that would disrupt the user's machine, such as installing system browsers,
+taking over their open browser, or binding common ports.
 
 - **Widths:** desktop (about 1440px) and narrow (about 375px), plus any width where the layout
   changes. Check 200% zoom on key screens (headless: half the CSS width at 2x density).
 - **Keyboard:** Tab through the whole task. Focus must be visible, in a logical order, and never
-  hidden behind sticky elements; check traps against Conflicts › Focus traps. Escape closes overlays, Enter submits, and focus moves
-  sensibly when dialogs open and close.
+  hidden behind sticky elements; check traps against Conflicts › Focus traps. Escape closes
+  overlays, Enter submits, and focus moves sensibly when dialogs open and close.
 - **Interactions and states:** actually click, type, submit, cancel, and retry, using the error,
   empty, and long-data fixtures. Watch the console for errors.
 - **Preferences:** reduced motion, and dark mode if the product supports it.
@@ -127,9 +129,10 @@ their open browser, or binding common ports.
   matters.
 
 Look at every screenshot you take; a screenshot nobody inspected proves nothing. Batch your fixes
-between looks. A visual fix, such as CSS added after a screenshot showed a problem, is not done until
-a new screenshot shows it fixed; if you can't take one, say so in the report. Save screenshots of
-the final states in the project (for example `design/screenshots/`), not only in /tmp, and report what was not verified.
+between looks. A visual fix, such as CSS added after a screenshot showed a problem, is not done
+until a new screenshot shows it fixed; if you can't take one, say so in the report. Save screenshots
+of the final states in the project (for example `design/screenshots/`), not only in /tmp, and report
+what was not verified.
 
 ### 5. Critique, audit, and fix
 
@@ -235,12 +238,15 @@ Change a rule here, not at the pointer.
   against that standard, not by counting tooltips or tours.
 - **Cards:** cards are not the default page structure. Nesting is legitimate only when the
   structure really is nested (a card inside a kanban column), never as decoration.
-- **Generated-look defaults:** the defaults listed in visual-direction.md › Calibration are
-  avoided unless the brief explicitly asks for them. That includes the ones Impeccable treats as
-  absolute bans: eyebrow labels above headings, a system face as the display voice of a Persuade
-  or Experience page, sketch-style SVG illustration, decorative stripe or grid backgrounds, and
-  geometric masks standing in for a subject's real outline. Explicit means the user named the
-  look; never infer it from the subject.
+- **Generated-look defaults:** Impeccable bans these outright; this skill makes them defaults to
+  avoid: eyebrow labels above headings, a system face as the display voice of a Persuade or
+  Experience page, sketch-style SVG illustration, decorative stripe or grid backgrounds, and
+  geometric masks standing in for a subject's real outline. Use one only when the user's brief
+  names it, or when the established design (DESIGN.md or the existing code) already uses it, which
+  includes a world the user chose, such as neobrutalism or a blueprint canvas. Never introduce one
+  because the subject suggests it. Anthropic's calibration traits (cream and terracotta,
+  near-black with one acid accent, and the rest) remain what that list says: legitimate for some
+  briefs, but never the way to spend a free axis.
 - **Distinctiveness:** on Operate and Read surfaces, familiarity wins. Spend boldness on one
   memorable detail, not on unfamiliar controls.
 

@@ -12,15 +12,14 @@ a one-line **Override** pointer leads to `SKILL.md` › Conflicts.
   `critique.md`, `audit.md`), `states-and-edge-cases.md` (Impeccable `harden.md`, `onboard.md`;
   Vercel), `copy.md` (Anthropic; Impeccable `clarify.md`; Vercel), `design-record.md` (Impeccable
   `init.md`, `document.md`), and `web-interface-guidelines.md` (Vercel, verbatim).
-- **Not used** from Impeccable: its CLI and the references that depend on it (`live`,
-  `live-setup`, `generate`, `hooks`, `doctor`, `region-map`, `visualize`, `routing`, the
-  `mode-*.md` comp rules), the single-purpose playbooks (`polish`, `bolder`, `quieter`, `distill`,
-  `animate`, `colorize`, `typeset`, `layout`, `delight`, `overdrive`, `adapt`, `optimize`,
-  `extract`, `component-review`, `craft`), native iOS/Android guidance, and the subagent
-  definitions. Their key rules are folded into the references where they apply. Impeccable's absolute
-  bans (eyebrow labels, system display faces, sketch-style SVG, decorative stripes and grids,
-  geometric masks) are softened to defaults the brief can explicitly request; see
-  `SKILL.md` › Conflicts › Generated-look defaults.
+- **Not used** from Impeccable: its CLI and the references that depend on it (`live`, `live-setup`,
+  `generate`, `hooks`, `doctor`, `region-map`, `visualize`, `routing`, the `mode-*.md` comp rules),
+  the single-purpose playbooks (`polish`, `bolder`, `quieter`, `distill`, `animate`, `colorize`,
+  `typeset`, `layout`, `delight`, `overdrive`, `adapt`, `optimize`, `extract`, `component-review`,
+  `craft`), native iOS/Android guidance, and the subagent definitions. Their key rules are folded
+  into the references where they apply. Impeccable's absolute bans (eyebrow labels, system display
+  faces, sketch-style SVG, decorative stripes and grids, geometric masks) are softened to defaults
+  the brief can explicitly request; see `SKILL.md` › Conflicts › Generated-look defaults.
 
 | Source | Revision | License | Copyright |
 |---|---|---|---|
