@@ -17,9 +17,9 @@ a one-line **Override** pointer leads to `SKILL.md` › Conflicts.
   the single-purpose playbooks (`polish`, `bolder`, `quieter`, `distill`, `animate`, `colorize`,
   `typeset`, `layout`, `delight`, `overdrive`, `adapt`, `optimize`, `extract`, `component-review`,
   `craft`), native iOS/Android guidance, and the subagent definitions. Their key rules are folded
-  into the references where they apply. Impeccable's absolute bans (eyebrow labels, system display
-  faces, sketch-style SVG, decorative stripes and grids, geometric masks) are softened to defaults
-  the brief can explicitly request; see `SKILL.md` › Conflicts › Generated-look defaults.
+  into the references where they apply. Impeccable's craft-floor Refuse list is kept
+  as defaults, its outright eyebrow ban is relaxed, and its Codex-only sketch-SVG and stripe/grid
+  rules now apply to every agent; see `SKILL.md` › Conflicts › Generated-look defaults.
 
 | Source | Revision | License | Copyright |
 |---|---|---|---|

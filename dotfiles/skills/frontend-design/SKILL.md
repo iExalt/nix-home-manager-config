@@ -103,15 +103,16 @@ Build one flow end to end before broadening. Read the "Craft floor" in
 ### 4. Verify in a browser
 
 Run the app and drive it with browser automation: Playwright, a browser MCP, or the harness's
-browser tools. [scripts/browser_check.py](scripts/browser_check.py) handles the repeatable part. It
-serves a static build or targets a running URL, screenshots named states at each width with and
-without reduced motion, adds a 200%-zoom pass, counts Tab presses to a target control, and reports
-HTTP errors, failed requests, console errors, and horizontal overflow. Install its browser once with
-`mise exec -- uv run <skill-dir>/scripts/browser_check.py --install-browser`, then see `--help`.
-Useful options: `--spa` for client-routed static builds; `--ready NAME=SELECTOR` for a state whose
-data loads after the page or that is transient; `--status NAME=404` for designed error pages;
+browser tools. [scripts/browser_check.py](scripts/browser_check.py) handles the repeatable part.
+It serves a static build or targets a running URL, screenshots named states at each width, runs
+reduced-motion and 200%-zoom passes on the first (key) state, counts Tab presses to a target
+control, and reports HTTP errors, failed requests, console errors, and horizontal overflow. Install
+its browser once with `mise exec -- uv run <skill-dir>/scripts/browser_check.py --install-browser`,
+then see `--help`. Useful options: `--spa` for client-routed static builds; `--ready NAME=SELECTOR`
+for a state whose data loads after the page or that is transient; `--status NAME=404` for error
+pages the server returns with an error status (not client-rendered SPA 404s, which return 200);
 `--idle-timeout 0` for streaming UIs; and `--all-passes` to run reduced motion and zoom on every
-state rather than only the first. Script the app-specific interactions separately. Give transient
+state. Script the app-specific interactions separately. Give transient
 states (posting, slow loads) a URL or fixture switch so they stay on screen long enough to capture.
 Ask before anything that would disrupt the user's machine, such as installing system browsers,
 taking over their open browser, or binding common ports.
@@ -238,15 +239,16 @@ Change a rule here, not at the pointer.
   against that standard, not by counting tooltips or tours.
 - **Cards:** cards are not the default page structure. Nesting is legitimate only when the
   structure really is nested (a card inside a kanban column), never as decoration.
-- **Generated-look defaults:** Impeccable bans these outright; this skill makes them defaults to
-  avoid: eyebrow labels above headings, a system face as the display voice of a Persuade or
-  Experience page, sketch-style SVG illustration, decorative stripe or grid backgrounds, and
-  geometric masks standing in for a subject's real outline. Use one only when the user's brief
-  names it, or when the established design (DESIGN.md or the existing code) already uses it, which
-  includes a world the user chose, such as neobrutalism or a blueprint canvas. Never introduce one
-  because the subject suggests it. Anthropic's calibration traits (cream and terracotta,
-  near-black with one acid accent, and the rest) remain what that list says: legitimate for some
-  briefs, but never the way to spend a free axis.
+- **Generated-look defaults:** these five are defaults to avoid: eyebrow labels above headings, a
+  system face as the display voice of a Persuade or Experience page, sketch-style SVG illustration,
+  decorative stripe or grid backgrounds, and geometric masks standing in for a subject's real
+  outline. Use one only when the user's brief names it, or when the established design (DESIGN.md
+  or the existing code) already uses it, which includes a world the user chose, such as
+  neobrutalism or a blueprint canvas. Never introduce one because the subject suggests it. This
+  relaxes Impeccable's outright eyebrow ban and makes its Codex-only sketch-SVG and stripe/grid
+  rules apply everywhere. Anthropic's calibration traits (cream and terracotta, near-black with one
+  acid accent, and the rest) remain what that list says: legitimate for some briefs, but never the
+  way to spend a free axis.
 - **Distinctiveness:** on Operate and Read surfaces, familiarity wins. Spend boldness on one
   memorable detail, not on unfamiliar controls.
 

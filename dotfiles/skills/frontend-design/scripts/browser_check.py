@@ -5,11 +5,11 @@
 """Screenshot named UI states at several widths in headless Chromium.
 
 Covers the repeatable part of browser verification: serving a static build,
-capturing each state at desktop and narrow widths with and without reduced
-motion, a 200%-zoom pass, a keyboard walk to a target control, and HTTP, console,
-and horizontal-overflow problems. Script app-specific interactions (click,
-submit, retry) separately; give transient states a URL switch (for example
-?latency=5000) so they can be captured here.
+capturing each state at desktop and narrow widths, reduced-motion and 200%-zoom
+passes on the first (key) state (every state with --all-passes), a keyboard walk
+to a target control, and HTTP, console, and horizontal-overflow problems. Script
+app-specific interactions (click, submit, retry) separately; give transient
+states a URL switch (for example ?latency=5000) so they can be captured here.
 
     mise exec -- uv run browser_check.py --install-browser   # once per machine
     mise exec -- uv run browser_check.py --serve dist --spa \\
@@ -43,7 +43,8 @@ def parse_args():
     source.add_argument("--serve", type=pathlib.Path, help="static directory to serve on a free port")
     source.add_argument("--url", help="base URL of a running app, e.g. http://127.0.0.1:5173")
     parser.add_argument("--spa", action="store_true",
-                        help="with --serve, answer unknown extensionless paths with index.html")
+                        help="with --serve, answer page requests for unknown paths with index.html "
+                             "(status 200, so client-rendered 404 pages need no --status)")
     parser.add_argument("--state", action="append", default=[], metavar="NAME=PATH",
                         help="named state and its path/query; repeatable")
     parser.add_argument("--widths", default="1440,375", help="comma-separated viewport widths")
@@ -78,6 +79,8 @@ def parse_args():
         if unknown:
             parser.error(f"--{option} names no --state: {', '.join(sorted(unknown))}")
         setattr(args, option, dict(pairs))
+    if not all(code.isdigit() for code in args.status.values()):
+        parser.error("--status codes must be numbers, e.g. notfound=404")
     args.status = {name: int(code) for name, code in args.status.items()}
     args.idle_hint_shown = False
     return args
@@ -92,7 +95,8 @@ def static_server(directory, spa):
         def send_head(self):
             request_path = urllib.parse.urlsplit(self.path).path
             missing = not pathlib.Path(self.translate_path(request_path)).exists()
-            if spa and missing and not pathlib.PurePosixPath(request_path).suffix:
+            # Browsers send Accept: text/html for page navigations; assets and fetches don't.
+            if spa and missing and "text/html" in self.headers.get("Accept", ""):
                 self.path = "/index.html"
             return super().send_head()
 
@@ -227,6 +231,9 @@ def main():
     states = [tuple(s.split("=", 1)) for s in args.state]
     if any(len(s) != 2 for s in states):
         sys.exit("--state must look like NAME=PATH")
+    # Paths join the base URL directly, so give bare paths their leading slash.
+    states = [(name, state_path if state_path.startswith(("/", "?", "#")) else "/" + state_path)
+              for name, state_path in states]
     widths = [int(w) for w in args.widths.split(",")]
     problems = []
     server = static_server(args.serve, args.spa) if args.serve else contextlib.nullcontext(args.url.rstrip("/"))
