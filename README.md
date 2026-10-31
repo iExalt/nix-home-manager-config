@@ -80,7 +80,10 @@ The allowlists in `scripts/clean-agent-config.py` define what is shared. All
 unlisted keys at every nesting level are also omitted, including future keys.
 Even an allowed key is omitted if its name or value contains a path separator
 or a home-directory marker (`~`, `$HOME`, or `${HOME}`); a list containing
-such a value is omitted in full. The one exception is a quoted path under
+such a value is omitted in full. When that drops a key the allowlist names,
+such as `developer_instructions` containing "and/or", the filter prints a
+warning naming the key, on every Git command that runs the filter, until the
+value changes. The one exception is a quoted path under
 `"$HOME/.config/agent-hooks/`, the shared hook scripts that Home Manager links
 from `dotfiles/agent-hooks`, so reviewed Claude `hooks` entries that run them
 stay in Git. A hook entry is kept whole or omitted whole: one unlisted key or
@@ -108,20 +111,22 @@ replaces a good backup. The installer adds `post-checkout`, `post-merge`, and
 `post-rewrite` hooks to Git's hooks directory (honouring a repository-local
 `core.hooksPath`) that run `git agent-restore --if-wiped`, so pulls, rebases,
 and checkouts restore the keys automatically. A hook restores only a file Git
-wrote: one that holds no private content, or that matches Git's index copy
-byte for byte; a file Git left alone keeps its edits. The installer warns and
-skips the hooks when `core.hooksPath` is set in global config, which other
-repositories share, or when a hook it did not write already exists. A hook
-also restores after `git checkout -- <file>` and `git restore <file>`, which
-wipe every private key; to discard one private edit, edit the file instead.
-Commands that rewrite the file without a hook, such as `git reset --hard`,
-`git cherry-pick`, `git merge --abort`, `git rebase --abort`, a merge that
-stops on a conflict in any file, and `git stash`, `git stash pop`, or `git
-pull --autostash`, need a manual step: `git agent-status` restores a wiped
-file before showing status, and `git agent-restore` also merges into a file an
-agent has written to since. Between `git stash` and `git stash pop`, the
-agents run without their private settings; Codex may write to its file
-meanwhile, so run `git agent-restore` after `git stash pop`.
+rewrote: its index copy changed from the commit Git left (so `commit --amend`
+and branch switches that keep the file do nothing), and the file holds no
+private content or matches Git's index copy byte for byte; a file Git left
+alone keeps its edits. The installer warns and skips the hooks when
+`core.hooksPath` is set in global config, which other repositories share, or
+when a hook it did not write already exists. A hook also restores after `git
+checkout -- <file>` and `git restore <file>`, which wipe every private key; to
+discard one private edit, edit the file instead. Commands that rewrite the
+file without a hook, such as `git reset --hard`, `git cherry-pick`, `git merge
+--abort`, `git rebase --abort`, a merge that stops on a conflict in any file,
+and `git stash`, `git stash pop`, or `git pull --autostash`, need a manual
+step: `git agent-status` restores a wiped file before showing status, and `git
+agent-restore` also merges into a file an agent has written to since. Between
+`git stash` and `git stash pop`, the agents run without their private
+settings; Codex may write to its file meanwhile, so run `git agent-restore`
+after `git stash pop`.
 
 `git agent-restore` adds back only private keys and private list items that
 are missing; values already in the file win, and portable preferences removed
@@ -152,9 +157,10 @@ staging these files. Rerun the installer if the Mise Python installation is
 replaced. A configured filter failure blocks staging instead of passing raw
 content through. Review `git diff --cached` before publishing.
 
-A clean filter is not a backup: a checkout, reset, or merge that replaces a
-working file can discard its local-only settings. Back up local config before
-such operations. The smudge filter passes repository content through unchanged.
+The clean filter only writes Git's copy; its raw backups and the restore hooks
+above are the only recovery for local-only settings, within the limits
+described there. Keep your own backup of anything you cannot recreate. The
+smudge filter passes repository content through unchanged.
 
 ### Apply configuration
 

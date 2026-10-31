@@ -136,6 +136,18 @@ accountId = "private"
         for kind, relative in FILTER.FILES.items():
             self.assertIn(f"/{relative} filter=agent-{kind}", attributes)
 
+    def test_toml_escapes_round_trip(self):
+        data = {"projects": {"/x/\U0001F600 proj": {"note": "del\x7f tab\t"}}}
+        self.assertEqual(tomllib.loads(FILTER.dump(data, "codex")), data)
+
+    def test_filter_warns_when_a_reviewed_key_stays_local(self):
+        result = subprocess.run([sys.executable, str(SCRIPT), "codex"], capture_output=True, text=True,
+                                input='developer_instructions = "Report progress and/or blockers"\n'
+                                      '[projects."/private"]\nx = 1\n', cwd=tempfile.gettempdir())
+        self.assertEqual(result.stdout, "\n")
+        self.assertIn("kept developer_instructions local", result.stderr)
+        self.assertNotIn("projects", result.stderr)
+
     def test_codex_private_sections_round_trip(self):
         dates = tomllib.loads('at = 1979-05-27T07:32:00Z\nday = 1979-05-27\nclock = 07:32:00.5\n'
                               'local = 1979-05-27T07:32:00\nbig = inf\nsmall = -inf\nodd = nan\n')
@@ -170,6 +182,12 @@ accountId = "private"
             self.assertEqual(len(kept), FILTER.KEEP_BACKUPS + 1)
             FILTER.rotate(directory, "codex", time.time_ns() + FILTER.KEEP_UNIQUE_SECONDS * 10**9)
             self.assertNotIn(full, [item.read_text() for item in FILTER.backups(directory, "codex")])
+            # A clock that steps back still names the next backup after the newest.
+            newest = FILTER.backups(directory, "codex")[-1]
+            future = directory / f"codex.{int(newest.suffix[1:]) + 10**18}"
+            newest.rename(future)
+            save('model = "late"\n[projects."/one"]\nx = 1\n')
+            self.assertIn("late", FILTER.backups(directory, "codex")[-1].read_text())
 
     def test_lists_keep_portable_items_and_restore_private_ones(self):
         def hook(command):
@@ -222,10 +240,13 @@ accountId = "private"
             older = [backup(1, full), backup(2, {**nux, "apiKeyHelper": "/private/helper"})]
             self.assertEqual(FILTER.unrestored(older, dict(nux), "claude"),
                              [(older[1], ["apiKeyHelper"]), (older[0], ["extraKnownMarketplaces"])])
-            # A private list item only an older backup holds is named too.
-            live = {"permissions": {"allow": ["Bash(b)"]}}
-            self.assertEqual(FILTER.unrestored(older[:1], live, "claude"),
-                             [(older[0], ["permissions.allow", "extraKnownMarketplaces", "apiKeyHelper"])])
+            # A private hook item only an older backup holds is named; a plain private list
+            # that restore cannot merge is not.
+            mine = {"matcher": "", "hooks": [{"type": "command", "command": "/private/hook"}]}
+            hooked = backup(3, {**full, "hooks": {"Stop": [mine]}})
+            live = {"permissions": {"allow": ["Bash(b)"]}, "hooks": {"Stop": []},
+                    "extraKnownMarketplaces": {"m": {}}, "apiKeyHelper": "/private/helper"}
+            self.assertEqual(FILTER.unrestored([hooked], live, "claude"), [(hooked, ["hooks.Stop"])])
 
     def test_restore_retries_when_the_file_changes_meanwhile(self):
         with tempfile.TemporaryDirectory(prefix="agent-restore-test-") as directory:
@@ -353,6 +374,23 @@ accountId = "private"
             assert_restored("local", ["/private/one"])
             git(clone, "add", config_path)
             self.assertNotIn("private", git(clone, "show", f":{config_path}").stdout)
+
+            # Deleting the last private key survives an amend and a branch switch, which
+            # leave the file alone; only the agent-status catch-all brings it back.
+            config.write_text(FILTER.clean(config.read_text(), "codex"))
+            git(clone, "commit", "-q", "--amend", "--no-edit", "--allow-empty")
+            git(clone, "checkout", "-q", "-b", "after-amend")
+            self.assertNotIn("projects", config.read_text())
+
+            # A squash merge rewrites the file without moving HEAD; the hook still restores.
+            git(clone, "checkout", "-q", "-b", "squashed")
+            config.write_text(FILTER.clean('model = "squashed"', "codex"))
+            git(clone, "commit", "-qam", "test: squashed")
+            git(clone, "checkout", "-q", "after-amend")
+            config.write_text(FILTER.clean(config.read_text(), "codex"))
+            git(clone, "agent-status", "--porcelain")  # Restores; a stale index blocks merges.
+            git(clone, "merge", "-q", "--squash", "squashed")
+            assert_restored("squashed", ["/private/one"])
 
             # Forget purges every backup of the removed key, so nothing brings it back.
             config.write_text(FILTER.clean(config.read_text(), "codex"))
