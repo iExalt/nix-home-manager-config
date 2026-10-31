@@ -3,6 +3,7 @@
 
 import importlib.util
 import json
+import math
 import os
 from pathlib import Path
 import shutil
@@ -136,6 +137,11 @@ accountId = "private"
             self.assertIn(f"/{relative} filter=agent-{kind}", attributes)
 
     def test_codex_private_sections_round_trip(self):
+        dates = tomllib.loads('at = 1979-05-27T07:32:00Z\nday = 1979-05-27\nclock = 07:32:00.5\n'
+                              'local = 1979-05-27T07:32:00\nbig = inf\nsmall = -inf\nodd = nan\n')
+        restored = tomllib.loads(FILTER.dump({"notice": dates}, "codex"))["notice"]
+        self.assertTrue(math.isnan(restored.pop("odd")))
+        self.assertEqual(restored, {key: value for key, value in dates.items() if key != "odd"})
         data = {"mcp_servers": {"docs": {"command": "/bin/docs", "args": ["--port", "1"],
                                          "env": {"KEY": "value"}}},
                 "projects": {"/private/a b": {"trust_level": "trusted"}},
@@ -157,7 +163,7 @@ accountId = "private"
             self.assertEqual([item.read_text() for item in FILTER.backups(directory, "codex")], [full])
             for index in range(FILTER.KEEP_BACKUPS + 2):
                 save(f'model = "{index}"\n[projects."/one"]\nx = 1\n'
-                     f'[tui.model_availability_nux]\nm{index} = 1\n')
+                     f'[tui.model_availability_nux]\nsome-model = {index}\n')
             kept = [item.read_text() for item in FILTER.backups(directory, "codex")]
             # The only backup holding /two survives rotation while it is young.
             self.assertEqual(kept[0], full)
@@ -193,9 +199,15 @@ accountId = "private"
             target, saved = Path(directory, "settings.json"), Path(directory, "claude.1")
             saved.write_text(json.dumps({"extraKnownMarketplaces": {"m": {}}}))
             target.write_text("<<<<<<< HEAD\n{}\n=======\n{}\n>>>>>>> other\n")
-            self.assertIsNone(FILTER.restore_file(target, saved, "claude", if_wiped=True))
+            self.assertIsNone(FILTER.restore_file(target, saved, "claude", lambda: b"{}\n"))
             with self.assertRaises(ValueError):
                 FILTER.restore_file(target, saved, "claude")
+            # Exactly what Git wrote is restored, even when today's policy would filter it
+            # differently; a file with private content Git did not write is left alone.
+            target.write_text('{"retiredKey": 1}\n')
+            self.assertIsNone(FILTER.restore_file(target, saved, "claude", lambda: b"{}\n"))
+            added, _ = FILTER.restore_file(target, saved, "claude", lambda: b'{"retiredKey": 1}\n')
+            self.assertEqual(added, ["extraKnownMarketplaces"])
 
     def test_restore_names_private_sections_left_in_older_backups(self):
         with tempfile.TemporaryDirectory(prefix="agent-restore-test-") as directory:
@@ -210,6 +222,10 @@ accountId = "private"
             older = [backup(1, full), backup(2, {**nux, "apiKeyHelper": "/private/helper"})]
             self.assertEqual(FILTER.unrestored(older, dict(nux), "claude"),
                              [(older[1], ["apiKeyHelper"]), (older[0], ["extraKnownMarketplaces"])])
+            # A private list item only an older backup holds is named too.
+            live = {"permissions": {"allow": ["Bash(b)"]}}
+            self.assertEqual(FILTER.unrestored(older[:1], live, "claude"),
+                             [(older[0], ["permissions.allow", "extraKnownMarketplaces", "apiKeyHelper"])])
 
     def test_restore_retries_when_the_file_changes_meanwhile(self):
         with tempfile.TemporaryDirectory(prefix="agent-restore-test-") as directory:
@@ -322,6 +338,10 @@ accountId = "private"
             git(clone, "status", "--porcelain")
             self.assertNotIn("projects", config.read_text())
             git(clone, "stash", "pop", "-q")
+            # The popped file holds a portable change, so it differs from the index, but it
+            # holds no private content either; agent-status restores it.
+            git(clone, "agent-status", "--porcelain")
+            assert_restored("local", ["/private/one"])
             # --from resolves against the directory the user ran it from.
             backup_dir = Path(git(clone, "rev-parse", "--absolute-git-dir").stdout.strip(),
                               "agent-config-private")

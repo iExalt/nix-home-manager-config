@@ -6,7 +6,9 @@ As a clean filter, also back up the raw file under the Git directory so that
 """
 
 import argparse
+import datetime
 import json
+import math
 import os
 from pathlib import Path
 import subprocess
@@ -101,6 +103,11 @@ def toml_value(value):
         return "{" + ", ".join(f"{json.dumps(k)} = {toml_value(v)}" for k, v in value.items()) + "}"
     if isinstance(value, list):
         return "[" + ", ".join(toml_value(item) for item in value) + "]"
+    # fix(config): restore rewrites private values too, which may use TOML-only types.
+    if isinstance(value, (datetime.date, datetime.time)):
+        return value.isoformat()
+    if isinstance(value, float) and not math.isfinite(value):
+        return "nan" if math.isnan(value) else ("inf" if value > 0 else "-inf")
     return json.dumps(value, ensure_ascii=False, allow_nan=False)
 
 
@@ -193,6 +200,9 @@ def absent(extra, live, path=()):
             names.append(".".join((*path, key)))
         elif isinstance(value, dict) and isinstance(live[key], dict):
             names += absent(value, live[key], (*path, key))
+        elif isinstance(value, list) and isinstance(live[key], list):
+            if any(item not in live[key] for item in value):
+                names.append(".".join((*path, key)))
     return names
 
 
@@ -224,19 +234,22 @@ def write_private(target, text, mode=0o600):
 
 
 def paths(data, prefix=()):
-    """Name the sections of a nested dict, two levels deep, as restore reports them."""
+    """Name every leaf of a nested dict, and every item of its lists."""
     names = set()
     for key, value in data.items():
-        if isinstance(value, dict) and value and len(prefix) < 1:
+        name = ".".join((*prefix, key))
+        if isinstance(value, dict) and value:
             names |= paths(value, (*prefix, key))
+        elif isinstance(value, list) and value:
+            names |= {f"{name}[{json.dumps(item, sort_keys=True, default=str)}]" for item in value}
         else:
-            names.add(".".join((*prefix, key)))
+            names.add(name)
     return names
 
 
 def rotate(directory, kind, now):
     # fix(config): keep the newest backups, plus older ones that alone still hold a private
-    # section, so a run of small private sets after a wipe cannot evict the complete one.
+    # value or list item, so small private sets after a wipe cannot evict the complete one.
     seen = set()
     for index, saved in enumerate(reversed(backups(directory, kind))):
         try:
@@ -294,24 +307,27 @@ def refresh(root, relatives):
             git("add", "--renormalize", "--", relative, cwd=root)
 
 
-def restore_file(target, saved, kind, if_wiped=False):
+def restore_file(target, saved, kind, indexed_bytes=None):
     """Merge private keys from saved into target; return the names added and the result.
 
-    With if_wiped, leave a file alone unless it holds no private content, the state Git
-    leaves after rewriting it; return None then.
+    With indexed_bytes (a callable returning the index copy, used by hooks), leave a file
+    alone unless Git wrote it: it holds no private content, or it equals the index copy.
+    Return None then.
     """
     extra = private_part(parse(saved.read_text(), kind), kind)
     for _ in range(3):
         before = target.stat()
+        raw = target.read_bytes()
         try:
-            live = parse(target.read_text(), kind)
+            live = parse(raw.decode(), kind)
         except ValueError:  # tomllib and json errors; conflict markers, for example
-            if if_wiped:  # Git never leaves an unparsable file, so it was not wiped.
+            if indexed_bytes:  # Git never leaves an unparsable file, so it was not wiped.
                 return None
             raise
         # fix(config): hooks also run when Git left the file alone; restoring then would
-        # bring back a private key deleted since the latest backup.
-        if if_wiped and live != project(live, POLICY[kind]):
+        # bring back a private key deleted since the latest backup. The index check covers
+        # commits whose content another policy filtered.
+        if indexed_bytes and live != project(live, POLICY[kind]) and raw != indexed_bytes():
             return None
         added = add_missing(live, extra, POLICY[kind])
         if not added:
@@ -323,6 +339,13 @@ def restore_file(target, saved, kind, if_wiped=False):
             write_private(target, output, before.st_mode & 0o777)
             return added, live
     raise OSError("file kept changing")
+
+
+def indexed(root, relative):
+    """Return the stage-0 index bytes of a path, or None."""
+    result = subprocess.run(["git", "cat-file", "blob", f":{relative}"], cwd=root,
+                            capture_output=True)
+    return result.stdout if result.returncode == 0 else None
 
 
 def unrestored(older, live, kind):
@@ -342,7 +365,7 @@ def restore_main(arguments, refresh_restored=True):
     parser.add_argument("--from", dest="source", type=Path,
                         help="a backup file such as codex.<n> or claude.<n>")
     parser.add_argument("--if-wiped", action="store_true",
-                        help="only restore files that hold no private content (used by hooks)")
+                        help="only restore files exactly as Git wrote them (used by hooks)")
     parser.add_argument("--forget", choices=FILES,
                         help="delete this file's backups, keeping only its current content")
     options = parser.parse_args(arguments)
@@ -365,7 +388,8 @@ def restore_main(arguments, refresh_restored=True):
         if not (source or saved) or not target.exists():
             continue
         try:
-            result = restore_file(target, source or saved[-1], kind, options.if_wiped)
+            index_copy = (lambda relative=relative: indexed(root, relative)) if options.if_wiped else None
+            result = restore_file(target, source or saved[-1], kind, index_copy)
         except Exception:
             # fix(privacy): name the file, never its contents.
             print(f"agent-restore: skipped {relative}; it or its backup could not be parsed or written.",
@@ -406,14 +430,20 @@ def forget(kind):
     # fix(privacy): a removed secret may be revoked or rotated; keep no copies of it.
     root = Path(git("rev-parse", "--show-toplevel"))
     directory = backup_dir()
-    old = backups(directory, kind)
+    # fix(privacy): every worktree keeps its own backups; purge them all.
+    common = Path(git("rev-parse", "--path-format=absolute", "--git-common-dir"))
+    old = [saved for found in (common, *(common / "worktrees").glob("*"))
+           for saved in backups(found / "agent-config-private", kind)]
     target = root / FILES[kind]
     if target.is_file():  # Save the new backup first, so a failed write keeps the old ones.
         directory.mkdir(mode=0o700, exist_ok=True)
         write_private(directory / f"{kind}.{time.time_ns()}", target.read_text())
+        message = f"kept only the current {FILES[kind]} as its backup"
+    else:
+        message = f"deleted every backup of {FILES[kind]}, which does not exist"
     for saved in old:
         saved.unlink()
-    print(f"agent-restore: kept only the current {FILES[kind]} as its backup.", file=sys.stderr)
+    print(f"agent-restore: {message}, in every worktree.", file=sys.stderr)
     return 0
 
 
