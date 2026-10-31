@@ -52,7 +52,7 @@ Read show ambition through precision and restraint.
 
 ## Workflow
 
-Track these steps in a short checklist for anything bigger than a small tweak. For a narrow fix
+Track these steps in a short checklist for medium-sized work and above. For a narrow fix
 inside an established design, start at step 3 with the existing conventions.
 
 ### 1. Establish users and tasks
@@ -83,6 +83,11 @@ click)", or "undo after delete vs. a confirmation dialog". Show two or three wir
 when the layout is genuinely open, and recommend one. Get the user's go-ahead, then record the
 agreed decisions in DESIGN.md ([references/design-record.md](references/design-record.md)).
 
+When no user can answer (a delegated or autonomous run), record each assumption under DESIGN.md ›
+Open decisions with the option you chose. Then build only if your instructions authorize
+implementation; otherwise return the brief and stop. Either way, list the assumptions in your
+report so the user can overturn them.
+
 ### 3. Build one complete task flow with realistic data
 
 Build one flow end to end before broadening. Read the "Craft floor" in
@@ -111,8 +116,9 @@ its browser once with `mise exec -- uv run <skill-dir>/scripts/browser_check.py 
 then see `--help`. Useful options: `--spa` for client-routed static builds; `--ready NAME=SELECTOR`
 for a state whose data loads after the page or that is transient; `--status NAME=404` for error
 pages the server returns with an error status (not client-rendered SPA 404s, which return 200);
-`--idle-timeout 0` for streaming UIs; and `--all-passes` to run reduced motion and zoom on every
-state. Script the app-specific interactions separately. Give transient
+`--idle-timeout 0` for streaming UIs; `--tab-to WIDTH=SELECTOR` when a control moves (into a menu
+on phones, say); and `--all-passes` to run reduced motion and zoom on every state. Narrow widths
+emulate a phone (viewport meta tag, touch, coarse pointer). Script the app-specific interactions separately. Give transient
 states (posting, slow loads) a URL or fixture switch so they stay on screen long enough to capture.
 Ask before anything that would disrupt the user's machine, such as installing system browsers,
 taking over their open browser, or binding common ports.
@@ -229,7 +235,7 @@ Change a rule here, not at the pointer.
   metrics and measurements. Reserve monospace for code, IDs, hashes, and paths.
 - **Typefaces:** on Persuade and Experience surfaces, choose faces specific to the brief rather
   than defaults. On Operate and Read surfaces, a well-tuned system or familiar sans is a deliberate
-  choice.
+  choice, and display faces stay out of UI labels, buttons, and data.
 - **Elevation:** pair a shadow only with a subtle semi-transparent border for edge clarity. An
   opaque 1px border under a wide soft shadow reads as a ghost card.
 - **Placeholders:** show an example value or pattern (`+1 (123) 456-7890`), never the label. An
