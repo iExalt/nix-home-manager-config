@@ -235,7 +235,9 @@ accountId = "private"
         self.assertEqual(FILTER.add_missing(live, FILTER.private(backup, kept), FILTER.CLAUDE), ["hooks"])
         self.assertEqual(live, {"hooks": {"Stop": [local]}})
         # Empty sections hold nothing private, so they never count as private content.
-        self.assertEqual(FILTER.private({"env": {}, "notify": []}, {}), {})
+        self.assertEqual(FILTER.private({"env": {}, "notify": [], "permissions": {"allow": []}}, {}), {})
+        # A named entry is private even with an empty table, like an MCP server with defaults.
+        self.assertEqual(FILTER.private({"mcp_servers": {"x": {}}}, {}), {"mcp_servers": {"x": {}}})
         # A plain list is tracked whole, so the pulled copy wins over a local one.
         backup = {"tui": {"status_line": ["model", "~/bin/x"]}}
         live = {"tui": {"status_line": ["model", "git-branch"]}}
@@ -256,6 +258,21 @@ accountId = "private"
             target.write_text('{"retiredKey": 1}\n')
             self.assertIsNone(FILTER.restore_file(target, saved, "claude", lambda: b"{}\n"))
             added, _ = FILTER.restore_file(target, saved, "claude", lambda: b'{"retiredKey": 1}\n')
+            self.assertEqual(added, ["extraKnownMarketplaces"])
+
+    def test_hook_items_are_canonical_and_empty_sections_count_as_wiped(self):
+        # Claude writes hook entries with its own key order; Git's copy sorts them.
+        item = {"matcher": "", "hooks": [{"type": "command", "timeout": 5,
+                                          "command": 'python3 "$HOME/.config/agent-hooks/a.py"'}]}
+        output = FILTER.clean(json.dumps({"hooks": {"Stop": [item]}}), "claude")
+        self.assertEqual(output, FILTER.clean(json.dumps({"hooks": {"Stop": [item]}}, sort_keys=True),
+                                              "claude"))
+        self.assertLess(output.index('"command"'), output.index('"type"'))
+        with tempfile.TemporaryDirectory(prefix="agent-restore-test-") as directory:
+            target, saved = Path(directory, "settings.json"), Path(directory, "claude.1")
+            saved.write_text(json.dumps({"extraKnownMarketplaces": {"m": {}}}))
+            target.write_text(json.dumps({"permissions": {"allow": []}}))  # Nothing private.
+            added, _ = FILTER.restore_file(target, saved, "claude", lambda: b"{}\n")
             self.assertEqual(added, ["extraKnownMarketplaces"])
 
     def test_restore_names_private_sections_left_in_older_backups(self):
@@ -482,7 +499,10 @@ accountId = "private"
             self.assertFalse(any("private" in item.read_text()
                                  for item in FILTER.backups(backup_dir, "codex")))
             self.assertIn("/linked", linked_config.read_text())  # Restored by the file checkout.
+            leftover = linked_config.parent / f".{linked_config.name}.abc.agent-restore-tmp"
+            leftover.write_text(linked_private)  # A killed restore's temp copy.
             git(clone, "agent-restore", "--forget", "codex")
+            self.assertFalse(leftover.exists())
             self.assertEqual([item.read_text() for item in FILTER.backups(linked_dir, "codex")],
                              [linked_config.read_text()])
 
