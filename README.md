@@ -119,8 +119,8 @@ to pin inputs between updates.
 `dotfiles/skills/frontend-design` merges Impeccable, Vercel's Web Interface
 Guidelines, and Anthropic's frontend-design skill into one workflow; it replaces
 the upstream Anthropic skill. Its `NOTICE.md` records the source revisions and
-licenses. Keep the Claude `frontend-design@claude-code-plugins` plugin disabled
-so the upstream skill does not load alongside it.
+licenses. Leave the Claude `frontend-design@claude-code-plugins` plugin out of
+`enabledPlugins` so the upstream skill does not load alongside it.
 
 ## Optional Overlays
 
