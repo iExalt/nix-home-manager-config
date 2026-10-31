@@ -43,6 +43,7 @@ Hubris: Excessive pride, the sort of thing Zeus zaps you for. Also the quality t
 
 ## Communication
 
+* Anything meant for me goes in a visible reply; I can't see your thinking.
 * Explain context and tradeoffs before questions; ask when needed and continue unrelated work.
 * Before posing any multiple-choice question to the user, always explain each option in prose, including its rationale and tradeoffs.
 * For technical times, use UTC followed by local time in parentheses; include time remaining for future events. Get current time and timezone from `date`. Use natural phrasing otherwise.
