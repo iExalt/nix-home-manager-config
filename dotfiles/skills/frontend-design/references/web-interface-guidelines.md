@@ -54,6 +54,7 @@ React/Next.js tools.
 - **Compositor-friendly.** Prioritize GPU-accelerated properties (`transform`, `opacity`) & avoid properties that trigger reflows/repaints (`width`, `height`, `top`, `left`).
   > **Override:** see SKILL.md › Conflicts › Motion.
 - **Necessity check.** Only animate when it clarifies cause & effect or when it adds deliberate delight e.g., [the northern lights](https://x.com/JohnPhamous/status/1831380516509278561).
+  > **Override:** see SKILL.md › Conflicts › Motion.
 - **Easing fits the subject.** Choose easing based on what changes (size, distance, trigger).
 - **Interruptible.** Animations are cancelable by user input.
 - **Input-driven.** Avoid autoplay except for muted, non-essential loops. Automatically playing motion lasting [>5 seconds](https://www.w3.org/WAI/WCAG22/Understanding/pause-stop-hide.html) alongside other content has pause, stop, or hide controls.

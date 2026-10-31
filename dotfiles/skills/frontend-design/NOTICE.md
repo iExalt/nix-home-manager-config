@@ -8,22 +8,23 @@ a one-line **Override** pointer leads to `SKILL.md` › Conflicts.
 - **`SKILL.md`** adapts Impeccable's `SKILL.src.md` (core principles, ground rules, modes) and
   `reference/shape.md` (discovery questions and cadence).
 - **`references/`** name their sources in their opening paragraphs: `visual-direction.md`
-  (Anthropic; Impeccable `craft-floor.md`, `operate.md`, `new-work.md`), `critique.md` (Impeccable
-  `critique.md`, `audit.md`), `states-and-edge-cases.md` (Impeccable `harden.md`, `onboard.md`;
-  Vercel), `copy.md` (Anthropic; Impeccable `clarify.md`; Vercel), `design-record.md` (Impeccable
-  `init.md`, `document.md`), and `web-interface-guidelines.md` (Vercel, verbatim).
+  (Anthropic; Impeccable `craft-floor.md`, `operate.md`, `mode-operate.md`, `new-work.md`),
+  `critique.md` (Impeccable `critique.md`, `audit.md`), `states-and-edge-cases.md` (Impeccable
+  `harden.md`, `onboard.md`; Vercel), `copy.md` (Anthropic; Impeccable `clarify.md`; Vercel),
+  `design-record.md` (Impeccable `init.md`, `document.md`), and `web-interface-guidelines.md`
+  (Vercel, verbatim).
 - **Not used** from Impeccable: its CLI and the references that depend on it (`live`, `live-setup`,
-  `generate`, `hooks`, `doctor`, `region-map`, `visualize`, `routing`, the `mode-*.md` comp rules),
-  the single-purpose playbooks (`polish`, `bolder`, `quieter`, `distill`, `animate`, `colorize`,
-  `typeset`, `layout`, `delight`, `overdrive`, `adapt`, `optimize`, `extract`, `component-review`,
-  `craft`), native iOS/Android guidance, and the subagent definitions. Their key rules are folded
-  into the references where they apply. Impeccable's craft-floor Refuse list is kept as defaults,
-  its outright eyebrow ban is relaxed, and its Codex-only sketch-SVG and stripe/grid rules now apply
-  to every agent; see `SKILL.md` › Conflicts › Generated-look defaults. Its Codex-only card-radius
-  rule (12–16px, pills for small controls) also applies everywhere. operate.md's "Product
-  constraints" are carried by `visual-direction.md` › Task surfaces and `SKILL.md` › Conflicts
-  (Typefaces, Native controls, Motion). Not carried over: Impeccable's randomized concept seeding
-  and comp generation, which need its CLI.
+  `generate`, `hooks`, `doctor`, `region-map`, `visualize`, `routing`, the `mode-persuade.md` and
+  `mode-read.md` comp rules), the single-purpose playbooks (`polish`, `bolder`, `quieter`,
+  `distill`, `animate`, `colorize`, `typeset`, `layout`, `delight`, `overdrive`, `adapt`,
+  `optimize`, `extract`, `component-review`, `craft`), native iOS/Android guidance, and the subagent
+  definitions. Their key rules are folded into the references where they apply. Impeccable's
+  craft-floor Refuse list is kept as defaults, its outright eyebrow ban is relaxed, and its
+  Codex-only sketch-SVG and stripe/grid rules now apply to every agent; see `SKILL.md` › Conflicts ›
+  Generated-look defaults. Its Codex-only card-radius rule (12–16px, pills for small controls) also
+  applies everywhere. operate.md's "Product constraints" are carried by `visual-direction.md` › Task
+  surfaces and `SKILL.md` › Conflicts (Typefaces, Native controls, Motion). Not carried over:
+  Impeccable's randomized concept seeding and comp generation, which need its CLI.
 
 | Source | Revision | License | Copyright |
 |---|---|---|---|
