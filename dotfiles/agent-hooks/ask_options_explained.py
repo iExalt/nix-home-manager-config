@@ -65,13 +65,16 @@ def extract_questions(tool_name, tool_input):
     return questions
 
 
-def _text_blocks(content):
+VISIBLE = ("text", "output_text", "input_text")
+
+
+def _text_blocks(content, kinds=VISIBLE):
     if isinstance(content, str):
-        return [content]
+        return [content] if kinds == VISIBLE else []
     out = []
     for block in content or []:
-        if isinstance(block, dict) and block.get("type") in ("text", "output_text", "input_text"):
-            out.append(block.get("text") or "")
+        if isinstance(block, dict) and block.get("type") in kinds:
+            out.append(block.get("text") or block.get("thinking") or "")
     return out
 
 
@@ -94,11 +97,13 @@ def _record_has_call(record, tool_use_id):
     return payload.get("type") == "function_call" and payload.get("call_id") == tool_use_id
 
 
-def visible_prose(records, tool_use_id):
+def visible_prose(records, tool_use_id, kinds=VISIBLE):
     """Agent text since the user's last message, up to the call.
 
     Returns None when the call isn't in the records (transcript not yet
-    written, or a format this hook doesn't know).
+    written, or a format this hook doesn't know). kinds=("thinking",)
+    collects the agent's hidden reasoning written since its last visible
+    text instead: the explanation it meant to show before this call.
     """
     end = None
     for i in range(len(records) - 1, -1, -1):
@@ -115,9 +120,14 @@ def visible_prose(records, tool_use_id):
         if record.get("type") == "event_msg" and payload.get("type") in ("task_started", "user_message"):
             break
         if record.get("type") == "assistant":
-            prose.extend(reversed(_text_blocks((record.get("message") or {}).get("content"))))
+            content = (record.get("message") or {}).get("content")
         elif payload.get("type") == "message" and payload.get("role") == "assistant":
-            prose.extend(reversed(_text_blocks(payload.get("content"))))
+            content = payload.get("content")
+        else:
+            continue
+        if kinds != VISIBLE and _text_blocks(content):
+            break
+        prose.extend(reversed(_text_blocks(content, kinds)))
     return "\n".join(reversed(prose))
 
 
@@ -179,14 +189,22 @@ def is_explained(label, haystack, haystack_words):
     return 3 * len(words & haystack_words) >= 2 * len(words)
 
 
-def missing_labels(questions, prose):
-    missing = []
+def missing_by_question(questions, prose):
+    """[(question text, [unexplained labels])] for questions with any."""
+    out = []
     for text, labels in questions:
         haystack = normalize(prose + "\n" + text)
         haystack_words = set(_content_words(haystack))
-        for label in labels:
-            if not is_explained(label, haystack, haystack_words) and label not in missing:
-                missing.append(label)
+        missing = [label for label in labels if not is_explained(label, haystack, haystack_words)]
+        if missing:
+            out.append((text, missing))
+    return out
+
+
+def missing_labels(questions, prose):
+    missing = []
+    for _, labels in missing_by_question(questions, prose):
+        missing.extend(label for label in labels if label not in missing)
     return missing
 
 
@@ -201,16 +219,43 @@ def read_records(path):
     return records
 
 
-def load_prose(path, tool_use_id, wait_s=TRANSCRIPT_WAIT_S):
+def load_turn(path, tool_use_id, wait_s=TRANSCRIPT_WAIT_S):
+    """(visible prose, thinking) for the call's turn, or (None, None) if the call never appears."""
     deadline = time.monotonic() + wait_s
     while True:
         try:
-            prose = visible_prose(read_records(path), tool_use_id)
+            records = read_records(path)
+            prose = visible_prose(records, tool_use_id)
         except OSError:
             prose = None
-        if prose is not None or time.monotonic() >= deadline:
-            return prose
+        if prose is not None:
+            return prose, visible_prose(records, tool_use_id, kinds=("thinking",))
+        if time.monotonic() >= deadline:
+            return None, None
         time.sleep(POLL_S)
+
+
+def _short(text, limit=80):
+    text = " ".join(text.split())
+    return text if len(text) <= limit else text[:limit - 1].rstrip() + "\u2026"
+
+
+def deny_reason(gaps, thinking):
+    """Name each question's unexplained options, and say so when the explanation sits in thinking."""
+    parts = []
+    for text, labels in gaps:
+        names = ", ".join('"%s"' % label for label in labels)
+        parts.append('%s (question "%s")' % (names, _short(text)) if text else names)
+    reason = (
+        "Standing rule: before a multiple-choice question, explain each option in prose, with its "
+        "rationale and tradeoffs, naming it by its label. Not yet explained: %s. " % "; ".join(parts))
+    hidden = [label for _, labels in gaps for label in labels
+              if thinking and not missing_labels([("", [label])], thinking)]
+    if hidden:
+        reason += ("Your thinking mentions %s, but thinking is hidden from the user; only text you write "
+                   "outside thinking counts. " % ", ".join('"%s"' % label for label in hidden))
+    return reason + ("Write the explanation as a visible message in this turn, then ask again. "
+                     "Option descriptions in the dialog don't count.")
 
 
 def decide(event, wait_s=TRANSCRIPT_WAIT_S):
@@ -225,19 +270,11 @@ def decide(event, wait_s=TRANSCRIPT_WAIT_S):
     path, tool_use_id = event.get("transcript_path"), event.get("tool_use_id")
     if not path or not tool_use_id or not os.path.exists(path):
         return None
-    prose = load_prose(path, tool_use_id, wait_s)
+    prose, thinking = load_turn(path, tool_use_id, wait_s)
     if prose is None:
         return None
-    missing = missing_labels(questions, prose)
-    if not missing:
-        return None
-    names = ", ".join('"%s"' % label for label in missing)
-    return (
-        "Standing rule: before a multiple-choice question, explain each option in prose "
-        "in your visible reply, with its rationale and tradeoffs, naming it by its label. "
-        "Not yet explained: %s. Option descriptions don't count. Write that explanation, "
-        "then ask again." % names
-    )
+    gaps = missing_by_question(questions, prose)
+    return deny_reason(gaps, thinking) if gaps else None
 
 
 def main():
