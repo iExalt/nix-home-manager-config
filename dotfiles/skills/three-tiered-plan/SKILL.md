@@ -174,6 +174,9 @@ able to resume the interview from the draft alone.
 - Use the repository's attribution form when it has one, such as
   `(you, 2026-09-29)` or `(the user, 2026-09-26)`; otherwise
   `(the user, <date>)`. Record the reason, in the user's words when short.
+  Record the option the user chose with its description, not a paraphrase: its
+  scope and trigger are what they chose, even when your wording would be
+  tidier. A call the user wasn't asked is Proposed, never Decided.
 - Say who proposed what: **Decided** (the user's call), **Agreed** (your
   proposal, accepted), **Proposed**, **Open** (with its spike or trigger),
   **Rejected** (with why) and **Verified** (with evidence).
@@ -398,8 +401,10 @@ honor that cadence instead.
 
 Present the complete set for confirmation only after the reviewer has reviewed
 the final snapshots and their consistency across tiers, and you agree, or the
-disagreement is clear. Present the reviewer's
-position: its agreement, the material amendments it secured, and any
+disagreement is clear. Say "reviewer-checked" only of the revision the reviewer
+saw: list any edit made after its last pass as not re-reviewed, and have the
+reviewer check it before you tell the user the set is reviewed. Present the
+reviewer's position: its agreement, the material amendments it secured, and any
 unresolved disagreement with both positions and your recommendation. A
 reviewer notification or an unacknowledged draft does not count as review.
 
@@ -412,6 +417,8 @@ the same confirmation. If revisions affect an upstream tier, propagate them
 downward and have the reviewer check the updated set before asking again.
 Don't publish the tiers or start implementation until the user explicitly
 confirms them. Silence, a timeout or a preselected option is not confirmation.
+Confirmation covers the tiers only; cutting or publishing a release still needs
+the user's separate explicit approval naming it.
 Offer a diagram-led
 companion, such as a lifecycle with Mermaid diagrams, when the design is
 cheaper to disagree with visually.

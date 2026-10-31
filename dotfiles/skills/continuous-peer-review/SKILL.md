@@ -118,7 +118,9 @@ and its bounds within the user's authorization, then keep the increment pending
 until the evidence is reconciled. Publication requires the applicable review and
 checks to be complete; needing live proof does not itself justify an early push.
 Later changes invalidate acceptance only for their affected delta and dependencies,
-which must be reviewed before completion.
+which must be reviewed before completion. Send the reviewer the delta before
+pushing to an open PR, including a CI fix; if pushing first is necessary, report
+the push as not re-reviewed until the reviewer has seen it.
 
 Allow at most **two completed increments awaiting acceptance**, counting the one
 under review and any awaiting repairs, re-review, or required verification.
@@ -176,6 +178,9 @@ Keep messages concise and distinguish these purposes:
   evidence/limits, and unresolved questions; name affected pending work when relevant.
 - **Finding:** stable ID, severity, evidence/revision, impact, affected increments,
   suggested repair and closure case; mark provisional uncertainty explicitly.
+  Label each claim as read (file and line at the snapshot), ran (command and
+  result), or inferred. Do not say "recomputed" or "verified" for what was not
+  computed or run, and read the source before asserting what code does.
 - **Decision:** accepted/challenged/deferred finding or amended design, with reasons.
 - **Review result:** reviewed snapshot; changed finding dispositions; coverage and
   limits; explicit acceptance, pending verification, or changes requested. Name
@@ -244,7 +249,11 @@ Neither role wins by authority. Use a focused probe when it can settle a dispute
 Escalate a material stalemate to the user when correctness, safety, scope, or
 architecture remains unresolved; keep affected work blocked and continue
 independent work. Defer optional improvements explicitly rather than making them
-completion requirements. Do not silently relax acceptance criteria.
+completion requirements. Do not silently relax acceptance criteria. Gates are
+binary: a change the plan made conditional on a measurement is adopted only when
+that measurement meets the agreed gate, and the report states the measurement. If
+the gate is unmet or unmeasured, report it as unmet and ask instead of adopting
+the change.
 
 If a proposed repair adds substantial behavior, such as retry orchestration,
 provenance enforcement, or a rehearsal command, treat it as a design delta before
@@ -285,8 +294,10 @@ alone is not integration acceptance.
 
 Finish only when the reviewer and main agent agree the final milestone satisfies
 its criteria with no unresolved material findings. Identify accepted deferrals,
-verification limits, and the reviewer's parked out-of-scope findings. At session
-end, the reviewer removes its verification environment and reports the space freed;
+verification limits, and the reviewer's parked out-of-scope findings, and put them
+in the report to the user, not only in the exchange with the reviewer. Cite the
+command and result for each check reported as run; write "not run" for the rest.
+At session end, the reviewer removes its verification environment and reports the space freed;
 if it cannot, the author removes it. Changes after acceptance need proportional delta review;
 preserve the task's existing commit, push, and deployment authorization.
 

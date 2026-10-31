@@ -120,8 +120,9 @@ installing system browsers, taking over their open browser, or binding common po
   matters.
 
 Look at every screenshot you take; a screenshot nobody inspected proves nothing. Batch your fixes
-between looks. Save screenshots of the final states somewhere the user can open, and report what
-was not verified.
+between looks. A visual fix, such as CSS added after a screenshot showed a problem, is not done until
+a new screenshot shows it fixed; if you can't take one, say so in the report. Save screenshots of
+the final states somewhere the user can open, and report what was not verified.
 
 ### 5. Critique, audit, and fix
 
