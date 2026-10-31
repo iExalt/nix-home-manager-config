@@ -107,21 +107,21 @@ already equals its filtered content is not saved, so a wiped file never
 replaces a good backup. The installer adds `post-checkout`, `post-merge`, and
 `post-rewrite` hooks to Git's hooks directory (honouring a repository-local
 `core.hooksPath`) that run `git agent-restore --if-wiped`, so pulls, rebases,
-and checkouts restore the keys automatically. A hook restores only a file that
-holds no private content, which is the state Git leaves after rewriting it; a
-file Git left alone keeps its edits. The installer warns and skips the hooks
-when `core.hooksPath` is set in global config, which other repositories share,
-or when a hook it did not write already exists. A hook also restores after
-`git checkout -- <file>` and `git restore <file>`, which wipe every private
-key; to discard one private edit, edit the file instead. Commands that rewrite
-the file without a hook, such as `git reset --hard`, `git cherry-pick`, `git
-merge --abort`, `git rebase --abort`, a merge that stops on a conflict in any
-file, and `git stash`, `git stash pop`, or `git pull --autostash`, need a
-manual step: `git agent-status` restores a wiped file before showing status,
-and `git agent-restore` also merges into a file an agent has written to since.
-Between `git stash` and `git stash pop`, the agents run without their private
-settings; Codex may write to its file meanwhile, so run `git agent-restore`
-after `git stash pop`.
+and checkouts restore the keys automatically. A hook restores only a file Git
+wrote: one that holds no private content, or that matches Git's index copy
+byte for byte; a file Git left alone keeps its edits. The installer warns and
+skips the hooks when `core.hooksPath` is set in global config, which other
+repositories share, or when a hook it did not write already exists. A hook
+also restores after `git checkout -- <file>` and `git restore <file>`, which
+wipe every private key; to discard one private edit, edit the file instead.
+Commands that rewrite the file without a hook, such as `git reset --hard`,
+`git cherry-pick`, `git merge --abort`, `git rebase --abort`, a merge that
+stops on a conflict in any file, and `git stash`, `git stash pop`, or `git
+pull --autostash`, need a manual step: `git agent-status` restores a wiped
+file before showing status, and `git agent-restore` also merges into a file an
+agent has written to since. Between `git stash` and `git stash pop`, the
+agents run without their private settings; Codex may write to its file
+meanwhile, so run `git agent-restore` after `git stash pop`.
 
 `git agent-restore` adds back only private keys and private list items that
 are missing; values already in the file win, and portable preferences removed
@@ -137,14 +137,15 @@ which overwrite without comparing; otherwise a restore brings the key back.
 Deleting the last private key is never saved, so a later restore brings it
 back. To remove private keys for good, such as a revoked secret, delete them
 and run `git agent-restore --forget codex` or `--forget claude`: it deletes
-that file's backups and keeps only its current content. Each restore message
-repeats this hint. When older backups hold private sections that the file and
-the latest backup both lack, as after a stash during which an agent saved a
-new key, restore names them and the backup to recover them from, run as `git
-agent-restore --from "$(git rev-parse
---absolute-git-dir)/agent-config-private/<file>"`. After a deliberate
-deletion, that note repeats until the backup rotates out, for up to 30 days,
-or until you run `--forget`.
+that file's backups in every worktree and keeps only its current content.
+Remove the keys from each linked worktree's copy of the file first, or its
+next backup saves them again. Each restore message repeats this hint. When
+older backups hold private sections that the file and the latest backup both
+lack, as after a stash during which an agent saved a new key, restore names
+them and the backup to recover them from, run as `git agent-restore --from
+"$(git rev-parse --absolute-git-dir)/agent-config-private/<file>"`. After a
+deliberate deletion, that note repeats until the backup rotates out, for up to
+30 days, or until you run `--forget`.
 
 Filters are clone-local Git configuration: install them in every clone before
 staging these files. Rerun the installer if the Mise Python installation is
