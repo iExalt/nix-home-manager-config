@@ -5,8 +5,10 @@ consistent without re-asking the user. It merges Impeccable's PRODUCT.md and DES
 into one file. The visual sections keep the names and relative order of Impeccable's DESIGN.md:
 Overview, Colors, Typography, Layout, Elevation & Depth, Shapes, Components, Do's and Don'ts. The
 user sections adapt PRODUCT.md, and Interaction conventions, Voice & copy, Open decisions, and
-Decision log are additions. Impeccable's YAML token frontmatter is omitted. If you adopt
-Impeccable's tooling, run its `document` command to regenerate a compatible DESIGN.md from this one.
+Decision log are additions. Impeccable's YAML token frontmatter is omitted. To adopt Impeccable
+later, move the user sections into its PRODUCT.md and add the token frontmatter by hand; its
+`document` command rescans the code and rewrites DESIGN.md as visual-only, so it would drop the
+added sections.
 
 ## Rules
 

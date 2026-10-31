@@ -1,10 +1,13 @@
 # Visual direction and craft
 
-Merged from Anthropic's `frontend-design` skill (Apache-2.0; its design principles, calibration
-list, and planning process are copied verbatim, with one-line **Override** pointers to SKILL.md's conflicts section where this skill differs) and Impeccable's craft floor, Operate-mode depth, and new-work triage ("Decide what is already
-true")
-(Apache-2.0; trimmed and deduplicated; the Restraint paragraph's quality-floor sentence moved into "Craft floor"). Load this when choosing or changing a visual direction, and
-skim "Craft floor" before any UI edit.
+Merged from Anthropic's `frontend-design` skill (Apache-2.0) and Impeccable's craft floor,
+Operate-mode depth, and new-work triage ("Decide what is already true") (Apache-2.0; trimmed and
+deduplicated). Anthropic's design principles, calibration list, planning process, and restraint
+paragraph are copied verbatim, with three exceptions: the studio-persona opening is dropped, the
+"Consider written content carefully" paragraph is replaced by a pointer to copy.md, and the
+restraint paragraph's quality-floor sentence moved into "Craft floor". One-line **Override**
+pointers mark where SKILL.md › Conflicts differs. Load this when choosing or changing a visual
+direction, and skim "Craft floor" before any UI edit.
 
 The user's priorities win over novelty: on task surfaces, clarity, consistency, and task efficiency
 come first, and distinctiveness shows up as precision. Where the brief or DESIGN.md pins a visual
@@ -42,6 +45,8 @@ Choose your typefaces deliberately, not the default families you would reach for
 
 Default to line lengths of less than 80 characters. Serif typefaces can have slightly longer line lengths; give serif body text slightly more line-height than a sans-serif.
 
+> **Override:** see SKILL.md › Conflicts › Line length.
+
 Avoid these default typographic treatments; they are the commonest tells of a generated page:
 - Accenting just a single word or phrase in a headline, like putting one word in italic/bold or a different color.
 - Using all caps for labels.
@@ -76,6 +81,12 @@ Impeccable adds these defaults to the list. Each is legitimate only when the bri
   zero-offset colored glows used as depth.
 - Monospace as a costume for "technical" rather than for code, data, or measurement.
   > **Override:** see SKILL.md › Conflicts › Monospace.
+- Eyebrow or kicker labels above headings; a system display face (Impact, Arial Black, the
+  platform sans) as the display voice of a Persuade or Experience page; sketch-style SVG
+  illustration; decorative `repeating-linear-gradient` stripes or grid overlays without a real
+  canvas, map, or blueprint under them; geometric masks approximating a photographic subject's
+  outline. Impeccable bans these outright.
+  > **Override:** see SKILL.md › Conflicts › Generated-look defaults.
 - Unicode glyphs or emoji standing in for an icon system. Use a real icon library or authored SVG
   in one consistent stroke and weight.
 - Sparklines, progress rings, and soft-shadowed rounded rectangles standing in for content.
@@ -122,8 +133,8 @@ Check these on the built result, together, in each look at the render.
 - **Type:** body measure per SKILL.md › Conflicts › Line length, display at most 6rem,
   letter-spacing no tighter than -0.04em, balanced headings (`text-wrap: balance`), obvious scale
   and weight steps, numbers per Conflicts › Monospace. Run the real copy at every breakpoint and fix what overflows.
-- **Motion:** how much, per SKILL.md › Conflicts › Motion; never scattered effects. Ease out from
-  an already-visible default. Animate `transform` and `opacity`, never `transition: all`. Honor `prefers-reduced-motion` with a
+- **Motion:** how much and which properties, per SKILL.md › Conflicts › Motion; never scattered
+  effects. Exponential ease-out from an already-visible default. Honor `prefers-reduced-motion` with a
   reduced variant that still shows state changes.
 - **States:** hover, focus, active, disabled, loading, error, empty, plus real content, working
   controls, and responsive composition. See [states-and-edge-cases.md](states-and-edge-cases.md).
