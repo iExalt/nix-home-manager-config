@@ -1,9 +1,12 @@
 # Design record (DESIGN.md)
 
 The design record carries agreed decisions from one session to the next, so later work stays
-consistent without re-asking the user. Its structure follows Impeccable's PRODUCT.md and DESIGN.md
-conventions (Apache-2.0), merged into one file. Section names match Impeccable's, so you can split
-the file in two later if you adopt Impeccable's tooling.
+consistent without re-asking the user. It merges Impeccable's PRODUCT.md and DESIGN.md (Apache-2.0)
+into one file. The visual sections keep the names and relative order of Impeccable's DESIGN.md:
+Overview, Colors, Typography, Layout, Elevation & Depth, Shapes, Components, Do's and Don'ts. The
+user sections adapt PRODUCT.md, and Interaction conventions, Voice & copy, Open decisions, and
+Decision log are additions. Impeccable's YAML token frontmatter is omitted. If you adopt
+Impeccable's tooling, run its `document` command to regenerate a compatible DESIGN.md from this one.
 
 ## Rules
 

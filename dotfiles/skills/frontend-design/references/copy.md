@@ -49,8 +49,9 @@ information or disappear.
 - **Destructive actions.** Name the object and consequence. Prefer Undo over confirmation when
   recovery is safe; when confirmation is necessary, name the action on both the message and the
   button instead of "Yes", "OK", or "Submit".
-- **Forms.** Persistent labels; placeholders are example values or patterns ending in an ellipsis
-  (`+1 (123) 456-7890…`), never the label. State format and eligibility requirements before
+- **Forms.** Persistent labels; placeholders show an example value or pattern
+  (`+1 (123) 456-7890`), never the label. An ellipsis marks only an open-ended prompt or a truncated
+  example (`Search…`, `sk-012345679…`). State format and eligibility requirements before
   submission. Validation says what needs attention and how to fix it without blaming the user.
 - **Errors.** What failed, why when known and useful, and how to recover: "Your API key is
   incorrect or expired. Generate a new key in Settings → API keys," not "Invalid API key." Never
