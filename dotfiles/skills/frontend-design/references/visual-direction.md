@@ -1,7 +1,8 @@
 # Visual direction and craft
 
 Merged from Anthropic's `frontend-design` skill (Apache-2.0) and Impeccable's craft floor,
-Operate-mode depth, and new-work triage ("Decide what is already true") (Apache-2.0; trimmed and
+Operate-mode depth (`operate.md`, `mode-operate.md`), and new-work triage ("Decide what is already
+true") (Apache-2.0; trimmed and
 deduplicated). Anthropic's design principles, calibration list, planning process, and restraint
 paragraph are copied verbatim, with three exceptions: the studio-persona opening is dropped, the
 "Consider written content carefully" paragraph is replaced by a pointer to copy.md, and the
@@ -121,15 +122,16 @@ Spend your boldness in one place. Let one element be the memorable thing, keep e
 
 ## Craft floor
 
-Check these on the built result, together, in each look at the render.
+Check these on the built result, together, in each look at the render. A pinned brief or the
+established design overrides any value here; see SKILL.md › Conflicts › Radii and brief.
 
 - **Contrast:** body and placeholder text ≥4.5:1, large text ≥3:1 (WCAG AA). On colored surfaces,
   tint secondary text from that hue rather than using gray. Interactive states (hover, active,
   focus) have more contrast than the rest state.
 - **Depth:** shadows carry an offset and a soft blur; layered shadows (ambient plus direct) read
   more natural. Borders with shadows: see SKILL.md › Conflicts › Elevation.
-  Nested radii: a child's radius is no larger than its parent's. Card radii stay around 12–16px;
-  pills are for small controls.
+  Nested radii: a child's radius is no larger than its parent's. When radii are open, cards sit around
+  12–16px and pills are for small controls.
 - **Spacing:** tight groups, generous separation, more space above a heading than below it. Align
   every element to something intentional: a grid, baseline, edge, or optical center.
 - **Type:** body measure per SKILL.md › Conflicts › Line length, display at most 6rem,

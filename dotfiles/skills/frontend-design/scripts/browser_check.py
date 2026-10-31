@@ -138,6 +138,9 @@ def load(page, url, name, label, args, problems):
             page.wait_for_selector(ready, timeout=10000)
         except PlaywrightTimeout:
             problems.append(f"{label}: {ready} did not appear at {url}")
+        except PlaywrightError as error:
+            problems.append(f"{label}: --ready {ready!r} is not a valid selector: "
+                            f"{error.message.splitlines()[0]}")
     elif args.idle_timeout:
         try:
             page.wait_for_load_state("networkidle", timeout=args.idle_timeout)
@@ -201,11 +204,17 @@ def capture(browser, base, states, label, context_options, args, problems, tab_t
         if not load(page, base + state_path, name, f"{label}/{name}", args, problems):
             page.close()
             continue
-        layout_width = page.evaluate("innerWidth")
-        if context_options.get("is_mobile") and layout_width > context_options["viewport"]["width"]:
-            problems.append(f"{label}/{name}: lays out at {layout_width}px on a "
-                            f"{context_options['viewport']['width']}px phone; check the viewport meta tag")
-        overflow = page.evaluate("document.documentElement.scrollWidth - innerWidth")
+        screen_width = context_options["viewport"]["width"]
+        if context_options.get("is_mobile"):
+            # Mobile Chromium widens the layout viewport to fit content instead of scrolling, so
+            # compare against the screen and say whether the meta tag or the content is at fault.
+            meta = page.evaluate("document.querySelector('meta[name=viewport]')?.content ?? ''")
+            if "width=device-width" not in meta.replace(" ", ""):
+                problems.append(f"{label}/{name}: no width=device-width viewport meta tag; phones "
+                                "render a zoomed-out desktop page")
+            overflow = page.evaluate("document.documentElement.scrollWidth") - screen_width
+        else:
+            overflow = page.evaluate("document.documentElement.scrollWidth - innerWidth")
         if overflow > 0:
             problems.append(f"{label}/{name}: horizontal overflow of {overflow}px")
         target = args.out / f"{label}-{name}.png"
@@ -224,6 +233,14 @@ def tab_walk(context, base, state, label, selector, args, problems):
     if load(page, base + state_path, name, f"{label}/tab", args, []):
         def focused():
             return page.evaluate("s => !!document.activeElement?.matches(s)", selector)
+
+        try:
+            focused()
+        except PlaywrightError as error:
+            problems.append(f"{label}: --tab-to {selector!r} is not a valid selector: "
+                            f"{error.message.splitlines()[0]}")
+            page.close()
+            return
 
         presses = 0
         while not focused() and presses < MAX_TABS:
