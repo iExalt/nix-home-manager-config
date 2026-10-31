@@ -82,6 +82,18 @@ example = 4
             source.replace("claude-md-and-agents-md", "/private/instructions"), "claude"
         )), {})
 
+    def test_claude_keeps_shared_hooks_whole_or_not_at_all(self):
+        shared = {"type": "command", "timeout": 10,
+                  "command": 'python3 -I "$HOME/.config/agent-hooks/check.py"'}
+        source = {"hooks": {
+            "PreToolUse": [{"matcher": "AskUserQuestion", "hooks": [shared]}],
+            "Stop": [{"matcher": "", "hooks": [dict(shared, command="/private/hook.sh")]}],
+            "PostToolUse": [{"matcher": "Bash", "hooks": [dict(shared, privateKey="x")]}],
+        }}
+        output = FILTER.clean(json.dumps(source), "claude")
+        self.assertEqual(json.loads(output), {"hooks": {"PreToolUse": source["hooks"]["PreToolUse"]}})
+        self.assertEqual(output, FILTER.clean(output, "claude"))
+
     def test_git_clean_status_private_edits_and_required_failure(self):
         with tempfile.TemporaryDirectory(prefix="agent-filter-test-") as directory:
             root = Path(directory)

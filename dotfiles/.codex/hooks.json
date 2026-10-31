@@ -1,0 +1,17 @@
+{
+  "description": "Hooks shared with Claude Code; scripts live in ~/.config/agent-hooks.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "request_user_input|request_user_input_async",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -I \"$HOME/.config/agent-hooks/ask_options_explained.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
