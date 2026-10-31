@@ -108,8 +108,8 @@ It serves a static build or targets a running URL, screenshots named states at e
 without reduced motion, adds a 200%-zoom pass, counts Tab presses to a target control, and reports
 HTTP errors, failed requests, console errors, and horizontal overflow. Install its browser once
 with `mise exec -- uv run <skill-dir>/scripts/browser_check.py --install-browser`, then see
-`--help`. Pass `--spa` for client-routed static builds and `--ready <selector>` when data loads
-after the page. Script the app-specific interactions separately. Give transient states (posting,
+`--help`. Pass `--spa` for client-routed static builds, `--ready NAME=SELECTOR` for a state whose
+data loads after the page or that is transient, and `--idle-timeout 0` for streaming UIs. Script the app-specific interactions separately. Give transient states (posting,
 slow loads) a URL or fixture switch so they stay on screen long enough to capture. Ask before
 anything that would disrupt the user's machine, such as installing system browsers, taking over
 their open browser, or binding common ports.
@@ -206,8 +206,9 @@ Change a rule here, not at the pointer.
   APCA is optional extra guidance.
 - **Destructive actions:** prefer Undo when recovery is safe; otherwise confirm, naming the action
   and the object. The destructive choice is never pre-focused.
-- **Focus traps:** only an open modal dialog traps focus, and closing it returns focus to the
-  control that opened it. Drawers, popovers, and panels never trap.
+- **Focus traps:** modal dialogs trap focus while open, including drawers and sheets that block
+  the page behind them; closing one returns focus to the control that opened it. Non-modal
+  popovers, menus, and side panels never trap.
 - **Case:** sentence case unless the project already uses Title Case consistently.
 - **Zoom:** never disable zoom (no `maximum-scale=1` or `user-scalable=no`). Prevent iOS auto-zoom
   with input font sizes of at least 16px.
@@ -215,7 +216,9 @@ Change a rule here, not at the pointer.
   color to the palette, but don't reinvent their behavior.
 - **Motion:** on Persuade and Experience surfaces, at most one authored moment such as a page-load
   sequence. On Operate and Read surfaces, no page-load choreography: motion answers user actions
-  and shows state changes in 150–250 ms.
+  and shows state changes in 150–250 ms. Default to `transform` and `opacity`; blur, clip-path,
+  mask, and shadow are fine for an authored moment when they stay smooth. Never animate layout
+  properties or use `transition: all`.
 - **Line length:** 65–75 characters for body prose (Anthropic's "under 80" is the outer limit);
   tables and dense UI may run wider.
 - **Monospace:** use `font-variant-numeric: tabular-nums` for numbers that are compared, including
@@ -232,6 +235,12 @@ Change a rule here, not at the pointer.
   against that standard, not by counting tooltips or tours.
 - **Cards:** cards are not the default page structure. Nesting is legitimate only when the
   structure really is nested (a card inside a kanban column), never as decoration.
+- **Generated-look defaults:** the defaults listed in visual-direction.md › Calibration are
+  avoided unless the brief explicitly asks for them. That includes the ones Impeccable treats as
+  absolute bans: eyebrow labels above headings, a system face as the display voice of a Persuade
+  or Experience page, sketch-style SVG illustration, decorative stripe or grid backgrounds, and
+  geometric masks standing in for a subject's real outline. Explicit means the user named the
+  look; never infer it from the subject.
 - **Distinctiveness:** on Operate and Read surfaces, familiarity wins. Spend boldness on one
   memorable detail, not on unfamiliar controls.
 

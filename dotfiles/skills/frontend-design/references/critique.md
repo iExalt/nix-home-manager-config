@@ -504,7 +504,8 @@ above when no user context exists.
 
 Score each 0–4 when a technical audit is requested; otherwise use them as a checklist.
 
-- **Accessibility:** contrast below 4.5:1 (3:1 for large text); `prefers-reduced-motion` handled
+- **Accessibility:** contrast below SKILL.md › Conflicts › Contrast, including 3:1 for control
+  borders, focus indicators, and meaningful icons; `prefers-reduced-motion` handled
   with an intentional alternative that preserves state changes, not a global kill that destroys
   useful feedback; missing roles, labels, or states; keyboard traps, illogical tab order, missing
   focus indicators; heading hierarchy and landmarks; alt text; unlabeled inputs and unclear errors.

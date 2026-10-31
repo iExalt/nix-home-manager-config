@@ -13,7 +13,8 @@ submit, retry) separately; give transient states a URL switch (for example
 
     mise exec -- uv run browser_check.py --install-browser   # once per machine
     mise exec -- uv run browser_check.py --serve dist --spa \\
-        --state main=/ --state empty='/?q=zzz' --ready '[data-loaded]' \\
+        --state main=/ --state posting='/?latency=5000' \\
+        --ready main='[data-loaded]' --ready posting='[aria-busy=true]' \\
         --tab-to '#primary-action' --out design/screenshots
 """
 
@@ -27,6 +28,7 @@ import sys
 import threading
 import urllib.parse
 
+from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import TimeoutError as PlaywrightTimeout
 from playwright.sync_api import sync_playwright
 
@@ -47,8 +49,12 @@ def parse_args():
     parser.add_argument("--widths", default="1440,375", help="comma-separated viewport widths")
     parser.add_argument("--out", type=pathlib.Path, help="screenshot directory (keep it in the project)")
     parser.add_argument("--full-page", action="store_true", help="capture the full scroll height")
-    parser.add_argument("--ready", metavar="SELECTOR",
-                        help="wait for this element before each capture (e.g. a loaded-data marker)")
+    parser.add_argument("--ready", action="append", default=[], metavar="NAME=SELECTOR",
+                        help="for state NAME, wait for this element instead of network idle; use it "
+                             "for data loaded after the page and for transient states; repeatable")
+    parser.add_argument("--idle-timeout", type=int, default=2000,
+                        help="ms to wait for network idle on states without --ready; 0 skips it "
+                             "(streaming and polling UIs never go idle)")
     parser.add_argument("--wait", type=int, default=300, help="extra ms to wait before each capture")
     parser.add_argument("--tab-to", metavar="SELECTOR",
                         help="press Tab from the first state until this element is focused")
@@ -58,6 +64,11 @@ def parse_args():
     args = parser.parse_args()
     if not args.install_browser and not ((args.serve or args.url) and args.state and args.out):
         parser.error("--serve or --url, at least one --state, and --out are required")
+    pairs = [r.split("=", 1) for r in args.ready]
+    if any(len(r) != 2 for r in pairs):
+        parser.error("--ready must look like NAME=SELECTOR")
+    args.ready = dict(pairs)
+    args.idle_hint_shown = False
     return args
 
 
@@ -83,20 +94,31 @@ def static_server(directory, spa):
         server.shutdown()
 
 
-def load(page, url, label, args, problems):
+def load(page, url, name, label, args, problems):
     """Navigate and wait until the state is settled; return False if it failed to load."""
-    response = page.goto(url)
+    try:
+        response = page.goto(url)
+    except PlaywrightError as error:
+        problems.append(f"{label}: {url} failed to load: {error.message.splitlines()[0]}")
+        return False
     # goto returns None for same-document navigations such as hash-route changes.
     if response is not None and response.status >= 400:
         problems.append(f"{label}: {url} returned {response.status}")
         return False
-    with contextlib.suppress(PlaywrightTimeout):
-        page.wait_for_load_state("networkidle", timeout=5000)
-    if args.ready:
+    ready = args.ready.get(name)
+    if ready:
         try:
-            page.wait_for_selector(args.ready, timeout=10000)
+            page.wait_for_selector(ready, timeout=10000)
         except PlaywrightTimeout:
-            problems.append(f"{label}: {args.ready} did not appear at {url}")
+            problems.append(f"{label}: {ready} did not appear at {url}")
+    elif args.idle_timeout:
+        try:
+            page.wait_for_load_state("networkidle", timeout=args.idle_timeout)
+        except PlaywrightTimeout:
+            if not args.idle_hint_shown:
+                args.idle_hint_shown = True
+                print(f"note: {url} never went network-idle; pass --idle-timeout 0 or --ready "
+                      "NAME=SELECTOR for streaming or polling UIs to skip the wait")
     page.wait_for_timeout(args.wait)
     return True
 
@@ -116,14 +138,19 @@ def report_response(response, label, problems):
     request = response.request
     if response.status < 400 or is_favicon(response.url):
         return
-    if request.resource_type == "document" and request.frame == request.frame.page.main_frame:
+    if is_main_document(request):
         return
     problems.append(f"{label}: HTTP {response.status} {response.url}")
 
 
+def is_main_document(request):
+    return request.resource_type == "document" and request.frame == request.frame.page.main_frame
+
+
 def report_failure(request, label, problems):
     # Requests that never got a response: refused connections, DNS, CORS, aborted loads.
-    if not is_favicon(request.url):
+    # load() reports the page's own document.
+    if not is_favicon(request.url) and not is_main_document(request):
         problems.append(f"{label}: request failed ({request.failure}) {request.url}")
 
 
@@ -141,7 +168,7 @@ def capture(browser, base, states, label, context_options, args, problems):
     for name, state_path in states:
         # A fresh page per state, so hash-route states start from a clean load.
         page = new_page(context, f"{label}/{name}", problems)
-        if not load(page, base + state_path, f"{label}/{name}", args, problems):
+        if not load(page, base + state_path, name, f"{label}/{name}", args, problems):
             page.close()
             continue
         overflow = page.evaluate("document.documentElement.scrollWidth - innerWidth")
@@ -151,8 +178,15 @@ def capture(browser, base, states, label, context_options, args, problems):
         page.screenshot(path=str(target), full_page=args.full_page)
         print("saved", target)
         page.close()
+    if args.tab_to:
+        tab_walk(context, base, states[0], label, args, problems)
+    context.close()
+
+
+def tab_walk(context, base, state, label, args, problems):
+    name, state_path = state
     page = new_page(context, f"{label}/tab", problems)
-    if args.tab_to and load(page, base + states[0][1], f"{label}/tab", args, problems):
+    if load(page, base + state_path, name, f"{label}/tab", args, problems):
         def focused():
             return page.evaluate("s => !!document.activeElement?.matches(s)", args.tab_to)
 
@@ -167,7 +201,7 @@ def capture(browser, base, states, label, context_options, args, problems):
             print("saved", target)
         else:
             problems.append(f"{label}: {args.tab_to} not reachable within {MAX_TABS} Tab presses")
-    context.close()
+    page.close()
 
 
 def main():
