@@ -82,8 +82,8 @@ class DecideTest(unittest.TestCase):
                    claude_tool_result(), claude_thinking("Merge keeps every commit; rebase is linear."),
                    claude_call("t1", CLAUDE_INPUT)]
         reason = self.run_hook("AskUserQuestion", CLAUDE_INPUT, records)
-        self.assertIn('"Merge" (your text lacks "merge") in question "Which approach?"', reason)
-        self.assertIn("thinking is hidden", reason)
+        self.assertIn('"Merge" (your visible text lacks "merge") in question "Which approach?"', reason)
+        self.assertTrue(reason.startswith('Your explanation of "Merge" is in your thinking'))
         first = self.run_hook("AskUserQuestion", CLAUDE_INPUT, records[:4], tool_use_id="t0")
         self.assertNotIn("thinking", first)  # reasoning before the visible text isn't the explanation
 
@@ -95,7 +95,7 @@ class DecideTest(unittest.TestCase):
         prose = "C. Inter: taller letters. B. Overpass, a little bolder, with lighter grey labels: smallest change."
         records = [claude_user("it's hard to read"), claude_text(prose), claude_call("t1", tool_input)]
         reason = self.run_hook("AskUserQuestion", tool_input, records)
-        self.assertIn('"Overpass, heavier" (your text lacks "heavier")', reason)
+        self.assertIn('"Overpass, heavier" (your visible text lacks "heavier")', reason)
         self.assertIn("rename the option", reason)
         renamed = json.loads(json.dumps(tool_input).replace("Overpass, heavier", "Overpass, bolder"))
         records[-1] = claude_call("t1", renamed)

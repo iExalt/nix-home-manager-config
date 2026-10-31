@@ -267,21 +267,23 @@ def deny_reason(gaps, thinking):
     """
     parts = []
     for text, labels in gaps:
-        names = ", ".join('"%s"%s' % (label, " (your text lacks %s)" % ", ".join('"%s"' % w for w in absent)
+        names = ", ".join('"%s"%s' % (label, " (your visible text lacks %s)" % ", ".join('"%s"' % w for w in absent)
                                        if absent else "") for label, absent in labels)
         parts.append('%s in question "%s"' % (names, _short(text)) if text else names)
-    reason = (
-        "Standing rule: before a multiple-choice question, explain each option in prose, with its "
-        "rationale and tradeoffs, naming it by its label. Not yet explained: %s. " % "; ".join(parts))
     hidden = [label for _, labels in gaps for label, _ in labels
               if thinking and not missing_labels([("", [label])], thinking)]
+    reason = ""
     if hidden:
-        reason += ("Your thinking mentions %s, but thinking is hidden from the user; only text you write "
-                   "outside thinking counts. " % ", ".join('"%s"' % label for label in hidden))
+        # Lead with it: agents that explained only in thinking skimmed past it mid-message (sessions 1a97f603, 8bbb28d3).
+        reason = ("Your explanation of %s is in your thinking, which the user never sees. Write it as an "
+                  "ordinary reply, outside thinking, then ask again. " % ", ".join('"%s"' % label for label in hidden))
+    reason += (
+        "Standing rule: before a multiple-choice question, explain each option in prose, with its "
+        "rationale and tradeoffs, naming it by its label. Not yet explained: %s. " % "; ".join(parts))
     return reason + ("The check looks for each label's words in your visible text since the user's last "
-                     "message. If you already explained the option under other words, rename the option "
-                     "to those words and ask again; otherwise write the explanation as a visible message, "
-                     "then ask again. Option descriptions in the dialog don't count.")
+                     "message, ignoring case and formatting. If you already explained the option under other "
+                     "words, rename the option to those words and ask again; otherwise write the explanation "
+                     "as a visible message, then ask again. Option descriptions in the dialog don't count.")
 
 
 def decide(event, wait_s=TRANSCRIPT_WAIT_S):
