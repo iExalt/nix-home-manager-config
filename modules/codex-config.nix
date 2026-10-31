@@ -4,28 +4,23 @@ let
   cfg = config.my.codex;
   tomlFormat = pkgs.formats.toml { };
   repoRoot = "${config.home.homeDirectory}/dev/Projects/nix-home-manager-config";
-  codexConfigFile = "${repoRoot}/dotfiles/.codex/config.toml";
-  generatedConfig = tomlFormat.generate "codex-config.toml" cfg.settings;
+  overlayConfig = tomlFormat.generate "codex-overlay.toml" cfg.settings;
 in
 {
   options.my.codex.settings = lib.mkOption {
     type = tomlFormat.type;
     default = { };
-    description = "Codex CLI settings written to ~/.codex/config.toml.";
+    description = "Private Codex settings, such as MCP servers, merged into ~/.codex/config.toml.";
   };
 
   config = {
-    my.codex.settings = builtins.fromTOML (builtins.readFile ../dotfiles/.codex/config.toml);
-
-    # note: Materialize the merged config into the repo so Codex can persist TUI edits.
-    home.file.".codex/config.toml".source =
-      config.lib.file.mkOutOfStoreSymlink codexConfigFile;
-
-    home.activation.writeCodexConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-      mkdir -p "$(dirname "${codexConfigFile}")"
-      if ! cmp -s ${generatedConfig} "${codexConfigFile}"; then
-        install -m 0644 ${generatedConfig} "${codexConfigFile}"
-      fi
+    # fix(config): the live Claude and Codex settings are untracked files that Git never
+    # rewrites; sync shares their portable keys with the tracked copies, then merges in
+    # overlay settings. Nix reads only the overlays, so private keys stay out of the store.
+    home.activation.syncAgentConfig = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+      run ${pkgs.python3}/bin/python3 -I "${repoRoot}/scripts/clean-agent-config.py" sync \
+        --repo "${repoRoot}" --overlay codex=${overlayConfig} \
+        || warnEcho "Agent config sync failed; fix the problem above, then rerun ./reload.sh."
     '';
   };
 }

@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-"""Keep only reviewed, portable preferences in Git; never write the input file.
+"""Share reviewed, portable agent preferences through Git; keep everything else local.
 
-As a clean filter, also back up the raw file under the Git directory so that
-`restore` can put back private keys that a checkout, pull, or stash removed.
+The live configs (~/.claude/settings.json, ~/.codex/config.toml) are untracked files. `sync`
+merges their portable keys three ways with the tracked copies under dotfiles/, using the
+copy from the last sync as the base. As a Git clean filter, the script also keeps anything
+private out of the tracked copies.
 """
 
 import argparse
@@ -11,12 +13,9 @@ import datetime
 import json
 import math
 import os
-import re
 from pathlib import Path
-import subprocess
 import sys
 import tempfile
-import time
 import tomllib
 
 
@@ -91,7 +90,7 @@ def project(data, policy, kept_local=None, path=()):
         elif isinstance(rule, list):
             if isinstance(value, list) and value:
                 # fix(config): keep the portable items, so a private item beside them
-                # neither hides them from Git nor makes them look deleted after a restore.
+                # neither hides them from Git nor makes them look deleted to sync.
                 # Keep the projected copy, whose keys are sorted, so Git's copy stays canonical.
                 kept = [projected for item in value if isinstance(item, dict)
                         and (projected := project(item, rule[0])) == item]
@@ -105,7 +104,7 @@ def project(data, policy, kept_local=None, path=()):
                 isinstance(value, list) and all(isinstance(item, str) for item in value))
             reason = ("its value contains a path-like character (/, \\, ~, or $HOME)" if textual
                       else "its value is not a reviewed type")
-            kept_local.append(f"{'.'.join((*path, key))} local; {reason}")
+            kept_local.append(((*path, key), reason))
     return result
 
 
@@ -120,7 +119,7 @@ def toml_value(value):
         return "{" + ", ".join(f"{toml_string(k)} = {toml_value(v)}" for k, v in value.items()) + "}"
     if isinstance(value, list):
         return "[" + ", ".join(toml_value(item) for item in value) + "]"
-    # fix(config): restore rewrites private values too, which may use TOML-only types.
+    # fix(config): sync rewrites private values too, which may use TOML-only types.
     if isinstance(value, (datetime.date, datetime.time)):
         return value.isoformat()
     if isinstance(value, float) and not math.isfinite(value):
@@ -143,13 +142,11 @@ def toml_dump(data, prefix=()):
     return "\n".join(lines)
 
 
+
 FILES = {"codex": "dotfiles/.codex/config.toml", "claude": "dotfiles/.claude/settings.json"}
+LIVE = {"codex": ".codex/config.toml", "claude": ".claude/settings.json"}
 POLICY = {"codex": CODEX, "claude": CLAUDE}
-KEEP_BACKUPS = 10
-# Installed hooks probe for this exact line before passing restore their arguments.
-HOOK_API = 1
-# Older backups that alone hold a private section survive rotation this long.
-KEEP_UNIQUE_SECONDS = 30 * 24 * 60 * 60
+MISSING = object()
 
 
 def parse(text, kind):
@@ -166,12 +163,14 @@ def dump(data, kind):
     return json.dumps(data, indent=2, ensure_ascii=False) + "\n"
 
 
-def clean(text, kind):
-    return dump(project(parse(text, kind), POLICY[kind]), kind)
+def warn_kept_local(kept_local):
+    for path, reason in kept_local:
+        # feat(config): a reviewed preference that silently stops syncing is easy to miss.
+        print(f"warning: kept {'.'.join(path)} local; {reason}.", file=sys.stderr)
 
 
-def private_part(data, kind):
-    return private(data, project(data, POLICY[kind]))
+def clean(text, kind, kept_local=None):
+    return dump(project(parse(text, kind), POLICY[kind], kept_local), kind)
 
 
 def holds_values(value):
@@ -193,10 +192,13 @@ def private(data, kept):
             if dropped:
                 result[key] = dropped
         elif isinstance(value, list) and isinstance(kept[key], list):
-            # Keep the whole list, so a restore can put private items back in their place.
             if any(item not in kept[key] for item in value):
                 result[key] = value
     return result
+
+
+def holds_private(data, kind):
+    return bool(private(data, project(data, POLICY[kind])))
 
 
 def portable_item(item, rule):
@@ -204,83 +206,129 @@ def portable_item(item, rule):
     return isinstance(item, dict) and project(item, rule[0]) == item
 
 
-def restorable(value, rule):
-    """Drop the portable items of per-item tracked lists from a backed-up section."""
-    if isinstance(value, dict) and isinstance(rule, dict):
-        result = {}
-        for key, item in value.items():
-            kept = restorable(item, rule.get(key, rule.get("*")))
-            # fix(config): keep a named entry that was empty to begin with, as holds_values()
-            # counts it; drop only what filtering emptied.
-            if (kept != {} and kept != []) or item == {}:
-                result[key] = kept
-        return result
-    if isinstance(value, list) and isinstance(rule, list):
-        return [item for item in value if not portable_item(item, rule)]
-    return value
+def rule_at(policy, path):
+    rule = policy
+    for key in path:
+        if not isinstance(rule, dict) or (key not in rule and "*" not in rule):
+            return MISSING
+        rule = rule.get(key, rule.get("*"))
+    return rule
 
 
-def add_missing(live, extra, policy, path=()):
-    """Add keys from extra that live lacks; live values always win."""
-    added = []
+def leaves(data, policy, prefix=()):
+    """Map each tracked leaf path of projected data to its value; lists are leaves."""
+    result = {}
+    for key, value in data.items():
+        path = (*prefix, key)
+        if isinstance(value, dict) and isinstance(rule_at(policy, path), dict):
+            result.update(leaves(value, policy, path))
+        else:
+            result[path] = value
+    return result
+
+
+def get_path(data, path):
+    for key in path:
+        if not isinstance(data, dict) or key not in data:
+            return MISSING
+        data = data[key]
+    return data
+
+
+def set_path(data, path, value):
+    for key in path[:-1]:
+        if not isinstance(data.get(key), dict):
+            data[key] = {}
+        data = data[key]
+    data[path[-1]] = value
+
+
+def delete_path(data, path):
+    parents = [data]
+    for key in path[:-1]:
+        parents.append(parents[-1][key])
+    del parents[-1][path[-1]]
+    # Drop only the tables this deletion emptied, innermost first.
+    for depth in range(len(path) - 1, 0, -1):
+        if parents[depth]:
+            break
+        del parents[depth - 1][path[depth - 1]]
+
+
+def build(values):
+    result = {}
+    for path, value in values.items():
+        set_path(result, path, value)
+    return result
+
+
+def apply(live, path, value, rule):
+    """Set a tracked leaf in live data, keeping private items of a per-item list."""
+    if isinstance(rule, list):
+        current = get_path(live, path)
+        kept = [item for item in (current if isinstance(current, list) else [])
+                if not portable_item(item, rule)]
+        value = (value if value is not MISSING else []) + kept
+        value = value or MISSING
+    if value is MISSING:
+        if get_path(live, path) is not MISSING:
+            delete_path(live, path)
+    else:
+        set_path(live, path, value)
+
+
+def merge(live, shared, base, policy):
+    """Merge the portable keys of live with shared, the projected repo copy, from base.
+
+    A key changed on one side takes that side's value; a key changed on both keeps the
+    live value. Without a base, nothing is deleted. Return the new live and shared data and
+    the paths applied to live, exported to shared, in conflict, and kept local because
+    live holds a value Git cannot share.
+    """
+    mine = leaves(project(live, policy), policy)
+    theirs = leaves(shared, policy)
+    common = leaves(base, policy)
+    merged_live = copy.deepcopy(live)
+    result = {}
+    report = {"applied": [], "exported": [], "conflicts": [], "kept": []}
+    for path in sorted(set(mine) | set(theirs) | set(common)):
+        local, repo, old = (side.get(path, MISSING) for side in (mine, theirs, common))
+        rule = rule_at(policy, path)
+        if local is MISSING and not isinstance(rule, list) and get_path(live, path) is not MISSING:
+            # fix(config): live holds a value Git cannot share; leave both sides alone.
+            report["kept"].append(path)
+            if repo is not MISSING:
+                result[path] = repo
+            continue
+        if local == repo or local == old:
+            value = repo
+        else:
+            value = local
+            if repo != old:
+                report["conflicts"].append(path)
+        if value is not MISSING:
+            result[path] = value
+        if value != local:
+            apply(merged_live, path, value, rule)
+            report["applied"].append(path)
+        if value != repo:
+            report["exported"].append(path)
+    merged_shared = project(build(result), policy)
+    shared_paths = {path: value for path, value in result.items() if path not in report["kept"]}
+    if leaves(project(merged_live, policy), policy) != shared_paths:
+        raise RuntimeError("merge produced live and repo copies that disagree")
+    return merged_live, merged_shared, report
+
+
+def deep_merge(target, extra):
     for key, value in extra.items():
-        name = ".".join((*path, key))
-        rule = policy.get(key, policy.get("*")) if isinstance(policy, dict) else None
-        if key not in live:
-            # fix(config): private() keeps whole lists for ordering; never bring back the
-            # portable items Git deleted along with the list or its section.
-            original, value = value, restorable(value, rule)
-            if (value != {} and value != []) or original == {}:
-                live[key] = value
-                added.append(name)
-        elif isinstance(live[key], dict) and isinstance(value, dict):
-            added += add_missing(live[key], value, rule or {}, (*path, key))
-        # fix(config): only lists with an item policy are tracked per item; appending to
-        # any other list would make Git's whole copy of it look deleted.
-        elif isinstance(rule, list) and isinstance(live[key], list) and isinstance(value, list):
-            # Private items were never in Git; restore the ones a pulled list lacks, each after
-            # its nearest preceding neighbour from the backup, so hook order survives.
-            # fix(config): Git never holds private items, so a list that still has one was not
-            # wiped; it wins whole, and an edited private item is not duplicated.
-            if not all(portable_item(item, rule) for item in live[key]):
-                continue
-            merged = list(live[key])
-            for index, item in enumerate(value):
-                if item in merged or portable_item(item, rule):
-                    continue
-                anchors = [merged.index(other) + 1 for other in value[:index] if other in merged]
-                merged.insert(max(anchors, default=0), item)
-            if merged != live[key]:
-                live[key] = merged
-                added.append(name)
-    return added
+        if isinstance(value, dict) and isinstance(target.get(key), dict):
+            deep_merge(target[key], value)
+        else:
+            target[key] = copy.deepcopy(value)
 
 
-def git(*args, cwd=None, check=True, text=True):
-    """Run git; return its output, or None on failure when check is false."""
-    result = subprocess.run(["git", *args], check=check, capture_output=True, text=text, cwd=cwd)
-    if result.returncode:
-        return None
-    return result.stdout.strip() if text else result.stdout
-
-
-def backup_dir_at(root):
-    # feat(config): per-worktree Git directory, so other checkouts never touch this backup.
-    return Path(git("rev-parse", "--absolute-git-dir", cwd=root)) / "agent-config-private"
-
-
-def backup_dir():
-    return backup_dir_at(None)
-
-
-def backups(directory, kind):
-    found = [item for item in directory.glob(f"{kind}.*") if item.suffix[1:].isdigit()]
-    return sorted(found, key=lambda item: int(item.suffix[1:]))
-
-
-def write_private(target, text, mode=0o600):
-    # fix(privacy): .gitignore covers this suffix, so a temp copy left by a killed process
-    # beside a tracked config is never staged unfiltered.
+def write_atomic(target, text, mode):
     descriptor, temporary = tempfile.mkstemp(dir=target.parent, prefix=f".{target.name}.",
                                              suffix=".agent-restore-tmp")
     try:
@@ -293,395 +341,169 @@ def write_private(target, text, mode=0o600):
         raise
 
 
-def paths(data, prefix=()):
-    """Name every leaf of a nested dict, and every item of its lists."""
-    names = set()
-    for key, value in data.items():
-        name = ".".join((*prefix, key))
-        if isinstance(value, dict) and value:
-            names |= paths(value, (*prefix, key))
-        elif isinstance(value, list) and value:
-            names |= {f"{name}[{json.dumps(item, sort_keys=True, default=str)}]" for item in value}
-        else:
-            names.add(name)
-    return names
-
-
-def read_or_none(path):
+def read_or_none(target):
     try:
-        return path.read_text()
-    except FileNotFoundError:  # Another Git process rotated it away meanwhile.
+        return target.read_text()
+    except FileNotFoundError:
         return None
 
 
-def rotate(directory, kind, now):
-    # fix(config): keep the newest backups, plus older ones that alone still hold a private
-    # value or list item, so small private sets after a wipe cannot evict the complete one.
-    seen = set()
-    for index, saved in enumerate(reversed(backups(directory, kind))):
-        try:
-            data = parse(saved.read_text(), kind)
-            # private() keeps whole lists for ordering; drop their portable items here.
-            names = paths(restorable(private_part(data, kind), POLICY[kind]))
-        except (ValueError, FileNotFoundError):  # Unparsable, or rotated by another run.
-            names = set()
-        young = now - int(saved.suffix[1:]) < KEEP_UNIQUE_SECONDS * 10**9
-        if index < KEEP_BACKUPS or (young and names - seen):
-            seen |= names
-        else:
-            saved.unlink(missing_ok=True)
+def newest_backup(repo, kind):
+    """The newest raw copy the retired backup hooks saved, which may hold private keys."""
+    directory = repo / ".git" / "agent-config-private"
+    found = [item for item in directory.glob(f"{kind}.*") if item.suffix[1:].isdigit()]
+    return max(found, key=lambda item: int(item.suffix[1:]), default=None)
 
 
-def back_up(text, kind, data, projected, directory=None):
-    # fix(config): a file without private content holds nothing to protect, so a wiped
-    # file never replaces a good backup. holds_private() uses the same test.
-    if not private(data, projected):
-        return
-    directory = directory or backup_dir()
-    directory.mkdir(mode=0o700, exist_ok=True)
-    existing = backups(directory, kind)
-    if existing and read_or_none(existing[-1]) == text:
-        return
-    now = time.time_ns()
-    # fix(config): stay ordered even if the clock steps back.
-    stamp = max(now, int(existing[-1].suffix[1:]) + 1) if existing else now
-    write_private(directory / f"{kind}.{stamp}", text)
-    rotate(directory, kind, now)
+def names(paths):
+    return ", ".join(".".join(path) for path in paths)
 
 
-def clean_text(text, kind, directory=None, keep_backup=True):
-    """Do what the clean filter does: back up the raw text and return Git's copy.
+class SyncError(Exception):
+    pass
 
-    Parse errors propagate; backup failures and reviewed keys kept local only warn.
+
+def load(path, kind):
+    try:
+        return parse(path.read_text(), kind)
+    except ValueError:
+        # fix(privacy): name the file without echoing its contents.
+        raise SyncError(f"could not parse {path}") from None
+
+
+def seed(kind, repo, live_path, shared_text, use_backup):
+    """Return text to create a missing live file from, its base, and whether it is shared's.
+
+    A retired Home Manager symlink points at the repo copy, which then still holds this
+    machine's private keys. If a pull already wiped them there before this machine first
+    synced, the retired backup hooks saved them.
     """
-    data = parse(text, kind)
-    kept_local = []
-    projected = project(data, POLICY[kind], kept_local)
-    output = dump(projected, kind)
-    try:
-        if keep_backup:
-            back_up(text, kind, data, projected, directory)
-    except Exception:
-        print(f"warning: agent config backup failed for {kind}; restore will not cover recent edits.",
+    if live_path.is_symlink():
+        target = live_path.resolve()
+        if target.is_file() and target != (repo / FILES[kind]).resolve():
+            return target.read_text(), {}, False
+    if use_backup and not holds_private(parse(shared_text, kind), kind):
+        backup = newest_backup(repo, kind)
+        if backup is not None:
+            text = backup.read_text()
+            # fix(config): base on the backup, so pulled portable changes still arrive.
+            return text, project(load(backup, kind), POLICY[kind]), False
+    return shared_text, {}, True
+
+
+def sync_kind(kind, repo, home, state, overlay=None):
+    policy = POLICY[kind]
+    live_path = home / LIVE[kind]
+    shared_path = repo / FILES[kind]
+    base_path = state / f"{kind}.base"
+    shared_text = shared_path.read_text()
+    shared_raw = load(shared_path, kind)
+    shared = project(shared_raw, policy)
+    base_text = read_or_none(base_path)
+    base = load(base_path, kind) if base_text is not None else {}
+    seeded, from_shared = None, False
+    if live_path.is_symlink() or not live_path.exists():
+        seeded, seed_base, from_shared = seed(kind, repo, live_path, shared_text,
+                                              use_backup=base_text is None)
+        if base_text is None:
+            base = seed_base
+    if holds_private(shared_raw, kind) and not from_shared:
+        # fix(privacy): never cut the only copy of private keys down to its projection.
+        raise SyncError(f"{shared_path} still holds private keys that {live_path} lacks; "
+                        f"copy them into {live_path}, then rerun sync")
+    overlay_data = load(overlay, kind) if overlay else {}
+    if project(overlay_data, policy):
+        raise SyncError(f"the {kind} overlay sets shared keys; overlays may set private keys only")
+    for _ in range(2):
+        before = seeded if seeded is not None else live_path.read_text()
+        try:
+            live = parse(before, kind)
+        except ValueError:
+            raise SyncError(f"could not parse {live_path}") from None
+        kept_local = []
+        project(live, policy, kept_local)
+        merged_live, merged_shared, report = merge(live, shared, base, policy)
+        shareable = project(merged_live, policy)
+        deep_merge(merged_live, overlay_data)
+        if project(merged_live, policy) != shareable:
+            raise SyncError(f"the {kind} overlay replaces a shared table")
+        if seeded is None and merged_live == live:
+            break
+        # fix(config): an app may save while this runs; merge again rather than drop its edit.
+        if seeded is None and live_path.read_text() != before:
+            continue
+        mode = 0o600 if seeded is not None else live_path.stat().st_mode & 0o777
+        live_path.parent.mkdir(parents=True, exist_ok=True)
+        write_atomic(live_path, dump(merged_live, kind), mode)
+        break
+    else:
+        raise SyncError(f"{live_path} kept changing; rerun sync")
+    warn_kept_local(kept_local)
+    if seeded is not None:
+        print(f"agent-config: created {live_path}.")
+    if report["applied"]:
+        print(f"agent-config: applied repo changes to {live_path}: {names(report['applied'])}.")
+    for path in report["conflicts"]:
+        print(f"warning: kept the local {'.'.join(path)}; the repo changed it too.",
               file=sys.stderr)
-    for note in kept_local:
-        # feat(config): a reviewed preference that silently stops syncing is easy to miss.
-        print(f"warning: kept {note}.", file=sys.stderr)
-    return output
+    shared_out = dump(merged_shared, kind)
+    if shared_out != shared_text:
+        write_atomic(shared_path, shared_out, shared_path.stat().st_mode & 0o777)
+        if report["exported"]:
+            print(f"agent-config: copied local changes to {FILES[kind]}; commit or revert "
+                  f"them: {names(report['exported'])}.")
+    if base_text != shared_out:
+        state.mkdir(parents=True, exist_ok=True, mode=0o700)
+        write_atomic(base_path, shared_out, 0o600)
 
 
-def filter_main(kind, path=None):
+def sync_main(arguments):
+    parser = argparse.ArgumentParser(prog="clean-agent-config.py sync")
+    parser.add_argument("kinds", nargs="*", metavar="KIND", help=" or ".join(FILES))
+    parser.add_argument("--repo", type=Path, default=Path(__file__).resolve().parents[1])
+    parser.add_argument("--home", type=Path, default=Path.home())
+    state_home = os.environ.get("XDG_STATE_HOME") or Path.home() / ".local/state"
+    parser.add_argument("--state", type=Path, default=Path(state_home) / "agent-config")
+    parser.add_argument("--overlay", action="append", default=[], metavar="KIND=FILE")
+    options = parser.parse_args(arguments)
+    overlays = dict(item.split("=", 1) for item in options.overlay)
+    unknown = sorted(set(options.kinds) - set(FILES))
+    if unknown:
+        parser.error(f"unknown kind {', '.join(unknown)}; expected {' or '.join(FILES)}")
+    if (options.repo / ".git").is_file():
+        # fix(config): every checkout shares one base; a linked worktree's copy may be stale.
+        print("agent-config: run sync from the main checkout, not a linked worktree.",
+              file=sys.stderr)
+        return 1
+    exit_code = 0
+    for kind in options.kinds or list(FILES):
+        overlay = overlays.get(kind)
+        try:
+            sync_kind(kind, options.repo, options.home, options.state,
+                      Path(overlay) if overlay else None)
+        except (SyncError, RuntimeError, OSError) as error:
+            print(f"agent-config: skipped {kind}: {error}", file=sys.stderr)
+            exit_code = 1
+    return exit_code
+
+
+def filter_main(kind):
     try:
-        text = sys.stdin.read()
-        # fix(config): Git also cleans historical blobs (merge -X renormalize, hash-object
-        # --stdin); back up only the working file's own text.
-        working = read_or_none(Path(path)) if path else text
-        output = clean_text(text, kind, keep_backup=working == text)
+        kept_local = []
+        output = clean(sys.stdin.read(), kind, kept_local)
     except Exception:
         # fix(privacy): do not echo configuration contents on parse failures.
         sys.exit("Agent config clean filter failed; check syntax and filter policy.")
+    warn_kept_local(kept_local)
     sys.stdout.write(output)
-
-
-def refresh(root, relatives):
-    """Refresh stat data per file; return the files that could not be refreshed."""
-    # fix(config): refresh stat data only when the filtered content matches the index,
-    # so Git stops reporting a byte-size change without staging a real one.
-    failed = []
-    for relative in relatives:
-        if not (root / relative).is_file():
-            continue
-        kind = next(name for name, path in FILES.items() if path == relative)
-        try:
-            indexed = git("rev-parse", "-q", "--verify", f":{relative}", cwd=root, check=False)
-            if not indexed:  # Unmerged or untracked: nothing to refresh, and no error.
-                continue
-            # fix(perf): clean in-process, as the filter would, rather than start it once more.
-            # No eol or ident attribute applies to these paths, so Git's copy is exactly this.
-            output = clean_text((root / relative).read_text(), kind, backup_dir_at(root))
-            cleaned = subprocess.run(["git", "hash-object", "--no-filters", "--stdin"], cwd=root,
-                                     input=output, capture_output=True, text=True, check=True)
-            if indexed == cleaned.stdout.strip():
-                mode = git("ls-files", "-s", "--", relative, cwd=root).split()[0]
-                git("add", "--renormalize", "--", relative, cwd=root)
-                # fix(config): renormalize reads the file again; if an agent saved a change
-                # in between, put the old entry back rather than stage it.
-                if git("rev-parse", "-q", "--verify", f":{relative}", cwd=root, check=False) != indexed:
-                    git("update-index", "--cacheinfo", f"{mode},{indexed},{relative}", cwd=root)
-                    print(f"agent-status: {relative} changed while refreshing; run git agent-status "
-                          "again.", file=sys.stderr)
-                    failed.append(relative)
-        except (subprocess.CalledProcessError, ValueError, OSError):  # Skip only this file.
-            failed.append(relative)
-    return failed
-
-
-def restore_file(target, saved, kind, indexed_bytes=None):
-    """Merge private keys from saved into target; return the names added and the result.
-
-    With indexed_bytes (a callable returning the index copy, used by hooks), leave a file
-    alone unless Git wrote it: it holds no private content, or it equals the index copy.
-    Return None then.
-    """
-    extra = private_part(parse(saved.read_text(), kind), kind)
-    for _ in range(3):
-        before = target.stat()
-        raw = target.read_bytes()
-        try:
-            live = parse(raw.decode(), kind)
-        except ValueError:  # tomllib and json errors; conflict markers, for example
-            if indexed_bytes:  # Git never leaves an unparsable file, so it was not wiped.
-                return None
-            raise
-        # fix(config): hooks also run when Git left the file alone; restoring then would
-        # bring back a private key deleted since the latest backup. The index check covers
-        # commits whose content another policy filtered.
-        if (indexed_bytes and private(live, project(live, POLICY[kind]))
-                and raw != indexed_bytes()):
-            return None
-        added = add_missing(live, extra, POLICY[kind])
-        if not added:
-            return [], live
-        output = dump(live, kind)
-        # fix(config): an agent may save the file meanwhile; start over rather than drop its write.
-        now = target.stat()
-        if (now.st_mtime_ns, now.st_size) == (before.st_mtime_ns, before.st_size):
-            write_private(target, output, before.st_mode & 0o777)
-            return added, live
-    raise OSError("file kept changing")
-
-
-def unchanged(root, old, relative):
-    """Whether the index copy of a path matches commit old; any failure counts as changed."""
-    before = git("rev-parse", "-q", "--verify", f"{old}:{relative}", cwd=root, check=False)
-    return before is not None and before == git(
-        "rev-parse", "-q", "--verify", f":{relative}", cwd=root, check=False)
-
-
-def indexed(root, relative):
-    """Return the stage-0 index bytes of a path, or None."""
-    return git("cat-file", "blob", f":{relative}", cwd=root, check=False, text=False)
-
-
-def unrestored(older, live, kind):
-    """Pair each older backup, newest first, with private sections live still lacks."""
-    reported, result = set(), []
-    for saved in reversed(older):
-        text = read_or_none(saved)
-        if text is None:
-            continue
-        try:
-            backup = private_part(parse(text, kind), kind)
-        except ValueError:  # One unreadable backup must not hide the others.
-            continue
-        # The names add_missing would restore are exactly the ones live still lacks.
-        names = [name for name in add_missing(copy.deepcopy(live), backup, POLICY[kind])
-                 if name not in reported]
-        if names:
-            reported.update(names)
-            result.append((saved, names))
-    return result
-
-
-def sections(names):
-    # fix(privacy): name top-level sections only; deeper names can be private paths or
-    # environment variable names that end up in IDE and terminal logs.
-    return ", ".join(sorted({re.split(r"[.\[]", name, maxsplit=1)[0] for name in names}))
-
-
-def restore_main(arguments, refresh_restored=True):
-    parser = argparse.ArgumentParser(prog="git agent-restore")
-    parser.add_argument("--from", dest="source", type=Path,
-                        help="a backup file such as codex.<n> or claude.<n>")
-    parser.add_argument("--if-wiped", action="store_true",
-                        help="only restore files exactly as Git wrote them (used by hooks)")
-    parser.add_argument("--changed", metavar="OLD",
-                        help="with --if-wiped, skip files whose index copy matches commit OLD")
-    parser.add_argument("--forget", choices=FILES,
-                        help="delete this file's backups, keeping only its current content")
-    parser.add_argument("--yes", action="store_true",
-                        help="with --forget, proceed although the file holds no private keys")
-    options = parser.parse_args(arguments)
-    if options.forget:
-        return forget(options.forget, options.yes)
-    source = options.source
-    if source:
-        # A git alias runs from the top level; resolve paths as typed by the user.
-        source = Path(os.environ.get("GIT_PREFIX", "")) / source
-        if (not any(source.name.startswith(f"{kind}.") for kind in FILES)
-                or not source.suffix[1:].isdigit() or not source.is_file()):
-            parser.error("--from expects an existing backup named codex.<n> or claude.<n>")
-    root = Path(git("rev-parse", "--show-toplevel"))
-    directory = backup_dir()
-    failed = False
-    for kind, relative in FILES.items():
-        if source and not source.name.startswith(f"{kind}."):
-            continue
-        saved = backups(directory, kind)
-        target = root / relative
-        if not (source or saved) or not target.exists():
-            continue
-        # fix(config): an amend or a branch switch that leaves the file alone must not
-        # restore a private key the user deleted. Compare with the index, not the new commit,
-        # because a squash merge rewrites the file without moving HEAD.
-        if options.changed and unchanged(root, options.changed, relative):
-            continue
-        try:
-            index_copy = (lambda relative=relative: indexed(root, relative)) if options.if_wiped else None
-            try:
-                result = restore_file(target, source or saved[-1], kind, index_copy)
-            except FileNotFoundError:
-                if source or not target.exists():
-                    raise
-                # A concurrent clean rotated the newest backup away; use the one now newest.
-                saved = backups(directory, kind)
-                result = restore_file(target, saved[-1], kind, index_copy)
-        except Exception:
-            # fix(privacy): name the file, never its contents.
-            print(f"agent-restore: skipped {relative}; it or its backup could not be parsed or written.",
-                  file=sys.stderr)
-            failed = True
-            continue
-        if result is None:
-            if options.changed:
-                # fix(config): Git changed the file, yet it already holds private keys (an agent
-                # saved one meanwhile, or a staged change); merging could revive a deleted
-                # key, so say so instead of staying silent.
-                print(f"agent-restore: {relative} changed in Git but already holds private keys "
-                      "or does not parse; run git agent-restore if any are missing.", file=sys.stderr)
-            continue
-        added, live = result
-        if added:
-            print(f"agent-restore: restored {sections(added)} in {relative}; if you removed them on "
-                  f"purpose, remove them again and run: git agent-restore --forget {kind}", file=sys.stderr)
-            if refresh_restored and refresh(root, [relative]):
-                print(f"agent-restore: could not refresh {relative}; run git agent-status.",
-                      file=sys.stderr)
-                failed = True
-        if source:
-            continue
-        try:
-            # fix(config): a wipe followed by new private keys yields small latest backups;
-            # name what older backups still hold instead of losing it silently.
-            lost = unrestored(saved[:-1], live, kind)
-        except Exception:
-            print(f"agent-restore: could not check older backups of {relative}.", file=sys.stderr)
-            failed = True
-            continue
-        for older, names in lost:
-            print(f"agent-restore: {older} also has {sections(names)}; if you did not delete them "
-                  f"on purpose, run: git agent-restore --from {older}", file=sys.stderr)
-    return 1 if failed else 0
-
-
-def temp_copies(directory, name):
-    """Temp copies a killed write_private left behind; they may hold the same secrets."""
-    return list(directory.glob(f".{name}.*.agent-restore-tmp"))
-
-
-def holds_private(text, kind):
-    try:
-        return bool(private_part(parse(text, kind), kind))
-    except ValueError:
-        return False
-
-
-def forget(kind, confirmed=False):
-    """Purge a file's backups, so a deliberately removed private key (or secret) stays gone."""
-    # fix(privacy): a removed secret may be revoked or rotated; every worktree keeps its own
-    # backups, so purge them all, including those of worktrees whose directory is gone.
-    here = Path(git("rev-parse", "--show-toplevel")) / FILES[kind]
-    if here.is_file():
-        try:
-            parse(here.read_text(), kind)
-        except ValueError:  # Conflict markers, say; its backups are the only good copies.
-            print(f"agent-restore: {FILES[kind]} does not parse; fix it before --forget.",
-                  file=sys.stderr)
-            return 1
-    # fix(config): a wiped or missing file (mid-stash, say) looks the same as one emptied on
-    # purpose; name what would be lost and ask for confirmation.
-    latest = backups(backup_dir(), kind)
-    if not confirmed and not holds_private(read_or_none(here) or "", kind) and latest:
-        try:
-            lost = sections(paths(private_part(parse(read_or_none(latest[-1]) or "", kind), kind)))
-        except ValueError:
-            lost = ""
-        if lost:
-            print(f"agent-restore: {FILES[kind]} holds no private keys, so --forget would delete the "
-                  f"last copies of {lost}. If it was wiped, run git agent-restore first; to forget "
-                  "them anyway, add --yes.", file=sys.stderr)
-            return 1
-    common = Path(git("rev-parse", "--path-format=absolute", "--git-common-dir"))
-    stale = {common, *(common / "worktrees").glob("*")}
-    current = Path(git("rev-parse", "--absolute-git-dir"))
-    for line in git("worktree", "list", "--porcelain").splitlines():
-        worktree = Path(line.split(" ", 1)[1]) if line.startswith("worktree ") else None
-        if worktree is None or not worktree.is_dir():
-            continue
-        git_dir = Path(git("rev-parse", "--absolute-git-dir", cwd=worktree))
-        stale.discard(git_dir)
-        directory = git_dir / "agent-config-private"
-        old = backups(directory, kind)
-        target = worktree / FILES[kind]
-        text = read_or_none(target) if target.is_file() else None
-        # fix(config): another worktree whose file was wiped (mid-stash, say) still needs
-        # its backups to recover unrelated private keys; keep them and say so.
-        # A missing file (a branch that predates it, say) counts as wiped too.
-        if (git_dir != current and not holds_private(text or "", kind)
-                and old and holds_private(read_or_none(old[-1]) or "", kind)):
-            print(f"agent-restore: kept the backups of {worktree}, whose {FILES[kind]} is missing "
-                  "or holds no private keys; restore it there, then run --forget there.",
-                  file=sys.stderr)
-            continue
-        if text is not None:
-            # fix(config): save the current file as the only backup, so this worktree keeps its
-            # recovery. Write first, so a failed write keeps the old ones.
-            directory.mkdir(mode=0o700, exist_ok=True)
-            write_private(directory / f"{kind}.{time.time_ns()}", text)
-        for saved in [*old, *temp_copies(directory, kind), *temp_copies(target.parent, target.name)]:
-            saved.unlink(missing_ok=True)  # A concurrent rotation may have removed it already.
-    for git_dir in stale:
-        directory = git_dir / "agent-config-private"
-        for saved in [*backups(directory, kind), *temp_copies(directory, kind)]:
-            saved.unlink(missing_ok=True)
-    print(f"agent-restore: kept only each worktree's current {FILES[kind]} as its backup.",
-          file=sys.stderr)
-    return 0
-
-
-def seed():
-    """Run the clean filter once per file, so its backup exists before any rewrite."""
-    root = Path(git("rev-parse", "--show-toplevel"))
-    failed = False
-    for kind, relative in FILES.items():
-        if (root / relative).is_file():
-            try:
-                git("hash-object", f"--path={relative}", relative, cwd=root)
-                text = (root / relative).read_text()
-                # fix(config): the filter only warns when a backup fails, so check for it.
-                saved = backups(backup_dir(), kind)
-                if holds_private(text, kind) and not (saved and read_or_none(saved[-1]) == text):
-                    raise OSError("no backup")
-            except (subprocess.CalledProcessError, OSError):
-                print(f"agent-seed: could not back up {relative}.", file=sys.stderr)
-                failed = True
-    return 1 if failed else 0
 
 
 if __name__ == "__main__":
     command = sys.argv[1] if len(sys.argv) > 1 else ""
-    if command == "restore":
-        sys.exit(restore_main(sys.argv[2:]))
-    if command == "refresh":
-        # fix(config): also a catch-all for rewrites that fire no hook, such as cherry-pick.
-        exit_code = restore_main(["--if-wiped"], refresh_restored=False)
-        for relative in refresh(Path(git("rev-parse", "--show-toplevel")), FILES.values()):
-            print(f"agent-status: could not refresh {relative}.", file=sys.stderr)
-            exit_code = 1
-        sys.exit(exit_code)
-    if command == "seed":
-        sys.exit(seed())
+    if command == "sync":
+        sys.exit(sync_main(sys.argv[2:]))
     if command == "kinds":
         print(" ".join(FILES))
         sys.exit(0)
-    filter_main(command, sys.argv[2] if len(sys.argv) > 2 else None)
+    # Git runs `<kind> <path>`; the path is accepted for older filter configurations.
+    filter_main(command)

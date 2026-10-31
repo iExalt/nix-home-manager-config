@@ -56,8 +56,6 @@ in
   home.file.".kubectl_aliases.zsh".source = ./dotfiles/.kubectl_aliases.zsh;
   home.file.".cache/zsh/completions/_kubectl".source =
     ./dotfiles/zsh/completions/_kubectl;
-  home.file.".claude/settings.json".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/.claude/settings.json";
   home.file.".claude/agents/developer-trivial.md".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/.claude/agents/developer-trivial.md";
   home.file.".claude/agents/developer-routine.md".source =
