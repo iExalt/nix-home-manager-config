@@ -23,6 +23,7 @@ import contextlib
 import functools
 import http.server
 import pathlib
+import re
 import subprocess
 import sys
 import threading
@@ -62,8 +63,10 @@ def parse_args():
                         help="ms to wait for network idle on states without --ready; 0 skips it "
                              "(streaming and polling UIs never go idle)")
     parser.add_argument("--wait", type=int, default=300, help="extra ms to wait before each capture")
-    parser.add_argument("--tab-to", metavar="SELECTOR",
-                        help="press Tab from the first state until this element is focused")
+    parser.add_argument("--tab-to", action="append", default=[], metavar="[WIDTH=]SELECTOR",
+                        help="press Tab from the first state until this element is focused; prefix "
+                             "WIDTH= to limit it to one width (e.g. 1440='#save' and "
+                             "375='#menu-button' when the control collapses on mobile); repeatable")
     parser.add_argument("--no-zoom", action="store_true", help="skip the 200%%-zoom pass")
     parser.add_argument("--no-reduced-motion", action="store_true",
                         help="skip the reduced-motion pass at each width")
@@ -83,6 +86,12 @@ def parse_args():
         parser.error("--status codes must be numbers, e.g. notfound=404")
     args.status = {name: int(code) for name, code in args.status.items()}
     args.idle_hint_shown = False
+    tab_targets = {}
+    for item in args.tab_to:
+        match = re.match(r"(\d+)=(.+)", item)
+        width, selector = (int(match[1]), match[2]) if match else (None, item)
+        tab_targets[width] = selector
+    args.tab_to = tab_targets
     return args
 
 
@@ -173,8 +182,10 @@ def report_failure(request, label, problems):
         problems.append(f"{label}: request failed ({request.failure}) {request.url}")
 
 
-def new_page(context, label, problems):
+def new_page(context, label, problems, listen=True):
     page = context.new_page()
+    if not listen:
+        return page
     page.on("console", lambda m: report_console(m, label, problems))
     page.on("response", lambda r: report_response(r, label, problems))
     page.on("requestfailed", lambda r: report_failure(r, label, problems))
@@ -182,7 +193,7 @@ def new_page(context, label, problems):
     return page
 
 
-def capture(browser, base, states, label, context_options, args, problems, tab=True):
+def capture(browser, base, states, label, context_options, args, problems, tab_to=None):
     context = browser.new_context(**context_options)
     for name, state_path in states:
         # A fresh page per state, so hash-route states start from a clean load.
@@ -190,6 +201,10 @@ def capture(browser, base, states, label, context_options, args, problems, tab=T
         if not load(page, base + state_path, name, f"{label}/{name}", args, problems):
             page.close()
             continue
+        layout_width = page.evaluate("innerWidth")
+        if context_options.get("is_mobile") and layout_width > context_options["viewport"]["width"]:
+            problems.append(f"{label}/{name}: lays out at {layout_width}px on a "
+                            f"{context_options['viewport']['width']}px phone; check the viewport meta tag")
         overflow = page.evaluate("document.documentElement.scrollWidth - innerWidth")
         if overflow > 0:
             problems.append(f"{label}/{name}: horizontal overflow of {overflow}px")
@@ -197,29 +212,30 @@ def capture(browser, base, states, label, context_options, args, problems, tab=T
         page.screenshot(path=str(target), full_page=args.full_page)
         print("saved", target)
         page.close()
-    if tab and args.tab_to:
-        tab_walk(context, base, states[0], label, args, problems)
+    if tab_to:
+        tab_walk(context, base, states[0], label, tab_to, args, problems)
     context.close()
 
 
-def tab_walk(context, base, state, label, args, problems):
+def tab_walk(context, base, state, label, selector, args, problems):
     name, state_path = state
-    page = new_page(context, f"{label}/tab", problems)
-    if load(page, base + state_path, name, f"{label}/tab", args, problems):
+    # The state's own capture already reported its load problems; don't report them twice.
+    page = new_page(context, f"{label}/tab", problems, listen=False)
+    if load(page, base + state_path, name, f"{label}/tab", args, []):
         def focused():
-            return page.evaluate("s => !!document.activeElement?.matches(s)", args.tab_to)
+            return page.evaluate("s => !!document.activeElement?.matches(s)", selector)
 
         presses = 0
         while not focused() and presses < MAX_TABS:
             page.keyboard.press("Tab")
             presses += 1
         if focused():
-            print(f"{label}: {presses} Tab presses to {args.tab_to}")
+            print(f"{label}: {presses} Tab presses to {selector}")
             target = args.out / f"{label}-keyboard-focus.png"
             page.screenshot(path=str(target))
             print("saved", target)
         else:
-            problems.append(f"{label}: {args.tab_to} not reachable within {MAX_TABS} Tab presses")
+            problems.append(f"{label}: {selector} not reachable within {MAX_TABS} Tab presses")
     page.close()
 
 
@@ -243,18 +259,21 @@ def main():
         # once per width, since reduced motion and zoom do not change focus order.
         extra_states = states if args.all_passes else states[:1]
         for width in widths:
-            options = {"viewport": {"width": width, "height": 900 if width > 800 else 812},
-                       "device_scale_factor": 1 if width > 800 else 2}
-            capture(browser, base, states, str(width), options, args, problems)
+            narrow = width <= 800
+            # Narrow widths emulate a phone: the viewport meta tag, touch, and coarse pointer apply.
+            options = {"viewport": {"width": width, "height": 812 if narrow else 900},
+                       "device_scale_factor": 2 if narrow else 1, "is_mobile": narrow,
+                       "has_touch": narrow}
+            capture(browser, base, states, str(width), options, args, problems,
+                    tab_to=args.tab_to.get(width, args.tab_to.get(None)))
             if not args.no_reduced_motion:
                 capture(browser, base, extra_states, f"{width}-reduced-motion",
-                        {**options, "reduced_motion": "reduce"}, args, problems, tab=False)
+                        {**options, "reduced_motion": "reduce"}, args, problems)
         if not args.no_zoom:
             # Browser zoom at 200% halves the CSS viewport and doubles device pixels.
             zoom_width = max(widths) // 2
             options = {"viewport": {"width": zoom_width, "height": 450}, "device_scale_factor": 2}
-            capture(browser, base, extra_states, f"zoom200-{zoom_width}", options, args, problems,
-                    tab=False)
+            capture(browser, base, extra_states, f"zoom200-{zoom_width}", options, args, problems)
         browser.close()
     if problems:
         print("problems:", *problems, sep="\n  ")
