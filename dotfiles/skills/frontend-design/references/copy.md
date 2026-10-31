@@ -46,9 +46,9 @@ information or disappear.
 - **Actions.** Specific verb and object when the outcome is not obvious: "Save API key", not
   "Continue". Labels describe what will happen, not the gesture. Menu items that open a follow-up
   step end with an ellipsis ("Rename…").
-- **Destructive actions.** Name the object and consequence. Prefer Undo over confirmation when
-  recovery is safe; when confirmation is necessary, name the action on both the message and the
-  button instead of "Yes", "OK", or "Submit".
+- **Destructive actions.** Name the object and consequence. When confirmation is necessary, name
+  the action on both the message and the button instead of "Yes", "OK", or "Submit". Undo versus
+  confirmation and default focus follow SKILL.md › Conflicts › Destructive actions.
 - **Forms.** Persistent labels; placeholders follow SKILL.md › Conflicts › Placeholders. State
   format and eligibility requirements before submission. Validation says what needs attention and
   how to fix it without blaming the user.
@@ -65,9 +65,8 @@ information or disappear.
 
 ## Mechanics
 
-- Sentence case for headings, buttons, and labels unless the project already uses another
-  convention consistently. (Vercel's house style is Title Case; that is a brand choice, not a
-  usability rule.)
+- Case for headings, buttons, and labels follows SKILL.md › Conflicts › Case. (Vercel's house
+  style is Title Case; that is a brand choice, not a usability rule.)
 - Second person ("your projects"); avoid first person from the product ("I", "we") in UI chrome.
 - Numerals for counts ("8 deployments"); a non-breaking space between a number and its unit
   (`10&nbsp;MB`) and inside shortcuts (`⌘&nbsp;K`).

@@ -128,7 +128,8 @@ Check these on the built result, together, in each look at the render.
   focus) have more contrast than the rest state.
 - **Depth:** shadows carry an offset and a soft blur; layered shadows (ambient plus direct) read
   more natural. Borders with shadows: see SKILL.md › Conflicts › Elevation.
-  Nested radii: a child's radius is no larger than its parent's.
+  Nested radii: a child's radius is no larger than its parent's. Card radii stay around 12–16px;
+  pills are for small controls.
 - **Spacing:** tight groups, generous separation, more space above a heading than below it. Align
   every element to something intentional: a grid, baseline, edge, or optical center.
 - **Type:** body measure per SKILL.md › Conflicts › Line length, display at most 6rem,
@@ -160,7 +161,8 @@ The tool should disappear into the task.
   ratio (1.125–1.2), not fluid headings. Titles that come from user or system data (issue titles,
   error strings, file paths) stay at a modest heading size and wrap or clamp on narrow screens.
   Measure per SKILL.md › Conflicts › Line length.
-- **Color.** Restrained by default. The accent marks primary actions, current selection, and state
+- **Color.** Restrained by default; inactive states never get heavy color or full-saturation
+  accents. The accent marks primary actions, current selection, and state
   only, not decoration. Standardize a semantic state vocabulary: hover, focus, active, disabled,
   selected, loading, error, warning, success, info. A second neutral layer separates sidebars,
   toolbars, and panels from content. Don't rely on color alone; pair it with text or an icon.
