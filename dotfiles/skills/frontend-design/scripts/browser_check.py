@@ -5,8 +5,8 @@
 """Screenshot named UI states at several widths in headless Chromium.
 
 Covers the repeatable part of browser verification: serving a static build,
-capturing each state at desktop and narrow widths, a 200%-zoom and
-reduced-motion pass, a keyboard walk to a target control, and HTTP, console,
+capturing each state at desktop and narrow widths with and without reduced
+motion, a 200%-zoom pass, a keyboard walk to a target control, and HTTP, console,
 and horizontal-overflow problems. Script app-specific interactions (click,
 submit, retry) separately; give transient states a URL switch (for example
 ?latency=5000) so they can be captured here.
@@ -52,7 +52,9 @@ def parse_args():
     parser.add_argument("--wait", type=int, default=300, help="extra ms to wait before each capture")
     parser.add_argument("--tab-to", metavar="SELECTOR",
                         help="press Tab from the first state until this element is focused")
-    parser.add_argument("--no-zoom", action="store_true", help="skip the 200%%-zoom/reduced-motion pass")
+    parser.add_argument("--no-zoom", action="store_true", help="skip the 200%%-zoom pass")
+    parser.add_argument("--no-reduced-motion", action="store_true",
+                        help="skip the reduced-motion pass at each width")
     args = parser.parse_args()
     if not args.install_browser and not ((args.serve or args.url) and args.state and args.out):
         parser.error("--serve or --url, at least one --state, and --out are required")
@@ -99,28 +101,48 @@ def load(page, url, label, args, problems):
     return True
 
 
+def is_favicon(url):
+    return urllib.parse.urlsplit(url).path.endswith("/favicon.ico")
+
+
 def report_console(message, label, problems):
-    # Failed requests are reported once, with their URL, by report_response.
+    # Failed requests are reported once, with their URL, by report_response or report_failure.
     if message.type == "error" and not message.text.startswith("Failed to load resource"):
         problems.append(f"{label}: console: {message.text}")
 
 
 def report_response(response, label, problems):
-    # The page's own document status is checked in load(); a missing favicon is noise.
+    # load() checks the top-level document's status; subframes and subresources are checked here.
     request = response.request
-    if (response.status >= 400 and request.resource_type != "document"
-            and not urllib.parse.urlsplit(response.url).path.endswith("/favicon.ico")):
-        problems.append(f"{label}: HTTP {response.status} {response.url}")
+    if response.status < 400 or is_favicon(response.url):
+        return
+    if request.resource_type == "document" and request.frame == request.frame.page.main_frame:
+        return
+    problems.append(f"{label}: HTTP {response.status} {response.url}")
+
+
+def report_failure(request, label, problems):
+    # Requests that never got a response: refused connections, DNS, CORS, aborted loads.
+    if not is_favicon(request.url):
+        problems.append(f"{label}: request failed ({request.failure}) {request.url}")
+
+
+def new_page(context, label, problems):
+    page = context.new_page()
+    page.on("console", lambda m: report_console(m, label, problems))
+    page.on("response", lambda r: report_response(r, label, problems))
+    page.on("requestfailed", lambda r: report_failure(r, label, problems))
+    page.on("pageerror", lambda e: problems.append(f"{label}: {e}"))
+    return page
 
 
 def capture(browser, base, states, label, context_options, args, problems):
     context = browser.new_context(**context_options)
-    page = context.new_page()
-    page.on("console", lambda m: report_console(m, label, problems))
-    page.on("response", lambda r: report_response(r, label, problems))
-    page.on("pageerror", lambda e: problems.append(f"{label}: {e}"))
     for name, state_path in states:
+        # A fresh page per state, so hash-route states start from a clean load.
+        page = new_page(context, f"{label}/{name}", problems)
         if not load(page, base + state_path, f"{label}/{name}", args, problems):
+            page.close()
             continue
         overflow = page.evaluate("document.documentElement.scrollWidth - innerWidth")
         if overflow > 0:
@@ -128,6 +150,8 @@ def capture(browser, base, states, label, context_options, args, problems):
         target = args.out / f"{label}-{name}.png"
         page.screenshot(path=str(target), full_page=args.full_page)
         print("saved", target)
+        page.close()
+    page = new_page(context, f"{label}/tab", problems)
     if args.tab_to and load(page, base + states[0][1], f"{label}/tab", args, problems):
         def focused():
             return page.evaluate("s => !!document.activeElement?.matches(s)", args.tab_to)
@@ -163,11 +187,13 @@ def main():
             options = {"viewport": {"width": width, "height": 900 if width > 800 else 812},
                        "device_scale_factor": 1 if width > 800 else 2}
             capture(browser, base, states, str(width), options, args, problems)
+            if not args.no_reduced_motion:
+                capture(browser, base, states, f"{width}-reduced-motion",
+                        {**options, "reduced_motion": "reduce"}, args, problems)
         if not args.no_zoom:
             # Browser zoom at 200% halves the CSS viewport and doubles device pixels.
             zoom_width = max(widths) // 2
-            options = {"viewport": {"width": zoom_width, "height": 450}, "device_scale_factor": 2,
-                       "reduced_motion": "reduce"}
+            options = {"viewport": {"width": zoom_width, "height": 450}, "device_scale_factor": 2}
             capture(browser, base, states, f"zoom200-{zoom_width}", options, args, problems)
         browser.close()
     if problems:

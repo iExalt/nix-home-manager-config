@@ -4,8 +4,8 @@ Copied verbatim from Vercel's [Web Interface Guidelines](https://vercel.com/desi
 ([source](https://github.com/vercel-labs/web-interface-guidelines/blob/434b7f91364665f2f733b310ec54809bf8f37937/README.md),
 MIT, Copyright (c) 2025 Vercel Labs; see `../licenses/MIT-vercel-web-interface-guidelines.txt`).
 Only the universal sections are kept. The Vercel-specific copywriting preferences are folded into
-[copy.md](copy.md). Where this skill overrides a rule, the bullet is followed by a quoted
-**Override** note; the override wins.
+[copy.md](copy.md). Where this skill overrides a rule, the bullet is followed by a one-line
+**Override** pointer to the rule in [SKILL.md](../SKILL.md)'s conflicts section, which wins.
 
 Use it as a review checklist after building, and skim the section for the area you are about to
 build (forms, animation, layout) before you write it. Most rules are framework-agnostic; a few name
@@ -16,9 +16,10 @@ React/Next.js tools.
 - **Keyboard works everywhere.** All flows are keyboard-operable & follow the [WAI-ARIA Authoring Patterns](https://www.w3.org/WAI/ARIA/apg/patterns/).
 - **Clear focus.** Every focusable element shows a visible, unobscured focus ring. Prefer `:focus-visible` over `:focus` to avoid distracting pointer users. Set `:focus-within` for grouped controls. Sticky headers, footers, banners, & overlays never cover the focused element.
 - **Manage focus.** Use focus traps, move & return focus according to the [WAI-ARIA Patterns](https://www.w3.org/WAI/ARIA/apg/patterns/).
+  > **Override:** see SKILL.md › Conflicts › Focus traps.
 - **Match visual & hit targets.** Exception: if the visual target is < 24px, expand its hit target to ≥ 24px. On mobile, the minimum size is 44px.
 - **Mobile input size.** `<input>` font size is ≥ 16px on mobile to prevent iOS Safari auto-zoom/pan on focus. Or set `<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />`.
-  > **Override:** never set `maximum-scale=1` or `user-scalable=no`; use ≥ 16px input font size instead.
+  > **Override:** see SKILL.md › Conflicts › Zoom.
 - **Respect zoom.** Never disable browser zoom.
 - **Hydration-safe inputs.** Inputs must not lose focus or value after hydration.
 - **Don’t block paste.** Never disable paste in `<input>` or `<textarea>`.
@@ -28,6 +29,7 @@ React/Next.js tools.
 - **Optimistic updates.** Update the UI immediately when success is likely; reconcile on server response. On failure, show an error & roll back or provide Undo.
 - **Ellipsis for further input & loading states.** Menu options that open a follow-up e.g., "Rename…" & loading/processing states e.g., "Loading…", "Saving…", "Generating…" end with an ellipsis.
 - **Confirm destructive actions.** Require confirmation or provide Undo with a safe window.
+  > **Override:** see SKILL.md › Conflicts › Destructive actions.
 - **Prevent double-tap zoom on controls.** Set `touch-action: manipulation`.
 - **Tap highlight follows design.** Set `webkit-tap-highlight-color`.
 - **Design forgiving interactions.** Controls minimize finickiness with generous hit targets, clear affordances, & predictable interactions, e.g., [prediction cones](https://x.com/JohnPhamous/status/1657083267299028992).
@@ -72,6 +74,7 @@ React/Next.js tools.
 ## Content
 
 - **Inline help first.** Prefer inline explanations; use tooltips as a last resort.
+  > **Override:** see SKILL.md › Conflicts › Help and onboarding.
 - **Stable skeletons.** Skeletons mirror final content exactly to avoid layout shift.
 - **Accurate page titles.** `<title>` reflects the current context.
 - **No dead ends.** Every screen offers a next step or recovery path.
@@ -79,7 +82,7 @@ React/Next.js tools.
 - **Typographic quotes.** Prefer curly quotes (“ ”) over straight quotes (" ").
 - **Avoid widows/orphans.** Tidy rag & line breaks.
 - **Tabular numbers for comparisons.** Use `font-variant-numeric: tabular-nums` or a monospace like [Geist Mono](https://vercel.com/font).
-  > **Override:** prefer `tabular-nums`; reserve monospace for code, IDs, hashes, and paths.
+  > **Override:** see SKILL.md › Conflicts › Monospace.
 - **Redundant status cues.** Don’t rely on color alone; include text labels.
 - **Icons have labels.** Convey the same meaning with text for non-sighted users.
 - **Don’t ship the schema.** Visual layouts may omit visible labels, but accessible names/labels still exist for assistive tech.
@@ -112,7 +115,7 @@ React/Next.js tools.
 - **Spellcheck selectively.** Disable for emails, codes, usernames, etc.
 - **Correct types & input modes.** Use the right `type` & `inputmode` for better keyboards & validation.
 - **Placeholders signal emptiness.** End with an ellipsis.
-  > **Override:** end with an ellipsis only for open-ended prompts or truncated examples (`Search…`, `sk-012345679…`), not complete example values.
+  > **Override:** see SKILL.md › Conflicts › Placeholders.
 - **Placeholder value.** Set placeholder to an example value or pattern e.g., `+1 (123) 456-7890` & `sk-012345679…`
 - **Unsaved changes.** Warn before navigation when data could be lost.
 - **Password managers & 2FA.** Ensure compatibility & allow pasting one-time codes.
@@ -143,12 +146,12 @@ React/Next.js tools.
 
 - **Layered shadows.** Mimic ambient + direct light with at least two layers.
 - **Crisp borders.** Combine borders & shadows; semi-transparent borders improve edge clarity.
-  > **Override:** pair a shadow only with a subtle semi-transparent border; an opaque 1px border under a wide soft shadow reads as a ghost card.
+  > **Override:** see SKILL.md › Conflicts › Elevation.
 - **Nested radii.** Child radius ≤ parent radius & concentric so curves align.
 - **Hue consistency.** On non-neutral backgrounds, tint borders/shadows/text toward the same hue.
 - **Accessible charts.** Use color-blind-friendly palettes.
 - **Minimum contrast.** Prefer [APCA](https://apcacontrast.com/) over [WCAG 2](https://webaim.org/resources/contrastchecker/) for more accurate perceptual contrast.
-  > **Override:** WCAG 2.2 AA (4.5:1 text, 3:1 large text and UI components) is the pass/fail floor; APCA is optional extra guidance.
+  > **Override:** see SKILL.md › Conflicts › Contrast.
 - **Interactions increase contrast.** `:hover`, `:active`, `:focus` have more contrast than rest state.
 - **Browser UI matches your background.** Set `<meta name="theme-color" content="#000000">` to [align the browser’s theme color with the page background](https://x.com/JohnPhamous/status/1816160187839107342).
 - **Set the appropriate color-scheme.** Style the `<html>` tag with `color-scheme: dark` in dark themes so that scrollbars and other device UI have proper contrast.

@@ -296,6 +296,7 @@ Error messages should use plain language, precisely indicate the problem, and co
 Even if the system is usable without docs, help should be easy to find, task-focused, and concise.
 
 **Check for**:
+> **Override:** see SKILL.md › Conflicts › Help and onboarding.
 - Searchable help or documentation
 - Contextual help (tooltips, inline hints, guided tours)
 - Task-focused organization (not feature-organized)
@@ -514,7 +515,7 @@ Score each 0–4 when a technical audit is requested; otherwise use them as a ch
   on theme change.
 - **Responsive:** fixed widths that break on mobile; touch targets under 44×44px (WCAG 2.5.8
   requires at least 24×24 CSS px unless spacing or another exception applies); horizontal scroll at
-  narrow widths; layouts that break at 200% text size; custom drag or slider controls that fail
+  narrow widths; layouts that break at 200% zoom; custom drag or slider controls that fail
   under touch or stay stuck after an interrupted gesture.
 - **Implementation integrity:** repeated shortcuts, drift from the project's components and
   tokens, misleading or decorative content, and structure interchangeable with an unrelated

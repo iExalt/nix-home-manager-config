@@ -1,12 +1,23 @@
 # Notices
 
-This skill merges and adapts material from three sources. Files under `references/` name the
-source of their content in their opening paragraph. Changes: content was selected, trimmed,
-deduplicated, and reorganized around one workflow. Steps that need Impeccable's CLI were removed,
-as were Impeccable's single-purpose command playbooks (bolder, quieter, animate, typeset, colorize,
-layout, adapt, optimize, delight, overdrive, distill, extract) and its native iOS/Android guidance;
-their key rules are folded into the references. Rules overridden by this skill are marked inline.
-Agentic-interface guidance, conflict resolutions, and `scripts/browser_check.py` were added.
+This skill merges and adapts material from three sources. Content was selected, trimmed,
+deduplicated, and reorganized around one workflow; agentic-interface guidance, the conflicts
+section, and `scripts/browser_check.py` are additions. Where this skill overrides upstream wording,
+a one-line **Override** pointer leads to `SKILL.md` › Conflicts.
+
+- **`SKILL.md`** adapts Impeccable's `SKILL.src.md` (core principles, ground rules, modes) and
+  `reference/shape.md` (discovery questions and cadence).
+- **`references/`** name their sources in their opening paragraphs: `visual-direction.md`
+  (Anthropic; Impeccable `craft-floor.md`, `operate.md`, `new-work.md`), `critique.md` (Impeccable
+  `critique.md`, `audit.md`), `states-and-edge-cases.md` (Impeccable `harden.md`, `onboard.md`;
+  Vercel), `copy.md` (Anthropic; Impeccable `clarify.md`; Vercel), `design-record.md` (Impeccable
+  `init.md`, `document.md`), and `web-interface-guidelines.md` (Vercel, verbatim).
+- **Not used** from Impeccable: its CLI and the references that depend on it (`live`,
+  `live-setup`, `generate`, `hooks`, `doctor`, `region-map`, `visualize`, `routing`, the
+  `mode-*.md` comp rules), the single-purpose playbooks (`polish`, `bolder`, `quieter`, `distill`,
+  `animate`, `colorize`, `typeset`, `layout`, `delight`, `overdrive`, `adapt`, `optimize`,
+  `extract`, `component-review`, `craft`), native iOS/Android guidance, and the subagent
+  definitions. Their key rules are folded into the references where they apply.
 
 | Source | Revision | License | Copyright |
 |---|---|---|---|
