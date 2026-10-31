@@ -69,8 +69,14 @@ elif [ -n "${HOOKS_DIR:-}" ]; then
         # touch the file; post-rewrite restores at the end instead. A rebase with nothing
         # left to pick (a fast-forward, or every commit already upstream) runs no
         # post-rewrite, so restore here. A file checkout ($3 = 0) names no commits.
+        # The apply backend checks out onto before creating rebase-apply, so recognise it
+        # by the rebase command that runs this hook, or by configuration.
         HOOK_BODY='git_dir="$(git rev-parse --git-dir)"
 if [ -d "$git_dir/rebase-apply" ]; then exit 0; fi
+case " $(ps -o command= -p "$PPID" 2>/dev/null) " in
+  *"git rebase "*" --apply "*|*"git rebase "*" --whitespace"*|*"git rebase "*" -C"*) exit 0 ;;
+  *"git rebase "*) [ "$(git config rebase.backend)" = apply ] && exit 0 ;;
+esac
 if grep -qv -e "^#" -e "^\$" "$git_dir/rebase-merge/git-rebase-todo" 2>/dev/null; then exit 0; fi
 if [ "$3" = 1 ]; then set -- --changed "$1"; else set --; fi' ;;
       post-merge) HOOK_BODY='set -- --changed ORIG_HEAD' ;;
