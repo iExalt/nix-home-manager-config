@@ -82,10 +82,24 @@ class DecideTest(unittest.TestCase):
                    claude_tool_result(), claude_thinking("Merge keeps every commit; rebase is linear."),
                    claude_call("t1", CLAUDE_INPUT)]
         reason = self.run_hook("AskUserQuestion", CLAUDE_INPUT, records)
-        self.assertIn('"Merge" (question "Which approach?")', reason)
+        self.assertIn('"Merge" (your text lacks "merge") in question "Which approach?"', reason)
         self.assertIn("thinking is hidden", reason)
         first = self.run_hook("AskUserQuestion", CLAUDE_INPUT, records[:4], tool_use_id="t0")
         self.assertNotIn("thinking", first)  # reasoning before the visible text isn't the explanation
+
+    def test_paraphrased_label_is_denied_naming_the_absent_word(self):
+        # Session d1257578: prose explained "Overpass, a little bolder" for the label "Overpass, heavier";
+        # told only that it was unexplained, the agent retried three times without finding why.
+        tool_input = {"questions": [{"question": "Which font?", "options": [
+            {"label": "Inter (Recommended)", "description": "x"}, {"label": "Overpass, heavier", "description": "y"}]}]}
+        prose = "C. Inter: taller letters. B. Overpass, a little bolder, with lighter grey labels: smallest change."
+        records = [claude_user("it's hard to read"), claude_text(prose), claude_call("t1", tool_input)]
+        reason = self.run_hook("AskUserQuestion", tool_input, records)
+        self.assertIn('"Overpass, heavier" (your text lacks "heavier")', reason)
+        self.assertIn("rename the option", reason)
+        renamed = json.loads(json.dumps(tool_input).replace("Overpass, heavier", "Overpass, bolder"))
+        records[-1] = claude_call("t1", renamed)
+        self.assertIsNone(self.run_hook("AskUserQuestion", renamed, records))
 
     def test_option_descriptions_do_not_count(self):
         records = [claude_user("fix it"), claude_call("t1", CLAUDE_INPUT)]
