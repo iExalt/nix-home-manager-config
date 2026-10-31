@@ -129,6 +129,11 @@ accountId = "private"
         self.assertNotIn("switchModelsOnFlag", live)
         self.assertEqual(live["permissions"]["defaultMode"], "plan")
 
+    def test_filter_kinds_match_gitattributes(self):
+        attributes = SCRIPT.parents[1].joinpath(".gitattributes").read_text()
+        for kind, relative in FILTER.FILES.items():
+            self.assertIn(f"/{relative} filter=agent-{kind}", attributes)
+
     def test_codex_private_sections_round_trip(self):
         data = {"mcp_servers": {"docs": {"command": "/bin/docs", "args": ["--port", "1"],
                                          "env": {"KEY": "value"}}},
@@ -177,6 +182,15 @@ accountId = "private"
         extra = FILTER.private(backup, FILTER.project(backup, FILTER.CODEX))
         self.assertEqual(FILTER.add_missing(live, extra, FILTER.CODEX), [])
         self.assertEqual(live, {"tui": {"status_line": ["model", "git-branch"]}})
+
+    def test_hook_restore_leaves_unparsable_files_alone(self):
+        with tempfile.TemporaryDirectory(prefix="agent-restore-test-") as directory:
+            target, saved = Path(directory, "settings.json"), Path(directory, "claude.1")
+            saved.write_text(json.dumps({"extraKnownMarketplaces": {"m": {}}}))
+            target.write_text("<<<<<<< HEAD\n{}\n=======\n{}\n>>>>>>> other\n")
+            self.assertIsNone(FILTER.restore_file(target, saved, "claude", if_wiped=True))
+            with self.assertRaises(ValueError):
+                FILTER.restore_file(target, saved, "claude")
 
     def test_restore_names_private_sections_left_in_older_backups(self):
         with tempfile.TemporaryDirectory(prefix="agent-restore-test-") as directory:
@@ -237,7 +251,9 @@ accountId = "private"
                                capture_output=True, env={**isolated, "FILTER_PYTHON": sys.executable})
 
             config_path = "dotfiles/.codex/config.toml"
-            private = '[projects."/private/one"]\ntrust_level = "trusted"\n'
+            private = ('[projects."/private/one"]\ntrust_level = "trusted"\n'
+                       '[projects."/private/two"]\ntrust_level = "trusted"\n')
+            trusted = {"trust_level": "trusted"}
             # The origin only publishes filtered commits, so it needs no filter.
             git(directory, "init", "-q", str(origin))
             (origin / ".gitattributes").write_text(f"/{config_path} filter=agent-codex\n")
@@ -256,9 +272,9 @@ accountId = "private"
                 (origin / config_path).write_text(FILTER.clean(f'model = "{model}"', "codex"))
                 git(origin, "commit", "-qam", f"test: {model}")
 
-            def assert_restored(model):
+            def assert_restored(model, projects=("/private/one", "/private/two")):
                 self.assertEqual(tomllib.loads(config.read_text()), {
-                    "model": model, "projects": {"/private/one": {"trust_level": "trusted"}}})
+                    "model": model, "projects": {name: trusted for name in projects}})
 
             publish("two")
             git(clone, "pull", "-q", "--no-rebase")
@@ -271,9 +287,32 @@ accountId = "private"
             git(clone, "pull", "-q", "--rebase")
             assert_restored("three")
 
+            # Hooks leave a file with private content alone, so a deletion sticks even when
+            # no clean ran since the latest backup.
+            data = tomllib.loads(config.read_text())
+            del data["projects"]["/private/two"]
+            config.write_text(FILTER.dump(data, "codex"))
+            git(clone, "checkout", "-q", "-b", "side")
+            assert_restored("three", ["/private/one"])
+            # Once agent-status has backed up the deletion, a forced rewrite restores without it.
+            git(clone, "agent-status", "--porcelain")
+            git(clone, "reset", "-q", "--hard")
+            git(clone, "agent-status", "--porcelain")
+            assert_restored("three", ["/private/one"])
+
+            # Cherry-pick rewrites the file without a hook; agent-status restores it.
+            config.write_text(config.read_text().replace('"three"', '"picked"'))
+            git(clone, "commit", "-qam", "test: picked")
+            git(clone, "checkout", "-q", "-")
+            assert_restored("three", ["/private/one"])
+            git(clone, "cherry-pick", "side")
+            self.assertNotIn("projects", config.read_text())
+            git(clone, "agent-status", "--porcelain")
+            assert_restored("picked", ["/private/one"])
+
             # Stash fires no hook; agent-restore recovers, and the wiped file never
             # replaced the backup.
-            config.write_text(config.read_text().replace('"three"', '"local"'))
+            config.write_text(config.read_text().replace('"picked"', '"local"'))
             git(clone, "stash", "-q")
             git(clone, "status", "--porcelain")
             self.assertNotIn("projects", config.read_text())
@@ -286,7 +325,7 @@ accountId = "private"
                                        (clone / "dotfiles").resolve())
             subprocess.run(["git", "agent-restore", "--from", relative], cwd=clone / "dotfiles",
                            check=True, capture_output=True, env=isolated)
-            assert_restored("local")
+            assert_restored("local", ["/private/one"])
             git(clone, "add", config_path)
             self.assertNotIn("private", git(clone, "show", f":{config_path}").stdout)
 
