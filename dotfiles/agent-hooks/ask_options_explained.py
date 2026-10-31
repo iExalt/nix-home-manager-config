@@ -7,7 +7,8 @@ explain each option in prose, including its rationale and tradeoffs."
 Works for Claude Code (AskUserQuestion) and Codex (request_user_input,
 request_user_input_async); both send the same PreToolUse stdin shape and accept
 the same deny output. The hook denies the call when an option label is not
-named in the agent's visible text since the user's last message, or in the
+named in the agent's visible text since the user's last message (injected
+notifications and agent messages don't count as the user's), or in the
 question text itself. Option descriptions don't count: the audit found that
 one-line descriptions alone are what the rule is meant to prevent.
 
@@ -78,14 +79,25 @@ def _text_blocks(content, kinds=VISIBLE):
     return out
 
 
+# User records the harness injects rather than the user typing: background-task
+# results, Paseo agent messages and notifications, local command output. The
+# user has already seen the prose before them, so they don't end the turn.
+_INJECTED_PREFIXES = ("<task-notification>", "<paseo-system", "<local-command-stdout>", "<system-reminder>")
+
+
 def _is_claude_human_turn(record):
     if record.get("type") != "user" or record.get("isMeta") or record.get("isSidechain"):
         return False
+    if (record.get("origin") or {}).get("kind", "human") != "human":
+        return False
     content = (record.get("message") or {}).get("content")
     if isinstance(content, str):
-        return True
+        return not content.lstrip().startswith(_INJECTED_PREFIXES)
     blocks = [b for b in content or [] if isinstance(b, dict)]
-    return bool(blocks) and not any(b.get("type") == "tool_result" for b in blocks)
+    if not blocks or any(b.get("type") == "tool_result" for b in blocks):
+        return False
+    text = "".join(b.get("text") or "" for b in blocks if b.get("type") == "text")
+    return not text.lstrip().startswith(_INJECTED_PREFIXES)
 
 
 def _record_has_call(record, tool_use_id):

@@ -115,6 +115,19 @@ class DecideTest(unittest.TestCase):
                    claude_text("Checked."), claude_call("t1", CLAUDE_INPUT)]
         self.assertIsNone(self.run_hook("AskUserQuestion", CLAUDE_INPUT, records))
 
+    def test_injected_messages_do_not_end_the_turn(self):
+        # Session d1257578: a Paseo agent message and a task notification arrived as user records
+        # between the explanation and the retried question, hiding the explanation from the hook.
+        paseo = {"type": "user", "message": {"role": "user", "content": [
+            {"type": "text", "text": '<paseo-system version="1" kind="agent-message">Please retry.</paseo-system>'}]}}
+        task = dict(claude_user("<task-notification>\n<status>completed</status>"),
+                    origin={"kind": "task-notification"})
+        records = [claude_user("fix it"), claude_text("Rebase is linear; merge is safe."), task, paseo,
+                   claude_call("t1", CLAUDE_INPUT)]
+        self.assertIsNone(self.run_hook("AskUserQuestion", CLAUDE_INPUT, records))
+        records[3] = claude_user("Actually, ask me again.")
+        self.assertIsNotNone(self.run_hook("AskUserQuestion", CLAUDE_INPUT, records))
+
     def test_codex_async_question_text_can_carry_the_explanation(self):
         tool_input = {"questions": [{"title": "Use the SSO profile (fast) or static keys (works offline)?",
                                      "options": ["SSO profile", "static keys"]}]}
