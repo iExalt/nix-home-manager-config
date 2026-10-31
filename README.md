@@ -42,139 +42,102 @@ cd ~/dev/Projects/nix-home-manager-config
 
 ## Usage
 
-### Private agent state and Git filters
+### Private agent state and shared preferences
+
+Claude Code and Codex keep their settings in regular, untracked files on each
+machine: `~/.claude/settings.json` and `~/.codex/config.toml`. Git never reads
+or writes them, so pulls, stashes, and checkouts cannot touch their private
+keys. The repository tracks only reviewed, portable preferences, in
+`dotfiles/.claude/settings.json` and `dotfiles/.codex/config.toml`.
 
 `dotfiles/.claude/claude.json` is ignored and stays on disk. Home Manager
 creates it if missing and merges optional overlay settings into the existing
 file during activation. Nix evaluation no longer requires that private file.
 Untracking the file does not remove copies from old commits.
 
-Quickstart installs local Git clean filters after provisioning Mise. For an
-existing clone or manual setup, run:
+`./reload.sh` runs `scripts/clean-agent-config.py sync` during activation. It
+merges each live file's portable keys with the tracked copy, using the tracked
+copy from the last sync, kept in `~/.local/state/agent-config/`, as the base:
 
-```sh
-bash scripts/install-git-filters.sh
-git add --renormalize dotfiles/.codex/config.toml dotfiles/.claude/settings.json
-```
+- A key changed only in the repository, as after a pull, is applied to the
+  live file.
+- A key changed only on this machine, as with `/model`, is copied into the
+  tracked file; commit or revert it.
+- A key changed on both sides keeps this machine's value, with a warning.
+- Without a base, as on a machine's first sync, keys found on one side only
+  are added to the other, and nothing is deleted.
 
-The filters keep reviewed preferences from these two files in Git; staging
-never modifies the working files. These sections are cleaned out in full,
-including all nested entries, and remain only on disk:
+To share a preference change without reloading, run
+`mise exec -- python scripts/clean-agent-config.py sync` from the main
+checkout; sync refuses to run from a linked worktree, because every checkout
+shares one base. Sync rewrites a live file only when it changes something, in
+canonical form, so comments in `config.toml` are lost then. If an app saves
+the file while sync runs, sync merges again. Codex overlay settings (see
+[Optional Overlays](#optional-overlays)) are merged into `~/.codex/config.toml`
+on every sync and may set private keys only. Keep your own backup of anything
+you cannot recreate.
+
+These sections are never shared, including all nested entries:
 
 | File | Omitted key or section | Local state |
 | --- | --- | --- |
-| `dotfiles/.codex/config.toml` | `notify` | Notification commands and executable paths |
-| `dotfiles/.codex/config.toml` | `marketplaces` | Marketplace registrations and source paths |
-| `dotfiles/.codex/config.toml` | `mcp_servers` | MCP server commands, endpoints, and configuration |
-| `dotfiles/.codex/config.toml` | `projects` | Project directories and trust settings |
-| `dotfiles/.codex/config.toml` | `hooks` | Hook trust hashes, approved per machine with `/hooks` |
-| `dotfiles/.codex/config.toml` | `tui.screen_reader_detection_done` | Machine-specific detection state |
-| `dotfiles/.codex/config.toml` | `tui.model_availability_nux` | Model onboarding state |
-| `dotfiles/.codex/config.toml` | `desktop.daybreak-enabled` | Account and user identifiers |
-| `dotfiles/.claude/settings.json` | `extraKnownMarketplaces` | Local marketplace registrations |
-| `dotfiles/.claude/settings.json` | `permissions.allow` | Permission rules with local command paths |
-| `dotfiles/.claude/settings.json` | `env`, except `CLAUDE_CODE_SILENT_TURN_REMINDER_TEXT` | Environment variables, which may hold secrets |
-| `dotfiles/.claude/claude.json` | Entire file (ignored, not filtered) | Account, project, and runtime state |
+| `~/.codex/config.toml` | `notify` | Notification commands and executable paths |
+| `~/.codex/config.toml` | `marketplaces` | Marketplace registrations and source paths |
+| `~/.codex/config.toml` | `mcp_servers` | MCP server commands, endpoints, and configuration |
+| `~/.codex/config.toml` | `projects` | Project directories and trust settings |
+| `~/.codex/config.toml` | `hooks` | Hook trust hashes, approved per machine with `/hooks` |
+| `~/.codex/config.toml` | `tui.screen_reader_detection_done` | Machine-specific detection state |
+| `~/.codex/config.toml` | `tui.model_availability_nux` | Model onboarding state |
+| `~/.codex/config.toml` | `desktop.daybreak-enabled` | Account and user identifiers |
+| `~/.claude/settings.json` | `extraKnownMarketplaces` | Local marketplace registrations |
+| `~/.claude/settings.json` | `permissions.allow` | Permission rules with local command paths |
+| `~/.claude/settings.json` | `env`, except `CLAUDE_CODE_SILENT_TURN_REMINDER_TEXT` | Environment variables, which may hold secrets |
+| `dotfiles/.claude/claude.json` | Entire file (ignored, linked to `~/.claude.json`) | Account, project, and runtime state |
 
 The allowlists in `scripts/clean-agent-config.py` define what is shared. All
 unlisted keys at every nesting level are also omitted, including future keys.
 Even an allowed key is omitted if its name or value contains a path separator
 or a home-directory marker (`~`, `$HOME`, or `${HOME}`); a list containing
-such a value is omitted in full. When that drops a key the allowlist names,
-such as `developer_instructions` containing "and/or", the filter prints a
-warning naming the key, on every Git command that runs the filter, until the
-value changes. The one exception is a quoted path under
+such a value is omitted in full. When that keeps a key the allowlist names
+local, such as `developer_instructions` containing "and/or", sync and the
+filter print a warning naming the key until the value changes, and sync
+leaves the key alone on both sides. The one exception is a quoted path under
 `"$HOME/.config/agent-hooks/`, the shared hook scripts that Home Manager links
 from `dotfiles/agent-hooks`, so reviewed Claude `hooks` entries that run them
-stay in Git. A hook entry is kept whole or omitted whole: one unlisted key or
-private path drops the entry, while the other entries for the same event stay
-in Git. Empty sections are dropped. Review and extend the allowlists when
+are shared. A hook entry is kept whole or omitted whole: one unlisted key or
+private path keeps the entry local, while the other entries for the same event
+are shared. Empty sections are dropped. Review and extend the allowlists when
 adding a new portable preference, and keep this table current when excluding
-additional sections. Output is canonicalized, so formatting and local-only
-changes produce no content diff after renormalization.
+additional sections.
 
-Git can still report a file as modified when local edits change its byte size,
-even when the filtered content matches the index. Use `git agent-status` (with
-the usual status arguments) to refresh those entries before showing status. It
-refreshes only files whose filtered hash already matches the index, so it does
-not stage new preference changes. Plain `git status` retains this Git
-limitation; the clean filter alone cannot eliminate it. This also happens
-after a rebase restores private keys, because the rebase rewrites the index
-after its hooks run; if a later checkout or pull refuses because of local
-changes to these files, run `git agent-status` first.
+Quickstart also installs Git clean filters for the two tracked files, as a
+safety net: Git stores only their allowlisted content, so private keys left in
+a tracked copy never reach a commit. For an existing clone or manual setup,
+run:
 
-Git stores only the filtered content, so a pull, checkout, reset, or stash
-that rewrites either file writes the filtered content back and drops the
-private keys. To recover them, the clean filter also saves each raw version
-that holds private keys to `agent-config-private/` in the Git directory,
-keeping the last 10 plus, for 30 days, any older one that alone still holds a
-private section (mode 0600, per worktree, never committed). A file that
-already equals its filtered content is not saved, so a wiped file never
-replaces a good backup. The installer adds `post-checkout`, `post-merge`, and
-`post-rewrite` hooks to Git's hooks directory (honouring a repository-local
-`core.hooksPath`) that run `git agent-restore --if-wiped`, so pulls, rebases,
-and checkouts restore the keys automatically. A hook restores only a file Git
-rewrote: its index copy changed from the commit Git left (so `commit --amend`
-and branch switches that keep the file do nothing), and the file holds no
-private content or matches Git's index copy byte for byte; a file Git left
-alone keeps its edits. The installer warns and skips the hooks when
-`core.hooksPath` is set outside this repository (global, system, or
-command-line config), which other repositories may share, or when a hook it
-did not write already exists. A hook also restores after `git checkout --
-<file>` and `git restore <file>`, which wipe every private key; to discard one
-private edit, edit the file instead. Commands that rewrite the file without a
-hook, such as `git reset --hard`, `git cherry-pick`, `git revert`, `git am`,
-`git apply`, `git checkout -p` and `git restore -p`, `git merge --abort`, `git
-rebase --abort`, a merge that stops on a conflict in any file, and `git
-stash`, `git stash pop`, or `git pull --autostash`, need a manual step: `git
-agent-status` restores a wiped file before showing status, and `git
-agent-restore` also merges into a file an agent has written to since. Between
-`git stash` and `git stash pop`, the agents run without their private
-settings; Codex may write to its file meanwhile, so run `git agent-restore`
-after `git stash pop`.
-
-`git agent-restore` adds back only private keys and private list items that
-are missing; a hook list that already holds a private item is left as it is,
-so after a stash during which an agent added a private hook, restore other
-hooks by hand; values already in the file win, and portable preferences
-removed in Git stay removed. It rewrites a file only when it adds keys, in
-canonical form, so hand-written comments in `config.toml` are lost then. If an
-agent saves the file while restore runs, restore starts over (a save in the
-instant before restore replaces the file can still be lost), but an agent that
-later writes back settings it read before the restore can still undo it. A
-backup is saved only when Git runs the clean filter on the file, as `git
-agent-status` and `git diff` do; plain `git status` skips it when the file's
-size changed. After deleting a private key, run `git agent-status` before `git
-reset --hard`, `git checkout -f`, or `git checkout`/`git restore -- <file>`,
-which overwrite without comparing; otherwise a restore brings the key back. If
-you deleted the last private key, `git agent-status` would restore it too; run
-`git agent-restore --forget <kind>` instead, as below. Deleting the last
-private key is never saved, so a later restore brings it back. To remove
-private keys for good, such as a revoked secret, delete them and run `git
-agent-restore --forget codex` or `--forget claude`: it deletes that file's
-backups in every worktree and keeps only each worktree's current content. If
-the file holds no private keys, which is also how a wiped file looks, it names
-the sections the backups would lose and asks you to add `--yes`. It keeps, and
-names, the backups of a linked worktree whose file
-is missing or holds no private keys, since they may be its only copy. Remove
-the keys from each linked worktree's copy of the file first, or its next
-backup saves them again. Each restore message repeats this hint. When older
-backups hold private sections that the file and the latest backup both lack,
-as after a stash during which an agent saved a new key, restore names them and
-the backup to recover them from, run as `git agent-restore --from "$(git
-rev-parse --absolute-git-dir)/agent-config-private/<file>"`. After a
-deliberate deletion, that note repeats until the backup rotates out, for up to
-30 days, or until you run `--forget`.
+```sh
+bash scripts/install-git-filters.sh
+```
 
 Filters are clone-local Git configuration: install them in every clone before
 staging these files. Rerun the installer if the Mise Python installation is
 replaced. A configured filter failure blocks staging instead of passing raw
 content through. Review `git diff --cached` before publishing.
 
-The clean filter only writes Git's copy; its raw backups and the restore hooks
-above are the only recovery for local-only settings, within the limits
-described there. Keep your own backup of anything you cannot recreate. The
-smudge filter passes repository content through unchanged.
+#### Moving from the previous layout
+
+The live files used to be links into this repository, kept private by backups
+and Git hooks. Rerun the installer once in each existing clone: it removes
+those hooks and the `git agent-status` and `git agent-restore` aliases. The
+first sync on such a machine creates each live file from the tracked copy,
+which still holds that machine's private keys. If a pull had already wiped
+them, it uses the newest backup in `.git/agent-config-private/` instead. Each
+clone keeps its own; delete it once that clone has synced. The first sync
+shrinks both tracked files to their shared content, so `git status` lists them
+as modified until `git add` refreshes Git's index; nothing is staged, because
+their content is unchanged. Earlier Home Manager generations put copies of the
+full Codex config in the Nix store; they remain until those generations expire
+and are garbage-collected.
 
 ### Apply configuration
 
