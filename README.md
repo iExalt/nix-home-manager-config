@@ -131,8 +131,10 @@ and Git hooks. Rerun the installer once in each existing clone: it removes
 those hooks and the `git agent-status` and `git agent-restore` aliases. The
 first sync on such a machine creates each live file from the tracked copy,
 which still holds that machine's private keys. If a pull had already wiped
-them, it uses the newest backup in `.git/agent-config-private/` instead. Each
-clone keeps its own; delete it once that clone has synced. The first sync
+them, it uses the newest backup in `.git/agent-config-private/` instead. Sync
+cannot tell a wiped copy from one whose private keys you deleted on purpose,
+so if you did that before moving, delete that directory before the first sync.
+Each clone keeps its own; delete it once that clone has synced. The first sync
 shrinks both tracked files to their shared content, so `git status` lists them
 as modified until `git add` refreshes Git's index; nothing is staged, because
 their content is unchanged. Earlier Home Manager generations put copies of the

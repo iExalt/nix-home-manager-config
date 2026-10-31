@@ -201,6 +201,16 @@ def holds_private(data, kind):
     return bool(private(data, project(data, POLICY[kind])))
 
 
+def holds(have, want):
+    """Whether have contains every value in want, such as another file's private part."""
+    if isinstance(want, dict):
+        return isinstance(have, dict) and all(
+            key in have and holds(have[key], value) for key, value in want.items())
+    if isinstance(want, list) and isinstance(have, list):
+        return all(item in have for item in want)
+    return have == want
+
+
 def portable_item(item, rule):
     """Whether an item of a per-item tracked list survives projection unchanged."""
     return isinstance(item, dict) and project(item, rule[0]) == item
@@ -407,10 +417,17 @@ def sync_kind(kind, repo, home, state, overlay=None):
                                               use_backup=base_text is None)
         if base_text is None:
             base = seed_base
-    if holds_private(shared_raw, kind) and not from_shared:
-        # fix(privacy): never cut the only copy of private keys down to its projection.
-        raise SyncError(f"{shared_path} still holds private keys that {live_path} lacks; "
-                        f"copy them into {live_path}, then rerun sync")
+    leftover = private(shared_raw, shared)
+    if leftover and not from_shared:
+        try:
+            current = parse(seeded, kind) if seeded is not None else load(live_path, kind)
+        except ValueError:
+            raise SyncError(f"could not parse {live_path}") from None
+        # fix(privacy): never cut the only copy of private keys down to its projection. A
+        # live file that already holds them, as after a failed write, makes that copy spare.
+        if not holds(current, leftover):
+            raise SyncError(f"{shared_path} still holds private keys that {live_path} lacks; "
+                            f"copy them into {live_path}, then rerun sync")
     overlay_data = load(overlay, kind) if overlay else {}
     if project(overlay_data, policy):
         raise SyncError(f"the {kind} overlay sets shared keys; overlays may set private keys only")

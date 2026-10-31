@@ -284,6 +284,16 @@ class SyncCommandTests(unittest.TestCase):
         self.assertIn("still holds private keys", result.stderr)
         self.assertEqual(self.path("claude", "shared").read_text(), shared_text)
 
+    def test_strips_the_repo_copy_once_the_live_file_holds_its_private_keys(self):
+        self.path("claude", "shared").write_text(json.dumps(LIVE_CLAUDE))
+        live = LIVE_CLAUDE | {"env": {"TOKEN": "t"}}
+        self.path("claude", "live").write_text(json.dumps(live))
+        result = self.sync("claude")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.path("claude", "shared").read_text(),
+                         FILTER.clean(json.dumps(LIVE_CLAUDE), "claude"))
+        self.assertEqual(json.loads(self.path("claude", "live").read_text()), live)
+
     def test_overlays_add_private_keys_only_and_worktrees_are_refused(self):
         shared_text = FILTER.clean('model = "m"\n', "codex")
         self.path("codex", "shared").write_text(shared_text)
