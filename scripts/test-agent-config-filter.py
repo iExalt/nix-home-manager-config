@@ -3,8 +3,9 @@
 
 import importlib.util
 import json
+import os
 from pathlib import Path
-import shlex
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -115,38 +116,135 @@ accountId = "private"
         self.assertEqual(json.loads(output), {"hooks": {"PreToolUse": source["hooks"]["PreToolUse"]}})
         self.assertEqual(output, FILTER.clean(output, "claude"))
 
-    def test_git_clean_status_private_edits_and_required_failure(self):
+    def test_restore_adds_only_missing_private_keys(self):
+        backup = {"model": "old", "switchModelsOnFlag": True,
+                  "permissions": {"defaultMode": "default", "allow": ["Bash(/private:*)"]},
+                  "extraKnownMarketplaces": {"private": {"path": "/private"}}}
+        live = {"model": "new", "permissions": {"defaultMode": "plan"}}
+        extra = FILTER.private(backup, FILTER.project(backup, FILTER.CLAUDE))
+        self.assertEqual(sorted(FILTER.add_missing(live, extra)),
+                         ["extraKnownMarketplaces", "permissions.allow"])
+        # A portable key removed on purpose stays removed; live values win.
+        self.assertEqual(live["model"], "new")
+        self.assertNotIn("switchModelsOnFlag", live)
+        self.assertEqual(live["permissions"]["defaultMode"], "plan")
+
+    def test_codex_private_sections_round_trip(self):
+        data = {"mcp_servers": {"docs": {"command": "/bin/docs", "args": ["--port", "1"],
+                                         "env": {"KEY": "value"}}},
+                "projects": {"/private/a b": {"trust_level": "trusted"}},
+                "hooks": {"tables": [{"name": "x", "nested": {"on": True}}]}}
+        self.assertEqual(tomllib.loads(FILTER.dump(data, "codex")), data)
+
+    def test_backup_skips_filtered_input_and_rotates(self):
+        with tempfile.TemporaryDirectory(prefix="agent-backup-test-") as directory:
+            original = FILTER.backup_dir
+            FILTER.backup_dir = lambda: Path(directory)
+            try:
+                def save(text):
+                    data = tomllib.loads(text)
+                    FILTER.back_up(text, "codex", data, FILTER.project(data, FILTER.CODEX))
+
+                full = 'model = "a"\n[projects."/one"]\nx = 1\n[projects."/two"]\nx = 2\n'
+                save(full)
+                save('model = "a"\n')  # A wiped file never replaces the backup.
+                save(full)  # Unchanged content adds no version.
+                self.assertEqual([item.read_text() for item in FILTER.backups("codex")], [full])
+                for index in range(FILTER.KEEP_BACKUPS):
+                    save(f'model = "{index}"\n[projects."/one"]\nx = 1\n')
+                kept = FILTER.backups("codex")
+                self.assertEqual(len(kept), FILTER.KEEP_BACKUPS)
+                self.assertNotIn(full, [item.read_text() for item in kept])
+            finally:
+                FILTER.backup_dir = original
+
+    def test_git_filter_backup_hooks_and_restore(self):
         with tempfile.TemporaryDirectory(prefix="agent-filter-test-") as directory:
-            root = Path(directory)
+            origin, clone = Path(directory, "origin"), Path(directory, "clone")
+            # Keep the user's global hooks, signing, and aliases out of the test.
+            isolated = {**os.environ, "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1"}
 
-            def git(*args, check=True):
-                return subprocess.run(["git", "-C", directory, *args], check=check,
-                                      capture_output=True, text=True)
+            def git(root, *args, check=True):
+                result = subprocess.run(
+                    ["git", "-C", str(root), "-c", "user.name=Test",
+                     "-c", "user.email=test@example.invalid", *args],
+                    check=False, capture_output=True, text=True, env=isolated)
+                if check and result.returncode:
+                    self.fail(f"git {' '.join(args)} failed: {result.stderr.strip()}")
+                return result
 
-            git("init", "-q")
-            git("config", "filter.test.clean", shlex.join([sys.executable, str(SCRIPT), "codex"]))
-            git("config", "filter.test.required", "true")
-            (root / ".gitattributes").write_text("dotfiles/.codex/config.toml filter=test\n")
-            config = root / "dotfiles/.codex/config.toml"
-            config.parent.mkdir(parents=True)
-            helper = SCRIPT.with_name("agent-status.sh")
-            git("config", "alias.agent-status", "!" + shlex.join(["bash", str(helper)]))
-            original = 'model = "example"\n[projects."/private/one"]\ntrust_level = "trusted"\n'
-            config.write_text(original)
-            git("add", ".")
-            git("-c", "user.name=Test", "-c", "user.email=test@example.invalid",
-                "-c", "commit.gpgsign=false", "commit", "-qm", "test: filter")
-            self.assertEqual(config.read_text(), original)
-            config.write_text(original.replace("/private/one", "/private/two-longer"))
-            self.assertEqual(git("diff", "--no-ext-diff").stdout, "")
-            self.assertEqual(git("agent-status", "--porcelain").stdout, "")
-            self.assertEqual(git("status", "--porcelain").stdout, "")
-            self.assertNotIn("private", git("show", "HEAD:dotfiles/.codex/config.toml").stdout)
-            config.write_text(original.replace('"example"', '"different"'))
-            self.assertIn("dotfiles/.codex/config.toml", git("agent-status", "--porcelain").stdout)
-            self.assertEqual(git("diff", "--cached", "--no-ext-diff").stdout, "")
+            def install(root):
+                (root / "scripts").mkdir(exist_ok=True)
+                for name in ("clean-agent-config.py", "agent-status.sh", "install-git-filters.sh"):
+                    shutil.copy(SCRIPT.with_name(name), root / "scripts" / name)
+                subprocess.run(["bash", str(root / "scripts/install-git-filters.sh")], check=True,
+                               capture_output=True, env={**isolated, "FILTER_PYTHON": sys.executable})
+
+            config_path = "dotfiles/.codex/config.toml"
+            private = '[projects."/private/one"]\ntrust_level = "trusted"\n'
+            # The origin only publishes filtered commits, so it needs no filter.
+            git(directory, "init", "-q", str(origin))
+            (origin / ".gitattributes").write_text(f"/{config_path} filter=agent-codex\n")
+            (origin / config_path).parent.mkdir(parents=True)
+            (origin / config_path).write_text(FILTER.clean('model = "one"', "codex"))
+            git(origin, "add", ".")
+            git(origin, "commit", "-qm", "test: base")
+
+            git(directory, "clone", "-q", str(origin), str(clone))
+            install(clone)
+            config = clone / config_path
+            config.write_text(config.read_text() + private)
+            self.assertEqual(git(clone, "agent-status", "--porcelain", "--", "dotfiles").stdout, "")
+
+            def publish(model):
+                (origin / config_path).write_text(FILTER.clean(f'model = "{model}"', "codex"))
+                git(origin, "commit", "-qam", f"test: {model}")
+
+            def assert_restored(model):
+                self.assertEqual(tomllib.loads(config.read_text()), {
+                    "model": model, "projects": {"/private/one": {"trust_level": "trusted"}}})
+
+            publish("two")
+            git(clone, "pull", "-q", "--no-rebase")
+            assert_restored("two")
+
+            (clone / "note").write_text("local\n")
+            git(clone, "add", "note")
+            git(clone, "commit", "-qm", "test: local")
+            publish("three")
+            git(clone, "pull", "-q", "--rebase")
+            assert_restored("three")
+
+            # Stash fires no hook; agent-restore recovers, and the wiped file never
+            # replaced the backup.
+            config.write_text(config.read_text().replace('"three"', '"local"'))
+            git(clone, "stash", "-q")
+            git(clone, "status", "--porcelain")
+            self.assertNotIn("projects", config.read_text())
+            git(clone, "stash", "pop", "-q")
+            git(clone, "agent-restore")
+            assert_restored("local")
+            git(clone, "add", config_path)
+            self.assertNotIn("private", git(clone, "show", f":{config_path}").stdout)
+
+            backups = list(Path(git(clone, "rev-parse", "--absolute-git-dir").stdout.strip(),
+                                "agent-config-private").iterdir())
+            self.assertTrue(backups)
+            self.assertTrue(all(item.stat().st_mode & 0o777 == 0o600 for item in backups))
+
+            # A hooks directory shared through global config is never written.
+            shared = Path(directory, "shared-hooks")
+            global_config = Path(directory, "gitconfig")
+            global_config.write_text(f"[core]\n\thooksPath = {shared}\n")
+            skipped = subprocess.run(
+                ["bash", str(clone / "scripts/install-git-filters.sh")], capture_output=True,
+                env={**isolated, "GIT_CONFIG_GLOBAL": str(global_config), "FILTER_PYTHON": sys.executable})
+            self.assertEqual(skipped.returncode, 0)
+            self.assertIn(b"core.hooksPath", skipped.stderr)
+            self.assertFalse(shared.exists())
+
             config.write_text('model = "broken')
-            self.assertNotEqual(git("add", "dotfiles/.codex/config.toml", check=False).returncode, 0)
+            self.assertNotEqual(git(clone, "add", config_path, check=False).returncode, 0)
 
 
 if __name__ == "__main__":
