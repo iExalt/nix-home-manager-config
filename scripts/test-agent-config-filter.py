@@ -143,9 +143,11 @@ accountId = "private"
     def test_filter_warns_when_a_reviewed_key_stays_local(self):
         result = subprocess.run([sys.executable, str(SCRIPT), "codex"], capture_output=True, text=True,
                                 input='developer_instructions = "Report progress and/or blockers"\n'
+                                      'model = {nested = 1}\n'
                                       '[projects."/private"]\nx = 1\n', cwd=tempfile.gettempdir())
         self.assertEqual(result.stdout, "\n")
-        self.assertIn("kept developer_instructions local", result.stderr)
+        self.assertIn("kept developer_instructions local; its value contains a path-like", result.stderr)
+        self.assertIn("kept model local; its value is not a reviewed type", result.stderr)
         self.assertNotIn("projects", result.stderr)
 
     def test_codex_private_sections_round_trip(self):
@@ -202,7 +204,8 @@ accountId = "private"
         # A pull adds another shared hook and drops the private one from the file.
         live = {"hooks": {"Stop": [mine, theirs]}}
         self.assertEqual(FILTER.add_missing(live, FILTER.private(backup, kept), FILTER.CLAUDE), ["hooks.Stop"])
-        self.assertEqual(live, {"hooks": {"Stop": [mine, theirs, local]}})
+        # The private hook returns to its place after its backup neighbour.
+        self.assertEqual(live, {"hooks": {"Stop": [mine, local, theirs]}})
         # The filtered content still matches what Git holds: no phantom deletion.
         self.assertEqual(FILTER.project(live, FILTER.CLAUDE), {"hooks": {"Stop": [mine, theirs]}})
         # A plain list is tracked whole, so the pulled copy wins over a local one.
@@ -244,9 +247,12 @@ accountId = "private"
             # that restore cannot merge is not.
             mine = {"matcher": "", "hooks": [{"type": "command", "command": "/private/hook"}]}
             hooked = backup(3, {**full, "hooks": {"Stop": [mine]}})
+            broken = Path(directory, "claude.4")
+            broken.write_text("{")  # An unreadable backup is skipped, not fatal.
             live = {"permissions": {"allow": ["Bash(b)"]}, "hooks": {"Stop": []},
                     "extraKnownMarketplaces": {"m": {}}, "apiKeyHelper": "/private/helper"}
-            self.assertEqual(FILTER.unrestored([hooked], live, "claude"), [(hooked, ["hooks.Stop"])])
+            self.assertEqual(FILTER.unrestored([hooked, broken], live, "claude"),
+                             [(hooked, ["hooks.Stop"])])
 
     def test_restore_retries_when_the_file_changes_meanwhile(self):
         with tempfile.TemporaryDirectory(prefix="agent-restore-test-") as directory:
@@ -396,11 +402,31 @@ accountId = "private"
             config.write_text(FILTER.clean(config.read_text(), "codex"))
             self.assertIn("--forget codex", git(clone, "agent-status", "--porcelain").stderr)
             config.write_text(FILTER.clean(config.read_text(), "codex"))
-            git(clone, "agent-restore", "--forget", "codex")
+            # A linked worktree with its own private keys, wiped (mid-stash, say) when the
+            # first forget runs, keeps its backups; once restored, it keeps one current backup.
+            linked = Path(directory, "linked")
+            git(clone, "worktree", "add", "-q", "-b", "linked", str(linked))
+            # The scripts are untracked in this fixture, so the new worktree needs its own copy.
+            shutil.copytree(clone / "scripts", linked / "scripts")
+            linked_config = linked / config_path
+            linked_private = '[projects."/linked"]\ntrust_level = "trusted"\n'
+            linked_config.write_text(linked_config.read_text() + linked_private)
+            git(linked, "agent-status", "--porcelain")
+            linked_dir = Path(git(linked, "rev-parse", "--absolute-git-dir").stdout.strip(),
+                              "agent-config-private")
+            linked_config.write_text(FILTER.clean(linked_config.read_text(), "codex"))
+            notice = git(clone, "agent-restore", "--forget", "codex").stderr
+            self.assertRegex(notice, r"kept the backups of \S*linked,")
+            self.assertTrue(any("/linked" in item.read_text()
+                                for item in FILTER.backups(linked_dir, "codex")))
             git(clone, "agent-status", "--porcelain")
             self.assertNotIn("projects", config.read_text())
             self.assertFalse(any("private" in item.read_text()
                                  for item in FILTER.backups(backup_dir, "codex")))
+            linked_config.write_text(linked_config.read_text() + linked_private)
+            git(clone, "agent-restore", "--forget", "codex")
+            self.assertEqual([item.read_text() for item in FILTER.backups(linked_dir, "codex")],
+                             [linked_config.read_text()])
 
             backups = list(Path(git(clone, "rev-parse", "--absolute-git-dir").stdout.strip(),
                                 "agent-config-private").iterdir())
