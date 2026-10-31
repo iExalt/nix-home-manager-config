@@ -70,7 +70,10 @@ all nested entries, and remain only on disk:
 | `dotfiles/.codex/config.toml` | `hooks` | Hook trust hashes, approved per machine with `/hooks` |
 | `dotfiles/.codex/config.toml` | `tui.screen_reader_detection_done` | Machine-specific detection state |
 | `dotfiles/.codex/config.toml` | `tui.model_availability_nux` | Model onboarding state |
+| `dotfiles/.codex/config.toml` | `desktop.daybreak-enabled` | Account and user identifiers |
 | `dotfiles/.claude/settings.json` | `extraKnownMarketplaces` | Local marketplace registrations |
+| `dotfiles/.claude/settings.json` | `permissions.allow` | Permission rules with local command paths |
+| `dotfiles/.claude/settings.json` | `env`, except `CLAUDE_CODE_SILENT_TURN_REMINDER_TEXT` | Environment variables, which may hold secrets |
 | `dotfiles/.claude/claude.json` | Entire file (ignored, not filtered) | Account, project, and runtime state |
 
 The allowlists in `scripts/clean-agent-config.py` define what is shared. All
