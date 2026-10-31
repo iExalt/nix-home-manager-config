@@ -9,11 +9,11 @@ FILTER_PYTHON="${FILTER_PYTHON:-$(mise which python)}"
 quote() {
   "$FILTER_PYTHON" -c 'import shlex, sys; print(shlex.join(sys.argv[1:]))' "$@"
 }
-# fix(privacy): a plain assignment trips set -e; a failing substitution in a for list would not.
+# fix(privacy): stop if kinds fails or prints nothing; a for list would ignore both.
 SCRIPT=("$FILTER_PYTHON" scripts/clean-agent-config.py)
-KINDS="$("${SCRIPT[@]}" kinds)"
-[ -n "$KINDS" ]
-for kind in $KINDS; do
+read -ra KINDS <<< "$("${SCRIPT[@]}" kinds)"
+[ "${#KINDS[@]}" -gt 0 ]
+for kind in "${KINDS[@]}"; do
   FILTER_COMMAND="$(quote "${SCRIPT[@]}" "$kind")"
   git config --local "filter.agent-$kind.clean" "$FILTER_COMMAND"
   git config --local "filter.agent-$kind.smudge" cat
@@ -47,21 +47,31 @@ else
       echo "warning: kept existing $hook_path; call 'git agent-restore' from it by hand." >&2
       continue
     fi
-    REBASE_GUARD=""
-    if [ "$hook" = post-checkout ]; then
-      # A rebase checks out commits one by one; post-rewrite restores once at the end.
-      REBASE_GUARD='git_dir="$(git rev-parse --git-dir)"
+    # fix(config): restore only files whose index copy changed from the commit Git left.
+    case "$hook" in
+      post-checkout)
+        # A rebase checks out commits one by one; post-rewrite restores once at the end.
+        # A file checkout ($3 = 0) names no commits.
+        HOOK_BODY='git_dir="$(git rev-parse --git-dir)"
 if [ -d "$git_dir/rebase-merge" ] || [ -d "$git_dir/rebase-apply" ]; then exit 0; fi
-'
-    fi
+if [ "$3" = 1 ]; then set -- --changed "$1"; else set --; fi' ;;
+      post-merge) HOOK_BODY='set -- --changed ORIG_HEAD' ;;
+      post-rewrite) HOOK_BODY='[ "$1" = rebase ] || exit 0
+set -- --changed ORIG_HEAD' ;;
+    esac
     # Write whole, then rename, so a failure never leaves a partial hook without the marker.
     if ! cat > "$hook_path.tmp" <<HOOK
 #!/bin/sh
 $HOOK_MARKER
 cd "\$(git rev-parse --show-toplevel)" || exit 0
 # An older checkout may predate restore; skip quietly rather than fail every checkout.
-grep -q -- --if-wiped scripts/clean-agent-config.py 2>/dev/null || exit 0
-${REBASE_GUARD}$HOOK_COMMAND
+grep -q -- --changed scripts/clean-agent-config.py 2>/dev/null || exit 0
+if [ ! -x $(quote "$FILTER_PYTHON") ]; then
+  echo "warning: agent config hooks cannot find their Python; rerun scripts/install-git-filters.sh." >&2
+  exit 0
+fi
+$HOOK_BODY
+$HOOK_COMMAND "\$@"
 # Restore reports its own problems; never fail the Git command that ran this hook.
 exit 0
 HOOK

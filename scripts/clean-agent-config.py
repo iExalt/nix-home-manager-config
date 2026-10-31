@@ -73,7 +73,8 @@ def portable(value):
     return isinstance(value, (bool, int, float)) or value is None
 
 
-def project(data, policy):
+def project(data, policy, kept_local=None, path=()):
+    """Select the allowlisted, portable parts of data; name reviewed keys kept local."""
     result = {}
     for key in sorted(data):
         if not portable(key) or (key not in policy and "*" not in policy):
@@ -82,7 +83,7 @@ def project(data, policy):
         value = data[key]
         if isinstance(rule, dict):
             if isinstance(value, dict):
-                selected = project(value, rule)
+                selected = project(value, rule, kept_local, (*path, key))
                 if selected:
                     result[key] = selected
         elif isinstance(rule, list):
@@ -95,12 +96,21 @@ def project(data, policy):
                     result[key] = kept
         elif portable(value):
             result[key] = value
+        elif kept_local is not None and key in policy:
+            # Wildcard entries are expected to hold private names; a reviewed key is not.
+            kept_local.append(".".join((*path, key)))
     return result
+
+
+def toml_string(text):
+    # fix(config): JSON escapes are TOML escapes, except that TOML needs DEL escaped and
+    # rejects the surrogate pairs json.dumps writes for non-BMP characters by default.
+    return json.dumps(text, ensure_ascii=False).replace("\x7f", "\\u007f")
 
 
 def toml_value(value):
     if isinstance(value, dict):
-        return "{" + ", ".join(f"{json.dumps(k)} = {toml_value(v)}" for k, v in value.items()) + "}"
+        return "{" + ", ".join(f"{toml_string(k)} = {toml_value(v)}" for k, v in value.items()) + "}"
     if isinstance(value, list):
         return "[" + ", ".join(toml_value(item) for item in value) + "]"
     # fix(config): restore rewrites private values too, which may use TOML-only types.
@@ -108,16 +118,18 @@ def toml_value(value):
         return value.isoformat()
     if isinstance(value, float) and not math.isfinite(value):
         return "nan" if math.isnan(value) else ("inf" if value > 0 else "-inf")
-    return json.dumps(value, ensure_ascii=False, allow_nan=False)
+    if isinstance(value, str):
+        return toml_string(value)
+    return json.dumps(value, allow_nan=False)
 
 
 def toml_dump(data, prefix=()):
     lines = []
     if prefix:
-        lines.append("[" + ".".join(json.dumps(key) for key in prefix) + "]")
+        lines.append("[" + ".".join(toml_string(key) for key in prefix) + "]")
     for key, value in data.items():
         if not isinstance(value, dict):
-            lines.append(f"{json.dumps(key)} = {toml_value(value)}")
+            lines.append(f"{toml_string(key)} = {toml_value(value)}")
     for key, value in data.items():
         if isinstance(value, dict):
             lines.extend(["", toml_dump(value, (*prefix, key))])
@@ -192,15 +204,16 @@ def add_missing(live, extra, policy, path=()):
     return added
 
 
-def absent(extra, live, path=()):
-    """Name the sections of extra that live lacks."""
+def absent(extra, live, policy, path=()):
+    """Name the sections of extra that live lacks and add_missing could restore."""
     names = []
     for key, value in extra.items():
+        rule = policy.get(key, policy.get("*")) if isinstance(policy, dict) else None
         if key not in live:
             names.append(".".join((*path, key)))
         elif isinstance(value, dict) and isinstance(live[key], dict):
-            names += absent(value, live[key], (*path, key))
-        elif isinstance(value, list) and isinstance(live[key], list):
+            names += absent(value, live[key], rule or {}, (*path, key))
+        elif isinstance(rule, list) and isinstance(value, list) and isinstance(live[key], list):
             if any(item not in live[key] for item in value):
                 names.append(".".join((*path, key)))
     return names
@@ -247,6 +260,13 @@ def paths(data, prefix=()):
     return names
 
 
+def read_or_none(path):
+    try:
+        return path.read_text()
+    except FileNotFoundError:  # Another Git process rotated it away meanwhile.
+        return None
+
+
 def rotate(directory, kind, now):
     # fix(config): keep the newest backups, plus older ones that alone still hold a private
     # value or list item, so small private sets after a wipe cannot evict the complete one.
@@ -254,13 +274,13 @@ def rotate(directory, kind, now):
     for index, saved in enumerate(reversed(backups(directory, kind))):
         try:
             names = paths(private_part(parse(saved.read_text(), kind), kind))
-        except ValueError:
+        except (ValueError, FileNotFoundError):  # Unparsable, or rotated by another run.
             names = set()
         young = now - int(saved.suffix[1:]) < KEEP_UNIQUE_SECONDS * 10**9
         if index < KEEP_BACKUPS or (young and names - seen):
             seen |= names
         else:
-            saved.unlink()
+            saved.unlink(missing_ok=True)
 
 
 def back_up(text, kind, data, projected, directory=None):
@@ -271,10 +291,12 @@ def back_up(text, kind, data, projected, directory=None):
     directory = directory or backup_dir()
     directory.mkdir(mode=0o700, exist_ok=True)
     existing = backups(directory, kind)
-    if existing and existing[-1].read_text() == text:
+    if existing and read_or_none(existing[-1]) == text:
         return
     now = time.time_ns()
-    write_private(directory / f"{kind}.{now}", text)
+    # fix(config): stay ordered even if the clock steps back.
+    stamp = max(now, int(existing[-1].suffix[1:]) + 1) if existing else now
+    write_private(directory / f"{kind}.{stamp}", text)
     rotate(directory, kind, now)
 
 
@@ -282,7 +304,8 @@ def filter_main(kind):
     text = sys.stdin.read()
     try:
         data = parse(text, kind)
-        projected = project(data, POLICY[kind])
+        kept_local = []
+        projected = project(data, POLICY[kind], kept_local)
         output = dump(projected, kind)
     except Exception:
         # fix(privacy): do not echo configuration contents on parse failures.
@@ -292,6 +315,10 @@ def filter_main(kind):
     except Exception:
         print(f"warning: agent config backup failed for {kind}; restore will not cover recent edits.",
               file=sys.stderr)
+    for name in kept_local:
+        # feat(config): a reviewed preference that silently stops syncing is easy to miss.
+        print(f"warning: kept {name} local; its value contains a path-like character "
+              "(/, \\, ~, or $HOME).", file=sys.stderr)
     sys.stdout.write(output)
 
 
@@ -341,6 +368,17 @@ def restore_file(target, saved, kind, indexed_bytes=None):
     raise OSError("file kept changing")
 
 
+def unchanged(root, old, relative):
+    """Whether the index copy of a path matches commit old; any failure counts as changed."""
+    def blob(spec):
+        result = subprocess.run(["git", "rev-parse", "-q", "--verify", spec], cwd=root,
+                                capture_output=True, text=True)
+        return result.stdout.strip() if result.returncode == 0 else None
+
+    before = blob(f"{old}:{relative}")
+    return before is not None and before == blob(f":{relative}")
+
+
 def indexed(root, relative):
     """Return the stage-0 index bytes of a path, or None."""
     result = subprocess.run(["git", "cat-file", "blob", f":{relative}"], cwd=root,
@@ -352,8 +390,11 @@ def unrestored(older, live, kind):
     """Pair each older backup, newest first, with private sections live still lacks."""
     reported, result = set(), []
     for saved in reversed(older):
-        names = [name for name in absent(private_part(parse(saved.read_text(), kind), kind), live)
-                 if name not in reported]
+        text = read_or_none(saved)
+        if text is None:
+            continue
+        backup = private_part(parse(text, kind), kind)
+        names = [name for name in absent(backup, live, POLICY[kind]) if name not in reported]
         if names:
             reported.update(names)
             result.append((saved, names))
@@ -366,6 +407,8 @@ def restore_main(arguments, refresh_restored=True):
                         help="a backup file such as codex.<n> or claude.<n>")
     parser.add_argument("--if-wiped", action="store_true",
                         help="only restore files exactly as Git wrote them (used by hooks)")
+    parser.add_argument("--changed", metavar="OLD",
+                        help="with --if-wiped, skip files whose index copy matches commit OLD")
     parser.add_argument("--forget", choices=FILES,
                         help="delete this file's backups, keeping only its current content")
     options = parser.parse_args(arguments)
@@ -386,6 +429,11 @@ def restore_main(arguments, refresh_restored=True):
         saved = backups(directory, kind)
         target = root / relative
         if not (source or saved) or not target.exists():
+            continue
+        # fix(config): an amend or a branch switch that leaves the file alone must not
+        # restore a private key the user deleted. Compare with the index, not the new commit,
+        # because a squash merge rewrites the file without moving HEAD.
+        if options.changed and unchanged(root, options.changed, relative):
             continue
         try:
             index_copy = (lambda relative=relative: indexed(root, relative)) if options.if_wiped else None
