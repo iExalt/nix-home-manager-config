@@ -79,15 +79,16 @@ including all nested entries, and remain only on disk:
 The allowlists in `scripts/clean-agent-config.py` define what is shared. All
 unlisted keys at every nesting level are also omitted, including future keys.
 Even an allowed key is omitted if its name or value contains a path separator
-or a home-directory marker (`~`, `$HOME`, or `${HOME}`); a list containing such
-a value is omitted in full. The one exception is a quoted path under
+or a home-directory marker (`~`, `$HOME`, or `${HOME}`); a list containing
+such a value is omitted in full. The one exception is a quoted path under
 `"$HOME/.config/agent-hooks/`, the shared hook scripts that Home Manager links
 from `dotfiles/agent-hooks`, so reviewed Claude `hooks` entries that run them
 stay in Git. A hook entry is kept whole or omitted whole: one unlisted key or
-private path drops the entry. Empty sections are dropped. Review and extend the
-allowlists when adding a new portable preference, and keep this table current
-when excluding additional sections. Output is canonicalized, so formatting
-and local-only changes produce no content diff after renormalization.
+private path drops the entry, while the other entries for the same event stay
+in Git. Empty sections are dropped. Review and extend the allowlists when
+adding a new portable preference, and keep this table current when excluding
+additional sections. Output is canonicalized, so formatting and local-only
+changes produce no content diff after renormalization.
 
 Git can still report a file as modified when local edits change its byte size,
 even when the filtered content matches the index. Use `git agent-status` (with
@@ -99,27 +100,35 @@ limitation; the clean filter alone cannot eliminate it.
 Git stores only the filtered content, so a pull, checkout, reset, or stash
 that rewrites either file writes the filtered content back and drops the
 private keys. To recover them, the clean filter also saves each raw version
-that holds private keys to `.git/agent-config-private/`, keeping the last 10
-(mode 0600, per worktree, never committed). A file that already equals its
-filtered content is not saved, so a wiped file never replaces a good backup.
-The installer adds `post-checkout`, `post-merge`, and `post-rewrite` hooks
-(under a repository-local `core.hooksPath`; it warns and skips them when the
-hooks directory is shared through global config, or when a hook it did not
-write already exists) that run `git agent-restore`, so pulls, rebases, and
-checkouts restore the keys automatically. No hook runs after `git stash`, `git
-stash pop`, `git pull --autostash`, `git reset --hard`, or resolving a merge
-conflict in either file; run `git agent-restore` yourself afterwards. Between
-`git stash` and `git stash pop`, the agents run without their private
-settings.
+that holds private keys to `agent-config-private/` in the Git directory,
+keeping the last 10 (mode 0600, per worktree, never committed). A file that
+already equals its filtered content is not saved, so a wiped file never
+replaces a good backup. The installer adds `post-checkout`, `post-merge`, and
+`post-rewrite` hooks to Git's hooks directory (honouring a repository-local
+`core.hooksPath`) that run `git agent-restore`, so pulls, rebases, and
+checkouts restore the keys automatically. It warns and skips the hooks when
+`core.hooksPath` is set in global config, which other repositories share, or
+when a hook it did not write already exists. A hook also restores after `git
+checkout -- <file>`, which wipes every private key; to discard one private
+edit, edit the file instead. No hook runs after `git stash`, `git stash pop`,
+`git pull --autostash`, `git reset --hard`, or resolving a merge conflict in
+either file; run `git agent-restore` yourself afterwards. Between `git stash`
+and `git stash pop`, the agents run without their private settings.
 
-`git agent-restore` adds back only private keys that are missing; values
-already in the file win, and portable preferences removed in Git stay removed.
-It rewrites a file only when it adds keys, in canonical form, so hand-written
-comments in `config.toml` are lost then. Deleting a private key is safe while
-others remain, because the next backup lacks it. Deleting the last one is not
-saved, so a later restore brings it back; remove that file's backups to drop it
-for good. To recover an older version, run
-`git agent-restore --from .git/agent-config-private/<file>`.
+`git agent-restore` adds back only private keys and private list items that
+are missing; values already in the file win, and portable preferences removed
+in Git stay removed. It rewrites a file only when it adds keys, in canonical
+form, so hand-written comments in `config.toml` are lost then. If an agent
+saves the file while restore runs, restore starts over, but an agent that
+later writes back settings it read before the restore can still undo it.
+Deleting a private key is safe while others remain, because the next backup
+lacks it. Deleting the last one is not saved, so a later restore brings it
+back; remove that file's backups to drop it for good. When older backups hold
+private sections that the file and the latest backup both lack, as after a
+stash during which an agent saved a new key, restore names them and the backup
+to recover them from, run as `git agent-restore --from "$(git rev-parse
+--absolute-git-dir)/agent-config-private/<file>"`. After a deliberate
+deletion, that note repeats until the backup rotates out or you delete it.
 
 Filters are clone-local Git configuration: install them in every clone before
 staging these files. Rerun the installer if the Mise Python installation is

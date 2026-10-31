@@ -122,7 +122,7 @@ accountId = "private"
                   "extraKnownMarketplaces": {"private": {"path": "/private"}}}
         live = {"model": "new", "permissions": {"defaultMode": "plan"}}
         extra = FILTER.private(backup, FILTER.project(backup, FILTER.CLAUDE))
-        self.assertEqual(sorted(FILTER.add_missing(live, extra)),
+        self.assertEqual(sorted(FILTER.add_missing(live, extra, FILTER.CLAUDE)),
                          ["extraKnownMarketplaces", "permissions.allow"])
         # A portable key removed on purpose stays removed; live values win.
         self.assertEqual(live["model"], "new")
@@ -138,25 +138,81 @@ accountId = "private"
 
     def test_backup_skips_filtered_input_and_rotates(self):
         with tempfile.TemporaryDirectory(prefix="agent-backup-test-") as directory:
-            original = FILTER.backup_dir
-            FILTER.backup_dir = lambda: Path(directory)
-            try:
-                def save(text):
-                    data = tomllib.loads(text)
-                    FILTER.back_up(text, "codex", data, FILTER.project(data, FILTER.CODEX))
+            directory = Path(directory)
 
-                full = 'model = "a"\n[projects."/one"]\nx = 1\n[projects."/two"]\nx = 2\n'
-                save(full)
-                save('model = "a"\n')  # A wiped file never replaces the backup.
-                save(full)  # Unchanged content adds no version.
-                self.assertEqual([item.read_text() for item in FILTER.backups("codex")], [full])
-                for index in range(FILTER.KEEP_BACKUPS):
-                    save(f'model = "{index}"\n[projects."/one"]\nx = 1\n')
-                kept = FILTER.backups("codex")
-                self.assertEqual(len(kept), FILTER.KEEP_BACKUPS)
-                self.assertNotIn(full, [item.read_text() for item in kept])
+            def save(text):
+                data = tomllib.loads(text)
+                FILTER.back_up(directory, text, "codex", data, FILTER.project(data, FILTER.CODEX))
+
+            full = 'model = "a"\n[projects."/one"]\nx = 1\n[projects."/two"]\nx = 2\n'
+            save(full)
+            save('model = "a"\n')  # A wiped file never replaces the backup.
+            save(full)  # Unchanged content adds no version.
+            self.assertEqual([item.read_text() for item in FILTER.backups(directory, "codex")], [full])
+            for index in range(FILTER.KEEP_BACKUPS):
+                save(f'model = "{index}"\n[projects."/one"]\nx = 1\n')
+            kept = FILTER.backups(directory, "codex")
+            self.assertEqual(len(kept), FILTER.KEEP_BACKUPS)
+            self.assertNotIn(full, [item.read_text() for item in kept])
+
+    def test_lists_keep_portable_items_and_restore_private_ones(self):
+        def hook(command):
+            return {"matcher": "", "hooks": [{"type": "command", "command": command}]}
+
+        mine = hook('python3 "$HOME/.config/agent-hooks/a.py"')
+        theirs = hook('python3 "$HOME/.config/agent-hooks/b.py"')
+        local = hook("/private/hook.sh")
+        backup = {"hooks": {"Stop": [mine, local]}}
+        kept = FILTER.project(backup, FILTER.CLAUDE)
+        self.assertEqual(kept, {"hooks": {"Stop": [mine]}})
+        # A pull adds another shared hook and drops the private one from the file.
+        live = {"hooks": {"Stop": [mine, theirs]}}
+        self.assertEqual(FILTER.add_missing(live, FILTER.private(backup, kept), FILTER.CLAUDE), ["hooks.Stop"])
+        self.assertEqual(live, {"hooks": {"Stop": [mine, theirs, local]}})
+        # The filtered content still matches what Git holds: no phantom deletion.
+        self.assertEqual(FILTER.project(live, FILTER.CLAUDE), {"hooks": {"Stop": [mine, theirs]}})
+        # A plain list is tracked whole, so the pulled copy wins over a local one.
+        backup = {"tui": {"status_line": ["model", "~/bin/x"]}}
+        live = {"tui": {"status_line": ["model", "git-branch"]}}
+        extra = FILTER.private(backup, FILTER.project(backup, FILTER.CODEX))
+        self.assertEqual(FILTER.add_missing(live, extra, FILTER.CODEX), [])
+        self.assertEqual(live, {"tui": {"status_line": ["model", "git-branch"]}})
+
+    def test_restore_names_private_sections_left_in_older_backups(self):
+        with tempfile.TemporaryDirectory(prefix="agent-restore-test-") as directory:
+            def backup(index, data):
+                path = Path(directory, f"claude.{index}")
+                path.write_text(json.dumps(data))
+                return path
+
+            nux = {"permissions": {"allow": ["Bash(a)"]}}
+            full = {"permissions": {"allow": ["Bash(a)"]}, "extraKnownMarketplaces": {"m": {}},
+                    "apiKeyHelper": "/private/helper"}
+            older = [backup(1, full), backup(2, {**nux, "apiKeyHelper": "/private/helper"})]
+            self.assertEqual(FILTER.unrestored(older, dict(nux), "claude"),
+                             [(older[1], ["apiKeyHelper"]), (older[0], ["extraKnownMarketplaces"])])
+
+    def test_restore_retries_when_the_file_changes_meanwhile(self):
+        with tempfile.TemporaryDirectory(prefix="agent-restore-test-") as directory:
+            target, saved = Path(directory, "settings.json"), Path(directory, "claude.1")
+            saved.write_text(json.dumps({"extraKnownMarketplaces": {"m": {"path": "/m"}}}))
+            target.write_text(json.dumps({"model": "a"}))
+            original, calls = FILTER.dump, []
+
+            def racing_dump(data, kind):
+                if not calls:  # An agent saves a new key between the read and the write.
+                    target.write_text(json.dumps({"model": "a", "theme": "agent-write"}))
+                calls.append(kind)
+                return original(data, kind)
+
+            FILTER.dump = racing_dump
+            try:
+                added, _ = FILTER.restore_file(target, saved, "claude")
             finally:
-                FILTER.backup_dir = original
+                FILTER.dump = original
+            self.assertEqual(added, ["extraKnownMarketplaces"])
+            self.assertEqual(json.loads(target.read_text()), {
+                "model": "a", "theme": "agent-write", "extraKnownMarketplaces": {"m": {"path": "/m"}}})
 
     def test_git_filter_backup_hooks_and_restore(self):
         with tempfile.TemporaryDirectory(prefix="agent-filter-test-") as directory:
@@ -175,7 +231,7 @@ accountId = "private"
 
             def install(root):
                 (root / "scripts").mkdir(exist_ok=True)
-                for name in ("clean-agent-config.py", "agent-status.sh", "install-git-filters.sh"):
+                for name in ("clean-agent-config.py", "install-git-filters.sh"):
                     shutil.copy(SCRIPT.with_name(name), root / "scripts" / name)
                 subprocess.run(["bash", str(root / "scripts/install-git-filters.sh")], check=True,
                                capture_output=True, env={**isolated, "FILTER_PYTHON": sys.executable})
@@ -222,7 +278,14 @@ accountId = "private"
             git(clone, "status", "--porcelain")
             self.assertNotIn("projects", config.read_text())
             git(clone, "stash", "pop", "-q")
-            git(clone, "agent-restore")
+            # --from resolves against the directory the user ran it from.
+            backup_dir = Path(git(clone, "rev-parse", "--absolute-git-dir").stdout.strip(),
+                              "agent-config-private")
+            self.assertNotEqual(git(clone, "agent-restore", "--from", check=False).returncode, 0)
+            relative = os.path.relpath(FILTER.backups(backup_dir, "codex")[-1],
+                                       (clone / "dotfiles").resolve())
+            subprocess.run(["git", "agent-restore", "--from", relative], cwd=clone / "dotfiles",
+                           check=True, capture_output=True, env=isolated)
             assert_restored("local")
             git(clone, "add", config_path)
             self.assertNotIn("private", git(clone, "show", f":{config_path}").stdout)
