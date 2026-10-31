@@ -24,6 +24,11 @@ rather than templated.
   copy, and everything outside scope. Ask before replacing factual copy or adding claims.
 - **Real content, never invented claims.** Use realistic data at real ranges. Label illustrative
   values as samples and never invent prices, customers, metrics, or capabilities.
+- **Loaded symbols stay out of the decoration.** A subject's world does not license emblems tied
+  to militarism, supremacy, or hate movements as motifs, badges, or ornament, such as the Rising
+  Sun flag's rays, the Confederate battle flag, or Nazi-era insignia and their stylised variants;
+  reach for that world's neutral forms instead. Content that documents such a symbol as fact stays
+  as it is.
 - **Verify by looking.** Code review alone is not verification. Inspect the rendered result at the
   sizes it ships at and exercise the interactions.
 - **Finish the job.** Every state the flow can reach is designed, not just the happy path.
@@ -101,9 +106,10 @@ Run the app and drive it with browser automation: Playwright, a browser MCP, or 
 browser tools. [scripts/browser_check.py](scripts/browser_check.py) handles the repeatable part.
 It serves a static build or targets a running URL, screenshots named states at each width, adds a
 200%-zoom and reduced-motion pass, counts Tab presses to a target control, and reports console
-errors and horizontal overflow. Run it with `uv run <skill-dir>/scripts/browser_check.py --help`
-after a one-time `uvx playwright install chromium`. Script the app-specific interactions
-separately. Give transient states (posting, slow loads) a URL or fixture switch so they stay on
+HTTP errors, console errors, and horizontal overflow. Install its browser once with
+`mise exec -- uv run <skill-dir>/scripts/browser_check.py --install-browser`, then see `--help`. Pass
+`--spa` for client-routed static builds and `--ready <selector>` when data loads after the page.
+Script the app-specific interactions separately. Give transient states (posting, slow loads) a URL or fixture switch so they stay on
 screen long enough to capture. Ask before anything that would disrupt the user's machine, such as
 installing system browsers, taking over their open browser, or binding common ports.
 
@@ -122,7 +128,7 @@ installing system browsers, taking over their open browser, or binding common po
 Look at every screenshot you take; a screenshot nobody inspected proves nothing. Batch your fixes
 between looks. A visual fix, such as CSS added after a screenshot showed a problem, is not done until
 a new screenshot shows it fixed; if you can't take one, say so in the report. Save screenshots of
-the final states somewhere the user can open, and report what was not verified.
+the final states in the project (for example `design/screenshots/`), not only in /tmp, and report what was not verified.
 
 ### 5. Critique, audit, and fix
 
@@ -200,6 +206,11 @@ really hard!"). Precise status builds more trust than personality.
   sizes of at least 16px.
 - **Scrollbars and native controls:** on task surfaces keep standard affordances. Theme their color
   to the palette, but don't reinvent their behavior.
+- **Motion:** on Persuade and Experience surfaces, at most one authored moment such as a page-load
+  sequence. On Operate and Read surfaces, no page-load choreography: motion answers user actions
+  and shows state changes in 150–250 ms.
+- **Line length:** 65–75 characters for body prose (Anthropic's "under 80" is the outer limit);
+  tables and dense UI may run wider.
 - **Monospace:** use `font-variant-numeric: tabular-nums` for numbers that are compared. Reserve
   monospace for code, IDs, hashes, and paths, not as a "technical" costume for labels.
 - **Distinctiveness:** on Operate and Read surfaces, familiarity wins. Spend boldness on one

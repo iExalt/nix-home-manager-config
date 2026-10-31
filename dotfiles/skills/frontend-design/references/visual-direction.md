@@ -2,7 +2,8 @@
 
 Merged from Anthropic's `frontend-design` skill (Apache-2.0; its design principles, calibration
 list, and planning process are copied verbatim) and Impeccable's craft floor and Operate-mode depth
-(Apache-2.0; trimmed and deduplicated). Load this when choosing or changing a visual direction, and
+(Apache-2.0; trimmed and deduplicated; the Restraint paragraph drops a quality-floor sentence that
+"Craft floor" now covers). Load this when choosing or changing a visual direction, and
 skim "Craft floor" before any UI edit.
 
 The user's priorities win over novelty: on task surfaces, clarity, consistency, and task efficiency
@@ -65,7 +66,6 @@ Impeccable adds these defaults to the list. Each is legitimate only when the bri
 
 - Same-size cards of icon plus heading plus text as the page structure. Cards are the lazy
   container; nested cards are always wrong.
-- The hero-metric template: big number, small label, supporting stats, accent.
 - Gradient text; glass and blur as decoration; a colored `border-left` above 1px on cards, list
   items, or alerts; hard zero-blur offset shadows outside a world that is actually neobrutalist;
   zero-offset colored glows used as depth.
@@ -99,7 +99,7 @@ When writing the code, be careful of structuring your CSS selector specificities
 
 ## Restraint and self-critique
 
-Spend your boldness in one place. Let one element be the memorable thing, keep everything around it quiet and disciplined, and cut any decoration that does not serve the brief. Build to a quality floor without announcing it: responsive down to mobile, visible keyboard focus, reduced motion respected, visually accessible, harmonious color palettes. Critique your own work as you build, taking screenshots to review if your environment supports it — a picture is worth 1000 tokens. Consider Chanel's advice: before leaving the house, take a look in the mirror and remove one accessory. Human creatives have memory and always try to do something new, so if you have a space to quickly jot down notes about what you've tried, it can help you in future passes.
+Spend your boldness in one place. Let one element be the memorable thing, keep everything around it quiet and disciplined, and cut any decoration that does not serve the brief. Critique your own work as you build, taking screenshots to review if your environment supports it — a picture is worth 1000 tokens. Consider Chanel's advice: before leaving the house, take a look in the mirror and remove one accessory. Human creatives have memory and always try to do something new, so if you have a space to quickly jot down notes about what you've tried, it can help you in future passes.
 
 ## Craft floor
 
@@ -113,10 +113,12 @@ Check these on the built result, together, in each look at the render.
   Nested radii: a child's radius is no larger than its parent's.
 - **Spacing:** tight groups, generous separation, more space above a heading than below it. Align
   every element to something intentional: a grid, baseline, edge, or optical center.
-- **Type:** body measure 65–75ch, display at most 6rem, letter-spacing no tighter than -0.04em,
+- **Type:** body measure 65–75ch (within Anthropic's under-80 limit above), display at most 6rem, letter-spacing no tighter than -0.04em,
   balanced headings (`text-wrap: balance`), obvious scale and weight steps, `tabular-nums` for
   numbers that are compared. Run the real copy at every breakpoint and fix what overflows.
-- **Motion:** one authored moment, not scattered effects. Ease out from an already-visible default.
+- **Motion:** on Persuade and Experience surfaces, one authored moment, not scattered effects; on
+  Operate and Read surfaces, none on page load (see "Task surfaces"). Ease out from an
+  already-visible default.
   Animate `transform` and `opacity`, never `transition: all`. Honor `prefers-reduced-motion` with a
   reduced variant that still shows state changes.
 - **States:** hover, focus, active, disabled, loading, error, empty, plus real content, working
