@@ -238,14 +238,14 @@ in
 
   home.activation.installGhosttyTerminfo = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     # feat(terminfo): make Ghostty's terminal definition available to root.
-    mkdir -p "$HOME/.terminfo"
-    ${pkgs.ncurses}/bin/tic -x -o "$HOME/.terminfo" ${./dotfiles/xterm-ghostty-terminfo.txt}
+    run mkdir -p "$HOME/.terminfo"
+    run ${pkgs.ncurses}/bin/tic -x -o "$HOME/.terminfo" ${./dotfiles/xterm-ghostty-terminfo.txt}
 
     # fix(terminfo): activation PATH is sanitized; locate sudo and skip if unavailable.
     export PATH="/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
     if command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
-      sudo mkdir -p "${rootHome}/.terminfo"
-      sudo ${pkgs.ncurses}/bin/tic -x -o "${rootHome}/.terminfo" ${./dotfiles/xterm-ghostty-terminfo.txt}
+      run sudo mkdir -p "${rootHome}/.terminfo"
+      run sudo ${pkgs.ncurses}/bin/tic -x -o "${rootHome}/.terminfo" ${./dotfiles/xterm-ghostty-terminfo.txt}
     else
       echo "warning: skipping root Ghostty terminfo install (sudo unavailable or needs a password)" >&2
     fi
