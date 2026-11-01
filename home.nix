@@ -8,6 +8,7 @@ let
     "bun@latest"
     "gh@latest"
     "npm:@openai/codex@latest"
+    "npm:agent-browser@latest"
     "claude@latest"
     "rg@latest"
     "fd@latest"
@@ -70,6 +71,10 @@ in
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/frontend-design";
   home.file.".claude/skills/frontend-design".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/frontend-design";
+  home.file.".codex/skills/frontend-dogfood".source =
+    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/frontend-dogfood";
+  home.file.".claude/skills/frontend-dogfood".source =
+    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/frontend-dogfood";
   home.file.".codex/skills/continuous-peer-review".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/continuous-peer-review";
   home.file.".claude/skills/continuous-peer-review".source =

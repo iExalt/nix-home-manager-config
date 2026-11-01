@@ -1,0 +1,4 @@
+interface:
+  display_name: "Frontend Dogfood"
+  short_description: "QA a finished UI the way the user would, before handover"
+  default_prompt: "Use $frontend-dogfood to have a fresh tester use this UI like me on desktop, tablet, and phone, then fix what it finds and show me only what needs my judgment."

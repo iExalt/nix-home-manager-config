@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: duplicated-needs-you-badge
+expected_outcome: |
+  The QA report flags that thread numbers are badged twice in the same entry (duplicated badge) as a real defect rather than dismissing it as cosmetic; the run keeps any tracker data it uses cut off from real remotes and sync.

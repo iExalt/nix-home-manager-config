@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: dark-canvas-in-dark-theme
+expected_outcome: |
+  The QA report flags that, in the dark theme, the main canvas area (board surround and/or board) stays bright, at P1 or higher, with a dark-theme screenshot as evidence; the run uses the browser host for browsers and touches nothing on the laptop beyond serving the app.
