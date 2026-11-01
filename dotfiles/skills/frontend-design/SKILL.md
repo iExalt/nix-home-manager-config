@@ -153,6 +153,10 @@ design review, cognitive load, Nielsen heuristics, two or three personas, and th
 and P1 finding and re-verify in the browser. Report the remaining P2 and P3 items briefly instead
 of burying the user in them.
 
+Then, before showing the user a built or changed UI, run the `frontend-dogfood` skill when it is
+installed: a fresh tester uses the running app the way this user would, and you fix what it finds.
+Your own checks here are the developer's; dogfood is the independent QA pass.
+
 ### 6. Iterate and preserve consistency
 
 Show the user the result as screenshots plus a short plain-language summary: what they can now do,
@@ -278,5 +282,6 @@ Change a rule here, not at the pointer.
 | [references/web-interface-guidelines.md](references/web-interface-guidelines.md) | Building forms, motion, or navigation; reviewing finished UI |
 | [references/critique.md](references/critique.md) | Step 5, or whenever the user asks for a review or audit |
 | [references/design-record.md](references/design-record.md) | Creating or updating DESIGN.md |
+| `frontend-dogfood` skill | QA of a finished UI before handover (end of step 5) |
 
 Sources and licenses are listed in [NOTICE.md](NOTICE.md).
