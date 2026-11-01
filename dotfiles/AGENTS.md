@@ -2,6 +2,7 @@
 
 * Use mise to manage and run CLI tools wherever possible.
 * Prefer native editing tools; use alternatives when they offer a concrete benefit or native tools are unavailable.
+* In the shell, prefer modern Rust CLIs to legacy ones: `rg` over `grep -r`, `fd` over `find`, `sd` over `sed` substitutions, `ast-grep` for structural code search and rewrites, `dust` over `du`, and `hyperfine` over `time` loops. Run any that aren't installed with `mise exec <tool>@latest -- <tool>`. For exhaustive sweeps, `rg -uuu` also searches hidden, ignored and binary files.
 * Run tools that require internet access or elevated permissions outside the sandbox.
 * Write commands for zsh; keep argument lists in arrays and expand with `"${args[@]}"`, never a space-separated scalar.
 * Quote literal patterns and URLs containing `*`, `?`, or brackets; handle unmatched file globs explicitly.
