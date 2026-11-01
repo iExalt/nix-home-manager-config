@@ -20,21 +20,25 @@ in
       config.lib.file.mkOutOfStoreSymlink claudeConfigFile;
 
     home.activation.writeClaudeConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-      mkdir -p "$(dirname "${claudeConfigFile}")"
-      # fix(claude): merge overlay settings without importing private runtime state.
-      if [ ! -f "${claudeConfigFile}" ]; then
-        install -m 0600 ${generatedConfig} "${claudeConfigFile}"
-      else
-        mergedConfig="$(mktemp "${claudeConfigFile}.XXXXXX")"
-        if ${pkgs.jq}/bin/jq -s '.[0] * .[1]' \
-          "${claudeConfigFile}" ${generatedConfig} > "$mergedConfig"; then
-          chmod 600 "$mergedConfig"
-          mv "$mergedConfig" "${claudeConfigFile}"
+      # fix(activation): keep temporary files and redirections inside run's dry-run boundary.
+      writeClaudeConfig() {
+        mkdir -p "$(dirname "${claudeConfigFile}")"
+        # fix(claude): merge overlay settings without importing private runtime state.
+        if [ ! -f "${claudeConfigFile}" ]; then
+          install -m 0600 ${generatedConfig} "${claudeConfigFile}"
         else
-          rm -f "$mergedConfig"
-          exit 1
+          mergedConfig="$(mktemp "${claudeConfigFile}.XXXXXX")"
+          if ${pkgs.jq}/bin/jq -s '.[0] * .[1]' \
+            "${claudeConfigFile}" ${generatedConfig} > "$mergedConfig"; then
+            chmod 600 "$mergedConfig"
+            mv "$mergedConfig" "${claudeConfigFile}"
+          else
+            rm -f "$mergedConfig"
+            exit 1
+          fi
         fi
-      fi
+      }
+      run writeClaudeConfig
     '';
   };
 }

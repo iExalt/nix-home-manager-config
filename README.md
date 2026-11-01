@@ -71,8 +71,12 @@ To share a preference change without reloading, run
 `mise exec -- python scripts/clean-agent-config.py sync` from the main
 checkout; sync refuses to run from a linked worktree, because every checkout
 shares one base. Sync rewrites a live file only when it changes something, in
-canonical form, so comments in `config.toml` are lost then. If an app saves
-the file while sync runs, sync merges again. Codex overlay settings (see
+canonical form, so comments in `config.toml` are lost then. Sync retries if it
+detects an app save before its final write, but a save between that check and
+replacement can still be overwritten. The separate `~/.claude.json` merge
+also has no coordination with concurrent app saves. Reloading while agents
+are running accepts that risk; stop them first to avoid concurrent writes.
+Codex overlay settings (see
 [Optional Overlays](#optional-overlays)) are merged into `~/.codex/config.toml`
 on every sync and may set private keys only. Keep your own backup of anything
 you cannot recreate.
