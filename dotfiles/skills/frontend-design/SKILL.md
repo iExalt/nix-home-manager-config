@@ -86,6 +86,13 @@ click)", or "undo after delete vs. a confirmation dialog". Show two or three wir
 when the layout is genuinely open, and recommend one. Get the user's go-ahead, then record the
 agreed decisions in DESIGN.md ([references/design-record.md](references/design-record.md)).
 
+When the user must pick between visual alternatives (directions, mockups, competing builds or
+skill outputs), have a separate judge agent screen them first: drop any that fail the craft floor,
+accessibility or the brief, and settle what can be measured. Show the user at most three, as
+same-scale images side by side with realistic data, not prose descriptions. Give a one-line
+tradeoff for each, your recommendation, and the one taste question left. Settled preferences in
+DESIGN.md are not open questions: apply them without asking.
+
 When no user can answer (a delegated or autonomous run), mark each assumption plainly in the
 brief, with the option you chose. If your instructions authorize implementation, also record the
 assumptions under DESIGN.md › Open decisions and build; otherwise return the brief and stop

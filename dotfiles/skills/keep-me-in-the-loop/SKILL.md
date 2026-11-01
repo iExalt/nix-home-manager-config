@@ -9,7 +9,8 @@ Turn the next substantial phase of an existing plan into a few meaningful chunks
 Shape that chunk plan with the reviewer, obtain the user's approval once, then
 implement, review, verify, commit, and push each chunk autonomously. Report
 between chunks and continue; seek approval for the next phase after finishing
-the current one. Preserve explicit user overrides and repository rules.
+the current one, unless the user approved the remaining phases together.
+Preserve explicit user overrides and repository rules.
 
 ## Establish the current boundary
 
@@ -85,8 +86,21 @@ Obtain phase approval before implementation unless the current instructions
 already approve that concrete scope. Silence is not approval. Use a permitted
 native dialog when available, respecting its restrictions on permission requests.
 Do not repeat settled questions or request approval for every internal increment.
+Don't ask who merges: follow the repository's rules and the user's standing
+merge policy.
 If outcomes or major tradeoffs are still unclear, use `agentic-workflow` to resolve
 them before turning a speculative route into an implementation commitment.
+
+Phase gates are the most common question the user gets, and they are usually
+answered "approve as proposed". When the roadmap's later phases stay inside the
+agreed scope and hold no taste, scope, cost or release decision, offer to
+approve them together with this phase, and recommend it. List those phases
+coarsely, and name any decision you already know will come back to the user.
+Offer approving only this phase as the alternative. Under a multi-phase
+approval, shape each next phase with the reviewer, describe it in the
+phase-completion report, and continue. Return to the user before a phase whose
+scope, acceptance criteria, cost, risk or external actions differ from what
+was approved, or that reaches a decision the approval left to them.
 
 ## Execute approved chunks
 
@@ -247,4 +261,4 @@ At phase completion, reconcile the phase's full exit criteria with current
 evidence and report results, accepted deferrals, and remaining boundaries.
 Shape the next phase's chunks with the reviewer, propose them, and await approval
 before implementing them, unless the user has explicitly authorized that next
-phase already. If the roadmap is finished, report completion and remaining limitations without inventing work.
+phase already, including through a multi-phase approval. If the roadmap is finished, report completion and remaining limitations without inventing work.
