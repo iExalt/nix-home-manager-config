@@ -57,12 +57,23 @@ for a way around the check.
    hard limit. Without one, plan for a stint of about 10 minutes, which is
    what the user usually lends, and your estimate is the limit. Don't assume
    you have the phone indefinitely. If the work needs more than 10 minutes,
-   split it into several stints and ask for each one. Record the deadline and check `date` between steps.
+   split it into several stints. Record the deadline and check `date` between steps.
    If you'll overrun, stop at a safe point, restore the phone, and ask for
    more time.
-5. **Ask for the phone.** If you need it attached, unlocked or plugged in,
-   say exactly what and wait. A push notification is a good way to ask if the
-   user may be away from the keyboard. Don't stall silently.
+5. **Ask once for a device window.** Device go-aheads are one of the user's
+   most frequent and least consequential questions, so ask for every stint the
+   thread will need in one question: how many stints, how long each is, and
+   the latest end time. Include the baseline install and anything else that
+   needs the device. Inside a granted window, don't ask again. Send a push
+   saying the stint is starting and how long it takes, then begin once the
+   device is attached and unlocked and the focus check shows only the app
+   under test or the home screen. If it isn't, push once saying what you need
+   (attach, unlock, put the app away), wait a few minutes, then skip that stint
+   rather than asking again. A new stint outside the window, or a change to
+   what the window covers, needs a new ask.
+6. **Ask for the phone.** Outside a window, if you need it attached, unlocked
+   or plugged in, say exactly what and wait. A push notification is a good way
+   to ask if the user may be away from the keyboard. Don't stall silently.
 
 ## Connect
 
