@@ -51,72 +51,73 @@ back to faces with different metrics. Before judging type, legibility, or pixel 
 face and `document.fonts.check()` confirms it loaded. If it didn't, either serve the app's fonts or
 tag type findings "rendered on Linux, intended face missing".
 
-**Sessions.** The daemon and its browser persist between `ssh` calls. Start each session inside a
-systemd scope so it stays under the agreed cap of 7 vCPU and 16 GB, and give every parallel tester
-its own session and unit name:
+**Drive the browser with [../scripts/dogfood.py](../scripts/dogfood.py).** It runs on the laptop
+and sends each command to the host in one ssh call, quoting its arguments for you, so JavaScript and
+selectors survive. Testers who wrote their own wrappers spent turns on shell quoting instead of
+testing. Run it with `uv run <skill-dir>/scripts/dogfood.py`; `--help` lists every command.
 
 ```sh
-ssh <host> 'bash -lc "export AGENT_BROWSER_CONFIG=~/.agent-browser/dogfood.json
-  systemd-run --user --scope -q --unit=dogfood-<session>-<unix-time> -p CPUQuota=700% -p MemoryMax=16G \
-    mise exec -- agent-browser --session <session> open <url>"'
+dogfood.py init <session> --host <host> --evidence <evidence-dir> --url-part <port-or-path> --open <url>
+dogfood.py ab <session> set viewport 412 915 3.5      # any agent-browser command
+dogfood.py ab <session> - <<'CMDS'                    # several, one per line, in one round trip
+set media dark
+reload
+wait --load networkidle
+snapshot -i
+CMDS
+dogfood.py eval <session> probe.js                    # a JavaScript file (or - for stdin)
+dogfood.py shot <session> 03-phone-dark               # screenshot, copied back with a view copy
+dogfood.py close <session>                            # browser, touch hold, and host files
 ```
 
-Later commands only need `AGENT_BROWSER_CONFIG` and `--session <session>`. `agent-browser
---session <session> close` stops the browser and the scope with it. Unit names can't be reused
-while a unit is still loaded, hence the timestamp.
+`init --open` starts the browser inside a systemd scope capped at the agreed 7 vCPU and 16 GB, and
+copies touch_probe.py to the host. The daemon and browser persist between calls; give every
+parallel tester its own session name. The main agent usually runs `init` and hands the session to
+the tester; the tester leaves it open for the main agent to close.
 
-**Useful commands.** `snapshot -i` (interactive elements with `@e` refs), `click`, `fill`, `type`,
-`press`, `drag`, `mouse move|down|up|wheel` (middle button supported), `scroll`, `screenshot
-[--annotate] <path>`, `set viewport <w> <h> [scale]`, `set device "<name>"`, `set media
-dark|light [reduced-motion]`, `get cdp-url`, `eval <js>`, `console`, `errors`, `network
-requests`, `vitals`, `wait --load networkidle`. Run `mise exec -- agent-browser <command> --help`
-for flags, and `agent-browser skills get core` for the tool's own usage guide at the installed
-version.
+**Screenshots.** `shot` writes two files into the evidence directory: the device-pixel original,
+and a copy in `view/` scaled to CSS pixels, which is what a person sees at that size. Read the
+view copy. A 3.5x phone original is 1442x3203 and costs several times the context of its
+412x915 view; testers that read originals filled their context with images, and every later step
+got slower. Open an original only for pixel-level checks (probes 3 and 29) or when the view copy
+leaves a question open. Cite the original as evidence.
+
+**Useful agent-browser commands.** `snapshot -i` (interactive elements with `@e` refs), `click`,
+`fill`, `type`, `press`, `drag`, `mouse move|down|up|wheel` (middle button supported), `scroll`,
+`set viewport <w> <h> [scale]`, `set device "<name>"`, `set media dark|light [reduced-motion]`,
+`get box`, `get url`, `console`, `errors`, `network requests`, `vitals`, `wait --load
+networkidle`. Run `dogfood.py ab <session> <command> --help` for flags, and `dogfood.py ab
+<session> skills get core` for the tool's own guide at the installed version.
 
 **Phone and tablet sizes need touch, which agent-browser doesn't provide.** `set device` sets the
 viewport and pixel ratio only: `navigator.maxTouchPoints` stays 0 and `(pointer: coarse)` is false,
 so the app shows its desktop-pointer behaviour (hover states, fine-pointer layouts, mouse events).
-Chrome also drops CDP emulation when the client that set it disconnects.
-[../scripts/touch_probe.py](../scripts/touch_probe.py) fills the gap. Copy it to the host once:
-`scp <skill-dir>/scripts/touch_probe.py <host>:/tmp/dogfood-<session>-touch_probe.py`. It
-speaks raw CDP and sends only touch, throttling, input, evaluation, and screenshot commands, so the
-session's colour scheme, viewport, and pixel ratio survive it.
+[../scripts/touch_probe.py](../scripts/touch_probe.py) fills the gap over raw CDP, leaving the
+session's colour scheme, viewport, and pixel ratio alone; dogfood.py drives it:
 
-1. After `set device` (or `set viewport` with a scale), start `hold` as a transient service. It
-   keeps touch emulation on (and a CPU rate, if given) until stopped:
-
-   ```sh
-   ssh <host> 'bash -lc "export AGENT_BROWSER_CONFIG=~/.agent-browser/dogfood.json
-     WS=\$(mise exec -- agent-browser --session <session> get cdp-url)
-     systemd-run --user -q --collect --unit=<scope-unit>-touch \
-       \$(mise which uv) run -q /tmp/dogfood-<session>-touch_probe.py \$WS hold --url <url-part>"'
-   ```
-
-2. Check it took: `eval "matchMedia('(pointer: coarse)').matches && navigator.maxTouchPoints > 0"`
-   must be true before you judge anything at that size. Reload the page if the app reads the
-   pointer type only at startup.
-3. While it holds, keep using agent-browser for navigation, `snapshot`, `get box`, `fill`, `type`,
-   `press`, `scroll`, `eval`, and `screenshot`, but **not `click` or `drag`**: under touch
-   emulation they hang on a mouse event and never fire `click`. Do every tap, drag, and pinch with
-   touch_probe steps instead, at coordinates from `get box <ref>`:
-
-   ```sh
-   ssh <host> 'bash -lc "WS=\$(... get cdp-url)
-     mise exec -- uv run -q /tmp/dogfood-<session>-touch_probe.py \$WS - --url <url-part>"' < steps.json
-   ```
-
+1. After setting the viewport, run `dogfood.py hold <session>` (add `--cpu 4` for a throttled
+   run). It keeps touch emulation on until released and prints `touch: true` once
+   `(pointer: coarse)` matches; don't judge anything at that size until it does. Reload the page if
+   the app reads the pointer type only at start-up.
+2. While it holds, keep using agent-browser for navigation, `snapshot`, `fill`, `type`, `press`,
+   `scroll`, and `eval`, but **not `click` or `drag`**: under touch emulation they hang on a mouse
+   event and never fire `click`. Tap with `dogfood.py tap <session> @e12` (an @ref, a CSS
+   selector, or `X,Y`); drag, pinch, and wheel with `dogfood.py steps <session> steps.json`.
+   `tap` scrolls an @ref or selector into view first, refuses a point outside the viewport, and
+   says what element the touch landed on; if that isn't the target, something covers it.
    A tap fires the full sequence (`pointerdown:touch`, `touchstart`, `mousedown`, `click`).
-4. Stop it with `systemctl --user stop <scope-unit>-touch` before switching back to a desktop size.
+3. Run `dogfood.py release <session>` before switching back to a desktop size.
 
 touch_probe's docstring lists the steps (`tap`, `drag`, `pinch`, `wheel` with `ctrl` for trackpad
-pinch, `wait`, `eval`, `screenshot`, `time_to_change`). For a throttled run, pass `--cpu 4` to
-`hold`. Don't put `"touch"` or `"cpu"` in a steps file while a hold runs: the steps run would clear
-the hold's emulation when it exits (checked: touch went from 5 points to 0). `get box` returns
-viewport coordinates, so taps stay accurate after scrolling. `--url` picks the tab when several are
-open. `time_to_change` starts the clock at the input event's own timestamp and stops
-on the first animation frame where a page predicate holds, so it includes rendering; it is the tool
-for "should land in the same frame" checks. Headless frame timing approximates a real display, so
-report these numbers as emulated.
+pinch, `wait`, `eval`, `screenshot`, `time_to_change`). Don't put `"touch"` or `"cpu"` in a steps
+file while a hold runs: the steps run would clear the hold's emulation when it exits. Coordinates
+are viewport CSS pixels, as `get box` reports them, so taps stay accurate after scrolling.
+
+**Timing.** `dogfood.py tap <session> @e12 --until "<js predicate>"` prints the milliseconds from
+the touch to the first animation frame where the predicate holds, so it includes rendering; it is
+the tool for "should land in the same frame" checks. For mouse input, use a `time_to_change` step
+with a `wheel` or `tap`, or time in the page with `eval`. Headless frame timing approximates a real
+display, so report these numbers as emulated.
 
 **Reaching the app.** Two routes; the project brief decides:
 
@@ -131,9 +132,9 @@ report these numbers as emulated.
 - *App on the host.* Run it there from a worktree and a copy of the data. Timings are realistic,
   but private data leaves the laptop; delete the copy at teardown.
 
-**Evidence.** Screenshots land on the host. Write them under `/tmp/dogfood-<session>/` (session
-names keep parallel testers from colliding), then copy them to the local evidence directory (`scp`
-or `rsync`) before you read or cite them. Cite only local paths.
+**Evidence.** `shot` copies each screenshot to the local evidence directory as it takes it. If
+you capture anything else on the host, copy it there (`scp`) before you read or cite it. Cite only
+local absolute paths.
 
 ## Tier 2: the virtual Android tablet
 

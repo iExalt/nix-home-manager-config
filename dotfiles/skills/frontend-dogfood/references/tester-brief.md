@@ -28,9 +28,12 @@ or fix anything. You never contact the user; questions for them go in your repor
 - Read in full, in this order: `{skill-dir}/references/qa-conduct.md`,
   `{skill-dir}/references/taste-profile.md`, then the parts of `{skill-dir}/references/devices.md`
   and of `~/.config/frontend-dogfood/environment.md` for your form factor.
-- Browser session name: `{session}`. Test host: `{host}`. Local evidence directory:
-  `{evidence-dir}`. Copy every screenshot, recording, and measurement you cite into the evidence
-  directory and cite its local path, so the main agent can show it.
+- Browser session `{session}` on test host `{host}` is open at the URL and initialised for
+  `{skill-dir}/scripts/dogfood.py`, with local evidence directory `{evidence-dir}`. Drive the
+  browser only through that script (devices.md › Drive the browser), take screenshots with its
+  `shot` command, and read their `view/` copies. Copy any other evidence you cite into the evidence
+  directory and cite its absolute local path, so the main agent can show it. Leave the session
+  open when you finish.
 - Budget: {N} browser actions and {M} minutes. When you reach either, stop and report, listing
   what you did not get to.
 - Profile receipts tagged CLI apply only if the scope names a CLI surface.
@@ -38,9 +41,9 @@ or fix anything. You never contact the user; questions for them go in your repor
 ## How to test
 
 1. **First glance.** For each form factor and theme in scope, load the app cold and screenshot it
-   before touching anything. At phone and tablet sizes, start touch emulation first and confirm it
-   (devices.md › Phone and tablet sizes need touch); a phone check run with a mouse pointer tests
-   the wrong app. Look at each screenshot and write, in a few lines, what you notice in
+   before touching anything. At phone and tablet sizes, start touch emulation first with
+   `dogfood.py hold` and wait for `touch: true`; a phone check run with a mouse pointer tests the
+   wrong app. Look at each screenshot and write, in a few lines, what you notice in
    the first seconds: what you can and can't read, what draws the eye, what looks out of place,
    where space is wasted. The user's first complaints usually come from this view.
 2. **Task walks.** Do each primary task end to end, the way the user would, with the real data,
@@ -55,7 +58,8 @@ or fix anything. You never contact the user; questions for them go in your repor
 4. **Measure feel.** Anything about speed or smoothness gets a number: time from input to visible
    change, write time on the largest realistic data, load time, zoom step size. Say how you
    measured it.
-5. **Look at everything you capture.** A screenshot you didn't inspect proves nothing.
+5. **Look at everything you capture.** A screenshot you didn't inspect proves nothing. Read the
+   `view/` copy; open the full-resolution original only for pixel-level checks.
 
 Report every defect you see on a path you walked, whether or not the current change caused it:
 tag those `pre-existing` rather than dropping them. Never downgrade a finding because it looks
@@ -81,7 +85,9 @@ Return the report as your final message, in this order:
 4. **Interaction log.** What you actually did, in order: each navigation, click, tap, type, drag,
    key press, and measurement, with its target. Keep it terse; it proves you used the UI.
 5. **Untested**, with the reason for each (form factor not reachable, emulation limit, budget).
-6. **Questions for the user.** Look-and-feel judgments only you can't settle, each with the
+6. **Questions for the user.** Look-and-feel judgments you can't settle, each with the
    screenshots that show the alternatives.
-7. **Teardown.** What you created or changed (test data, sessions, guest settings) and what you
+7. **Feature ideas.** Changes or additions worth the user's consideration, one line each with
+   the moment in your walk that suggested it. Collect them; don't plan them.
+8. **Teardown.** What you created or changed (test data, sessions, guest settings) and what you
    cleaned up.

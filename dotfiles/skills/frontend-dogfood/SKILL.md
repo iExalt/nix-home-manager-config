@@ -62,7 +62,8 @@ Follow qa-conduct and [references/devices.md](references/devices.md):
   on the laptop. If the host is unreachable, ask the user once instead of falling back to the
   laptop.
 - Make sure agent-browser is installed on the test host (devices.md) and that the app is reachable
-  from it.
+  from it. Open each tester's browser session with `scripts/dogfood.py init --open` (devices.md ›
+  Drive the browser), so testers start testing instead of writing their own ssh wrappers.
 - Create the local evidence directory, `<project>/design/dogfood/<YYYY-MM-DD>-<slug>/`, and keep it
   out of git (`.git/info/exclude`) unless the project commits its screenshots. Everything the tester
   cites must be a local path there, so you can show it in chat.
@@ -93,11 +94,31 @@ Treat the report as claims to check, not results:
   defects: they are tagged, not out of scope.
 - Fold duplicates into one finding with every place it occurs.
 
-### 5. Fix and re-run
+### 5. Agree the scope, fix, and re-run
 
-Fix every P0, P1, and P2 yourself, using frontend-design for the design work; the user wants
-papercuts fixed in the same pass, not filed. P3 items go to the handover list. Re-run the tester
-on the surfaces your fixes touched, with a fresh subagent and a new budget.
+The size of the verified list decides what happens next:
+
+- **Small:** the pass covered one change, and the verified P0–P2 findings are about ten or fewer,
+  need no design decision from the user, and stay inside the frontend. Fix them all yourself,
+  using frontend-design for the design work; the user wants papercuts fixed in the same pass, not
+  filed.
+- **Larger:** an audit of an existing UI, or a list that needs several commits, design decisions,
+  or changes outside the frontend. Stop after verification and report before fixing anything:
+  verified counts per severity, the worst findings with screenshots, the decisions only the user
+  can make, and what the fixing will cost (how many chunks or pull requests, which surfaces,
+  anything outside the UI, and a rough duration). Offer scopes: P0 and P1 only; all of P0–P2; or
+  the list as a handover. Fix only what they choose. In one audit, "fix all of it" became more
+  than five hours of chunks, reviews, and CI before the second round could start.
+
+P3 items go to the handover list. Then re-run with fresh testers and a new budget, narrower than
+round one:
+
+- the surfaces your fixes touched, walked again on the form factors where they changed;
+- a first-glance sweep (brief step 1 only: cold load and screenshots in each theme) on every form
+  factor in scope, to catch what your fixes broke elsewhere. One tester can sweep all form
+  factors.
+
+Don't repeat full walks of surfaces you didn't touch.
 
 Stop on materiality, not on an empty report: a tester always finds something. Record each round's
 counts (P0/P1 found, total). If a round's P0 + P1 count does not fall, or a fix creates new P0/P1
@@ -106,7 +127,8 @@ findings, stop and ask the user before another round.
 ### 6. Hand over
 
 Show the user screenshots in chat (and a link they can open on their phone when that is how they
-review), with a short plain-language summary:
+review), with a short plain-language summary. Give every file you mention as an absolute path: a
+path relative to the project sent the user looking for it.
 
 - what now works, and what you fixed from the dogfood pass;
 - the questions only they can answer, which are look-and-feel judgments with the alternatives
