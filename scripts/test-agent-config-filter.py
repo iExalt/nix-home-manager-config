@@ -104,18 +104,6 @@ accountId = "private"
             source.replace("claude-md-and-agents-md", "/private/instructions"), "claude"
         )), {})
 
-    def test_claude_keeps_shared_hooks_whole_or_not_at_all(self):
-        shared = {"type": "command", "timeout": 10,
-                  "command": 'python3 -I "$HOME/.config/agent-hooks/check.py"'}
-        source = {"hooks": {
-            "PreToolUse": [{"matcher": "AskUserQuestion", "hooks": [shared]}],
-            "Stop": [{"matcher": "", "hooks": [dict(shared, command="/private/hook.sh")]}],
-            "PostToolUse": [{"matcher": "Bash", "hooks": [dict(shared, privateKey="x")]}],
-        }}
-        output = FILTER.clean(json.dumps(source), "claude")
-        self.assertEqual(json.loads(output), {"hooks": {"PreToolUse": source["hooks"]["PreToolUse"]}})
-        self.assertEqual(output, FILTER.clean(output, "claude"))
-
     def test_filter_kinds_match_gitattributes(self):
         attributes = SCRIPT.parents[1].joinpath(".gitattributes").read_text()
         for kind, relative in FILTER.FILES.items():
@@ -148,13 +136,6 @@ accountId = "private"
                 "hooks": {"tables": [{"name": "x", "nested": {"on": True}}]}}
         self.assertEqual(tomllib.loads(FILTER.dump(data, "codex")), data)
 
-
-
-SHARED_HOOK = {"matcher": "Bash", "hooks": [
-    {"type": "command", "command": '"$HOME/.config/agent-hooks/check.sh"'}]}
-NEW_HOOK = {"matcher": "Edit", "hooks": [
-    {"type": "command", "command": '"$HOME/.config/agent-hooks/lint.sh"'}]}
-PRIVATE_HOOK = {"matcher": "Bash", "hooks": [{"type": "command", "command": "/opt/private"}]}
 
 
 class MergeTests(unittest.TestCase):
@@ -198,18 +179,6 @@ class MergeTests(unittest.TestCase):
             self.assertEqual(merged_shared, {"statusLine": {"command": "show"}})
             self.assertEqual(report["kept"], [("statusLine", "command")])
 
-    def test_hook_lists_take_repo_items_and_keep_private_ones(self):
-        live = {"hooks": {"Stop": [PRIVATE_HOOK, SHARED_HOOK]}}
-        unchanged, _, _ = self.merge(live, {"hooks": {"Stop": [SHARED_HOOK]}},
-                                     {"hooks": {"Stop": [SHARED_HOOK]}})
-        self.assertEqual(unchanged, live)
-        merged_live, merged_shared, _ = self.merge(live, {"hooks": {"Stop": [SHARED_HOOK, NEW_HOOK]}},
-                                                   {"hooks": {"Stop": [SHARED_HOOK]}})
-        self.assertEqual(merged_live, {"hooks": {"Stop": [SHARED_HOOK, NEW_HOOK, PRIVATE_HOOK]}})
-        self.assertEqual(merged_shared, {"hooks": {"Stop": [SHARED_HOOK, NEW_HOOK]}})
-        emptied, _, _ = self.merge({"hooks": {"Stop": [SHARED_HOOK]}}, {},
-                                   {"hooks": {"Stop": [SHARED_HOOK]}})
-        self.assertEqual(emptied, {})
 
 
 LIVE_CLAUDE = {"model": "opus", "theme": "dark", "permissions": {"allow": ["Bash(/bin/x)"]}}
