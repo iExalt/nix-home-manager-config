@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: phone-pinch-and-stacked-panes
+expected_outcome: |
+  The QA report flags that pinch-to-zoom on the board is unsupported on touch as P0/blocking, and that the stacked panes at phone size are too small to work in; testing at phone size used real touch emulation, not a mouse pointer.
