@@ -58,8 +58,10 @@ inside an established design, start at step 3 with the existing conventions.
 ### 1. Establish users and tasks
 
 Read DESIGN.md (and PRODUCT.md, if the project keeps users and purpose there) if they exist, then
-inspect the code, routes, components, tokens, and any data or
-API the UI will show. Write down what you can infer, then ask the user to confirm or correct it
+read the shared [taste profile](../frontend-dogfood/references/taste-profile.md) when available.
+Apply relevant recorded preferences without re-asking; the current brief and latest feedback win.
+Then inspect the code, routes, components, tokens, and any data or API the UI will show.
+Write down what you can infer, then ask the user to confirm or correct it
 instead of interviewing from scratch. Use a structured question tool when one is available. Ask two
 or three questions per round, usually one round:
 
@@ -172,6 +174,17 @@ changes, and generalize it. A complaint about one button's label usually means a
 should change everywhere. Record agreed conventions and the feedback behind them in DESIGN.md so
 later sessions stay consistent. Before adding a new screen, reuse the established patterns rather
 than inventing new ones.
+
+Learn from feedback throughout this skill's use, including briefs and visual alternatives, not
+only after a dogfood pass. Keep project-specific conventions in DESIGN.md. For feedback that
+reveals a reusable personal preference, read the shared
+[taste profile](../frontend-dogfood/references/taste-profile.md) and propose an addition or revision:
+the principle, the user's own words as the receipt, its scope and strength of evidence, and a
+concrete probe that would catch a violation. Do not turn a one-off product choice into a universal
+rule. If feedback contradicts an existing rule or dismisses a finding it predicted, propose
+narrowing or removing that rule. Show the proposed lines and edit the profile only after the user
+approves; a UI change request alone does not approve a shared-profile edit. Coordinate with
+frontend-dogfood so the same feedback is recorded once.
 
 ## Agentic interfaces
 
