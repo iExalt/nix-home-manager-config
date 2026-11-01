@@ -80,7 +80,8 @@ dogfood.py close <session>                            # browser, touch hold, and
 ```
 
 `init --open` starts the browser inside a systemd scope capped at the agreed 7 vCPU and 16 GB, and
-copies touch_probe.py to the host. The daemon and browser persist between calls; give every
+copies touch_probe.py to the host. It first closes any browser and touch hold left under that
+session name, so re-running it starts clean. The daemon and browser persist between calls; give every
 parallel tester its own session name. The main agent usually runs `init` and hands the session to
 the tester; the tester leaves it open for the main agent to close.
 
@@ -113,7 +114,8 @@ session's colour scheme, viewport, and pixel ratio alone; dogfood.py drives it:
    the app reads the pointer type only at start-up.
 2. While it holds, keep using agent-browser for navigation, `snapshot`, `fill`, `type`, `press`,
    `scroll`, `select`, and `eval`, but **no mouse commands** (`click`, `dblclick`, `drag`,
-   `check`, `uncheck`, `hover`, `mouse ...`; dogfood.py refuses them during a hold): under touch
+   `check`, `uncheck`, `hover`, `mouse ...`, and `find` with a click, check, or hover action or
+   none, since it defaults to click; dogfood.py refuses them during a hold): under touch
    emulation they hang on a mouse event or do nothing. Tap with `dogfood.py tap <session> @e12`
    (an @ref, a CSS selector, or `X,Y`); drag, pinch, and wheel with `dogfood.py steps <session>
    steps.json`.

@@ -115,6 +115,10 @@ command -v uv >/dev/null || { echo "uv missing on the host: mise use -g uv"; exi
   echo "warning: lingering is off on the host, so the browser and touch hold stop if your last login session there ends (devices.md › Setup)" """), end="")
     subprocess.run(["scp", "-q", str(PROBE), f"{a.host}:/tmp/dogfood-{a.session}/touch_probe.py"], check=True)
     if a.open:
+        # A browser still running under this name would take the open and leave the new scope empty,
+        # so the liveness guard would call the session dead. Start clean instead.
+        remote(cfg, f"systemctl --user stop dogfood-{a.session}-touch 2>/dev/null; ab close >/dev/null 2>&1; true",
+               check=False, guard=False)
         unit = f"dogfood-{a.session}-{int(time.time())}"
         cfg["scope"] = unit
         save(cfg)
@@ -124,9 +128,35 @@ command -v uv >/dev/null || { echo "uv missing on the host: mise use -g uv"; exi
     print(f"session {a.session} on {a.host}; evidence in {cfg['evidence']}")
 
 
+def mouse_command(args):
+    """The mouse command an agent-browser argument list would run, if any."""
+    words, follows_option, skip = [], [], False
+    for i, tok in enumerate(args):
+        if skip:
+            skip = False
+        elif tok == "--name":  # find's only option that takes a value
+            skip = True
+        elif not tok.startswith("-"):
+            words.append(tok)
+            follows_option.append(i > 0 and args[i - 1].startswith("-") and "=" not in args[i - 1])
+    for start in (0, 1):
+        if start == 1 and not (words and follows_option[0]):
+            break  # only skip the first word when it may be a global option's value, as in --timeout 5000
+        w = words[start:]
+        if w and w[0] in MOUSE_ONLY:
+            return w[0]
+        if w and w[0] == "find":
+            # find <locator> <value> [action]; nth takes an index too, and the action defaults to click.
+            n = 4 if len(w) > 1 and w[1] == "nth" else 3
+            action = w[n] if len(w) > n else "click"
+            if action in MOUSE_ONLY:
+                return f"find ... {action}"
+    return None
+
+
 def refuse_mouse(cfg, args):
-    command = next((x for x in args if not x.startswith("-")), "")
-    if cfg.get("hold") and command in MOUSE_ONLY:
+    command = mouse_command(args)
+    if cfg.get("hold") and command:
         sys.exit(f"refused `{command}`: mouse input hangs or does nothing under touch emulation. Tap with "
                  "`dogfood.py tap`, drag, pinch, or wheel with `steps`, or `dogfood.py release` first.")
 
