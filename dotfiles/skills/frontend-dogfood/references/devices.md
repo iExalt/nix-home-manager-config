@@ -29,8 +29,17 @@ says), wrap commands in `bash -lc` and call `mise exec -- agent-browser`; the co
 so:
 
 ```sh
-ssh <host> 'bash -lc "mise use -g npm:agent-browser@latest && mise exec -- agent-browser install"'
+ssh <host> 'bash -lc "mise use -g npm:agent-browser@latest uv && mise exec -- agent-browser install"'
+ssh <host> 'loginctl show-user "$USER" -p Linger --value'
 ```
+
+uv runs touch_probe.py on the host. Lingering decides whether the browser and the touch hold, which
+run under the user's systemd manager, survive when the last login session on the host ends. With
+`Linger=no` they still work while any other session keeps the manager up, but can stop mid-run
+without warning. `dogfood.py init` checks both and warns, and every later call checks that the
+browser and any touch hold are still running, failing with exit 3 if not: re-run `init --open` or
+`hold` rather than carrying on, because a restarted browser has default settings and no touch. Turning lingering on (`loginctl
+enable-linger`) changes the user's machine, so ask them first.
 
 The laptop gets the same `npm:agent-browser@latest` from this repo's `home.nix`; agent-browser is
 installed there only so its version and docs match, never to run a browser. Compare
@@ -80,7 +89,10 @@ and a copy in `view/` scaled to CSS pixels, which is what a person sees at that 
 view copy. A 3.5x phone original is 1442x3203 and costs several times the context of its
 412x915 view; testers that read originals filled their context with images, and every later step
 got slower. Open an original only for pixel-level checks (probes 3 and 29) or when the view copy
-leaves a question open. Cite the original as evidence.
+leaves a question open. Cite the original as evidence. A `--full-page` shot of a long page comes
+back as screen-high view tiles (`view/<name>-1.png`, `-2`, …), because one tall image would be
+shrunk until its text is unreadable; prefer viewport shots while scrolling when the order of
+screens matters.
 
 **Useful agent-browser commands.** `snapshot -i` (interactive elements with `@e` refs), `click`,
 `fill`, `type`, `press`, `drag`, `mouse move|down|up|wheel` (middle button supported), `scroll`,
@@ -100,7 +112,8 @@ session's colour scheme, viewport, and pixel ratio alone; dogfood.py drives it:
    `(pointer: coarse)` matches; don't judge anything at that size until it does. Reload the page if
    the app reads the pointer type only at start-up.
 2. While it holds, keep using agent-browser for navigation, `snapshot`, `fill`, `type`, `press`,
-   `scroll`, and `eval`, but **not `click` or `drag`**: under touch emulation they hang on a mouse
+   `scroll`, and `eval`, but **not `click` or `drag`** (dogfood.py refuses them during a hold):
+   under touch emulation they hang on a mouse
    event and never fire `click`. Tap with `dogfood.py tap <session> @e12` (an @ref, a CSS
    selector, or `X,Y`); drag, pinch, and wheel with `dogfood.py steps <session> steps.json`.
    `tap` scrolls an @ref or selector into view first, refuses a point outside the viewport, and
@@ -110,7 +123,8 @@ session's colour scheme, viewport, and pixel ratio alone; dogfood.py drives it:
 
 touch_probe's docstring lists the steps (`tap`, `drag`, `pinch`, `wheel` with `ctrl` for trackpad
 pinch, `wait`, `eval`, `screenshot`, `time_to_change`). Don't put `"touch"` or `"cpu"` in a steps
-file while a hold runs: the steps run would clear the hold's emulation when it exits. Coordinates
+file while a hold runs: the steps run would clear the hold's emulation when it exits, so
+`dogfood.py steps` drops them during a hold. Coordinates
 are viewport CSS pixels, as `get box` reports them, so taps stay accurate after scrolling.
 
 **Timing.** `dogfood.py tap <session> @e12 --until "<js predicate>"` prints the milliseconds from

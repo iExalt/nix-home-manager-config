@@ -26,6 +26,7 @@ touch to the first frame where the predicate holds.
 import argparse
 import json
 import pathlib
+import re
 import shlex
 import subprocess
 import sys
@@ -34,6 +35,8 @@ import time
 STATE = pathlib.Path("/tmp/frontend-dogfood")
 PROBE = pathlib.Path(__file__).with_name("touch_probe.py")
 EOF_MARK = "DOGFOOD_EOF_7f3c"
+# Under touch emulation these hang on a mouse event and never fire click.
+MOUSE_ONLY = {"click", "dblclick", "drag"}
 
 
 def load(session):
@@ -43,13 +46,35 @@ def load(session):
     return json.loads(path.read_text())
 
 
-def remote(cfg, body, check=True):
+def save(cfg):
+    (STATE / f"{cfg['session']}.json").write_text(json.dumps(cfg, indent=1))
+
+
+def guards(cfg):
+    """Shell checks that the browser scope and touch hold are still alive.
+
+    Without lingering on the host, either can stop between calls. agent-browser would then start an
+    uncapped browser with default settings, or the page would quietly lose touch, and the tester
+    would judge the wrong app.
+    """
+    out = []
+    if cfg.get("scope"):
+        out.append(f"systemctl --user is-active -q {cfg['scope']}.scope || {{ echo 'browser session gone: its "
+                   f"scope stopped (lingering off on the host?). Re-run dogfood.py init --open' >&2; exit 3; }}")
+    if cfg.get("hold"):
+        out.append(f"systemctl --user is-active -q dogfood-{cfg['session']}-touch || {{ echo 'touch hold stopped: "
+                   f"run dogfood.py hold {cfg['session']} again before judging touch sizes' >&2; exit 3; }}")
+    return out
+
+
+def remote(cfg, body, check=True, guard=True):
     """Run a bash script on the host with agent-browser as `ab`; return stdout."""
     script = "\n".join([
         'eval "$(mise env -s bash)"',
         f"export AGENT_BROWSER_CONFIG={cfg['config']}",
         f"ab() {{ agent-browser --session {shlex.quote(cfg['session'])} \"$@\"; }}",
         f"D=/tmp/dogfood-{cfg['session']}; mkdir -p \"$D\"",
+        *(guards(cfg) if guard else []),
         body,
     ])
     res = subprocess.run(["ssh", "-T", "-o", "BatchMode=yes", cfg["host"], "bash -lc " + shlex.quote(script)],
@@ -58,6 +83,7 @@ def remote(cfg, body, check=True):
     if err:
         print(err, file=sys.stderr)
     if check and res.returncode:
+        print(res.stdout, end="")
         sys.exit(res.returncode)
     return res.stdout
 
@@ -75,28 +101,45 @@ def probe_args(cfg):
 
 
 def cmd_init(a):
+    if not re.fullmatch(r"[A-Za-z0-9_-]+", a.session):
+        sys.exit("session names may use only letters, digits, - and _")
     cfg = {"session": a.session, "host": a.host, "evidence": str(pathlib.Path(a.evidence).resolve()),
-           "url_part": a.url_part, "config": a.config}
+           "url_part": a.url_part, "config": a.config, "hold": False}
     STATE.mkdir(exist_ok=True)
-    (STATE / f"{a.session}.json").write_text(json.dumps(cfg, indent=1))
+    save(cfg)
     (pathlib.Path(cfg["evidence"]) / "view").mkdir(parents=True, exist_ok=True)
-    remote(cfg, "true")
+    print(remote(cfg, """command -v agent-browser >/dev/null || { echo "agent-browser missing on the host; see devices.md › Setup"; exit 1; }
+command -v uv >/dev/null || { echo "uv missing on the host: mise use -g uv"; exit 1; }
+[ "$(loginctl show-user "$USER" -p Linger --value 2>/dev/null)" = yes ] ||
+  echo "warning: lingering is off on the host, so the browser and touch hold stop if your last login session there ends (devices.md › Setup)" """), end="")
     subprocess.run(["scp", "-q", str(PROBE), f"{a.host}:/tmp/dogfood-{a.session}/touch_probe.py"], check=True)
     if a.open:
         unit = f"dogfood-{a.session}-{int(time.time())}"
-        print(remote(cfg, f"systemd-run --user --scope -q --unit={unit} -p CPUQuota={a.cpu_quota} "
+        cfg["scope"] = unit
+        save(cfg)
+        print(remote(cfg, guard=False, body=f"systemd-run --user --scope -q --unit={unit} -p CPUQuota={a.cpu_quota} "
                           f"-p MemoryMax={a.memory_max} agent-browser --session {shlex.quote(a.session)} "
                           f"open {shlex.quote(a.open)}"), end="")
     print(f"session {a.session} on {a.host}; evidence in {cfg['evidence']}")
+
+
+def refuse_mouse(cfg, args):
+    command = next((x for x in args if not x.startswith("-")), "")
+    if cfg.get("hold") and command in MOUSE_ONLY:
+        sys.exit(f"refused `{command}`: it hangs under touch emulation. Use `dogfood.py tap` or `steps`, "
+                 "or `dogfood.py release` first.")
 
 
 def cmd_ab(a):
     cfg = load(a.session)
     if a.args == ["-"]:
         lines = [l.strip() for l in sys.stdin if l.strip() and not l.lstrip().startswith("#")]
+        for l in lines:
+            refuse_mouse(cfg, shlex.split(l))
         body = "\n".join(f"printf '%s\\n' {shlex.quote('$ ' + l)}; ab {shlex.join(shlex.split(l))} || echo \"[exit $?]\""
                          for l in lines)
     else:
+        refuse_mouse(cfg, a.args)
         body = f"ab {shlex.join(a.args)}"
     print(remote(cfg, body), end="")
 
@@ -110,8 +153,10 @@ def cmd_shot(a):
     from PIL import Image
     cfg = load(a.session)
     name = a.name.removesuffix(".png")
-    out = remote(cfg, f"ab screenshot {'--full ' if a.full_page else ''}\"$D/{name}.png\" >/dev/null && ab eval devicePixelRatio")
-    dpr = float(out.strip().splitlines()[-1])
+    out = remote(cfg, f"ab screenshot {'--full ' if a.full_page else ''}\"$D/{name}.png\" >/dev/null && "
+                      "ab eval 'devicePixelRatio + \" \" + innerHeight'")
+    dpr, screen_h = (float(v) for v in json.loads(out.strip().splitlines()[-1]).split())
+    screen_h = int(screen_h)
     full = pathlib.Path(cfg["evidence"]) / f"{name}.png"
     full.parent.mkdir(parents=True, exist_ok=True)
     subprocess.run(["scp", "-q", f"{cfg['host']}:/tmp/dogfood-{cfg['session']}/{name}.png", str(full)], check=True)
@@ -119,8 +164,19 @@ def cmd_shot(a):
     view.parent.mkdir(exist_ok=True)
     with Image.open(full) as img:
         size = (round(img.width / dpr), round(img.height / dpr))
-        (img.resize(size, Image.LANCZOS) if dpr > 1 else img).save(view)
-    print(f"view {view}  ({size[0]}x{size[1]}, CSS pixels; read this one)\nfull {full}  (device pixels, {dpr:g}x; for pixel checks and evidence)")
+        small = img.resize(size, Image.LANCZOS) if dpr > 1 else img.copy()
+    # A long full-page view would be shrunk again when read, until its text is illegible,
+    # so cut it into screen-high tiles instead.
+    tiles = [(0, size[1])] if size[1] <= screen_h * 1.5 else \
+        [(top, min(top + screen_h, size[1])) for top in range(0, size[1], screen_h)]
+    views = []
+    for n, (top, bottom) in enumerate(tiles, 1):
+        path = view if len(tiles) == 1 else view.with_name(f"{name}-{n}.png")
+        small.crop((0, top, size[0], bottom)).save(path)
+        views.append(path)
+    for path in views:
+        print(f"view {path}  (CSS pixels; read this one)")
+    print(f"full {full}  ({size[0]}x{size[1]} CSS pixels at {dpr:g}x; for pixel checks and evidence)")
 
 
 def cmd_hold(a):
@@ -128,18 +184,22 @@ def cmd_hold(a):
     unit = f"dogfood-{a.session}-touch"
     url = f" --url {shlex.quote(cfg['url_part'])}" if cfg["url_part"] else ""
     cpu = f" --cpu {a.cpu:g}" if a.cpu != 1 else ""
-    print(remote(cfg, f"""systemctl --user stop {unit} 2>/dev/null
+    print(remote(dict(cfg, hold=False), f"""systemctl --user stop {unit} 2>/dev/null
 WS=$(ab get cdp-url)
 systemd-run --user -q --collect --unit={unit} "$(command -v uv)" run -q "$D/touch_probe.py" "$WS" hold{url}{cpu}
 sleep 2
 systemctl --user is-active {unit} >/dev/null || {{ journalctl --user -u {unit} -n 20 --no-pager; exit 1; }}
 printf 'touch: '; ab eval "matchMedia('(pointer: coarse)').matches && navigator.maxTouchPoints > 0"
 echo "reload the page if the app reads the pointer type only at start-up" """), end="")
+    cfg["hold"] = True
+    save(cfg)
 
 
 def cmd_release(a):
     cfg = load(a.session)
-    remote(cfg, f"systemctl --user stop dogfood-{a.session}-touch 2>/dev/null; true")
+    remote(cfg, f"systemctl --user stop dogfood-{a.session}-touch 2>/dev/null; true", guard=False)
+    cfg["hold"] = False
+    save(cfg)
     print("touch emulation and throttling off")
 
 
@@ -185,12 +245,18 @@ def cmd_tap(a):
 
 
 def cmd_steps(a):
-    print(run_steps(load(a.session), json.loads(read_src(a.src))), end="")
+    cfg = load(a.session)
+    spec = json.loads(read_src(a.src))
+    # A steps run that sets emulation clears the hold's when it exits.
+    if cfg.get("hold") and {"touch", "cpu"} & spec.keys():
+        print("ignoring \"touch\"/\"cpu\" in the steps: the hold already sets them", file=sys.stderr)
+        spec = {k: v for k, v in spec.items() if k not in ("touch", "cpu")}
+    print(run_steps(cfg, spec), end="")
 
 
 def cmd_close(a):
     cfg = load(a.session)
-    print(remote(cfg, f"systemctl --user stop dogfood-{a.session}-touch 2>/dev/null; ab close; rm -rf \"$D\"", check=False), end="")
+    print(remote(cfg, f"systemctl --user stop dogfood-{a.session}-touch 2>/dev/null; ab close; rm -rf \"$D\"", check=False, guard=False), end="")
     (STATE / f"{a.session}.json").unlink()
 
 
