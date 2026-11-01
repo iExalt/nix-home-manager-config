@@ -85,7 +85,6 @@ These sections are never shared, including all nested entries:
 | `~/.codex/config.toml` | `marketplaces` | Marketplace registrations and source paths |
 | `~/.codex/config.toml` | `mcp_servers` | MCP server commands, endpoints, and configuration |
 | `~/.codex/config.toml` | `projects` | Project directories and trust settings |
-| `~/.codex/config.toml` | `hooks` | Hook trust hashes, approved per machine with `/hooks` |
 | `~/.codex/config.toml` | `tui.screen_reader_detection_done` | Machine-specific detection state |
 | `~/.codex/config.toml` | `tui.model_availability_nux` | Model onboarding state |
 | `~/.codex/config.toml` | `desktop.daybreak-enabled` | Account and user identifiers |
@@ -101,14 +100,9 @@ or a home-directory marker (`~`, `$HOME`, or `${HOME}`); a list containing
 such a value is omitted in full. When that keeps a key the allowlist names
 local, such as `developer_instructions` containing "and/or", sync and the
 filter print a warning naming the key until the value changes, and sync
-leaves the key alone on both sides. The one exception is a quoted path under
-`"$HOME/.config/agent-hooks/`, the shared hook scripts that Home Manager links
-from `dotfiles/agent-hooks`, so reviewed Claude `hooks` entries that run them
-are shared. A hook entry is kept whole or omitted whole: one unlisted key or
-private path keeps the entry local, while the other entries for the same event
-are shared. Empty sections are dropped. Review and extend the allowlists when
-adding a new portable preference, and keep this table current when excluding
-additional sections.
+leaves the key alone on both sides. Empty sections are dropped. Review and
+extend the allowlists when adding a new portable preference, and keep this
+table current when excluding additional sections.
 
 Quickstart also installs Git clean filters for the two tracked files, as a
 safety net: Git stores only their allowlisted content, so private keys left in
