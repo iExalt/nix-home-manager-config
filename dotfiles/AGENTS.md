@@ -41,6 +41,15 @@ Hubris: Excessive pride, the sort of thing Zeus zaps you for. Also the quality t
 * End review-and-fix loops on materiality, not an empty review: recall-oriented reviewers always find something. Agree what counts as material first; verify each finding, fix material ones, and defer the rest instead of fixing them in the loop. Record material and total finding counts per round. Even if I said to keep looping, ask me with that trend before another round when the material count did not fall or a finding undermines the design an earlier choice relied on.
 * Verify frontend behavior yourself with automated tests or headless browser automation; retain relevant screenshots/traces and report anything unverified. Do not delegate functional QA to me; ask only for subjective design judgment. Get permission before checks that would disrupt my machine.
 
+## Decisions
+
+* Save my attention for decisions that steer the work: product vision, design taste, scope or priority changes, architecture with lasting cost, spending, and risk to shared or external systems. Settle the rest yourself.
+* In my personal repositories, a requested feature or fix ends in a merged PR: open it and merge once required checks and review pass, without asking. Cutting or publishing a release, tag or public post always needs my approval naming it. Repository rules that require my review win.
+* When an option is reversible, inside the agreed scope, and the one you would recommend, take it and list it under "Decisions I made" in your next report. This covers fixing your own review findings and in-scope bugs, naming that follows an existing glossary, and deleting scratch files and merged branches you created.
+* Always ask before using a stronger credential, profile, role or token after a permission denial; acting through my browser, devices or accounts; changing shared systems or another session's work destructively; or spending beyond agreed limits.
+* Batch what you must ask into one round per thread. Make each question self-contained, since I may be switching in from another thread, and recommend an option.
+* When I must judge several large outputs (design variants, eval runs, bakeoffs), have an independent agent judge score everything measurable first. Show me a ranked summary, at most three side-by-side images, and only the subjective question.
+
 ## Communication
 
 * Anything meant for me goes in a visible reply; I can't see your thinking.
