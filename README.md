@@ -155,6 +155,27 @@ the upstream Anthropic skill. Its `NOTICE.md` records the source revisions and
 licenses. Leave the Claude `frontend-design@claude-code-plugins` plugin out of
 `enabledPlugins` so the upstream skill does not load alongside it.
 
+### Ponytail skills
+
+The non-flake `ponytail` input pins upstream to a full Git SHA in `flake.nix`;
+`flake.lock` also records its content hash. `modules/ponytail-skills.nix` installs
+`ponytail`, `ponytail-audit`, `ponytail-debt`, `ponytail-gain`, `ponytail-help`,
+and `ponytail-review` into both `~/.codex/skills/` and `~/.claude/skills/`.
+These are immutable Nix-store links. Local skills remain editable in this repo.
+
+This installs standalone skills only. Upstream `ponytail-help` describes plugin
+features that are not installed here: session-start hooks, default-mode config,
+the band UI, and marketplace updates. Its namespaced Codex examples apply to
+the plugin; use `$ponytail`, `$ponytail-review`, etc. for these standalone skills.
+Claude uses `/ponytail`, `/ponytail-review`, etc. The benchmark and README cited
+by `ponytail-gain` remain in the pinned source tree, two directories above the
+resolved skill directory.
+
+To update, replace the full SHA in `inputs.ponytail.url`, run
+`nix flake lock`, review the Ponytail-only lockfile change and upstream skill
+diff, then run `./reload.sh`. Commit the SHA and lockfile together. A general
+`nix flake update` does not advance this explicit SHA pin.
+
 ## Optional Overlays
 
 Machine-specific Home Manager overlays can be enabled without committing local

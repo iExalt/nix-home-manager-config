@@ -10,9 +10,13 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    ponytail = {
+      url = "github:DietrichGebert/ponytail/96608e078b2d5ea607c5c3b8b5a54d1c1fba6846";
+      flake = false;
+    };
   };
 
-  outputs = { nixpkgs, home-manager, ... }:
+  outputs = { nixpkgs, home-manager, ponytail, ... }:
     let
       lib = nixpkgs.lib;
       systems = [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ];
@@ -36,7 +40,9 @@
       mkHome = system:
         home-manager.lib.homeManagerConfiguration {
           pkgs = nixpkgs.legacyPackages.${system};
+          extraSpecialArgs = { inherit ponytail; };
           modules = [
+            ./modules/ponytail-skills.nix
             ./modules/claude-config.nix
             ./modules/codex-config.nix
             ./home.nix
