@@ -191,7 +191,11 @@ def main():
             print(json.dumps({"hold": url, "cpu": args.cpu}), flush=True)
             while True:
                 time.sleep(3600)
-        spec = json.load(sys.stdin if args.src == "-" else open(args.src, encoding="utf-8"))
+        if args.src == "-":
+            spec = json.load(sys.stdin)
+        else:
+            with open(args.src, encoding="utf-8") as fh:
+                spec = json.load(fh)
         emulate(cdp, spec.get("touch", False), spec.get("cpu", 1))
         for step in spec["steps"]:
             print(json.dumps(run_step(cdp, step)), flush=True)

@@ -102,8 +102,9 @@ The size of the verified list decides what happens next:
   need no design decision from the user, and stay inside the frontend. Fix them all yourself,
   using frontend-design for the design work; the user wants papercuts fixed in the same pass, not
   filed.
-- **Larger:** an audit of an existing UI, or a list that needs several commits, design decisions,
-  or changes outside the frontend. Stop after verification and report before fixing anything:
+- **Larger:** anything that isn't small, such as an audit of an existing UI, more findings than
+  that, or a list that needs several commits, design decisions, or
+  changes outside the frontend. Stop after verification and report before fixing anything:
   verified counts per severity, the worst findings with screenshots, the decisions only the user
   can make, and what the fixing will cost (how many chunks or pull requests, which surfaces,
   anything outside the UI, and a rough duration). Offer scopes: P0 and P1 only; all of P0–P2; or
