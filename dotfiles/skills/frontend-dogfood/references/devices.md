@@ -38,8 +38,8 @@ run under the user's systemd manager, survive when the last login session on the
 `Linger=no` they still work while any other session keeps the manager up, but can stop mid-run
 without warning. `dogfood.py init` checks both and warns, and every later call checks that the
 browser and any touch hold are still running, failing with exit 3 if not: re-run `init --open` or
-`hold` rather than carrying on, because a restarted browser has default settings and no touch. Turning lingering on (`loginctl
-enable-linger`) changes the user's machine, so ask them first.
+`hold` rather than carrying on, because a restarted browser has default settings and no touch.
+Turning lingering on (`loginctl enable-linger`) changes the user's machine, so ask them first.
 
 The laptop gets the same `npm:agent-browser@latest` from this repo's `home.nix`; agent-browser is
 installed there only so its version and docs match, never to run a browser. Compare
@@ -112,10 +112,11 @@ session's colour scheme, viewport, and pixel ratio alone; dogfood.py drives it:
    `(pointer: coarse)` matches; don't judge anything at that size until it does. Reload the page if
    the app reads the pointer type only at start-up.
 2. While it holds, keep using agent-browser for navigation, `snapshot`, `fill`, `type`, `press`,
-   `scroll`, and `eval`, but **not `click` or `drag`** (dogfood.py refuses them during a hold):
-   under touch emulation they hang on a mouse
-   event and never fire `click`. Tap with `dogfood.py tap <session> @e12` (an @ref, a CSS
-   selector, or `X,Y`); drag, pinch, and wheel with `dogfood.py steps <session> steps.json`.
+   `scroll`, `select`, and `eval`, but **no mouse commands** (`click`, `dblclick`, `drag`,
+   `check`, `uncheck`, `hover`, `mouse ...`; dogfood.py refuses them during a hold): under touch
+   emulation they hang on a mouse event or do nothing. Tap with `dogfood.py tap <session> @e12`
+   (an @ref, a CSS selector, or `X,Y`); drag, pinch, and wheel with `dogfood.py steps <session>
+   steps.json`.
    `tap` scrolls an @ref or selector into view first, refuses a point outside the viewport, and
    says what element the touch landed on; if that isn't the target, something covers it.
    A tap fires the full sequence (`pointerdown:touch`, `touchstart`, `mousedown`, `click`).

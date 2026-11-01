@@ -35,8 +35,9 @@ import time
 STATE = pathlib.Path("/tmp/frontend-dogfood")
 PROBE = pathlib.Path(__file__).with_name("touch_probe.py")
 EOF_MARK = "DOGFOOD_EOF_7f3c"
-# Under touch emulation these hang on a mouse event and never fire click.
-MOUSE_ONLY = {"click", "dblclick", "drag"}
+# Under touch emulation these hang on a mouse event (click, check, mouse down/up/wheel, measured at
+# 20 s and more) or do nothing (hover, mouse move), so a tester would misjudge the app.
+MOUSE_ONLY = {"click", "dblclick", "drag", "check", "uncheck", "hover", "mouse"}
 
 
 def load(session):
@@ -126,8 +127,8 @@ command -v uv >/dev/null || { echo "uv missing on the host: mise use -g uv"; exi
 def refuse_mouse(cfg, args):
     command = next((x for x in args if not x.startswith("-")), "")
     if cfg.get("hold") and command in MOUSE_ONLY:
-        sys.exit(f"refused `{command}`: it hangs under touch emulation. Use `dogfood.py tap` or `steps`, "
-                 "or `dogfood.py release` first.")
+        sys.exit(f"refused `{command}`: mouse input hangs or does nothing under touch emulation. Tap with "
+                 "`dogfood.py tap`, drag, pinch, or wheel with `steps`, or `dogfood.py release` first.")
 
 
 def cmd_ab(a):
