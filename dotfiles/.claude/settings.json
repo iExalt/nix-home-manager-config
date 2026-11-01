@@ -11,20 +11,6 @@
   "env": {
     "CLAUDE_CODE_SILENT_TURN_REMINDER_TEXT": "The user hasn't seen a message from you in a while. If an active skill defines when to update the user, follow it; this reminder does not require a reply. Otherwise, update the user when there's something to tell: a finding, a change of plan, or a blocker."
   },
-  "hooks": {
-    "PreToolUse": [
-      {
-        "hooks": [
-          {
-            "command": "python3 -I \"$HOME/.config/agent-hooks/ask_options_explained.py\"",
-            "timeout": 10,
-            "type": "command"
-          }
-        ],
-        "matcher": "AskUserQuestion"
-      }
-    ]
-  },
   "model": "opus",
   "modelSettings": {
     "claude-fable-5-1": {

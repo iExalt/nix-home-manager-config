@@ -57,17 +57,12 @@ CLAUDE.update({
     },
     "sandbox": {"enabled": None},
     "modelSettings": {"*": {"effortLevel": None}},
-    # feat(config): lists hold one item policy; each item is kept whole or dropped whole.
-    "hooks": {"*": [{"matcher": None, "hooks": [{"type": None, "command": None, "timeout": None}]}]},
 })
-# Shared hook scripts live at this fixed path, which identifies nothing.
-SHARED_HOOKS = '"$HOME/.config/agent-hooks/'
 
 
 def portable(value):
     # fix(privacy): conservatively omit strings containing any path separator.
     if isinstance(value, str):
-        value = value.replace(SHARED_HOOKS, '"')
         return not any(part in value for part in ("/", "\\", "$HOME", "${HOME}", "~"))
     if isinstance(value, list):
         return all(portable(item) for item in value)
@@ -87,15 +82,6 @@ def project(data, policy, kept_local=None, path=()):
                 selected = project(value, rule, kept_local, (*path, key))
                 if selected:
                     result[key] = selected
-        elif isinstance(rule, list):
-            if isinstance(value, list) and value:
-                # fix(config): keep the portable items, so a private item beside them
-                # neither hides them from Git nor makes them look deleted to sync.
-                # Keep the projected copy, whose keys are sorted, so Git's copy stays canonical.
-                kept = [projected for item in value if isinstance(item, dict)
-                        and (projected := project(item, rule[0])) == item]
-                if kept:
-                    result[key] = kept
         elif portable(value):
             result[key] = value
         elif kept_local is not None and key in policy:
@@ -191,9 +177,6 @@ def private(data, kept):
             dropped = private(value, kept[key])
             if dropped:
                 result[key] = dropped
-        elif isinstance(value, list) and isinstance(kept[key], list):
-            if any(item not in kept[key] for item in value):
-                result[key] = value
     return result
 
 
@@ -206,14 +189,7 @@ def holds(have, want):
     if isinstance(want, dict):
         return isinstance(have, dict) and all(
             key in have and holds(have[key], value) for key, value in want.items())
-    if isinstance(want, list) and isinstance(have, list):
-        return all(item in have for item in want)
     return have == want
-
-
-def portable_item(item, rule):
-    """Whether an item of a per-item tracked list survives projection unchanged."""
-    return isinstance(item, dict) and project(item, rule[0]) == item
 
 
 def rule_at(policy, path):
@@ -272,14 +248,8 @@ def build(values):
     return result
 
 
-def apply(live, path, value, rule):
-    """Set a tracked leaf in live data, keeping private items of a per-item list."""
-    if isinstance(rule, list):
-        current = get_path(live, path)
-        kept = [item for item in (current if isinstance(current, list) else [])
-                if not portable_item(item, rule)]
-        value = (value if value is not MISSING else []) + kept
-        value = value or MISSING
+def apply(live, path, value):
+    """Set or delete a tracked leaf in live data."""
     if value is MISSING:
         if get_path(live, path) is not MISSING:
             delete_path(live, path)
@@ -303,8 +273,7 @@ def merge(live, shared, base, policy):
     report = {"applied": [], "exported": [], "conflicts": [], "kept": []}
     for path in sorted(set(mine) | set(theirs) | set(common)):
         local, repo, old = (side.get(path, MISSING) for side in (mine, theirs, common))
-        rule = rule_at(policy, path)
-        if local is MISSING and not isinstance(rule, list) and get_path(live, path) is not MISSING:
+        if local is MISSING and get_path(live, path) is not MISSING:
             # fix(config): live holds a value Git cannot share; leave both sides alone.
             report["kept"].append(path)
             if repo is not MISSING:
@@ -319,7 +288,7 @@ def merge(live, shared, base, policy):
         if value is not MISSING:
             result[path] = value
         if value != local:
-            apply(merged_live, path, value, rule)
+            apply(merged_live, path, value)
             report["applied"].append(path)
         if value != repo:
             report["exported"].append(path)
