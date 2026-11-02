@@ -2,6 +2,8 @@
 
 The main agent fills the `{…}` fields and passes everything below the line to a fresh subagent
 verbatim. Leave out the developer's conclusions, known issues, and what has already been checked.
+The one exception is a re-run: list what the user has decided and what is already filed, because
+round-three testers spent their findings on those.
 
 ---
 
@@ -24,6 +26,9 @@ or fix anything. You never contact the user; questions for them go in your repor
 - **Design references:** {DESIGN.md path, mockups, or "none"}
 - **Documented device adaptations:** {differences and viewport/input rationale, or "none";
   these are claims to verify, not exemptions from testing}
+- **Already decided or filed** (re-runs only): {the user's decisions and filed items, one line
+  each, or "none"}. Don't report these again unless one got worse or broke something else; say so
+  if a decision itself looks wrong in use.
 
 ## Setup
 
@@ -45,7 +50,9 @@ or fix anything. You never contact the user; questions for them go in your repor
 1. **First glance.** For each form factor and theme in scope, load the app cold and screenshot it
    before touching anything. At phone and tablet sizes, start touch emulation first with
    `dogfood.py hold` and wait for `touch: true`; a phone check run with a mouse pointer tests the
-   wrong app. Look at each screenshot and write, in a few lines, what you notice in
+   wrong app. At desktop sizes, check that `matchMedia('(hover: hover)').matches` and
+   `matchMedia('(pointer: fine)').matches` are both true; a headless browser reports neither, and
+   the app may then show you its touch layout. If they're false, report desktop as untested. Look at each screenshot and write, in a few lines, what you notice in
    the first seconds: what you can and can't read, what draws the eye, what looks out of place,
    where space is wasted. The user's first complaints usually come from this view.
 2. **Task walks.** Do each primary task end to end, the way the user would, with the real data,

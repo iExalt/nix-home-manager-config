@@ -33,11 +33,14 @@ ssh <host> 'bash -lc "mise use -g npm:agent-browser@latest uv && mise exec -- ag
 ssh <host> 'loginctl show-user "$USER" -p Linger --value'
 ```
 
-uv runs touch_probe.py on the host. Lingering decides whether the browser and the touch hold, which
+Headed sessions also need Xvfb on the host (Ubuntu's `xvfb` package; installing it needs the
+user's say-so). dogfood.py's liveness check reads the unified cgroup v2 tree, which current
+distributions use; on a cgroup v1 host it would report every session as gone. uv runs touch_probe.py on the host. Lingering decides whether the browser and the touch hold, which
 run under the user's systemd manager, survive when the last login session on the host ends. With
 `Linger=no` they still work while any other session keeps the manager up, but can stop mid-run
 without warning. `dogfood.py init` checks both and warns, and every later call checks that the
-browser and any touch hold are still running, failing with exit 3 if not: re-run `init --open` or
+browser (not just its virtual display) and any touch hold are still running, including after the
+browser's idle timeout, failing with exit 3 if not: re-run `init --open` or
 `hold` rather than carrying on, because a restarted browser has default settings and no touch.
 Turning lingering on (`loginctl enable-linger`) changes the user's machine, so ask them first.
 
@@ -79,8 +82,12 @@ dogfood.py shot <session> 03-phone-dark               # screenshot, copied back 
 dogfood.py close <session>                            # browser, touch hold, and host files
 ```
 
-`init --open` starts the browser inside a systemd scope capped at the agreed 7 vCPU and 16 GB, and
-copies touch_probe.py to the host. It first closes any browser and touch hold left under that
+`init --open` starts the browser headed, on a private virtual display (Xvfb), inside a systemd
+scope capped at the agreed 7 vCPU and 16 GB, and copies touch_probe.py to the host. Headed matters:
+headless Chrome reports `(hover: hover)` and `(pointer: fine)` as false, so an app that switches on
+them shows a desktop tester its touch layout. `init` prints `mouse: true` when the page sees a real
+mouse. Pass `--headless` only if the host lacks Xvfb, and report hover- and pointer-dependent
+behaviour untested. It first closes any browser and touch hold left under that
 session name, so re-running it starts clean. The daemon and browser persist between calls; give every
 parallel tester its own session name. The main agent usually runs `init` and hands the session to
 the tester; the tester leaves it open for the main agent to close.
