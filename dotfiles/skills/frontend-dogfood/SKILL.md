@@ -1,6 +1,6 @@
 ---
 name: frontend-dogfood
-description: "QA a finished web or PWA interface the way this user would: a fresh tester subagent uses the running app like a person on desktop, tablet, and phone form factors, judges it against the user's recorded taste profile, measures feel instead of guessing, and reports evidence-backed findings; the main agent then verifies, fixes, and hands over only what needs human judgment. Use after a UI is built or changed and before showing it to the user, whenever asked to dogfood, QA, smoke-test, click through, try out, or 'use it like a user', and at the end of frontend-design work. Not for designing or building UI (frontend-design) or for CLIs."
+description: "QA a finished web or PWA interface the way this user would: a fresh tester subagent uses the running app like a person on desktop, tablet, and phone form factors, judges it against the user's recorded taste profile, measures feel instead of guessing, and reports evidence-backed findings; the main agent then verifies, fixes, and hands over only what needs human judgment. The default focused mode reports the few problems that would bother the user most in about 45 minutes; pedantic mode ('pedantic', 'thorough', 'find everything') hunts every defect, big or small. Use after a UI is built or changed and before showing it to the user, whenever asked to dogfood, QA, smoke-test, click through, try out, or 'use it like a user', and at the end of frontend-design work. Not for designing or building UI (frontend-design) or for CLIs."
 ---
 
 # Frontend Dogfood
@@ -18,6 +18,28 @@ Two roles keep the judgment honest:
   its findings, fix them, and hand over.
 - **The tester** is a fresh subagent that has not seen your code or your conclusions. It uses the
   running app through the browser only, never fixes anything, and never talks to the user.
+
+## Modes
+
+Both modes run one exploratory round, put the user's first impressions before checklists, hand
+the user an early look, and keep to a time budget. They differ in how wide the tester searches and
+how much gets fixed in the pass:
+
+| | Focused (default) | Pedantic |
+|---|---|---|
+| Use when | Any pass, unless the user asks for pedantic | The user says "pedantic", "thorough", or "find everything" |
+| Tester searches | Impression pass, task walks, then the probes what it saw calls for | Impression pass, task walks, then every applicable probe |
+| Tester reports | Top five in full; other P0/P1 in full; P2/P3 one line each | Top five, then every finding in full |
+| Budget per form factor | About 60 browser actions and 10 minutes | About 120 actions and 25 minutes |
+| Fixed in the pass | P0, P1, and cheap P2s | Step 5's small/larger rule: all of P0–P2 when small |
+| Whole pass, to handover | About 45 minutes | About 90 minutes |
+
+Focused mode exists because the exhaustive version took hours per round, buried the user in long
+lists, and still missed what the user found in half an hour on their own phone: the whole UI too
+big, a menu that closed on a checkbox, a loading flash after every setting. Those are whole-app
+impressions, which a short pass that starts from the user's first two minutes catches better than
+a long checklist. Pedantic mode trades time for breadth; use it before a release or when the user
+wants the papercuts too.
 
 Read [references/qa-conduct.md](references/qa-conduct.md) before you start: it is how the user
 expects agents to behave while testing, and it binds you and the tester alike.
@@ -80,13 +102,12 @@ Follow qa-conduct and [references/devices.md](references/devices.md):
 
 ### 3. Brief and run the tester
 
-Fill in [references/tester-brief.md](references/tester-brief.md) and give it to a fresh subagent
-verbatim, with the paths of taste-profile.md, qa-conduct.md, and devices.md. Set an explicit
-budget (browser actions and minutes) sized to the change: about 40 actions for one changed screen,
-about 120 for a new multi-screen flow across form factors. When several form factors are in scope
-and the harness allows it, run one tester per form factor in parallel, each with its own browser
-session name and evidence subdirectory. Wait for them in the foreground (start them together and
-block until all return) rather than as background tasks: some harnesses deliver a background
+Fill in [references/tester-brief.md](references/tester-brief.md), including the mode, and give it to
+a fresh subagent verbatim, with the paths of taste-profile.md, qa-conduct.md, and devices.md. Set
+the mode's budget (Modes), halved when only one screen changed. When several form factors are in
+scope and the harness allows it, run one tester per form factor in parallel, each with its own
+browser session name and evidence subdirectory. Wait for them in the foreground (start them together
+and block until all return) rather than as background tasks: some harnesses deliver a background
 subagent's completion to the top-level session instead of to you, and you'd wait forever.
 
 If no subagent is available, run the brief yourself in a clean context and say in the report that
@@ -94,7 +115,8 @@ the tester was not independent.
 
 ### 4. Verify the report
 
-Treat the report as claims to check, not results:
+Treat the report as claims to check, not results. The tester writes every finding to
+`findings.md` in its evidence directory and returns the top five; read both.
 
 - Reproduce every P0 and P1 from its steps and evidence before acting on it.
 - Check the interaction log: a pass that only screenshotted and never clicked, typed, dragged, or
@@ -114,69 +136,73 @@ Treat the report as claims to check, not results:
   comparison pass. Require a device comparison summary, including justified adaptations, defects,
   and untested combinations; separate device reports alone do not establish consistency.
 
-### 5. Agree the scope, fix, and re-run
+### 5. Fix, re-check, and file
 
-The size of the verified list decides what happens next:
+What gets fixed in the pass depends on the mode:
 
-- **Small:** the pass covered one change, and the verified P0–P2 findings are about ten or fewer,
-  need no design decision from the user, and stay inside the frontend. Fix them all yourself,
-  using frontend-design for the design work; the user wants papercuts fixed in the same pass, not
-  filed.
-- **Larger:** anything that isn't small, such as an audit of an existing UI, more findings than
-  that, or a list that needs several commits, design decisions, or
-  changes outside the frontend. Stop after verification and report before fixing anything:
-  verified counts per severity, the worst findings with screenshots, the decisions only the user
-  can make, and what the fixing will cost (how many chunks or pull requests, which surfaces,
-  anything outside the UI, and a rough duration). Offer scopes: P0 and P1 only, with P2 and P3
-  filed as tracker items grouped under one thread when the project has a tracker (what the user
-  chose for large passes); all of P0–P2; or the list as a handover. Fix only what they choose. In
-  one audit, "fix all of it" became more than five hours of chunks, reviews, and CI before the
-  second round could start.
+- **Focused:** fix every verified P0 and P1, and each P2 that is cheap: one component, no design
+  decision, minutes rather than an hour. File the rest (below) without asking. If the P0 and P1
+  fixes alone need several commits, design decisions, or changes outside the frontend, report and
+  ask before fixing, as for a larger pedantic list.
+- **Pedantic:** the size of the verified list decides.
+  - **Small:** the verified P0–P2 findings are about ten or fewer, need no design decision from
+    the user, and stay inside the frontend. Fix them all yourself; the user wants papercuts fixed
+    in the same pass, not filed.
+  - **Larger:** anything else, such as an audit of an existing UI. Stop after verification and
+    report before fixing anything: verified counts per severity, the top five with screenshots,
+    the decisions only the user can make, and what fixing will cost (chunks or pull requests,
+    surfaces, anything outside the UI, a rough duration). Offer scopes: P0 and P1 only, with the
+    rest filed (what the user chose for large passes); all of P0–P2; or the list as a handover.
+    Fix only what they choose. In one audit, "fix all of it" became more than five hours of
+    chunks, reviews, and CI before a second round could start.
 
-  In the same report, offer a link for a look-and-feel pass on the user's own phone or laptop,
-  served from its own throwaway copy (step 6), to use while the fixes run. In one pass the user's
-  half hour on their phone found about fifteen problems that thirteen tester runs had missed, the
-  biggest being that the whole UI was too big. Ask for their impressions, not functional checks.
+Use frontend-design for the design work. Run independent fix chunks in parallel, each in its own
+subagent and worktree, and merge them as they pass; keep chunks that edit the same files in one
+sequence.
 
-Run independent fix chunks in parallel, each in its own subagent and worktree, and merge them as
-they pass; keep chunks that edit the same files in one sequence. Start a form factor's re-test as
-soon as the screens it judges are merged rather than after every chunk; run the first-glance
-sweep below only after the last chunk merges, so it sees what later chunks broke.
+**File what you don't fix.** When the project's tracker is private to the user (a local tracker or
+a private repository's issues), file each unfixed finding as an item without asking, grouped under
+one thread named for the pass, with its severity and evidence path in the notes. A public tracker
+needs the user's agreement first, and its items must not carry screenshots of or quotes from real
+data: findings describe the user's data, and public posts need their approval. Otherwise, or
+until they agree, keep the findings in the git-excluded `<evidence-dir>/findings.md`. Leave out
+anything on the "Already decided or filed" list and P3s the user has already declined. Don't list
+filed findings in chat beyond a count and the link: long lists in chat read as no progress, and
+the user had to ask for them to be catalogued afterwards.
 
-P3 items go to the handover list. Then re-run with fresh testers and a new budget, narrower than
-round one:
+**Re-check, don't re-explore.** When the fixes are merged, check each fixed finding yourself by
+its own steps, with a before-and-after screenshot, and run one first-glance sweep (cold load and
+screenshots in each theme) on every form factor in scope to catch what the fixes broke elsewhere.
+A regression your fix caused is yours to fix; if the second attempt fails too, revert that fix and
+file the finding. There is no second exploratory round by default: each fresh round found a fresh
+pile, fixes added new P1s every round, and the rounds never converged. Run another round only
+when the user asks for one, usually after their own look (step 6). For that round, fill the
+brief's "Already decided or filed" field.
 
-- the surfaces your fixes touched, walked again on the form factors where they changed;
-- a first-glance sweep (brief step 1 only: cold load and screenshots in each theme) on every form
-  factor in scope, to catch what your fixes broke elsewhere. One tester can sweep all form
-  factors.
-
-Don't repeat full walks of surfaces you didn't touch.
-
-Give re-run testers the brief's "Already decided or filed" list, so they don't spend the round
-re-reporting it.
-
-Stop on materiality, not on an empty report: a tester always finds something. Record each round's
-counts after merging duplicates across form factors (distinct P0/P1, total), and how many of them
-your own fixes caused; compare rounds only on distinct counts, leaving the "Already decided or
-filed" items out of both sides, since re-run testers no longer report them. Raw counts once made a
-falling round look like it had doubled. If a round's distinct P0 + P1 count does not fall, or a fix
-creates new P0/P1 findings, stop and ask the user before another round.
+**Keep to the time budget.** Note the start time. If the pass reaches one and a half times its
+mode's budget, stop fixing, file what's left, and hand over what is done, naming every P0 and P1
+you didn't fix.
 
 ### 6. Hand over
 
-Show the user screenshots in chat, with a short plain-language summary, and offer a link they can
-open on their phone or laptop (over their private network, such as a tailnet, when they have one).
+Hand over as soon as step 5 is done; this is the user's early look, and their review decides
+whether another round is worth it. In one pass the user's half hour on their phone found about
+fifteen problems that thirteen tester runs had missed. Show screenshots in chat, with a short
+plain-language summary, and offer a link they can open on their phone or laptop (over their
+private network, such as a tailnet, when they have one).
 Serve that link from its own throwaway copy of the real data with remotes removed, never from the
 real store: the user once had to ask whether the review server was on their production data. Say
 which parts of the link's path you couldn't test yourself. Give every file you mention as an
 absolute path: a path relative to the project sent the user looking for it.
 
-- what now works, and what you fixed from the dogfood pass;
+- the top five problems, ranked, and what you did about each, plus every other P0 or P1 you didn't
+  fix;
+- the other fixes, in a few lines;
 - the questions only they can answer, which are look-and-feel judgments with the alternatives
   shown as images; never ask them to check something measurable;
 - what was not tested and why (form factor not reachable, emulation limits, device-only probes);
-- P3 items you left, in one line each.
+- how many findings you filed, and where;
+- how long the pass took against its budget, and the mode it ran in.
 
 Tear down what you started (qa-conduct): servers by PID, tunnels, browser sessions, test data,
 guest settings you changed, and LOCK files.
@@ -194,8 +220,8 @@ removing that rule.
 
 Use the scale in taste-profile.md › Severity calibration, which maps this user's reactions to
 P0–P3. The short version: P0 blocks or makes the UI unusable on a target device; P1 is what they
-notice at first look (agents have wrongly called these cosmetic); P2 is a papercut they still want
-fixed now; P3 is noted and not pushed.
+notice at first look (agents have wrongly called these cosmetic); P2 is a papercut, fixed in the
+pass when cheap (focused) or under step 5's rule (pedantic), and filed otherwise; P3 is filed.
 
 ## References
 

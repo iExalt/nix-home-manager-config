@@ -172,7 +172,8 @@ and P1 finding and re-verify in the browser. Report the remaining P2 and P3 item
 of burying the user in them.
 
 Then, before showing the user a built or changed UI, run the `frontend-dogfood` skill when it is
-installed: a fresh tester uses the running app the way this user would, and you fix what it finds.
+installed: a fresh tester uses the running app the way this user would, and you fix or file what it
+finds.
 Your own checks here are the developer's; dogfood is the independent QA pass.
 
 ### 6. Iterate and preserve consistency
