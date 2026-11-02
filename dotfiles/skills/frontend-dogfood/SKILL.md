@@ -40,6 +40,10 @@ Write down, from the project's docs (DESIGN.md, PRODUCT.md, README) and the chan
 - **Target form factors and themes:** which of desktop, tablet, and phone the project supports,
   which is primary, and whether it has a dark theme.
 - **Real data:** the realistic dataset the tester will use, at the sizes the user works with.
+- **Device consistency:** expect the same look-and-feel and feature coverage, as close as practical,
+  across supported desktop, tablet, and phone. Include documented viewport/input adaptations and
+  their rationale, without presenting them as proven correct. Small screens alone do not justify
+  dropping features; adapted controls should preserve equivalent task outcomes.
 
 Pass the tester the product, not your opinion of it. Leave out known issues, what you already
 checked, and why you think it works: anchoring makes testers confirm instead of explore.
@@ -93,6 +97,12 @@ Treat the report as claims to check, not results:
   at the same viewport, another screen of the same app, or a measurement). Keep pre-existing
   defects: they are tagged, not out of scope.
 - Fold duplicates into one finding with every place it occurs.
+- Explicitly compare matching screens, states, and task outcomes across form factors, using the
+  same data and theme. Check visual identity, terminology, navigation, and feature access; verify
+  that differences are justified by actual viewport/input constraints (desktop need not support
+  touch). If testers covered separate devices, reconcile their evidence yourself or assign a
+  comparison pass. Require a device comparison summary, including justified adaptations, defects,
+  and untested combinations; separate device reports alone do not establish consistency.
 
 ### 5. Agree the scope, fix, and re-run
 

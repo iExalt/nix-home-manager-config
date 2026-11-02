@@ -32,6 +32,11 @@ rather than templated.
 - **Verify by looking.** Code review alone is not verification. Inspect the rendered result at the
   sizes it ships at and exercise the interactions.
 - **Finish the job.** Every state the flow can reach is designed, not just the happy path.
+- **One product across devices.** Keep look-and-feel and feature coverage the same, or as close
+  as practical, across desktop, tablet, and phone. Adapt layout and controls to real viewport and
+  input constraints (touch is not normally expected on desktop), while preserving equivalent
+  task outcomes. A smaller screen alone is not a reason to drop a feature. Record necessary
+  differences and their rationale in DESIGN.md.
 
 ## Modes
 
@@ -136,8 +141,12 @@ separately. Give transient states (posting, slow loads) a URL or fixture switch 
 screen long enough to capture. Ask before anything that would disrupt the user's machine, such as
 installing system browsers, taking over their open browser, or binding common ports.
 
-- **Widths:** desktop (about 1440px) and narrow (about 375px), plus any width where the layout
-  changes. Check 200% zoom on key screens (headless: half the CSS width at 2x density).
+- **Widths:** desktop (about 1440px), tablet (about 820px), and phone (about 375px), plus any width
+  where the layout changes. Check 200% zoom on key screens (headless: half the CSS width at 2x density).
+- **Across devices:** compare matching screens and states with the same data and theme, and
+  complete the same tasks on each supported form factor. Check visual identity, terminology,
+  navigation, available actions, and outcomes; report unexplained drift or missing capabilities.
+  Distinguish justified viewport/input adaptations from defects and name any untested device.
 - **Keyboard:** Tab through the whole task. Focus must be visible, in a logical order, and never
   hidden behind sticky elements; check traps against Conflicts › Focus traps. Escape closes
   overlays, Enter submits, and focus moves sensibly when dialogs open and close.
