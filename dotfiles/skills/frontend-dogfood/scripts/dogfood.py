@@ -51,6 +51,17 @@ def save(cfg):
     (STATE / f"{cfg['session']}.json").write_text(json.dumps(cfg, indent=1))
 
 
+def browser_alive(scope):
+    """Shell test: the scope still holds a process other than its virtual display.
+
+    Xvfb keeps a headed session's scope active after the browser exits (for example on its idle
+    timeout), so an active scope alone doesn't mean the browser is there.
+    """
+    return (f'(cg=$(systemctl --user show -p ControlGroup --value {scope}.scope 2>/dev/null) && '
+            f'pids=$(paste -sd, "/sys/fs/cgroup$cg/cgroup.procs" 2>/dev/null) && [ -n "$pids" ] && '
+            'ps -o comm= -p "$pids" | grep -qvx Xvfb)')
+
+
 def guards(cfg):
     """Shell checks that the browser scope and touch hold are still alive.
 
@@ -60,8 +71,9 @@ def guards(cfg):
     """
     out = []
     if cfg.get("scope"):
-        out.append(f"systemctl --user is-active -q {cfg['scope']}.scope || {{ echo 'browser session gone: its "
-                   f"scope stopped (lingering off on the host?). Re-run dogfood.py init --open' >&2; exit 3; }}")
+        out.append(f"{browser_alive(cfg['scope'])} || {{ systemctl --user stop {cfg['scope']}.scope 2>/dev/null; "
+                   "echo 'browser session gone (idle timeout, or lingering off on the host?). "
+                   "Re-run dogfood.py init --open' >&2; exit 3; }")
     if cfg.get("hold"):
         out.append(f"systemctl --user is-active -q dogfood-{cfg['session']}-touch || {{ echo 'touch hold stopped: "
                    f"run dogfood.py hold {cfg['session']} again before judging touch sizes' >&2; exit 3; }}")
@@ -104,27 +116,51 @@ def probe_args(cfg):
 def cmd_init(a):
     if not re.fullmatch(r"[A-Za-z0-9_-]+", a.session):
         sys.exit("session names may use only letters, digits, - and _")
+    old = STATE / f"{a.session}.json"
+    old_scope = json.loads(old.read_text()).get("scope") if old.exists() else None
     cfg = {"session": a.session, "host": a.host, "evidence": str(pathlib.Path(a.evidence).resolve()),
            "url_part": a.url_part, "config": a.config, "hold": False}
     STATE.mkdir(exist_ok=True)
     save(cfg)
     (pathlib.Path(cfg["evidence"]) / "view").mkdir(parents=True, exist_ok=True)
+    xvfb = "" if a.headless else ('command -v Xvfb >/dev/null || { echo "Xvfb missing on the host: install it, '
+                                  'or pass --headless and report hover untested"; exit 1; }\n')
     print(remote(cfg, """command -v agent-browser >/dev/null || { echo "agent-browser missing on the host; see devices.md › Setup"; exit 1; }
 command -v uv >/dev/null || { echo "uv missing on the host: mise use -g uv"; exit 1; }
-[ "$(loginctl show-user "$USER" -p Linger --value 2>/dev/null)" = yes ] ||
+""" + xvfb + """[ "$(loginctl show-user "$USER" -p Linger --value 2>/dev/null)" = yes ] ||
   echo "warning: lingering is off on the host, so the browser and touch hold stop if your last login session there ends (devices.md › Setup)" """), end="")
     subprocess.run(["scp", "-q", str(PROBE), f"{a.host}:/tmp/dogfood-{a.session}/touch_probe.py"], check=True)
     if a.open:
         # A browser still running under this name would take the open and leave the new scope empty,
         # so the liveness guard would call the session dead. Start clean instead.
-        remote(cfg, f"systemctl --user stop dogfood-{a.session}-touch 2>/dev/null; ab close >/dev/null 2>&1; true",
+        # Stop the previous scope too, or its virtual display lingers on the host.
+        stop_old = f"; systemctl --user stop {old_scope}.scope 2>/dev/null" if old_scope else ""
+        remote(cfg, f"systemctl --user stop dogfood-{a.session}-touch 2>/dev/null; ab close >/dev/null 2>&1{stop_old}; true",
                check=False, guard=False)
         unit = f"dogfood-{a.session}-{int(time.time())}"
         cfg["scope"] = unit
         save(cfg)
+        headed = "" if a.headless else " --headed"
+        browser = f"agent-browser --session {shlex.quote(a.session)}{headed} open {shlex.quote(a.open)}"
+        if not a.headless:
+            # Headless Chrome reports no hover and no fine pointer, so apps that switch on
+            # (hover: hover) or (pointer: fine) show desktop testers their touch layout. A headed
+            # browser on a private virtual display reports a real mouse.
+            browser = shlex.quote(
+                'Xvfb -displayfd 3 -screen 0 2560x1600x24 -nolisten tcp 3>"$D/display" 2>/dev/null & '
+                'for i in $(seq 50); do [ -s "$D/display" ] && break; sleep 0.1; done; '
+                f'DISPLAY=:$(cat "$D/display") exec {browser}')
+            browser = f'env D="$D" bash -c {browser}'
+        # Check the browser is in the scope before any `ab` call, which would otherwise start an
+        # uncapped headless browser; then that a headed one really sees a mouse.
+        fail = f"systemctl --user stop {unit}.scope 2>/dev/null; ab close >/dev/null 2>&1; exit 1"
+        need_mouse = "" if a.headless else \
+            f'[ "$m" = true ] || {{ echo "headed browser reports no mouse; see devices.md" >&2; {fail}; }}'
         print(remote(cfg, guard=False, body=f"systemd-run --user --scope -q --unit={unit} -p CPUQuota={a.cpu_quota} "
-                          f"-p MemoryMax={a.memory_max} agent-browser --session {shlex.quote(a.session)} "
-                          f"open {shlex.quote(a.open)}"), end="")
+                          f"-p MemoryMax={a.memory_max} {browser} >/dev/null\n"
+                          f"{browser_alive(unit)} || {{ echo 'browser failed to start in its scope' >&2; {fail}; }}\n"
+                          "m=$(ab eval \"matchMedia('(hover: hover)').matches && "
+                          "matchMedia('(pointer: fine)').matches\"); echo \"mouse: $m\"\n" + need_mouse), end="")
     print(f"session {a.session} on {a.host}; evidence in {cfg['evidence']}")
 
 
@@ -287,7 +323,9 @@ def cmd_steps(a):
 
 def cmd_close(a):
     cfg = load(a.session)
-    print(remote(cfg, f"systemctl --user stop dogfood-{a.session}-touch 2>/dev/null; ab close; rm -rf \"$D\"", check=False, guard=False), end="")
+    scope = f"; systemctl --user stop {cfg['scope']}.scope 2>/dev/null" if cfg.get("scope") else ""
+    print(remote(cfg, f"systemctl --user stop dogfood-{a.session}-touch 2>/dev/null; ab close{scope}; rm -rf \"$D\"",
+                 check=False, guard=False), end="")
     (STATE / f"{a.session}.json").unlink()
 
 
@@ -300,6 +338,7 @@ def main():
     p.add_argument("--open", help="start the browser in a capped systemd scope and open this URL")
     p.add_argument("--config", default="~/.agent-browser/dogfood.json")
     p.add_argument("--cpu-quota", default="700%"); p.add_argument("--memory-max", default="16G")
+    p.add_argument("--headless", action="store_true", help="no virtual display; hover and fine pointer go untested")
     p = sub.add_parser("ab"); p.add_argument("session"); p.add_argument("args", nargs=argparse.REMAINDER)
     p = sub.add_parser("eval"); p.add_argument("session"); p.add_argument("src")
     p = sub.add_parser("shot"); p.add_argument("session"); p.add_argument("name"); p.add_argument("--full-page", action="store_true")

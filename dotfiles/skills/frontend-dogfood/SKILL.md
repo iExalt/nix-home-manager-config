@@ -60,6 +60,12 @@ Follow qa-conduct and [references/devices.md](references/devices.md):
   leaves: run the server with outbound network blocked where the project supports it, and check the
   browser's `network requests` for third-party or real-backend calls during a first journey.
   Journeys must not raise real OS notifications or touch the user's own browser profile.
+- Make the copy behave like the user's real setup, or testers report your setup. Copy the app's
+  own config that changes what it shows (for example which local repositories it checks), with
+  its outbound effects cut, rather than starting from an empty home. Before briefing, compare a
+  summary the app derives (a queue, counts, statuses) between the copy and the real data; any
+  difference is a setup defect to fix first. Mismatched config produced fake entries in two
+  rounds of one pass.
 - Read the user's environment file (devices.md › The environment file) for their machines. If it
   is missing, settle it with the user now, because the tester can't ask; either way, put the host
   and tier facts the tester needs into the brief. Browsers run on the browser host it names, never
@@ -97,6 +103,10 @@ Treat the report as claims to check, not results:
   at the same viewport, another screen of the same app, or a measurement). Keep pre-existing
   defects: they are tagged, not out of scope.
 - Fold duplicates into one finding with every place it occurs.
+- Re-measure any slow timing before it counts: one browser on the host, no other tester or
+  server running, and on the laptop too if the user allows it. Parallel testers and servers
+  share the host's CPU; one round reported multi-second writes that took 290–565 ms on a quiet
+  machine. Report the quiet number and how you got it.
 - Explicitly compare matching screens, states, and task outcomes across form factors, using the
   same data and theme. Check visual identity, terminology, navigation, and feature access; verify
   that differences are justified by actual viewport/input constraints (desktop need not support
@@ -117,9 +127,21 @@ The size of the verified list decides what happens next:
   changes outside the frontend. Stop after verification and report before fixing anything:
   verified counts per severity, the worst findings with screenshots, the decisions only the user
   can make, and what the fixing will cost (how many chunks or pull requests, which surfaces,
-  anything outside the UI, and a rough duration). Offer scopes: P0 and P1 only; all of P0–P2; or
-  the list as a handover. Fix only what they choose. In one audit, "fix all of it" became more
-  than five hours of chunks, reviews, and CI before the second round could start.
+  anything outside the UI, and a rough duration). Offer scopes: P0 and P1 only, with P2 and P3
+  filed as tracker items grouped under one thread when the project has a tracker (what the user
+  chose for large passes); all of P0–P2; or the list as a handover. Fix only what they choose. In
+  one audit, "fix all of it" became more than five hours of chunks, reviews, and CI before the
+  second round could start.
+
+  In the same report, offer a link for a look-and-feel pass on the user's own phone or laptop,
+  served from its own throwaway copy (step 6), to use while the fixes run. In one pass the user's
+  half hour on their phone found about fifteen problems that thirteen tester runs had missed, the
+  biggest being that the whole UI was too big. Ask for their impressions, not functional checks.
+
+Run independent fix chunks in parallel, each in its own subagent and worktree, and merge them as
+they pass; keep chunks that edit the same files in one sequence. Start a form factor's re-test as
+soon as the screens it judges are merged rather than after every chunk; run the first-glance
+sweep below only after the last chunk merges, so it sees what later chunks broke.
 
 P3 items go to the handover list. Then re-run with fresh testers and a new budget, narrower than
 round one:
@@ -131,15 +153,24 @@ round one:
 
 Don't repeat full walks of surfaces you didn't touch.
 
+Give re-run testers the brief's "Already decided or filed" list, so they don't spend the round
+re-reporting it.
+
 Stop on materiality, not on an empty report: a tester always finds something. Record each round's
-counts (P0/P1 found, total). If a round's P0 + P1 count does not fall, or a fix creates new P0/P1
-findings, stop and ask the user before another round.
+counts after merging duplicates across form factors (distinct P0/P1, total), and how many of them
+your own fixes caused; compare rounds only on distinct counts, leaving the "Already decided or
+filed" items out of both sides, since re-run testers no longer report them. Raw counts once made a
+falling round look like it had doubled. If a round's distinct P0 + P1 count does not fall, or a fix
+creates new P0/P1 findings, stop and ask the user before another round.
 
 ### 6. Hand over
 
-Show the user screenshots in chat (and a link they can open on their phone when that is how they
-review), with a short plain-language summary. Give every file you mention as an absolute path: a
-path relative to the project sent the user looking for it.
+Show the user screenshots in chat, with a short plain-language summary, and offer a link they can
+open on their phone or laptop (over their private network, such as a tailnet, when they have one).
+Serve that link from its own throwaway copy of the real data with remotes removed, never from the
+real store: the user once had to ask whether the review server was on their production data. Say
+which parts of the link's path you couldn't test yourself. Give every file you mention as an
+absolute path: a path relative to the project sent the user looking for it.
 
 - what now works, and what you fixed from the dogfood pass;
 - the questions only they can answer, which are look-and-feel judgments with the alternatives
