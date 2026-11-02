@@ -151,6 +151,12 @@ To pull in newer package versions (nixpkgs + home-manager track rolling
 unstable), run `nix flake update` then re-switch. Commit `flake.lock`
 to pin inputs between updates.
 
+Mise is pinned to 2026.10.25 in `overlays/mise.nix`, which includes the DuckDB
+2.0.0 registry fix. The overlay uses SHA-256-pinned official release binaries
+to avoid compiling Rust locally (static musl builds on Linux). To upgrade,
+update the version and all three archive hashes from the release's
+`SHASUMS256.txt`, then run `./reload.sh`.
+
 ### frontend-design skill
 
 `dotfiles/skills/frontend-design` merges Impeccable, Vercel's Web Interface
