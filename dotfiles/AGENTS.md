@@ -23,7 +23,7 @@
 ## Working principles
 
 * Keep implementation checklists only for medium-sized tasks and above.
-* When a repository's documentation and its existing code disagree, follow the conventions in the existing code, then fix the mismatch without asking. Usually that means updating the docs to match deliberate code behavior; fix the code instead when the docs record an intended contract or a decision of mine. Fix it in the current change, or in a separate PR if it's unrelated, and list each fix under "Decisions I made". Ask me only when it's unclear which side is intended.
+* When a repository's documentation and its code disagree, use your best judgement to decide which side is intended, and fix the other without asking. Fix it in the current change, or in a separate PR if it's unrelated, and list each fix under "Decisions I made". Ask me only when it's unclear which side is intended.
 * Abide by the three great virtues of a programmer. I have copied them for you below with my interpretations.
 
 ```
