@@ -13,13 +13,18 @@ Contents: [How to run a critique](#how-to-run-a-critique) · [Report](#report) �
 
 ## How to run a critique
 
-Critique the rendered experience, not the source alone. Walk the primary task in a real browser at
-desktop and narrow widths, with mouse and keyboard, using realistic data (see SKILL.md, step 4).
+Critique the rendered experience, not the source alone. Walk the primary task in a real browser on
+supported desktop, tablet, and phone sizes with their appropriate input methods, using realistic
+data (see SKILL.md, step 4).
 
 1. **Design review.** Judge hierarchy, information architecture, discoverability, composition,
    typography, color, states, copy, and edge cases as a design director would. Ask whether the
    composition and language are grounded in this product or could ship unchanged on an unrelated
-   one.
+   one. Explicitly compare matching screens, states, and tasks across devices using the same data
+   and theme: visual identity, terminology, navigation, feature access, and task outcomes should
+   remain consistent. Verify that layout/input adaptations preserve equivalent capabilities;
+   report unexplained differences or missing features, with comparative evidence. Record justified
+   exceptions and untested form factors rather than treating responsive layout alone as a pass.
 2. **Cognitive load.** Run the checklist below; report any decision point with more than four
    visible options.
 3. **Heuristics.** Score Nielsen's ten heuristics 0–4. Mark a heuristic `n/a` when the surface

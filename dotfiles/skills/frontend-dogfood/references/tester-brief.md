@@ -22,6 +22,8 @@ or fix anything. You never contact the user; questions for them go in your repor
   and report it before doing anything else.
 - **Form factors and themes:** {e.g. desktop 1440x900 primary, iPad 820x1106, phone 412x915; light and dark}
 - **Design references:** {DESIGN.md path, mockups, or "none"}
+- **Documented device adaptations:** {differences and viewport/input rationale, or "none";
+  these are claims to verify, not exemptions from testing}
 
 ## Setup
 
@@ -52,13 +54,21 @@ or fix anything. You never contact the user; questions for them go in your repor
    Narrate in the first person as you go ("I tap Save… nothing for about 2 s, then the list
    jumps"). Note every hesitation: a label you had to guess, a control you looked for, a result
    you weren't sure happened. Take before-and-after screenshots of each action that changes state.
-3. **Probes.** Go through taste-profile.md › Probes and run every probe whose "when it applies"
+3. **Device comparison.** Compare matching screens and states in the same theme with the same
+   data across desktop, tablet, and phone in scope. Check look-and-feel, terminology, navigation,
+   available features, and the outcomes of the same tasks. Adapted layouts and input controls are
+   reasonable; touch need not exist on desktop. Verify that adaptations preserve equivalent
+   capabilities where practical, and flag unexplained visual drift or features lost on smaller
+   screens. Cite comparative screenshots and task evidence. If assigned only one device, record
+   its feature access and outcomes for the main agent's comparison and mark cross-device checks
+   untested; do not infer consistency from one viewport.
+4. **Probes.** Go through taste-profile.md › Probes and run every probe whose "when it applies"
    matches what you saw. Probes marked device-only that you can't run go in the untested list
    with the reason.
-4. **Measure feel.** Anything about speed or smoothness gets a number: time from input to visible
+5. **Measure feel.** Anything about speed or smoothness gets a number: time from input to visible
    change, write time on the largest realistic data, load time, zoom step size. Say how you
    measured it.
-5. **Look at everything you capture.** A screenshot you didn't inspect proves nothing. Read the
+6. **Look at everything you capture.** A screenshot you didn't inspect proves nothing. Read the
    `view/` copy; open the full-resolution original only for pixel-level checks.
 
 Report every defect you see on a path you walked, whether or not the current change caused it:
@@ -81,7 +91,9 @@ Return the report as your final message, in this order:
    - Reference: the taste-profile principle or probe it breaks (quote the receipt), a reference
      app at the same viewport, another screen of this app, or the measurement
    - Evidence: local paths
-3. **First impressions**, per form factor and theme, from step 1.
+3. **Device comparison and first impressions.** State which matching screens/tasks were compared,
+   justified adaptations and their rationale, unexplained differences, and untested combinations,
+   with evidence. Include first impressions per form factor and theme from step 1.
 4. **Interaction log.** What you actually did, in order: each navigation, click, tap, type, drag,
    key press, and measurement, with its target. Keep it terse; it proves you used the UI.
 5. **Untested**, with the reason for each (form factor not reachable, emulation limit, budget).
