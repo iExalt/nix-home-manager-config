@@ -29,6 +29,7 @@ panels and a needs-you queue, plus a CLI).
 - The target is quiet and Linear-like, and they name clutter outright. "it's still very, very visually noisy/cluttered."; "Linear has some smashing good ideas - let's crib from them."
 - Show each fact once per entry. "I don't like e.g the green 1 duplication at all." An agent had dismissed this one as cosmetic.
 - Quieting one area can clutter another, so re-check the whole app after a restyle. "We redesigned the task view to be quieter, and now the `Needs you` panel is too cluttered."
+- Child rows read as subordinate to their heading: smaller or muted, and set tighter. "The thread title should be more prominent, of course. The line spacing between each item should also be smaller to accentuate its subordinate nature."
 - An accent that doesn't belong to the visual language reads as wrong. "it looks out of place in the new Linear-ish UI."
 - Unstyled defaults on one long page read to them as `engineer UI`: "I think we definitely need to do a pass to rearrange the tools/layout of the page, tweak font size, etc."
 - Where the UI depicts physical things, faithful beats decorative. "The `fused` bead looks closest to, well, a fused perler bead."; "looks a little duller/flatter than the bolder palette of the Mard beads".
@@ -49,6 +50,7 @@ panels and a needs-you queue, plus a CLI).
 - Load time and layout time on the phone count as well, and so does a cold load. "take far too long to lay out"; "Why does it take so long to load the app".
 - Zoom steps can feel sluggish: about 3% per wheel notch was too slow and about 12% felt better. "Zooming is a bit too sluggish - how much does each scroll wheel tick/increment zoom by?" (once)
 - Dropped or doubled keystrokes make a UI unusable. "Keys press more than once when I hit them once."
+- A setting changes on screen at once and syncs in the background; a loading state after a change is a defect. "Changing one of those settings causes a brief loading screen - not good. I think the change should be reflected in the UI immediately and sync in the background to not lock the UI."
 - Don't buy speed with a worse desktop look; fall back only on touch devices. "Can we only drop down to the fast behavior on non-desktop devices?" (once)
 
 ### Direct manipulation, gestures and input methods
@@ -58,6 +60,8 @@ panels and a needs-you queue, plus a CLI).
 - On desktop, hovering reveals relationships; making the user click is worse. "I really like how hovering over a thread in the threads view showed the connections, whereas we have to click to see them on the map."
 - Pressing must leave no stray default feedback, whether a library focus ring, a tap flash or a circle. "Why does clicking draw a black circle on the map?"
 - Edit modes have to work with a finger. "I can't test link well out on the phone."
+- A toggle in a menu leaves the menu open. "When I open the triple dot menu and touch a checkbox, it closes the menu. I don't think this is good UX."
+- Keyboard furniture (key chips, shortcut hints) stays off a touch device until a physical keyboard is used. "Don't show keyboard shortcuts ... on mobile unless a keyboard is plugged in."
 - The soft keyboard must not cover primary actions. "Save and cancel are hidden a bit behind the text prediction bar for my keyboard."
 - With a pen, the pen paints and the finger moves the view once a pen has been seen; they kept this as built and declined a palm guard. (picks)
 
@@ -65,10 +69,12 @@ panels and a needs-you queue, plus a CLI).
 - Desktop should use its width and show several panes, not a stretched phone layout. "there's a ton of void space on the right, even when the `Needs you` panel is open."; they asked that desktop be less `mobile-y`.
 - On a tablet, panels stay proportionate and no dead bands of chrome are allowed. "The right panel is far too wide for the iPad"; "On an iPad, we shouldn't waste space like that."
 - On a phone, every stacked pane has to be usable on its own: about 136 px panes on a 360 px phone got "No, that's not usable."
+- Chrome and panels leave the main surface most of the screen. Size controls by their touch target, not by padding added around it, and judge the elements, not only the text, against Linear and Slack on the same phone. "the Acyclic UI just seems comically... big? It's like if I turned my Android UI scale all the way to "old person size""; "This hurts especially when browsing half the map and half an item - the map doesn't have a lot of space."
 - Open straight onto the working surface, put secondary flows in dialogs, and restore the last session. "When I navigate to the app I want to land on the blank canvas."; "can we reload the user's last project if they had one open?"
 - Collapsible panels: the control sits inside its panel, a cue shows how to bring the panel back, and hide and show sit in the same spot. "Can we make both the sidebars collapsible from a button inside each sidebar, not at the very top?"; "Not a fan of the hide arrow being at the bottom but the show arrow being at the top."
 - Diagrams should be orderly, mostly vertical and shaped to the screen. "it should roughly fit the screen's aspect ratio."; "or better yet, it should be centered since both columns". (the second is a nitpick)
 - Sibling labels align and centre alike, checked in pixels. "color picker isn't centered like the other tool names"; "Can you check the pixels?"
+- Icons and badges centre on the text they sit beside, not on its line box. "the alignment of the colored thread circle seems to be a smidgen too low? The alignment of the icons for task state also seem to sit below the text line."
 
 ### Defaults, automation, undo vs confirm
 - Don't make the user choose what the app can detect: detect it, then let them override. "I should not have to choose what type of image I'm importing, the application ought to try to figure it out, and if it gets it wrong, users can manually pick."
@@ -82,7 +88,7 @@ panels and a needs-you queue, plus a CLI).
 - States should be distinguishable at a glance. "We need to be able to tell between completed, in progress, ready to start, and blocked phases/tasks."; on the redesign, "there's nothing to tell them apart."
 - Show uncertainty plainly. "make sure it's displayed in a striking way so the user knows what they might have to edit."
 - Derived and summary state must be correct on real data. "all threads are marked as state backlog even though some of them are in progress".
-- A first-timer should understand every mark, section and control. "I needed to infer from context what the sections meant."; "it's super unclear what the little red dot for `Tracker-assigned ids` means".
+- A first-timer should understand every mark, section and control. "I needed to infer from context what the sections meant."; "it's super unclear what the little red dot for `Tracker-assigned ids` means"; "I have no idea what `Starts with` means in the context of a thread.".
 - Only one thing should look selected or focused at a time. "doesn't un-white-outline nor un-radiobutton the original"; "I can focus on a phase but also a thread at the same time - I think this is confusing."
 - Counts and labels must match what is visible. "Why do these `Needs you` items say Approve X items when I can only see one linked?" Hide a zero count: "Yes, hide the 0."
 - Selection should propagate to related views. "When I click on a task, it should highlight the thread it's in on the left as well as the phase it's in."
@@ -93,6 +99,7 @@ panels and a needs-you queue, plus a CLI).
 - Use one name per concept on every surface (section 5, `Needs you`).
 - Repeated rows keep the same element order, and lists follow the canvas order. "Let's flip the order of the icon, title, thread ID to thread ID, title, icon to match the left bar."; "It doesn't match the left to right/top to bottom layout of the phases on the map itself".
 - A navigation behaviour works from every entry point, not just one. "Clicking threads on the left bar still doesn't take me to the map and focus on the thread. Is that intentional?"
+- Something the user creates is shown where it landed. "Creating an item shold change tabs to the map and show me where the item was placed."
 - Follow the conventions of polished tools. "Bare `acyclic` shouldn't print an error message, it should print `--help` to be consistent with other CLI tools."
 
 ### Copy and labels
@@ -142,11 +149,17 @@ Format: **when it applies** / device and input / action / check. Run each on rea
 26. **Navigation from every entry point.** Click the same entity from the overview, sidebar, queue and canvas. Each should land on the same focused view with the panel open.
 27. **Relationship highlighting.** Desktop and phone. Select, and on desktop hover, each entity in every view. Its links, group (thread) and parent (phase) should highlight in its colour everywhere, membership colour should be on even without selection, and on desktop hover alone should reveal connections.
 28. **Text rendering.** Real titles with backticks, inline code, long ids and URLs, at 1x and 2x DPR. Look for combining-mark artefacts, split columns, overflow and clipping on phone.
-29. **Pixel alignment.** Screenshot at 2x or 3x DPR. Measure label and value baselines in rows whose value starts with an icon or badge, and check that sibling labels are centred alike.
+29. **Pixel alignment.** Screenshot at 2x or 3x DPR. Measure label and value baselines in rows whose value starts with an icon or badge, and check that sibling labels are centred alike. Measure each icon's and badge's vertical centre against the x-height centre of the text beside it; more than 1 px off is a finding.
 30. **Destructive and bulk actions.** Make an edit and let it sync, then trigger reset, re-apply or clear. Expect a confirmation or one-step undo, including while edits are still in flight. Bulk actions should be one click, undoable and fast.
 31. **Imperfect and real inputs.** Every sample the project ships, plus degraded variants (cropped, missing legend, empty fields). Nothing should block. Compare the result against the source (counts, hardest regions, colour profile and saturation). Every cell or field marked uncertain is a finding.
 32. **Browser state restore.** Desktop Chrome. Duplicate the tab and use back and forward after a file was chosen. Controls must be enabled or the form reset.
 33. **Colour sequences.** Any categorical colouring. List hues in order and check that steps are continuous with no identical pairs.
+34. **Screen share of the main surface.** Phone at 412x915. With each panel at its first height, and with each menu open, measure the share of the screen left to the main surface (Map, canvas, list). Under about 55% is a finding; so are menu rows or panel facts spaced well beyond their 44 px target. Compare element sizes with Linear or Slack on the same viewport.
+35. **Menu toggles.** Every menu holding a checkbox, switch or select. Flip each one, by tap and by keyboard; the menu must stay open and show the new value at once.
+36. **Heading and child hierarchy.** Every grouped list (a queue entry's items, a panel's sections). Compare the heading's size, weight and colour with its rows' and the row pitch with the heading's gap. Equal treatment is a finding.
+37. **Settings latency.** Every setting and small edit in panels and menus. Time from the change to the screen showing it; any loading state, spinner or lock of the surrounding UI is a finding.
+38. **Created things shown.** Add each kind of thing from every view and form factor. The app should go to where it landed, selected and in view.
+39. **Keyboard furniture on touch.** Phone and tablet with touch emulation and no key events. Open search, menus and panels; key chips or shortcut hints are a finding. Then press a key on a hardware keyboard and check that they appear.
 
 ## 5. Conflicts, reversals and conditions (by date)
 
@@ -164,3 +177,5 @@ Format: **when it applies** / device and input / action / check. Run each on rea
 - **2026-10-30 to 10-31, attention marker.** They proposed "an amber exclamation mark instead of a number", then rejected it as out of place in the quieter UI. A signal has to fit the current visual language.
 - **2026-10-30 to 10-31, anytime column.** Right, then "Actually, let's move anytime stuff to the *left* rather than the right". Layout side preferences are unstable; flag them, don't enforce them.
 - **2026-10-31, font.** They chose Inter, then "Inter looks a bit cold :joy: I take that back." Decide type from rendered screenshots, never from names.
+- **2026-10-31 to 11-01, theme.** The app followed the system with no override; on 2026-11-01 they asked for a light/dark switch on the phone and chose System / Light / Dark in the menu, System by default.
+- **2026-11-01, Needs you.** A layer over any view was the design; after using it they said "it feels like it should probably get its own view like overview/map/threads?" and chose a view.
