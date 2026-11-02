@@ -9,7 +9,7 @@ The `phone-debug` skill covers the mechanics of borrowing a device; the rules be
 - The user's time is for look and feel and for product decisions: "Reserve my judgement for look and feel."
 - Measure anything that can be measured, including smoothness, frame time and latency, and never ask whether it feels smooth. "I should be consulted for visual/design look-and-feel, but you and the workers are perfectly equipped to answer mechanical questions."
 - Do your own headed pass before you involve them. "I think you should try testing it for yourself on the [browser host] headfully."
-- Fix what you notice instead of leaving it as their call. They pasted back an agent's note that left two iPad defects as `both your call`, asking "Did we fix this?"
+- Fix or file what you notice instead of leaving it as their call or dropping it. They pasted back an agent's note that left two iPad defects as `both your call`, asking "Did we fix this?"
 - Before you hand over a URL, command or checklist, run it from the user's real starting state and quote the real output. "Before asking me to try the benchmark, the worker should probably ensure that it's fully working/bug free :)"; "I don't see that line or table to be honest, here's the bottom of the output:". Any file you name must exist where they will look: "I can't find the .json files for the original placement check".
 - Re-check after every fix and every action the user takes. "They should be dead now - double check."; "Check again now."
 
