@@ -7,6 +7,9 @@
 "sandbox_mode" = "danger-full-access"
 "service_tier" = "fast"
 
+["agents"]
+"max_concurrent_threads_per_session" = 9
+
 ["desktop"]
 "conversationDetailMode" = "STEPS_PROSE"
 "dock-icon-preference" = "codex-system"
