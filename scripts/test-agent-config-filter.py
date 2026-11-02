@@ -25,6 +25,10 @@ class CleanFilterTests(unittest.TestCase):
 notify = ["/private/tool"]
 unknown_future_key = "private value"
 developer_instructions = "Read /private/instructions"
+[agents]
+max_concurrent_threads_per_session = 9
+[agents.private]
+config_file = "/private/agent.toml"
 [projects."/private/project"]
 trust_level = "trusted"
 [mcp_servers.private]
@@ -42,6 +46,7 @@ example = 4
         output = FILTER.clean(source, "codex")
         self.assertEqual(tomllib.loads(output), {
             "model": "example", "features": {"goals": True},
+            "agents": {"max_concurrent_threads_per_session": 9},
             "tui": {"status_line": ["model", "git-branch"]},
         })
         self.assertEqual(output, FILTER.clean(output, "codex"))
