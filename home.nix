@@ -4,7 +4,7 @@ let
   repoRoot = "${config.home.homeDirectory}/dev/Projects/nix-home-manager-config";
   rootHome = if pkgs.stdenv.hostPlatform.isDarwin then "/var/root" else "/root";
   miseTools = [
-    "node@26"
+    "node@latest"
     "bun@latest"
     "gh@latest"
     "npm:@openai/codex@latest"
@@ -12,7 +12,7 @@ let
     "claude@latest"
     "rg@latest"
     "fd@latest"
-    "python@3.14"
+    "python@latest"
     "uv@latest"
     "rust[profile=minimal,components=clippy,rustfmt]@latest"
     "dust@latest"
