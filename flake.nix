@@ -39,7 +39,10 @@
           enabledOverlayNames;
       mkHome = system:
         home-manager.lib.homeManagerConfiguration {
-          pkgs = nixpkgs.legacyPackages.${system};
+          pkgs = import nixpkgs {
+            inherit system;
+            overlays = [ (import ./overlays/mise.nix) ];
+          };
           extraSpecialArgs = { inherit ponytail; };
           modules = [
             ./modules/ponytail-skills.nix
