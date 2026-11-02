@@ -28,6 +28,7 @@ CODEX = {
     )
 }
 CODEX.update({
+    "agents": {"max_concurrent_threads_per_session": None},
     "desktop": {
         key: None for key in (
             "conversationDetailMode", "dock-icon-preference", "followUpQueueMode",
