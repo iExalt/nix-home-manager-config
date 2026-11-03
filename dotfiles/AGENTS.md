@@ -8,8 +8,16 @@
 * Quote literal patterns and URLs containing `*`, `?`, or brackets; handle unmatched file globs explicitly.
 * Avoid zsh special variables such as `path` and `status`; use descriptive names like `target_path` and `exit_code`.
 * Keep shell quoting simple; use a script with an explicit interpreter when embedding code or nesting SSH commands.
-* Check availability and supported flags before using platform-specific utilities such as GNU `timeout` on macOS.
+* Check availability and supported flags before using platform-specific utilities, such as GNU-only flags with macOS's BSD tools.
 * Check command output and intended results; a successful final command can hide earlier failures.
+
+## Waiting on processes and agents
+
+* Bound every wait with a deadline, and end it on a condition the job sets itself, such as a done-marker or exit-code file its own script writes, including on failure (`trap … EXIT`). Expect jobs to queue behind shared locks such as `flock`.
+* Track your own processes by PID (`cmd & echo $! > pidfile`, then `kill -0`), not by `pgrep -f` or `pkill -f` patterns: inside `ssh` or `kubectl exec`, and on Linux, those match the shell running your command, and `ps | grep X` always lists the grep itself. If you must match a pattern, bracket it (`[b]uild.sh`), and kill only PIDs you started.
+* Claude Code moves a foreground command to the background after 10 minutes. Run longer work in the background or under Monitor and wait for its notification; never start a second watcher on something already watched.
+* Check what actually runs, such as the daemon's version rather than the app bundle's, and prefer watchers that stop at the first failure, such as `gh pr checks --watch --fail-fast`.
+* Never end a turn on a promise. If your last message says you're waiting, something armed must wake you: a background task, Monitor, a scheduled wake-up, or a peer that is still running. A subagent's final hand-back is its last message. When the next piece of work is already approved, start it instead of announcing it.
 
 ## Git and workspace
 
