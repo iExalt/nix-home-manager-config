@@ -57,6 +57,24 @@ muse() {
   mise use --global "$tool@$(mise latest "$tool")"
 }
 
+# tsh writes its own versioned mise path into kubeconfig on every login and has
+# no option to change it. Point those entries at mise's `latest` link instead,
+# so upgrading tsh doesn't break kubectl.
+tsh() {
+  local exit_code kubeconfig_file
+
+  command tsh "$@"
+  exit_code=$?
+
+  kubeconfig_file="${KUBECONFIG%%:*}"
+  kubeconfig_file="${kubeconfig_file:-$HOME/.kube/config}"
+  if [[ -f "$kubeconfig_file" ]] && (( $+commands[sd] )); then
+    command sd '(/mise/installs/teleport[^/]*/)[0-9][^/]*(/bin/tsh)' \
+      '${1}latest${2}' "$kubeconfig_file"
+  fi
+  return "$exit_code"
+}
+
 mise-union() {
   setopt localoptions pipefail
   local config_file dependency rows
