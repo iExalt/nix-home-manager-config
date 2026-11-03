@@ -53,6 +53,7 @@
             ./modules/mattpocock-skills.nix
             ./modules/claude-config.nix
             ./modules/codex-config.nix
+            ./modules/agent-hooks.nix
             ./home.nix
             {
               # Read at eval time — requires `--impure`. Keeps the flake
