@@ -186,6 +186,26 @@ To update, replace the full SHA in `inputs.ponytail.url`, run
 diff, then run `./reload.sh`. Commit the SHA and lockfile together. A general
 `nix flake update` does not advance this explicit SHA pin.
 
+### Matt Pocock skills
+
+The non-flake `mattpocock-skills` input pins
+[mattpocock/skills](https://github.com/mattpocock/skills) (MIT) to a full Git
+SHA the same way. `modules/mattpocock-skills.nix` installs `grill-me`,
+`grill-with-docs`, and `improve-codebase-architecture` into both
+`~/.codex/skills/` and `~/.claude/skills/`, plus the skills they call by name:
+`grilling`, `domain-modeling`, and `codebase-design`. When you add a skill from
+this repo, check its `SKILL.md` for "Call the Skill tool with …" and install
+those dependencies too. Upstream nests skills under category directories, so
+the module maps each installed name to its upstream path.
+
+The three entry points set `disable-model-invocation: true` and only run when
+you invoke them (`/grill-me`, `$grill-me`). `improve-codebase-architecture`
+writes its HTML report to `$TMPDIR` and opens it in the browser.
+
+Update it the same way as Ponytail: replace the SHA in
+`inputs.mattpocock-skills.url`, run `nix flake lock`, review the upstream
+diff, and run `./reload.sh`.
+
 ## Optional Overlays
 
 Machine-specific Home Manager overlays can be enabled without committing local
