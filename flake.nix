@@ -14,9 +14,13 @@
       url = "github:DietrichGebert/ponytail/96608e078b2d5ea607c5c3b8b5a54d1c1fba6846";
       flake = false;
     };
+    mattpocock-skills = {
+      url = "github:mattpocock/skills/4ae2317ddb22b046e26455e4f9c9b3aaaf62212d";
+      flake = false;
+    };
   };
 
-  outputs = { nixpkgs, home-manager, ponytail, ... }:
+  outputs = { nixpkgs, home-manager, ponytail, mattpocock-skills, ... }:
     let
       lib = nixpkgs.lib;
       systems = [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ];
@@ -43,9 +47,10 @@
             inherit system;
             overlays = [ (import ./overlays/mise.nix) ];
           };
-          extraSpecialArgs = { inherit ponytail; };
+          extraSpecialArgs = { inherit ponytail mattpocock-skills; };
           modules = [
             ./modules/ponytail-skills.nix
+            ./modules/mattpocock-skills.nix
             ./modules/claude-config.nix
             ./modules/codex-config.nix
             ./home.nix
