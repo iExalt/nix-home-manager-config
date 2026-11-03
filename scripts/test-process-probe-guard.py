@@ -92,6 +92,7 @@ class DecisionTests(unittest.TestCase):
             "rg -n pgrep scripts/",
             "codex exec \"Run: pgrep -af marker >/dev/null && echo matched || echo none\"",
             "git commit -m 'avoid `while pgrep -af build.sh; do sleep 1; done`'",
+            "git commit -m \"fix: parse ps | rg -F -- patterns\"",
             "ssh host 'uptime; pgrep -af \"gradle|vitest\" | grep -v pgrep | wc -l'",  # filtered
         ), "allow")
 

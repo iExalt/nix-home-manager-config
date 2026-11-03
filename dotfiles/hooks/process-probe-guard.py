@@ -125,6 +125,8 @@ def findings(command):
     if not GREP_V.search(text):
         for m in PS_GREP.finditer(text):
             pattern = next(g for g in m.group(3, 4, 5) if g is not None)
+            if _context(text, m.start())[0] == "literal":
+                continue  # e.g. a commit message that mentions `ps | grep`
             fixed = re.search(r"-[A-Za-z]*F", m.group(2) or "") is not None
             if pattern and (pattern in text if fixed else _matches(pattern, text)):
                 out.append(("warn", m.group(1), pattern))
