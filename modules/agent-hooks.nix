@@ -8,7 +8,7 @@ let
     inherit matcher;
     hooks = [{ type = "command"; command = guard; timeout = 10; }];
   };
-  claudeHooks = pkgs.writeText "claude-hooks.json" (builtins.toJSON { PreToolUse = [ (entry "Bash") ]; });
+  claudeHooks = pkgs.writeText "claude-hooks.json" (builtins.toJSON { PreToolUse = [ (entry "^(Bash|Monitor)$") ]; });
   settings = "${config.home.homeDirectory}/.claude/settings.json";
 in
 {

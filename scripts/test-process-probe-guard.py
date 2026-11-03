@@ -47,6 +47,10 @@ class DecisionTests(unittest.TestCase):
             "ssh host 'pgrep -f worker.py | xargs kill; echo ok'",
             "bash -c 'while pgrep -af build.sh >/dev/null; do sleep 1; done'",
             "/tmp/run-remote.sh 'pkill -f build.sh; sleep 1; echo ok'",  # forwarding wrapper
+            "until ssh host '! pgrep -f build.sh >/dev/null'; do sleep 15; done",  # `!` keeps bash -c
+            "ssh host 'cnt=$(pgrep -fc build.sh); echo $cnt'",
+            "ssh host 'pgrep -f build.sh > /dev/null; echo $?'",
+            "ssh host 'for p in $(pgrep -f build.sh); do readlink /proc/$p/cwd; done'",
         ), "deny")
 
     def test_linux_local_wrapper_is_denied(self):
@@ -58,10 +62,17 @@ class DecisionTests(unittest.TestCase):
                     "pgrep -af build.sh",
                     "ssh host 'cd /srv && pgrep -fl build.sh'",
                     "ssh host 'tail -3 build.log; pgrep -af build.sh | head -3'",
-                    "ssh host 'for p in $(pgrep -f build.sh); do readlink /proc/$p/cwd; done'",
                     "pgrep -fal 'npm ci|npm install' || true"), "warn")
         note = GUARD.decide("ps aux | grep gradle")["hookSpecificOutput"]["additionalContext"]
         self.assertIn("[g]radle", note)
+        # `--` ends options; the pattern is the next word, matched literally under -F.
+        self.assertEqual(GUARD.findings('ps -axo command= | rg -c -F -- "-c sleep"'),
+                         [("warn", "rg", "-c sleep")])
+
+    @unittest.expectedFailure
+    def test_known_false_positive_text_after_ssh(self):
+        # Quoted text handed to echo after an earlier ssh still reads as a remote body.
+        self.assertEqual(decision("ssh host uptime; echo 'pkill -f build.sh; true'"), "allow")
 
     def test_correct_commands_are_allowed(self):
         self.check((
@@ -99,6 +110,7 @@ class HookContractTests(unittest.TestCase):
     def test_claude_and_codex_inputs(self):
         loop = "ssh h 'while pgrep -f build.sh; do sleep 5; done'"
         for tool_input in ({"command": loop},                          # Claude Bash, Codex Bash
+                           {"command": loop, "description": "wait", "timeout_ms": 60000},  # Monitor
                            {"cmd": loop},                              # exec_command arguments
                            {"command": ["bash", "-lc", loop]},         # argv form
                            'await tools.exec_command({cmd:%s, yield_time_ms:1000})' % json.dumps(loop)):
