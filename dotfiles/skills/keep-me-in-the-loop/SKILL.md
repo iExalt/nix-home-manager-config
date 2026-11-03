@@ -98,7 +98,8 @@ approve them together with this phase, and recommend it. List those phases
 coarsely, and name any decision you already know will come back to the user.
 Offer approving only this phase as the alternative. Under a multi-phase
 approval, shape each next phase with the reviewer, describe it in the
-phase-completion report, and continue. Return to the user before a phase whose
+phase-completion report, and start it in the same turn; a report that ends on
+"Phase N starts next" stalls until the user asks. Return to the user before a phase whose
 scope, acceptance criteria, cost, risk or external actions differ from what
 was approved, or that reaches a decision the approval left to them.
 
@@ -230,7 +231,10 @@ event or a timeout within the tool's limit, rather than ending the turn and bein
 woken. Reviewer and user replies arrive only between turns, so continue
 independent work while they are pending. When a turn must end to await one with
 nothing new to report, close it with one short line naming what you await, such
-as `Waiting on the reviewer for C3.`, and write it once per wait.
+as `Waiting on the reviewer for C3.`, and write it once per wait. End a turn only
+on something that will wake you: a pending reply from an agent that is still
+running, a background task, a Monitor, or a scheduled wake-up. A subagent's final
+hand-back is its last message, so act on it rather than waiting for more.
 
 ## Report for quick reading
 

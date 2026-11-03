@@ -199,6 +199,8 @@ then the oldest outstanding review, then upcoming design proposals. The author
 can prepare proposals and tests while waiting, but cannot count a pending proposal
 as agreement. When only blocked work remains, use native interruptible waits or
 completion notifications; avoid polling loops and unchanged-status messages.
+Before ending a turn to wait for the reviewer, confirm it is still running or has a
+message in flight; a stopped reviewer sends nothing more until resumed.
 
 ## Reviewer idle time
 
