@@ -49,7 +49,14 @@ in
     pkgs.zsh
     pkgs.mise
     pkgs.difftastic
-  ];
+  ] ++ lib.optional pkgs.stdenv.hostPlatform.isDarwin
+    # feat(shell): macOS lacks `timeout`, which agents reach for to bound waits. Link only that
+    # command from uutils, the Rust rewrite of GNU coreutils, so the BSD tools stay in charge.
+    # Linux already has GNU timeout.
+    (pkgs.runCommand "uutils-timeout" { } ''
+      mkdir -p $out/bin
+      ln -s ${pkgs.uutils-coreutils}/bin/uutils-timeout $out/bin/timeout
+    '');
 
   home.file.".vimrc".source = ./dotfiles/.vimrc;
   home.file.".gitignore_global".source = ./dotfiles/.gitignore_global;
