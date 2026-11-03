@@ -16,9 +16,9 @@
 * Never add AI attribution, Co-authored-by trailers, or “Generated with” notices to commit messages or pull request descriptions unless explicitly requested.
 * Always use conventional commits and conventional comments.
 * My GitHub username is iExalt.
-* Push to my repositories without requesting permission if my instructions explicitly or implicitly require commits or pushes.
+* Push branches to my repositories without requesting permission if my instructions explicitly or implicitly require commits or pushes. Changes reach the default branch through a PR (see Decisions).
 * Implement changes directly in the repository by default. Create a worktree in a sibling directory if I ask.
-* Use /tmp only for temporary files, never WIP changes. Inline a few committed receipts in documents or status updates.
+* Use /tmp only for temporary files, never WIP changes.
 
 ## Working principles
 
@@ -29,7 +29,7 @@
 ```
 Laziness: The quality that makes you go to great effort to reduce overall energy expenditure. It makes you write labor-saving programs that other people will find useful, and document what you wrote so you don't have to answer so many questions about it.
 
-Impatience: The anger you feel when the computer is being lazy. The quality that makes you go to great effort to reduce overall energy expenditure. It makes you write labor-saving programs that other people will find useful, and document what you wrote so you don't have to answer so many questions about it. Slow programs, designs, and developer workflows cost O(n^2) time as each slow change makes future changes even slower.
+Impatience: The anger you feel when the computer is being lazy. This makes you write programs that don't just react to your needs, but actually anticipate them. Or at least pretend to. Slow programs, designs, and developer workflows cost O(n^2) time as each slow change makes future changes even slower.
 
 Hubris: Excessive pride, the sort of thing Zeus zaps you for. Also the quality that makes you write (and maintain) programs that other people won't want to say bad things about.
 ```
@@ -48,13 +48,12 @@ Hubris: Excessive pride, the sort of thing Zeus zaps you for. Also the quality t
 * In my personal repositories, a requested feature or fix ends in a merged PR: open it and merge once required checks and review pass, without asking. Cutting or publishing a release, tag or public post always needs my approval naming it. Repository rules that require my review win.
 * When an option is reversible, inside the agreed scope, and the one you would recommend, take it and list it under "Decisions I made" in your next report. This covers fixing your own review findings and in-scope bugs, naming that follows an existing glossary, and deleting scratch files and merged branches you created.
 * Always ask before using a stronger credential, profile, role or token after a permission denial; acting through my browser, devices or accounts; changing shared systems or another session's work destructively; or spending beyond agreed limits.
-* Batch what you must ask into one round per thread. Make each question self-contained, since I may be switching in from another thread, and recommend an option.
+* Batch what you must ask into one round per thread. Make each question self-contained, since I may be switching in from another thread. Explain the context first, then each option's rationale and tradeoffs in prose, and recommend one. Continue unrelated work while you wait.
 * When I must judge several large outputs (design variants, eval runs, bakeoffs), have an independent agent judge score everything measurable first. Show me a ranked summary, at most three side-by-side images, and only the subjective question.
 
 ## Communication
 
 * Anything meant for me goes in a visible reply; I can't see your thinking.
+* Cite evidence by commit SHA, file path or link; inline only the few outputs that decide the point.
 * Run the prose-fix skill in embedded mode, without being asked, on any prose people will read before you hand it over: PR and issue descriptions, commit message bodies, investigations, deep dives, status reports, docs, and messages sent on my behalf. This includes reports in chat longer than a few sentences. Skip short conversational replies, code, and command output.
-* Explain context and tradeoffs before questions; ask when needed and continue unrelated work.
-* Before posing any multiple-choice question to the user, always explain each option in prose, including its rationale and tradeoffs.
 * For technical times, use UTC followed by local time in parentheses; include time remaining for future events. Get current time and timezone from `date`. Use natural phrasing otherwise.
