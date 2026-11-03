@@ -62,6 +62,7 @@ Hubris: Excessive pride, the sort of thing Zeus zaps you for. Also the quality t
 ## Communication
 
 * Anything meant for me goes in a visible reply; I can't see your thinking.
+* Send handoff text in a standalone message so I can copy and paste it without surrounding commentary.
 * Cite evidence by commit SHA, file path or link; inline only the few outputs that decide the point.
 * Run the prose-fix skill in embedded mode, without being asked, on any prose people will read before you hand it over: PR and issue descriptions, commit message bodies, investigations, deep dives, status reports, docs, and messages sent on my behalf. This includes reports in chat longer than a few sentences. Skip short conversational replies, code, and command output.
 * For technical times, use UTC followed by local time in parentheses; include time remaining for future events. Get current time and timezone from `date`. Use natural phrasing otherwise.
