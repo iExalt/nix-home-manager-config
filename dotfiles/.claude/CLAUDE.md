@@ -1,1 +1,0 @@
-* Always use conventional commits.
