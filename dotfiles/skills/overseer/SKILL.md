@@ -22,10 +22,11 @@ project, and your whole job is the hand-off, done straight away:
    checkout as `path`, the run project's `projectId` and the title
    `Overseer: <task>`.
 3. Launch the overseer in it with `create_agent`, titled `Overseer: <task>`,
-   with your own provider, model, mode and thinking option from
-   `get_agent_status`. Its prompt invokes this skill and carries the user's
-   request verbatim, with anything else they said in this thread, and your
-   agent ID as the launcher's. Clear its `paseo.parent-agent-id` label, as
+   with your own provider and mode from `get_agent_status`, and the overseer
+   model and effort from "Three-tier model routing". Its prompt invokes this
+   skill and carries the user's request verbatim, with anything else they
+   said in this thread, and your agent ID as the launcher's. Clear its
+   `paseo.parent-agent-id` label, as
    "Paseo" describes for workers.
 4. Right after the launch, without waiting on the overseer, ask the user in a
    blocking dialog whether to archive this thread, naming the overseer thread
@@ -48,9 +49,11 @@ dialog returns, read the launcher's labels with `get_agent_status`. Once
 `keep`.
 
 Run script threads without implementing them. You launch **workers**, separate
-top-level sessions that each run `keep-me-in-the-loop`, usually one per
-thread. You brief them, enforce the script's order, carry their requests for a
-human to the user, and keep the user in the loop. The user talks to you, and
+top-level sessions that act as middle-tier thread leads and each run
+`keep-me-in-the-loop`, usually one per thread. They delegate implementation
+to cheaper native pilots within their own sessions. You brief them, enforce
+the script's order, carry their requests for a human to the user, and keep
+the user in the loop. The user talks to you, and
 the workers talk to you.
 
 Run the whole agreed scope to its conclusion, using the autonomy level below
@@ -374,9 +377,9 @@ When you are running in Paseo with its built-in tools (`create_agent`,
   `labels: {"paseo.parent-agent-id": ""}` so it appears as a top-level thread
   in its project. You still get its finish notifications. Choose the provider and model as Paseo's guidance says: the profile
   the user named, or the one from `list_profiles` whose notes fit
-  implementation, otherwise your own provider. For Claude workers, apply
-  "Claude development worker routing" below when choosing the model and effort. Name yourself with
-  `update_agent` too.
+  implementation, otherwise your own provider. Apply
+  "Three-tier model routing" below to both providers when choosing the model
+  and effort. Name yourself with `update_agent` too.
 - **Address:** `send_agent_prompt` interrupts a running agent and its
   subagents instead of queuing. For routine messages, use it only when
   `get_agent_status` shows idle; otherwise message as above. For authorization
@@ -397,27 +400,56 @@ When you are running in Paseo with its built-in tools (`create_agent`,
   wakes you, keep one hourly `create_heartbeat` while workers run, and delete
   it when they finish. At decision points, read `get_agent_activity`.
 
-### Claude development worker routing
+### Three-tier model routing
 
-Unless the user selected another model, use Sonnet 5.5 medium for routine,
-bounded development and high for demanding diagnosis, concurrency/lifecycle work,
-complex integration, or substantive review. Record the choice in the worker brief.
-Keep medium as the default; escalate deliberately based on the work, not simply
-because the campaign is long. Preserve explicit user model/provider choices.
+Use this hierarchy for new sessions, descendants, reviewers and replacements.
+Preserve explicit user provider, model and effort choices, including reviewer
+choices. Carry those choices and this routing policy in every worker brief;
+they override conflicting model defaults in `keep-me-in-the-loop`, its review
+skill and other descendant workflows. Keep their review and acceptance gates.
 
-In Paseo, select a matching Claude profile from `list_profiles`, or use the
-advertised launch overrides for `claude-sonnet-5-5` and the chosen effort. Claude's
-`~/.claude/agents/developer-{trivial,routine,demanding}.md` are native
-subagent definitions, not Paseo launch profiles. Verify the effective provider,
-model and thinking option returned by the launcher; report unsupported routing
-rather than silently inheriting another model. Do not modify existing live workers.
+| Role | Codex model | Claude model | Default effort |
+| --- | --- | --- | --- |
+| Main overseer: direction, cross-thread decisions, final acceptance | GPT Astra | Opus | `high` |
+| Thread lead (the top-level worker): phase coordination, review, integration decisions | GPT Sol | Sonnet | `medium`; `high` for substantive review or complex decisions |
+| Implementation pilot: bounded implementation, diagnosis, discovery, mechanical edits | GPT Luna | Haiku | Codex `high` for implementation/diagnosis, `medium` for mechanical work; Claude `medium` |
+| Independent substantive reviewer within a thread | GPT Sol | Sonnet | `high` |
 
-For standalone Claude workers, use explicit model and effort flags as below.
-Keep the normal Claude Code system prompt and the `keep-me-in-the-loop` brief:
-`--agent` with a nonempty custom prompt would replace the default system prompt.
-Native subagents inside a Claude worker may use `developer-trivial`,
-`developer-routine`, or `developer-demanding` when their assignment fits; pass the relevant workflow rules
-and preserve any reviewer model explicitly required by the active review skill.
+The independent reviewer is a peer at the thread lead's tier, not another
+orchestration layer. A worker keeps the `keep-me-in-the-loop` workflow and owns
+its phase proposals, review and verification, but delegates implementation to
+native pilots. Pilots send proposals, results and blockers to their thread lead;
+thread leads report to the overseer. Difficult pilot work returns to the lead
+for diagnosis and a revised bounded assignment. Difficulty, failed checks or a
+long campaign do not authorize moving descendants to Astra or Opus. Ask the
+user before changing the hierarchy when it cannot deliver the required result.
+
+Resolve each class to its latest available model using advertised provider
+models; never invent identifiers. Set model and effort explicitly at launch
+and resume. In Paseo, use matching `list_profiles` entries or supported launch
+overrides; a profile must match the assigned tier. Claude's installed
+`developer-*` definitions are native subagent profiles, not Paseo profiles.
+
+For Codex native pilots, pass the resolved model and effort with
+`fork_turns: "none"` and a scoped brief where supported; a full-history fork
+must not inherit Astra or Sol into an implementation pilot. For Claude native
+pilots, use `developer-trivial` only when its scope fits the assignment, its
+effective model is Haiku and its effort matches. Use `developer-routine` for a
+Sonnet reviewer only when its model and effort match; otherwise use supported
+explicit routing.
+Do not select `developer-demanding` merely because a task is difficult: its
+Opus model belongs to the overseer tier unless the user chose an exception.
+Keep the normal Claude Code system prompt and `keep-me-in-the-loop` brief for
+standalone thread leads; `--agent` with a nonempty custom prompt replaces that
+system prompt.
+
+Verify effective provider, model and effort in launch results, session status
+or native task configuration when exposed, including after resume or reuse.
+Correct unintended routing before dependent work starts. If the required model,
+effort or delegation route is unavailable, report it and hold affected launches;
+continue only independent read-only preparation. Never silently inherit a more
+expensive model or drop the pilot tier. Do not modify existing live sessions;
+report a mismatch in the current overseer's model instead of claiming it changed.
 
 Compare elapsed time and total model usage per accepted work item, including
 review and repairs, before claiming savings. Do not add recurring benchmarks just
@@ -429,7 +461,7 @@ Launch each worker as a background session from its worktree:
 
 ```sh
 cd ../<repo>-worker-<slug>
-claude --bg -n "Worker: <subtask>" --model claude-sonnet-5-5 --effort <medium-or-high> --permission-mode <your mode> "<brief>"
+claude --bg -n "Worker: <subtask>" --model <resolved-Sonnet-model> --effort <medium-or-high> --permission-mode <your mode> "<brief>"
 ```
 
 - **Trust:** the launch fails with "Workspace not trusted" unless the
@@ -455,9 +487,9 @@ claude --bg -n "Worker: <subtask>" --model claude-sonnet-5-5 --effort <medium-or
 ### Codex
 
 Launch each worker in the background with
-`codex exec --json -C <worktree> -o <reply file> "<brief>"`, using the sandbox
+`codex exec --json --model <resolved-Sol-model> -c 'model_reasoning_effort="<medium-or-high>"' -C <worktree> -o <reply file> "<brief>"`, using the sandbox
 and approval policy the user authorized, and resume it with
-`codex exec resume <session> "<message>"`. Exec mode can't answer an approval
+`codex exec resume --model <resolved-Sol-model> -c 'model_reasoning_effort="<medium-or-high>"' <session> "<message>"`. Exec mode can't answer an approval
 prompt, so a policy that asks for approval blocks the worker.
 
 A Codex overseer's workers reach it with `codex queue` on its session. A
@@ -494,6 +526,15 @@ filled in for the worker:
   `<by ending your turn with the request>` where no tool reaches it. Nobody
   watches this session's chat.
 - Acknowledge this brief to the overseer before anything else.
+- You are the middle-tier thread lead running `keep-me-in-the-loop`, using
+  `<resolved Sol/Sonnet model and effort>`. Delegate implementation and bounded
+  diagnosis/discovery to native pilots using `<resolved Luna/Haiku model and
+  effort>`. Keep substantive independent review at `<resolved Sol/Sonnet model
+  and effort>`. Preserve `<explicit user model choices, or none>`; these choices
+  and the overseer's three-tier policy override conflicting descendant model
+  defaults, including reviewer defaults. Pass the policy and your return
+  address to descendants, verify effective settings at launch/resume, and
+  report unsupported routing instead of inheriting an expensive model.
 - The overseer's autonomy level is `<low|medium|high>`, with authority limited
   to `<agreed scope and any session grant>`. This does not give you the
   overseer's delegated authority. Route decisions through it at every level;
