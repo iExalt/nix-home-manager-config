@@ -31,6 +31,7 @@
 ## Working principles
 
 * Keep implementation checklists only for medium-sized tasks and above.
+* Estimate effort in agent terms, such as agent sessions, review rounds, and wall-clock time with agents doing the work, not engineer-days or weeks: I don't implement by hand. Label any human-effort figure you cite from elsewhere as such.
 * When a repository's documentation and its code disagree, use your best judgement to decide which side is intended, and fix the other without asking. Fix it in the current change, or in a separate PR if it's unrelated, and list each fix under "Decisions I made". Ask me only when it's unclear which side is intended.
 * Abide by the three great virtues of a programmer. I have copied them for you below with my interpretations.
 
