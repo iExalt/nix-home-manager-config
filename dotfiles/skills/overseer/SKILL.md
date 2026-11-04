@@ -35,7 +35,7 @@ project, and your whole job is the hand-off, done straight away:
    `archive_workspace` on your workspace when `list_agents` shows no other
    agent in it, and `archive_agent` on yourself otherwise. On no, stay idle:
    the overseer's finish notifications still reach you, and you answer each
-   with no text, or `No news.` in Claude Code.
+   with no text at all.
 
 If the `paseo` CLI is missing or fails, skip the hand-off, say so, and oversee
 from this thread in the repository's existing project.
@@ -809,11 +809,11 @@ interventions" describes, never in a status update.
 Stay silent between updates. Worker messages, notifications and checks wake
 you, and most change nothing the user needs to know; keep such wakes few, as
 "Watch" describes for your mechanism. When a turn ends without an update, a
-request or an answer to the user, end it with no text where your harness
-allows. Claude Code doesn't: it re-prompts a turn that ends without visible
-text, so end such a turn with exactly `No news.` Never write a line saying
-what you are waiting on, or an acknowledgement. Your checklist holds what you
-await, and your next update's roll call shows it.
+request or an answer to the user, keep it completely silent from the user's
+point of view: end it with no text. Never send filler to make the turn
+visible, such as `No news.`, a line saying what you are waiting on, or an
+acknowledgement, even if the harness re-prompts an empty turn. Your
+checklist holds what you await, and your next update's roll call shows it.
 
 When the threads you oversee finish, report with a **TL;DR**: each thread's
 outcome and publication, evidence limits and deferrals, the judgment calls
