@@ -128,8 +128,10 @@ Within each chunk:
    an approved outcome, acceptance check, deferral, risk, or external action,
    return it to the user before affected work proceeds.
 2. Implement and resolve routine technical decisions and necessary fixes
-   autonomously within the approved outcome. Record unrelated improvements and
-   pre-existing bugs for later; ask before materially expanding scope.
+   autonomously within the approved outcome. Handle unrelated improvements and
+   pre-existing bugs as the user's global instructions say: fix a small, safe
+   one and report it, and file the rest for a later bugfix run. Ask before
+   materially expanding scope.
 3. Run available discriminating checks now. Defer expensive or unavailable
    verification only when the chunk's acceptance criteria permit it. Attach each
    deferral to a specific later roadmap gate, naming what remains unproven and
