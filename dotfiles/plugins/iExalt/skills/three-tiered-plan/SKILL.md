@@ -5,6 +5,11 @@ description: "Grill the user about a campaign that will span days or weeks, then
 
 # Three-Tiered Plan
 
+**Load `iExalt:working-conventions` before any other step.** It holds the
+rules shared across the workflow skills, and this skill cites its sections as
+`working-conventions` › Section without restating them. Invoke it as a skill,
+or read its `SKILL.md` where your harness lists the path.
+
 Shape a campaign that will steer days or weeks of agent work into three
 documents, each more concise and more literal than the last:
 
@@ -22,8 +27,7 @@ Grill each tier out of the user, then write it with a continuous reviewer.
 Draft and review the tiers in order, then ask the user to confirm the complete
 set in one dialog. The user owns outcomes, scope and
 tradeoffs, and holds history and expertise the repository doesn't record. You
-find facts, propose, challenge and write; the reviewer challenges you. Follow
-`working-conventions` for the rules shared across the workflow skills.
+find facts, propose, challenge and write; the reviewer challenges you.
 
 ## Start from the right tier
 

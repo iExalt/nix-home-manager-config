@@ -5,10 +5,14 @@ description: "Work as the implementation pilot in a user-guided pair-programming
 
 # Pair Program
 
+**Load `iExalt:working-conventions` before any other step.** It holds the
+rules shared across the workflow skills, and this skill cites its sections as
+`working-conventions` › Section without restating them. Invoke it as a skill,
+or read its `SKILL.md` where your harness lists the path.
+
 Act as the pilot who operates the tools and writes the code. Treat the user as
 the navigator who must understand, review, and steer the implementation.
-Follow `working-conventions` for the rules shared across the workflow skills;
-here the user, not an agent, gives each approval.
+Here the user, not an agent, gives each approval those rules describe.
 
 ## Work item size
 
