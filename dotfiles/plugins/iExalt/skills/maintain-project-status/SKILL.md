@@ -25,66 +25,45 @@ and update semantics.
   proof that the current tree still satisfies a claim.
 - Never infer milestone completion from partial implementation, checked
   subtasks, code existence, or a passing subset of tests.
-- Keep accomplishments evidence-backed and state the incomplete boundary
-  explicitly.
-- Keep intermediate goals outcome-oriented. Do not copy the low-level
-  checklist into the status document.
-- Give every final exit condition and cross-component decision exactly one
-  owning intermediate goal. Other goals may contribute evidence.
-- Preserve unrelated worktree changes and identify evidence that exists only in
-  the uncommitted tree.
 
 ## Documentation and evidence retention
 
-Default to one project-wide status/progress document and the active
-implementation plan, which may contain its checklist. Reuse them instead of
-creating per-item reports, acceptance receipts, benchmark writeups, or handoff
-documents. Component READMEs and `docs` directories hold durable usage,
-interface, and design knowledge, not run logs. Add a separate document only
-for a distinct ongoing reader need that the existing documents cannot
-reasonably serve.
+Keep one project-wide status document and the active implementation plan,
+which may hold its checklist. Don't create per-item reports, acceptance
+receipts, benchmark writeups or hand-off documents; add a document only for a
+distinct ongoing reader need the existing ones can't serve. Component READMEs
+and `docs` directories hold durable usage, interface and design knowledge, not
+run logs.
 
-Choose the smallest useful retained representation:
+Retain the smallest useful representation:
 
-- Inline short results and small tables in the progress document. Keep only a
-  few decisive receipts, with enough conditions and limitations to interpret
-  them.
-- Put moderately larger useful tables or details in an appendix to that same
-  document. Do not paste raw logs or unbounded datasets into an appendix.
+- Inline short results and small tables, with a few decisive receipts and the
+  conditions and limits needed to read them.
+- Put moderately larger tables in an appendix to the same document, never raw
+  logs or unbounded datasets.
 - For larger output, keep the conclusion and the reproduction command or
-  source reference, and omit raw output from the commit by default. If exact
-  raw results were not retained, say so; do not link disposable local files as
-  durable evidence.
-- Only when preserving exact files is essential to an explicit requirement or
-  named future use, consolidate them into a benchmark/evidence `.tar.zstd` archive.
-  Reuse the existing archive when present, updating it without losing
-  members. Do not create one archive per run or retain both the archive and its
-  expanded contents. In the progress document, state briefly why it is
-  retained, what it contains, and how to extract the relevant files. Verify
-  that the archive is readable and contains the required files before removing
-  task-owned originals.
+  source reference, not the raw output. Say when exact raw results weren't
+  retained, and never link disposable local files as durable evidence.
+- Only when an explicit requirement or named future use needs exact files,
+  consolidate them into the one benchmark/evidence `.tar.zstd` archive,
+  updating the existing archive without losing members. Never keep one archive
+  per run, or both an archive and its expanded contents. State in the status
+  document why it's retained, what it holds and how to extract it, and check
+  it's readable and complete before removing task-owned originals.
 
-Verification and retention are separate decisions: a rigorous benchmark does
-not require committing all its outputs. Keep reusable tests, benchmark
-harnesses, and required runtime/test fixtures as normal source files. This
-policy covers generated evidence; it does not permit hiding source in archives
-or weakening checks. Keep working evidence only as long as review needs it, and
-remove only task-owned disposable material within the authorized scope. Do not
-turn a status update into an unsolicited repository-wide cleanup or create
-preservation machinery by default.
+Keep reusable tests, benchmark harnesses and required fixtures as normal
+source files; never hide source in the archive or weaken checks to shrink
+evidence. Remove only task-owned disposable material, and don't turn a status
+update into a repository-wide cleanup.
 
 ## Status model
 
 Track workflow status separately from evidence state.
 
-Workflow status:
-
-- `complete`: the full exit condition has current evidence;
-- `active`: implementation or validation is underway;
-- `next`: the highest-priority unopened outcome;
-- `planned`: sequenced but not started;
-- `blocked`: named prerequisites are missing;
-- `later`: intentionally outside the current planning horizon.
+Workflow status is `complete` (the full exit condition has current evidence),
+`active`, `next` (the highest-priority unopened outcome), `planned`, `blocked`
+(named prerequisites are missing) or `later` (outside the current planning
+horizon).
 
 Evidence state:
 
@@ -101,39 +80,25 @@ promoting the whole goal.
 
 ### 1. Establish the document hierarchy
 
-Identify:
-
-1. governing plans, contracts, milestone definitions, and decision records;
-2. exhaustive checklists or issue trackers;
-3. the intended status-document path and its readers;
-4. repository instructions and the preferred tool runner;
-5. the baseline revision, relevant branches, and worktree state.
+Identify the governing plans, contracts, milestone definitions and decision
+records; the exhaustive checklist or issue tracker; the status document's path
+and readers; and the baseline revision, relevant branches and worktree state.
 
 When updating, read the existing status document first, then inspect its
 linked sources and confirm the hierarchy is still accurate.
 
 ### 2. Inspect the evidence surface
 
-Inspect before writing:
+Inspect before writing: `git status` with staged, unstaged and untracked
+changes; the relevant Git log ranges and file history; current modules,
+interfaces, schemas, configuration and generated outputs; scoped tests and
+correctness corpora; benchmark definitions, retained results and artifacts;
+and milestone exit gates, checked checklist items, dependencies and open
+decisions. Prefer repository-managed tools and commands, and check each claim
+against the current tree, not only its history.
 
-- `git status`, staged and unstaged diffs, and untracked files;
-- relevant Git log ranges, commit details, and file history;
-- current modules, interfaces, schemas, configuration, and generated outputs;
-- scoped tests, fixtures, property tests, and correctness corpora;
-- benchmark definitions, retained results, profiles, and machine-readable
-  artifacts;
-- milestone exit gates, checked checklist items, dependencies, and open
-  decisions.
-
-Prefer repository-managed tools and commands. Keep a small evidence ledger in
-working context or the existing status document, not in a new receipt file:
-
-| Claim | Evidence | Current-tree check | Classification |
-| --- | --- | --- | --- |
-| Outcome or behavior | Commit, test, module, artifact, or measurement | How it was verified now | designed, implemented, or verified |
-
-Do not attribute pre-existing uncommitted changes to a commit. If evidence is
-worktree-only, say so.
+Preserve unrelated worktree changes, and don't attribute pre-existing
+uncommitted changes to a commit. If evidence is worktree-only, say so.
 
 ### 3. Reconstruct accomplishments
 
@@ -144,7 +109,6 @@ group:
 - name the relevant concrete evidence, such as test names, commands and measured
   results, modules, or commit IDs; reference retained artifacts or hashes only
   when they serve the claim under the retention policy above;
-- verify that referenced commits resolve and paths or symbols still exist;
 - distinguish implementation evidence from verification evidence;
 - describe a design as a design, not as implemented behavior.
 
@@ -259,8 +223,6 @@ Verify:
 - every local link and referenced artifact path;
 - commit IDs, baseline revision, test names, module names, counts, hashes, and
   measurement claims;
-- each `complete` goal against every exit-condition clause;
-- dependency acyclicity and unique exit-condition ownership;
 - relevant scoped tests and benchmark/result validation;
 - `git diff --check` and the final worktree diff.
 
@@ -277,6 +239,3 @@ Finish with:
 - the current boundary and recommended next sequence;
 - verification performed and any unverified claims;
 - any reciprocal plan or checklist links added.
-
-Do not report a milestone as complete unless its authoritative exit gate is
-fully satisfied with current evidence.
