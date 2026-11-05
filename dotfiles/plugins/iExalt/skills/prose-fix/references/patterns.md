@@ -1,9 +1,7 @@
 # Pattern catalog
 
-Each pattern is one form of a model's default choice: the phrasing that fits the widest range
-of readers. Read the passage before classifying it. A watched phrase inside a quotation, title,
-proper name, or discussion of the phrase is not a tell, and neither is text written before
-late 2022.
+Read the passage before classifying it. A watched phrase inside a quotation, title, proper
+name, or discussion of the phrase is not a tell.
 
 Patterns in sections A to C are structural and justify an edit on one sighting. A pattern
 marked *weak alone* needs other tells nearby before you act. Treat word lists as search aids,
@@ -26,9 +24,6 @@ before the reveal ("Not a X. Not a Y. A Z."); a clipped negative tail (", no gue
 **Fix:** State Y. Keep the contrast only when X is a belief the reader actually holds or a
 mistake they would actually make, or when both halves carry information. In agent instructions
 most contrasts are rules ("null, not zero"); keep those.
-
-> Before: Caching isn't just a performance trick. It's a reliability strategy.
-> After: The cache keeps pages loading when the database is down.
 
 ### A2. Closers, fragments, and quotables
 
@@ -67,8 +62,6 @@ actually weigh, or one the text attributes and answers.
 **Fix:** Name the implication, stake, or difficulty, or cut the sentence.
 
 ## B. Inflation and borrowed authority
-
-The fact underneath is usually sound. Keep it and remove the dressing.
 
 ### B1. Inflated significance
 
@@ -184,16 +177,6 @@ the rule; keep them.
 solution").
 **Fix:** Pick the clearest term and repeat it.
 
-### C8. Passive voice and missing subjects
-
-**Watch:** "No configuration needed."; "Mistakes were made."; "It is believed that".
-**Fix:** Name the actor when it makes the sentence clearer. *Weak alone.*
-
-### C9. Hyphenated pairs after the noun
-
-**Watch:** "the report is high-quality", "the process is well-documented".
-**Fix:** Drop the hyphen after the noun; keep it before ("a high-quality report"). *Weak alone.*
-
 ## D. Formatting by rule
 
 ### D1. Bold as decoration
@@ -216,11 +199,6 @@ remove decoration. Do not rename a heading other text refers to.
 **Watch:** a heading followed by a one-line paragraph that repeats it ("## Performance /
 Speed matters.").
 **Fix:** Cut the restatement.
-
-### D4. Quotes
-
-**Watch:** curly quotes where the target uses straight quotes, or the reverse. *Weak alone.*
-**Fix:** Match the platform: straight in code-oriented and wiki contexts.
 
 ## E. Leftovers from chat and drafting
 
@@ -263,15 +241,10 @@ evidence before the decision; background the other person wrote; the answer in t
 agrees and any link they need to act. Act on this only when you can see the conversation or
 the text is plainly a reply.
 
-### F2. Narrator from a distance
-
-**Watch:** "Nobody designed this.", "People tend to...", lecturer voice in personal writing.
-**Fix:** Put the reader in the scene with "you" or a specific person, when the register allows.
-
 ## Not signals
 
-Correct grammar, formal language, transition words on their own, restrained prose, a single
-dash, and a missing citation are not evidence of AI writing. Protect what carries a writer's
-voice: an unusual checkable detail, a real aside or self-correction, mixed feelings, deliberate
+Correct grammar, formal language, transition words on their own, restrained prose, and a
+missing citation are not evidence of AI writing. Protect what carries a writer's voice: an
+unusual checkable detail, a real aside or self-correction, mixed feelings, deliberate
 repetition of the right word, trade language, dated references, and an earned joke, contrast,
 or closing line.
