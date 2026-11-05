@@ -37,9 +37,10 @@ user's say-so). dogfood.py's liveness check reads the unified cgroup v2 tree, wh
 distributions use; on a cgroup v1 host it would report every session as gone. uv runs touch_probe.py on the host. Lingering decides whether the browser and the touch hold, which
 run under the user's systemd manager, survive when the last login session on the host ends. With
 `Linger=no` they still work while any other session keeps the manager up, but can stop mid-run
-without warning. `dogfood.py init` checks both and warns, and every later call checks that the
-browser (not just its virtual display) and any touch hold are still running, including after the
-browser's idle timeout, failing with exit 3 if not: re-run `init --open` or
+without warning. `dogfood.py init` exits if agent-browser, uv, or (unless `--headless`) Xvfb is
+missing, and only warns when lingering is off; it doesn't check the cgroup version. Every later
+call checks that the browser (not just its virtual display) and any touch hold are still running,
+including after the browser's idle timeout, failing with exit 3 if not: re-run `init --open` or
 `hold` rather than carrying on, because a restarted browser has default settings and no touch.
 Turning lingering on (`loginctl enable-linger`) changes the user's machine, so ask them first.
 
@@ -81,8 +82,9 @@ dogfood.py shot <session> 03-phone-dark               # screenshot, copied back 
 dogfood.py close <session>                            # browser, touch hold, and host files
 ```
 
-`init --open` starts the browser headed, on a private virtual display (Xvfb), inside a systemd
-scope capped at the agreed 7 vCPU and 16 GB, and copies touch_probe.py to the host. Headed matters:
+`init` copies touch_probe.py to the host every time. With `--open` it also starts the browser
+headed, on a private virtual display (Xvfb), inside a systemd scope capped at the agreed 7 vCPU and
+16 GB. Headed matters:
 headless Chrome reports `(hover: hover)` and `(pointer: fine)` as false, so an app that switches on
 them shows a desktop tester its touch layout. `init` prints `mouse: true` when the page sees a real
 mouse. Pass `--headless` only if the host lacks Xvfb, and report hover- and pointer-dependent
@@ -139,8 +141,8 @@ are viewport CSS pixels, as `get box` reports them, so taps stay accurate after 
 **Timing.** `dogfood.py tap <session> @e12 --until "<js predicate>"` prints the milliseconds from
 the touch to the first animation frame where the predicate holds, so it includes rendering; it is
 the tool for "should land in the same frame" checks. For mouse input, use a `time_to_change` step
-with a `wheel` or `tap`, or time in the page with `eval`. Headless frame timing approximates a real
-display, so report these numbers as emulated.
+with a `wheel` or `tap`, or time in the page with `eval`. Frame timing on the host's virtual display
+(Xvfb) only approximates a real display, so report these numbers as emulated.
 
 **Reaching the app.** Two routes; the project brief decides:
 
