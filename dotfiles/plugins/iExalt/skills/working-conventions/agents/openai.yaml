@@ -1,0 +1,4 @@
+interface:
+  display_name: "Working Conventions"
+  short_description: "Shared rules the workflow skills follow"
+  default_prompt: "Use $iExalt:working-conventions as the shared rules for authority, review, evidence, updates, delegation and publication while running a workflow skill."

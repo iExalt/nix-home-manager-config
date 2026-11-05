@@ -52,7 +52,7 @@ first. A fresh reviewer can help with an expensive or ambiguous route decision.
 
 Once the outcome and boundaries are clear, let the agents handle proposals,
 implementation, review, testing, and ordinary repairs. The
-[subagent-pair-program skill](dotfiles/skills/subagent-pair-program/SKILL.md)
+[subagent-pair-program skill](dotfiles/plugins/iExalt/skills/subagent-pair-program/SKILL.md)
 provides that execution loop. You do not need to approve every edit or attend
 every code walkthrough.
 
@@ -77,9 +77,9 @@ changes. Routine technical replanning can remain autonomous.
 
 ## Use it in a conversation
 
-Invoke the [agentic-workflow skill](dotfiles/skills/agentic-workflow/SKILL.md):
+Invoke the [agentic-workflow skill](dotfiles/plugins/iExalt/skills/agentic-workflow/SKILL.md):
 
-> Use $agentic-workflow to help me plan this project. Guide me through the
+> Use $iExalt:agentic-workflow to help me plan this project. Guide me through the
 > decisions using the Q&A dialog. I want to delegate implementation, but choose
 > the outcome and tradeoffs myself.
 

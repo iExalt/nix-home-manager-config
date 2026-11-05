@@ -77,74 +77,11 @@ in
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/AGENTS.md";
   home.file.".codex/AGENTS.md".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/AGENTS.md";
-  home.file.".codex/skills/frontend-design".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/frontend-design";
-  home.file.".claude/skills/frontend-design".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/frontend-design";
-  home.file.".codex/skills/frontend-dogfood".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/frontend-dogfood";
-  home.file.".claude/skills/frontend-dogfood".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/frontend-dogfood";
-  home.file.".codex/skills/continuous-peer-review".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/continuous-peer-review";
-  home.file.".claude/skills/continuous-peer-review".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/continuous-peer-review";
-  home.file.".codex/skills/pair-program".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/pair-program";
-  home.file.".claude/skills/pair-program".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/pair-program";
-  home.file.".codex/skills/subagent-pair-program".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/subagent-pair-program";
-  home.file.".claude/skills/subagent-pair-program".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/subagent-pair-program";
-  home.file.".codex/skills/agentic-workflow".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/agentic-workflow";
-  home.file.".claude/skills/agentic-workflow".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/agentic-workflow";
-  home.file.".codex/skills/working-conventions".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/working-conventions";
-  home.file.".claude/skills/working-conventions".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/working-conventions";
-  home.file.".codex/skills/keep-me-in-the-loop".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/keep-me-in-the-loop";
-  home.file.".claude/skills/keep-me-in-the-loop".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/keep-me-in-the-loop";
-  home.file.".codex/skills/maintain-project-status".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/maintain-project-status";
-  home.file.".claude/skills/maintain-project-status".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/maintain-project-status";
-  home.file.".codex/skills/three-tiered-plan".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/three-tiered-plan";
-  home.file.".claude/skills/three-tiered-plan".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/three-tiered-plan";
-  home.file.".codex/skills/overseer".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/overseer";
-  home.file.".claude/skills/overseer".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/overseer";
-  home.file.".codex/skills/prose-fix".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/prose-fix";
-  home.file.".claude/skills/prose-fix".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/prose-fix";
-  home.file.".codex/skills/fix-skill".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/fix-skill";
-  home.file.".claude/skills/fix-skill".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/fix-skill";
-  home.file.".codex/skills/assign".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/assign";
-  home.file.".claude/skills/assign".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/assign";
-  home.file.".codex/skills/reload-skill".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/reload-skill";
-  home.file.".claude/skills/reload-skill".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/reload-skill";
-  home.file.".codex/skills/triage-bugfix".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/triage-bugfix";
-  home.file.".claude/skills/triage-bugfix".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/triage-bugfix";
-  home.file.".codex/skills/phone-debug".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/phone-debug";
-  home.file.".claude/skills/phone-debug".source =
-    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/phone-debug";
+  # feat(skills): the user's skills ship as one plugin, so both harnesses list
+  # them as iExalt:<skill>. Claude Code loads it live from the skills directory;
+  # Codex installs a copy from the local marketplace (see modules/codex-config.nix).
+  home.file.".claude/skills/iExalt".source =
+    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/plugins/iExalt";
   home.file.".codex/rules/phone-debug.rules".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/.codex/rules/phone-debug.rules";
   home.file.".vibe/config.toml".source =

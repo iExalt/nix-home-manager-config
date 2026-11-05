@@ -157,9 +157,19 @@ to avoid compiling Rust locally (static musl builds on Linux). To upgrade,
 update the version and all three archive hashes from the release's
 `SHASUMS256.txt`, then run `./reload.sh`.
 
+### iExalt skills
+
+The skills under `dotfiles/plugins/iExalt/skills/` ship as one plugin named
+`iExalt`, so Claude Code and Codex list them as `iExalt:<skill>` (for example
+`/iExalt:overseer` in Claude Code, `$iExalt:overseer` in Codex) and keep them
+apart from third-party skills. Claude Code loads the plugin live through
+`~/.claude/skills/iExalt`. Codex installs a copy from the local marketplace at
+`dotfiles/plugins/`, so after editing a skill run
+`scripts/install-codex-plugin.sh`; `./reload.sh` runs it too.
+
 ### frontend-design skill
 
-`dotfiles/skills/frontend-design` merges Impeccable, Vercel's Web Interface
+`dotfiles/plugins/iExalt/skills/frontend-design` merges Impeccable, Vercel's Web Interface
 Guidelines, and Anthropic's frontend-design skill into one workflow; it replaces
 the upstream Anthropic skill. Its `NOTICE.md` records the source revisions and
 licenses. Leave the Claude `frontend-design@claude-code-plugins` plugin out of
