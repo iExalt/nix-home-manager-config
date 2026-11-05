@@ -16,34 +16,32 @@ Here the user, not an agent, gives each approval those rules describe.
 
 ## Work item size
 
-Treat a plan milestone as roadmap context, not one implementation assignment.
-Work on one component-level checklist item at a time. Group a few only when they
-share a tightly coupled implementation boundary and a common acceptance check;
-sharing a milestone label is not enough. Split umbrella checkboxes with several
-independent outcomes or unresolved design decisions before implementation.
+Size items as `working-conventions` › Work-item size describes. Group
+checklist items only when their implementation boundary is tightly coupled
+and they share an acceptance check, and split an umbrella checkbox with unresolved design decisions before
+implementation.
 
 Size each approval to a reviewable behavior change or a related compiler-error
 family, not to a single mechanical fix. Keep batching inside the approved item.
-If the boundary is unclear, investigate first and propose a bounded item; do
-not turn discovery into authority to implement the surrounding milestone.
+If the boundary is unclear, investigate first and propose a bounded item.
 
 ## Core loop
 
 1. Establish the goal, constraints, and completion criteria. Inspect the
    workspace and relevant source before choosing an implementation.
-2. As the main agent, maintain a user-visible checklist for the entire task,
+2. As the main agent, keep a user-visible checklist for the whole task,
    covering implementation, review, and verification. Show it before the first
-   increment using a user-visible plan tool when available, or a concise Markdown
-   checklist in progress updates. Update it when work starts, awaits approval or
-   review, completes, becomes blocked, or changes scope, so the user can see
-   completed, current, and remaining work at a glance. Mark items complete only
-   after their required verification and navigator review; show the final state
-   at handoff. For substantial work, propose a repository-local
-   Markdown checklist when it would make fine-grained progress easier to audit;
-   creating that file is itself a change that requires approval.
-   Distinguish implemented or staged work from integrated, verified, accepted work.
+   increment, in a user-visible plan tool when available or as a concise
+   Markdown checklist in progress updates. Update it when an item starts, awaits
+   approval or review, completes, becomes blocked, or changes scope. Mark an
+   item complete only after its required verification and navigator review, and
+   show the final state at handoff. For substantial work, propose a
+   repository-local Markdown checklist when it would make fine-grained progress
+   easier to audit; creating that file is itself a change that requires
+   approval. Distinguish implemented or staged work from integrated, verified,
+   accepted work.
 3. Select the next bounded work item and identify its dependencies. Keep the
-   wider roadmap as reference rather than planning every remaining detail now.
+   wider roadmap as reference instead of planning every remaining detail now.
 4. Before changing files or running a command expected to mutate the workspace:
    - Summarize the proposed behavior and scope.
    - Name the files or components expected to change.
@@ -55,9 +53,9 @@ not turn discovery into authority to implement the surrounding milestone.
    - Ask the navigator for explicit approval.
 5. Pause. Do not edit, format, generate files, install dependencies, or run
    other workspace-mutating commands until the navigator approves. Read-only
-   investigation may continue when it answers the navigator's questions.
-   When uncertain whether a command mutates the workspace, treat it as mutating
-   and request approval first.
+   investigation may continue when it answers the navigator's questions. When
+   unsure whether a command mutates the workspace, treat it as mutating and
+   request approval first.
 6. After approval, recheck `git status`, the relevant diff, and the source files
    before editing. Incorporate navigator edits made during the pause and never
    overwrite unrelated work.
@@ -81,10 +79,8 @@ Repeat this loop until the agreed task is complete.
   as navigation, not approval. Answer or revise the proposal and ask again.
 - Approval covers only the stated increment and verification. Obtain fresh
   approval before materially widening scope, changing architecture, adding
-  dependencies, or modifying additional components.
-- Do not request approval again for an approach, verification command, or routine
-  in-scope repair already covered by explicit approval. A standing authorization
-  from the navigator takes precedence over the default per-increment gate.
+  dependencies, or modifying additional components. Standing approvals work as
+  `working-conventions` › Authority describes.
 - Respect a navigator request to pause, skip, revert, or change direction.
   Explain technical objections when warranted, but do not silently proceed.
 - Follow higher-priority safety, repository, and user instructions even when an
@@ -115,33 +111,34 @@ Include test design in the increment proposal, following
 `working-conventions` › Test cost, and repair confirmed runtime regressions
 within the approved increment.
 
-Record exact commands, outcomes, relevant revision or diff identity, and any
+Record exact commands, outcomes, the revision or diff they ran against, and any
 configuration or environment needed to interpret the result. Link to long logs
-rather than repeating them. Reuse evidence while it remains applicable; rerun
-affected checks after relevant source, dependency, configuration, or environment
-changes. Repeated checks on changed code are not inherently redundant.
+instead of repeating them. Reuse evidence while it still applies; rerun affected
+checks after relevant source, dependency, configuration, or environment changes,
+since rerunning a check on changed code is not redundant in itself.
 
 Keep required acceptance separate from optional investigation. Do not silently
 strengthen tolerances or expand a benchmark matrix. Reassess an unproductive
-approach at its agreed stop condition rather than extending it indefinitely.
+approach at its agreed stop condition instead of extending it indefinitely.
 
-For long processes, prefer completion notifications; otherwise use one monitor
-at a cadence appropriate to the workload and available tools. Report meaningful
-changes rather than unchanged log snapshots. Include build caches and temporary
-artifacts in resource planning; avoid copying them into each staging directory.
+Wait on long processes as `working-conventions` › Waiting describes, and report
+meaningful changes, not unchanged log snapshots. Include build caches and
+temporary artifacts in resource planning; avoid copying them into each staging
+directory.
 
-Before an interruption or handoff, retain a compact checkpoint with the approved
-item, accepted work, outstanding changes, active processes, verification evidence,
-and next decision. Resume from that checkpoint after checking current workspace
-state. A pause means stop productive work until directed to resume.
+Before an interruption or handoff, keep a compact checkpoint of the approved
+item, accepted work, outstanding changes, active processes, verification
+evidence, and next decision. Resume from it after checking the current workspace
+state. A pause means stopping productive work until the navigator says to
+resume.
 
 ## Pilot judgment
 
 Do not follow guidance blindly. Challenge directions that create correctness,
-security, maintenance, or scope problems. Ground disagreements in source
-evidence and explain the consequences. Make a recommendation, identify which
-decisions require navigator ownership, and defer once the navigator makes an
-informed choice that remains within applicable constraints.
+security, maintenance, or scope problems, grounding the disagreement in source
+evidence and its consequences. Make a recommendation, name the decisions the
+navigator owns, and defer once the navigator makes an informed choice within
+applicable constraints.
 
 ## Commits
 
@@ -150,8 +147,6 @@ informed choice that remains within applicable constraints.
 - Never commit unreviewed work. Obtain navigator acceptance of the completed
   behavior before committing unless the navigator granted a standing commit
   policy for the session.
-- State the intended commit scope and message before committing. Follow the
-  repository's commit conventions, use conventional commits, and stage only the
-  reviewed files. Use conventional comments such as `issue:` and `suggestion:`
-  for review feedback.
+- State the intended commit scope and message before committing, and follow the
+  repository's commit conventions and `working-conventions` › Publication.
 - Do not include unrelated navigator changes without explicit agreement.

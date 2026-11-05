@@ -1,9 +1,9 @@
 # Tester brief
 
 The main agent fills the `{…}` fields and passes everything below the line to a fresh subagent
-verbatim. Leave out the developer's conclusions, known issues, and what has already been checked.
-The one exception is a re-run: list what the user has decided and what is already filed, because
-round-three testers spent their findings on those.
+verbatim, adding nothing SKILL.md step 1 says to withhold. The one exception is a re-run: list
+what the user has decided and what is already filed, because round-three testers spent their
+findings on those.
 
 ---
 
@@ -37,13 +37,11 @@ or fix anything. You never contact the user; questions for them go in your repor
   and of `~/.config/frontend-dogfood/environment.md` for your form factor.
 - Browser session `{session}` on test host `{host}` is open at the URL and initialised for
   `{skill-dir}/scripts/dogfood.py`, with local evidence directory `{evidence-dir}`. Drive the
-  browser only through that script (devices.md › Drive the browser), take screenshots with its
-  `shot` command, and read their `view/` copies. Copy any other evidence you cite into the evidence
-  directory and cite its absolute local path, so the main agent can show it. Leave the session
-  open when you finish.
-- Mode: {focused | pedantic}. Focused: find the few problems that would bother the user most,
-  and run only the probes that what you saw calls for. Pedantic: find every defect, big or small,
-  and run every applicable probe.
+  browser only through that script (devices.md › Drive the browser) and take screenshots with its
+  `shot` command. Copy any other evidence you cite into the evidence directory and cite its
+  absolute local path, so the main agent can show it. Leave the session open when you finish.
+- Mode: {focused | pedantic}. Focused: find the few problems that would bother the user most.
+  Pedantic: find every defect, big or small. Step 4 says which probes each mode runs.
 - Budget: {N} browser actions and {M} minutes. When you reach either, stop and report, listing
   what you did not get to.
 - Profile receipts tagged CLI apply only if the scope names a CLI surface.
@@ -75,16 +73,16 @@ or fix anything. You never contact the user; questions for them go in your repor
    Narrate in the first person as you go ("I tap Save… nothing for about 2 s, then the list
    jumps"). Note every hesitation: a label you had to guess, a control you looked for, a result
    you weren't sure happened. Take before-and-after screenshots of each action that changes state.
-3. **Device comparison.** Compare matching screens and states in the same theme with the same
-   data across desktop, tablet, and phone in scope. Check look-and-feel, terminology, navigation,
-   available features, and the outcomes of the same tasks. Adapted layouts and input controls are
-   reasonable; touch need not exist on desktop. Verify that adaptations preserve equivalent
-   capabilities where practical, and flag unexplained visual drift or features lost on smaller
-   screens. Cite comparative screenshots and task evidence. If assigned only one device, record
-   its feature access and outcomes for the main agent's comparison and mark cross-device checks
-   untested; do not infer consistency from one viewport.
-4. **Probes.** Focused: run the probes in taste-profile.md › Probes that what you saw in steps 1–3
-   calls for, within the budget. Pedantic: run every probe whose "when it applies" matches. Probes
+3. **Device comparison.** Compare matching screens and states across the form factors in scope,
+   with the same theme and data: look-and-feel, terminology, navigation, available features, and
+   the outcomes of the same tasks. Adapted layouts and input controls are fine (touch need not
+   exist on desktop) if they preserve equivalent capabilities where practical; flag unexplained
+   visual drift and features lost on smaller screens. Cite comparative screenshots and task
+   evidence. If assigned only one device, record its feature access and outcomes for the main
+   agent's comparison and mark cross-device checks untested; do not infer consistency from one
+   viewport.
+4. **Probes.** Focused: run the probes in taste-profile.md › Probes that what you saw in steps 1
+   to 3 calls for, within the budget. Pedantic: run every probe whose "when it applies" matches. Probes
    marked device-only that you can't run go in the untested list with the reason.
 5. **Measure feel.** Anything about speed or smoothness gets a number: time from input to visible
    change, write time on the largest realistic data, load time, zoom step size. Say how you
@@ -102,7 +100,7 @@ reference.
 
 Write every finding to `{evidence-dir}/findings.md`, most severe first. For each:
 
-- `ID` · severity (P0–P3, per taste-profile.md › Severity calibration) · `pre-existing` if so
+- `ID` · severity (P0 to P3, per taste-profile.md › Severity calibration) · `pre-existing` if so
 - Surface, form factor and viewport, theme, input method
 - Steps to reproduce (numbered)
 - Observed, then expected

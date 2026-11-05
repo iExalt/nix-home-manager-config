@@ -12,7 +12,7 @@ way you found it.
 
 ## Standing permissions granted by invoking this skill
 
-By invoking this skill, the user explicitly permits the agent to:
+By invoking this skill, the user explicitly permits you to:
 
 - **use their Expo push token** from Paseo's push-token store
   (`$PASEO_HOME/push-tokens.json`, normally `~/.paseo/push-tokens.json`) to
@@ -55,15 +55,14 @@ for a way around the check.
    into setup, the checks and teardown, and give the end time as UTC with
    local time in parentheses (from `date`). If they set a time limit, it's a
    hard limit. Without one, plan for a stint of about 10 minutes, which is
-   what the user usually lends, and your estimate is the limit. Don't assume
-   you have the phone indefinitely. If the work needs more than 10 minutes,
-   split it into several stints. Record the deadline and check `date` between steps.
-   If you'll overrun, stop at a safe point, restore the phone, and ask for
-   more time.
-5. **Ask once for a device window.** Device go-aheads are one of the user's
-   most frequent and least consequential questions, so ask for every stint the
-   thread will need in one question: how many stints, how long each is, and
-   the latest end time. Include the baseline install and anything else that
+   what the user usually lends, and your estimate is the limit. If the work
+   needs more than 10 minutes, split it into several stints. Record the
+   deadline and check `date` between steps. If you'll overrun, stop at a safe
+   point, restore the phone, and ask for more time.
+5. **Ask once for a device window.** Device go-aheads are among the user's
+   most frequent and least consequential questions, so ask in one question
+   for every stint the thread will need: how many, how long each, and the
+   latest end time. Include the baseline install and anything else that
    needs the device. Inside a granted window, don't ask again. Send a push
    saying the stint is starting and how long it takes, then begin once the
    device is attached and unlocked and the focus check shows only the app
@@ -72,10 +71,13 @@ for a way around the check.
    rather than asking again. A new stint outside the window, or a change to
    what the window covers, needs a new ask.
 6. **Ask for the phone.** Outside a window, if you need it attached, unlocked
-   or plugged in, say exactly what and wait. A push notification is a good way
-   to ask if the user may be away from the keyboard. Don't stall silently.
+   or plugged in, say exactly what and wait. If the user may be away from the
+   keyboard, a push notification is a good way to ask. Don't stall silently.
 
 ## Connect
+
+Read `~/.config/phone-debug/environment.md` first for the devices' serial,
+Tailscale address and UDID (see "This user's setup").
 
 Call the adb binary directly, outside the sandbox. The mise shim fails with
 "No version is set for shim: adb":
@@ -141,7 +143,7 @@ value you remember isn't a baseline.
 
 ## Input discipline
 
-Input must land only on the app or web page under test. Never in another
+Input must land only on the app or web page under test, never on another
 app, a notification, a system dialog, or the production Paseo app
 (`sh.paseo.iexalt`) unless the user explicitly asks you to test prod
 directly. The user may be using the phone between your steps. Treat the
@@ -223,12 +225,11 @@ Do every step, even if the session failed or was cut short:
 
 ## iOS tablet (iPad)
 
-The rules above apply to the iPad as well: agree the time first, touch only
-the page under test, hand it back the way you found it, and use the Android
-phone's push notifications to tell the user what's happening. Only wired
-(USB) iPad debugging has been proven. The user has one free port, so iPad
-and phone runs take turns. Say when the iPad run is done so they can swap
-the cable.
+The rules above apply to the iPad too, with the page under test in place of
+the app; tell the user what's happening through the Android phone's push
+notifications. Only wired (USB) iPad debugging has been proven. The user
+has one free port, so iPad and phone runs take turns. Say when the iPad run
+is done so they can swap the cable.
 
 **One-time setup on the iPad, done by the user:** trust this Mac
 ("Trust This Computer?" plus the passcode, again after every replug that
@@ -254,8 +255,11 @@ xcrun devicectl device info lockState --device <UDID>
 
 **Drive Safari with the built-in safaridriver** (W3C WebDriver over HTTP):
 
-- Before you start it, kill stale drivers holding the port
-  (`pgrep -lf safaridriver`). Then run `/usr/bin/safaridriver -p 4723`.
+- Before you start it, check the port with
+  `lsof -nP -iTCP:4723 -sTCP:LISTEN`. Kill a holder only if it's a
+  safaridriver you started; otherwise pick another port or ask the user.
+  Then run `/usr/bin/safaridriver -p 4723` (or your chosen port), recording
+  its PID.
 - `POST /session` with
   `{"capabilities":{"alwaysMatch":{"platformName":"iOS","browserName":"Safari","safari:deviceType":"iPad"}}}`.
   The response's `safari:deviceName`, `safari:platformVersion` and
@@ -310,10 +314,12 @@ DPR 2), and save the device for what emulation can't show.
 
 ## This user's setup
 
-- Phone: [phone model].
-  - USB serial `[phone USB serial]`.
-  - Tailscale node `[phone Tailscale node]` at `[phone Tailscale IP]`; wireless adb uses
-    `[phone Tailscale IP]:<port>`.
+The user's device identities (models, USB serial, Tailscale address, iPad
+UDID) and the path to a worked iPad driver live in
+`~/.config/phone-debug/environment.md`, outside this public repository. Read
+it before connecting. If it's missing, ask the user once for those details
+and write the file.
+
 - Packages:
   - prod Paseo is `sh.paseo.iexalt` (`sh.paseo.iexalt/.MainActivity`); never
     install over it, and never upgrade or remove it;
@@ -324,8 +330,3 @@ DPR 2), and save the device for what emulation can't show.
   Folder). It's harmless; send stderr to `/dev/null`.
 - Metro and the daemon reach the phone through
   `a reverse tcp:8081 tcp:8081` and `a reverse tcp:6768 tcp:6768`.
-- iPad: [iPad model], UDID `[iPad UDID]`,
-  iPadOS 18.7 at last check. The user has an Apple Pencil Pro. A worked
-  safaridriver driver is in the perler project:
-  `~/dev/Projects/[private project]/frontend/bench/ipad-layout.mjs` and
-  `ipad-pointers.py`.

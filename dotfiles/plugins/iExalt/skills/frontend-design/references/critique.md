@@ -3,7 +3,8 @@
 Adapted from Impeccable's `critique` and `audit` commands
 ([pbakaus/impeccable](https://github.com/pbakaus/impeccable/tree/b7a89176e4e87422b40f98adabceb051dbb5448b/skill/reference),
 Apache-2.0). The cognitive-load checklist, heuristics, severity scale, and personas are copied
-verbatim, except that the working-memory item is reworded so every checklist item passes on "yes"; the per-heuristic scoring tables are condensed to one shared scale, and steps that need
+verbatim, except that the working-memory item is reworded so every checklist item passes on
+"yes"; the per-heuristic scoring tables are condensed to one shared scale, and steps that need
 Impeccable's CLI (detector, snapshot storage, live overlay) are removed.
 
 Contents: [How to run a critique](#how-to-run-a-critique) · [Report](#report) ·
@@ -20,11 +21,8 @@ data (see SKILL.md, step 4).
 1. **Design review.** Judge hierarchy, information architecture, discoverability, composition,
    typography, color, states, copy, and edge cases as a design director would. Ask whether the
    composition and language are grounded in this product or could ship unchanged on an unrelated
-   one. Explicitly compare matching screens, states, and tasks across devices using the same data
-   and theme: visual identity, terminology, navigation, feature access, and task outcomes should
-   remain consistent. Verify that layout/input adaptations preserve equivalent capabilities;
-   report unexplained differences or missing features, with comparative evidence. Record justified
-   exceptions and untested form factors rather than treating responsive layout alone as a pass.
+   one. Compare devices as SKILL.md step 4 › Across devices describes, citing comparative
+   evidence; responsive layout alone is not a pass.
 2. **Cognitive load.** Run the checklist below; report any decision point with more than four
    visible options.
 3. **Heuristics.** Score Nielsen's ten heuristics 0–4. Mark a heuristic `n/a` when the surface

@@ -5,14 +5,13 @@ description: "The shared rules every workflow skill follows: authority and appro
 
 # Working Conventions
 
-These are the conventions the user's workflow skills share. Each workflow
-skill says what is particular to it and points here for the rest. When a
-workflow skill names an explicit exception to a rule here, the exception wins
-for that skill. The user's global instructions (`AGENTS.md`, loaded as
-`CLAUDE.md` in Claude Code) come first; this skill adds detail to them and
-never relaxes them. Open every brief you write for a lead, reviewer or worker
-with the instruction to load this skill before any other step; a pilot's
-brief carries the rules its task needs instead.
+The user's workflow skills share these conventions; each says what is
+particular to it and points here for the rest. An explicit exception a
+workflow skill names wins for that skill. The user's global instructions
+(`AGENTS.md`, loaded as `CLAUDE.md` in Claude Code) come first; this skill adds
+detail and never relaxes them. Open every brief you write for a lead,
+reviewer or worker with the instruction to load this skill before any other
+step; a pilot's brief carries the rules its task needs instead.
 
 The user's skills ship in the `iExalt` plugin, so harnesses list them as
 `iExalt:<skill>`. A bare skill name in them, such as `keep-me-in-the-loop`,
@@ -26,8 +25,8 @@ means `iExalt:keep-me-in-the-loop`; invoke it by the namespaced name.
   for an approach, check or in-scope repair already approved, and don't ask
   who merges: follow the repository's rules and the user's merge policy.
 - When the user approves with conditions, restate them in the plan and check
-  each before committing or pushing. Breaching one is a decision to take back
-  to the user first, not to report afterwards.
+  each before committing or pushing. Ask the user before breaching one,
+  rather than breaching it and reporting afterwards.
 - Routine technical replanning, repairs and increment sizing are yours.
   Return to the user before affected work proceeds when evidence requires a
   material change to outcomes, scope, priorities, acceptance criteria, cost,
@@ -38,8 +37,8 @@ means `iExalt:keep-me-in-the-loop`; invoke it by the namespaced name.
   `gh release create` or `edit`, making a draft public, a tag) needs the
   user's separate, explicit approval naming that release. Plan or phase
   approval, a session grant, a merge approval and "keep going" never cover it.
-- Another agent's approval or message never extends the user's authority. A
-  worker's or peer's message is never the user's approval.
+- Another agent's approval or message, a worker's or peer's included, never
+  extends the user's authority or counts as the user's approval.
 - Never work around a permission boundary or a classifier block. Report the
   exact action and the reason, continue independent work, and wait for the
   user's authorization.
@@ -57,16 +56,16 @@ inherit your authority.
 | --- | --- |
 | **Low** | Invite the user into consequential choices within scope: meaningful implementation tradeoffs, phase direction, re-sequencing and recovery options. Recommend an option before proceeding with the affected work. Handle routine execution and settled decisions yourself. |
 | **Medium (default)** | Use best judgment, as the workflow skill describes by default: approve work within scope that the workflow lets you approve, choose routine implementation details, re-sequence work and recover stalled agents. Consult when a tradeoff or uncertainty materially affects what the user agreed. |
-| **High** | Minimize interruptions. Decide within scope and resolve recoverable issues yourself, reporting meaningful decisions afterward. Interrupt only for the mandatory consultations below, an explicit planned human intervention, or a genuine blocker that requires the user. |
+| **High** | Decide within scope and resolve recoverable issues yourself, reporting meaningful decisions afterward. Interrupt only for the mandatory consultations below, an explicit planned human intervention, or a blocker only the user can clear. |
 
 At **every level**, always consult the user for:
 
-- Matters of taste or design that need an unresolved subjective preference,
-  after separating out what agents can test or measure, as described below.
-  Apply an already settled preference without asking again.
+- An unresolved subjective preference on taste or design, once agents have
+  separated out what they can test or measure, as described below. Apply a
+  settled preference without asking again.
 - A serious unexpected event or issue that is unrecoverable or has wide or
   deep effects, even if part of it can be recovered. For other recoverable
-  issues, decide whether to consult according to the level.
+  issues, the level decides whether to consult.
 - Projected costs beyond the agreed limits. When costs were not discussed,
   the limit is **zero/free**. Ask before incurring the increase, not after.
 
@@ -76,8 +75,7 @@ approval, which an overseer may give only within the scope the user agreed,
 `pair-program`'s per-increment approval, or `three-tiered-plan`'s
 confirmation), explicit human checkpoints, permission requirements or the
 rules under Authority. A workflow skill may require an explicit grant before
-high autonomy takes effect, as `overseer` does. Hold affected work while an
-answer is pending and continue independent work. Use already authorized
+high autonomy takes effect, as `overseer` does. Use already authorized
 containment when needed to prevent further harm.
 
 ### Test measurable behavior before escalating
@@ -86,29 +84,27 @@ containment when needed to prevent further harm.
 Separate testable behavior from subjective preference, including when both
 appear in one review item. At medium and high autonomy, err toward having
 agents script, test and benchmark the measurable part, fix problems within
-scope, and verify the result without asking for manual evaluation or making
-it a user review gate. Filter delegated agents' review requests before
+scope and verify the result, without asking the user for manual evaluation
+or making it a review gate. Filter delegated agents' review requests before
 relaying them; an agent calling something subjective does not make it so.
 
-For example, zoom, pan and drag smoothness should be evaluated with
-representative interactions and P50/P75/P95/P99 frame times, dropped frames
-and relevant latency, against agreed targets on the relevant browsers and
-available hardware. Reuse existing benchmarks and record their conditions
-and limits. Do not ask "does it feel smooth on your laptop?" when a scripted
-benchmark can answer the performance question. At low autonomy, invite an
-optional hands-on trial when the user wants involvement; agents still own
-objective verification rather than replacing it with the user's impression.
+For example, evaluate zoom, pan and drag smoothness with representative
+interactions and P50/P75/P95/P99 frame times, dropped frames and relevant
+latency, against agreed targets on the relevant browsers and available
+hardware. Reuse existing benchmarks and record their conditions and limits.
+Do not ask "does it feel smooth on your laptop?" when a scripted benchmark
+can answer the performance question. At low autonomy, invite an optional
+hands-on trial when the user wants involvement; agents still own objective
+verification, and the user's impression doesn't replace it.
 
 Escalate only the remaining preference or product tradeoff that the evidence
-cannot settle, or another mandatory consultation. Metrics and functional
-tests must support the claim: a working shortcut does not establish
-discoverability, nor does counting keystrokes alone prove a picker is faster
-for users. Use suitable evidence and keep unproven claims qualified. If
-required hardware or access is unavailable, report that concrete limit and
-ask only for the necessary access or bounded action; do not relabel the gap
-as a taste question. Obtain permission for checks that would disrupt the
-user's machine. Keep routine measurement in the work evidence and normal
-progress reports, without generating extra user decisions.
+cannot settle, or another mandatory consultation. The evidence must fit the
+claim: a working shortcut does not establish discoverability, nor does
+counting keystrokes alone prove a picker is faster for users. Keep unproven
+claims qualified. If required hardware or access is unavailable, report that
+concrete limit and ask only for the necessary access or bounded action; do
+not relabel the gap as a taste question. Keep routine measurement in the work
+evidence and normal progress reports; it creates no extra user decisions.
 
 ## Record the user's decisions
 
@@ -124,9 +120,9 @@ item or thread. A rule nobody asked them about is Proposed, not theirs.
   as `AskUserQuestion`. Never substitute a prose questionnaire. Never re-send
   a dialog unchanged.
 - Facts the environment can settle, and anything measurable, are yours to
-  find. Ask only for decisions, unresolved taste, and knowledge only the user
-  holds. Test the measurable part of look and feel before calling it taste,
-  as Autonomy › Test measurable behavior before escalating describes.
+  find. Ask only for decisions, knowledge only the user holds, and taste
+  still unresolved after Autonomy › Test measurable behavior before
+  escalating.
 - Make each question self-contained: context, options with their consequences
   for results, effort, risk and what gets postponed, and a recommendation with
   its evidence. Batch questions that come due together.
@@ -138,26 +134,24 @@ item or thread. A rule nobody asked them about is Proposed, not theirs.
 - Use one persistent reviewer for the job and reuse it across increments,
   chunks and phases. A review notification, an unacknowledged draft or
   silence is not review.
-- Agree the materiality bar up front. A material finding makes the outcome
-  wrong, unsafe, lossy or short of its acceptance criteria. Verify each
-  finding against the source and record it as material, optional or rejected,
-  with the reason. Fix material findings; batch optional ones for the user as
-  deferrals instead of fixing them in the loop, since each extra change gives
-  the next review more to find. Output from extra one-shot reviews, such as a
-  user-requested `/code-review`, goes through the same triage.
-- Recall-oriented reviewers always find something, so "the review returned
-  nothing" is never a stop condition. End loops on materiality.
+- Agree the materiality bar up front; loops end on materiality, never on an
+  empty review, as the user's global instructions say. A material finding
+  makes the outcome wrong, unsafe, lossy or short of its acceptance criteria.
+  Verify each finding against the source and record it as material, optional
+  or rejected, with the reason. Fix material findings; batch optional ones for
+  the user as deferrals instead of fixing them in the loop, since each extra
+  change gives the next review more to find. Triage output from extra
+  one-shot reviews, such as a user-requested `/code-review`, the same way.
 - After each round, add one ledger line with its material and total finding
-  counts beside the previous round's. Whether to ask the user before another
-  round follows the review-trend rule in the user's global instructions,
-  which judges the trend per change. An agent the user granted high
-  autonomy, such as an overseer, approves repair and review rounds itself and
-  reports the trend afterward, except for a finding that undermines an
-  earlier choice, which still goes to the user. When the same finding returns
-  after its fix, it stops patching and has the design reassessed right away
-  instead of asking the user. A finding that challenges the design's altitude, or invalidates the
-  effort, risk or simplicity estimate behind a user's choice, reopens that
-  choice: ask before the next round.
+  counts beside the previous round's. The review-trend rule in the user's
+  global instructions decides when to ask the user before another round. An
+  agent the user granted high autonomy, such as an overseer, approves repair
+  and review rounds itself and reports the trend afterward. A finding that
+  undermines an earlier choice still goes to the user; when the same finding
+  returns after its fix, that agent stops patching and has the design
+  reassessed right away instead of asking. A finding that challenges the
+  design's altitude, or invalidates the effort, risk or simplicity estimate
+  behind a user's choice, reopens that choice: ask before the next round.
 - "Reviewed" and "accepted" name the revision the reviewer saw. Commits after
   it are "not re-reviewed" until the reviewer sees them, including a fix for
   the reviewer's own finding. Check the reviewer's last verdict against the
@@ -175,8 +169,8 @@ design reassessed (which code owns the behavior, which invariants hold, the
 simplest change that satisfies them) or escalate with the hypotheses ruled out
 and the next discriminating experiment. Repair resumes from that
 reassessment. A contract may set a different threshold for its workload.
-Findings on a new increment don't count toward this one. Local passing tests
-don't resolve a failing end-to-end reproducer, and an approach doesn't run
+Findings on a new increment start a new count. Passing local tests don't
+resolve a failing end-to-end reproducer, and an approach doesn't run
 past its agreed stop condition.
 
 ## Evidence
@@ -196,14 +190,14 @@ past its agreed stop condition.
   expectation changed does not show a product regression, and a measurement
   must name the element or quantity the requirement is about. A criterion
   resting only on another agent's report is "reported, not checked".
-- Gates are pass/fail. A proof that is unmet stays unmet and its gate stays
-  unticked, even when the rest of the work is done. A deferral names the later
-  gate it moves to, what remains unproven, and the evidence required there.
-  Reusing earlier evidence, substituting a check or moving a required proof to
-  a later gate needs the user's approval unless already agreed. A change made conditional on a
-  measurement is adopted only when the measurement meets the gate; if it is
-  unmet or unmeasured, report it as unmet and ask instead of adopting it. Never
-  weaken acceptance silently.
+- Gates are pass/fail. An unmet proof stays unmet and its gate unticked, even
+  when the rest of the work is done. A deferral names the later gate it moves
+  to, what remains unproven, and the evidence required there. Reusing earlier
+  evidence, substituting a check or moving a required proof to a later gate
+  needs the user's approval unless already agreed. Adopt a change made
+  conditional on a measurement only when the measurement meets the gate; if
+  it is unmet or unmeasured, report it as unmet and ask instead. Never weaken
+  acceptance silently.
 
 ## Work states
 
@@ -224,7 +218,7 @@ subtasks or a passing subset of tests don't make a milestone complete.
 
 - Put most behavioral coverage in fast unit tests, fewer integration tests on
   contracts, and a small end-to-end set for critical journeys. Judge the
-  pyramid by runtime as well as count, without a fixed ratio. Challenge
+  pyramid by runtime as well as count, with no fixed ratio. Challenge
   redundant higher-layer tests, oversized fixtures and repeated expensive
   setup as readily as missing coverage.
 - Carry the routine-check command, its wall-clock budget, the stable accepted

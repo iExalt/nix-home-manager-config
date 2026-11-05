@@ -30,17 +30,16 @@ transient states such as "Posting…" can be captured and inspected.
 Every component and screen gets these where they can occur: default, hover, focus, active,
 disabled, loading, empty, error, success, and partial or permission-limited.
 
-- **Loading.** Name the real operation ("Loading your projects…"). Use skeletons that mirror the
-  final layout exactly instead of a spinner in the middle of content. Add a short show-delay
-  (~150–300 ms) and a minimum visible time (~300–500 ms) so fast responses do not flicker. Show
-  determinate progress when it is available; never invent progress. Time estimates for long
-  operations.
+- **Loading.** Label it per [copy.md](copy.md). Use skeletons that mirror the final layout
+  exactly instead of a spinner in the middle of content. Add a short show-delay (~150–300 ms) and a
+  minimum visible time (~300–500 ms) so fast responses do not flicker. Show determinate progress
+  when it is available; never invent progress. Give time estimates for long operations.
 - **Empty.** Distinguish first use, no results, filtered-to-nothing, no permission, and failure.
   Each explains what will be here, why it matters, and the next useful action. "Nothing here" is a
   dead end.
-- **Error.** Say what failed, why when known and useful, and how to recover. Keep the user's input.
-  Offer retry where retry can work. Show errors next to their source, and never block the whole
-  interface because one component failed.
+- **Error.** Word it per [copy.md](copy.md) › Errors. Keep the user's input. Offer retry where
+  retry can work. Show errors next to their source, and never block the whole interface because one
+  component failed.
 - **Success.** Confirm the completed outcome briefly; mention the next consequence only when it
   changes what the user should do.
 - **Disabled and permission-limited.** Explain why something is unavailable and how to get access,
@@ -85,17 +84,15 @@ disabled, loading, empty, error, success, and partial or permission-limited.
 - Format dates, times, numbers, and currencies with `Intl.DateTimeFormat` and `Intl.NumberFormat`
   for the user's locale; detect language from `navigator.languages` or `Accept-Language`, never IP.
 - Pluralize with an i18n library, not `count !== 1 ? 's' : ''`.
-- Write complete translatable messages rather than concatenated fragments.
 - Wrap brand names, code tokens, and identifiers in `translate="no"`.
 
 ## First run and onboarding
 
 - **Time to value.** Get the user to their first meaningful result as fast as possible; teach
   through the task, not walls of text.
-- **Make it optional.** Power users skip tours; never force an unskippable walkthrough.
-- **Context over ceremony.** Explain a feature where and when it is used, not in an upfront tour.
-- **Empty states teach.** The first empty state is often the best onboarding surface: show what will
-  appear, why it matters, and one clear action to start.
+- **Tours and help** follow SKILL.md › Conflicts › Help and onboarding.
+- **Empty states teach.** The first empty state is often the best onboarding surface; build it as
+  Empty above describes.
 
 ## Verify
 
