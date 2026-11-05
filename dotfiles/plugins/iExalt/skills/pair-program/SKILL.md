@@ -54,8 +54,9 @@ If the boundary is unclear, investigate first and propose a bounded item.
 
 ## Approval rules
 
-- Accept clear approval such as "approved", "go ahead", or an unambiguous
-  instruction to implement the proposed increment.
+- Ask for approval through the question dialog, as `working-conventions` ›
+  Ask the user describes, offering approval or revision, with free text for
+  steering. A clear approval typed in chat, such as "go ahead", also counts.
 - Treat questions, suggested alternatives, partial agreement, and manual edits
   as navigation, not approval. Answer or revise the proposal and ask again.
 - Approval covers only the stated increment and verification. Obtain fresh

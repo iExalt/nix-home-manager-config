@@ -116,10 +116,10 @@ item or thread. A rule nobody asked them about is Proposed, not theirs.
   beside the previous round's. An agent the user granted high autonomy, such
   as an overseer, approves repair and review rounds itself and reports the
   trend afterward. When the same finding returns after its fix, that agent
-  has the design reassessed instead of patching again. A finding that
-  undermines an earlier choice of the user's, including its altitude or the
-  effort, risk or simplicity estimate behind it, goes to the user before the
-  next round.
+  has the design reassessed instead of patching again; failing checks follow
+  Repeated failure. A finding that undermines an earlier choice of the
+  user's, including its altitude or the effort, risk or simplicity estimate
+  behind it, goes to the user before the next round.
 - "Reviewed" and "accepted" name the revision the reviewer saw. Commits after
   it are "not re-reviewed" until the reviewer sees them, including a fix for
   the reviewer's own finding. Check the reviewer's last verdict against the
@@ -136,7 +136,8 @@ repair exposes a new failure in the same interaction, stop patching. Have the
 design reassessed (which code owns the behavior, which invariants hold, the
 simplest change that satisfies them) or escalate with the hypotheses ruled out
 and the next discriminating experiment. A contract may set a different
-threshold for its workload. Findings on a new increment start a new count.
+threshold for its workload. Failures on a new increment start a new count.
+A review finding that returns after its fix follows Review loops instead.
 Passing local tests don't resolve a failing end-to-end reproducer, and an
 approach doesn't run past its agreed stop condition.
 
