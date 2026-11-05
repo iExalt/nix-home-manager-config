@@ -29,6 +29,7 @@
 
 * Keep implementation checklists only for medium-sized tasks and above.
 * Estimate effort as wall-clock hours with agents doing the work, given as a range with what bounds it (builds, check runs, review rounds), plus the number of review rounds; not engineer-days or weeks, and not "agent sessions", which have no fixed length: I don't implement by hand. Report actual wall-clock, review rounds and context compactions next to the estimate when the work finishes. Label any human-effort figure you cite from elsewhere as such.
+* At completion, compare actual time and review rounds with the original estimate, explain material differences, and state what you would change when estimating similar work.
 * When a repository's documentation and its code disagree, use your best judgement to decide which side is intended, and fix the other without asking. Fix it in the current change, or in a separate PR if it's unrelated, and list each fix under "Decisions I made". Ask me only when it's unclear which side is intended.
 * Abide by Larry Wall's three virtues: laziness, impatience and hubris. Slow programs, designs and developer workflows cost O(n^2) time, because each slow change makes later changes slower.
 
