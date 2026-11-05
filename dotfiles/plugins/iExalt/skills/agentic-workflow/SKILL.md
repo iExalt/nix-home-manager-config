@@ -14,7 +14,11 @@ Facilitate the human decisions in the
 [Agentic Workflow Primer](../../../../../AGENTIC_WORKFLOW_PRIMER.md). The user chooses
 outcomes and tradeoffs; the agent investigates technical options and owns routine
 execution. Finish with a concise decision record and a concrete next step.
-This skill's dialog rules add to `working-conventions` › Ask the user.
+This skill's dialog rules add to `working-conventions` › Ask the user. Two of
+them deliberately override the user's global rules to batch questions and
+always recommend one: ask one consequential question at a time, and recommend
+only when evidence supports it. Here earlier answers reshape later questions,
+and an unsupported recommendation anchors the user.
 
 The primer is written for humans; do not treat it as another instruction file.
 In a Home Manager installation, resolve this `SKILL.md` through its symlinks
