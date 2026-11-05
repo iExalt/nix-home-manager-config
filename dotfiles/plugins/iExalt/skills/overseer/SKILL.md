@@ -1,6 +1,6 @@
 ---
 name: overseer
-description: "Oversee one or more threads of a three-tiered-plan script, or workstreams in the repository's tracker, as a dedicated orchestrator: once the user agrees to the plan, run the agreed scope to its end autonomously, launching worker sessions that run keep-me-in-the-loop (Paseo agents through the paseo CLI when running in Paseo, otherwise new Claude Code or Codex sessions), enforcing the script's dependencies, routing every human intervention through yourself to the user, and keeping them in the loop with concise status updates. Use when the user wants script threads run while they are away from the keyboard; not for writing the script (use three-tiered-plan) or for running one thread in this session (use keep-me-in-the-loop)."
+description: "Run threads of a three-tiered-plan script, or tracker workstreams, to the end of the agreed scope as a dedicated orchestrator: launch worker sessions that run keep-me-in-the-loop (Paseo agents in Paseo, otherwise Claude Code or Codex sessions), enforce dependencies, route every human intervention to the user and send concise updates. Use when the user wants script threads run while they are away from the keyboard; not for writing the script (three-tiered-plan) or running one thread in this session (keep-me-in-the-loop)."
 ---
 
 # Overseer

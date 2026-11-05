@@ -1,6 +1,6 @@
 ---
 name: frontend-dogfood
-description: "QA a finished web or PWA interface the way this user would: a fresh tester subagent uses the running app like a person on desktop, tablet, and phone, judges it against the user's recorded taste profile, measures feel instead of guessing, and reports evidence-backed findings; the main agent then verifies, fixes, and hands over only what needs human judgment. The default focused mode reports the few problems that would bother the user most in about 45 minutes; pedantic mode ('pedantic', 'thorough', 'find everything') hunts every defect, big or small. Use after a UI is built or changed and before showing it to the user, whenever asked to dogfood, QA, smoke-test, click through, try out, or 'use it like a user', and at the end of frontend-design work. Not for designing or building UI (frontend-design) or for CLIs."
+description: "QA a finished web or PWA interface the way this user would: a fresh tester subagent uses the running app on desktop, tablet and phone, judges it against the user's taste profile and reports evidence, and the main agent verifies, fixes and hands over only judgment calls. Focused by default; pedantic mode ('pedantic', 'thorough', 'find everything') hunts every defect. Use after a UI is built or changed and before showing it, when asked to dogfood, QA, smoke-test, click through or 'use it like a user', and at the end of frontend-design work. Not for building UI or for CLIs."
 ---
 
 # Frontend Dogfood

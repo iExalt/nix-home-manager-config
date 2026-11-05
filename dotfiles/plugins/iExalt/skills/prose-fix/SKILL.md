@@ -1,6 +1,6 @@
 ---
 name: prose-fix
-description: "Rewrite or review prose so it reads like a specific writer with something to say, removing AI-writing patterns without changing meaning or inventing facts. Use when editing, reviewing, or drafting reader-facing text that feels generic, inflated, formulaic, or AI-shaped: docs, READMEs, agent skills and prompts, PR descriptions, commit messages, emails, Slack replies, essays, launch copy, and similar. Distills blader/humanizer, addyosmani/clarity, andreaskonopka/humanizer, and hardikpandya/stop-slop."
+description: "Rewrite, review or draft prose so it reads like a specific writer, removing AI-writing patterns without changing meaning or inventing facts. Use on reader-facing text that feels generic, inflated or formulaic: docs, READMEs, skills and prompts, PR descriptions, commit messages, reports, emails, chat replies, essays and launch copy."
 ---
 
 # Prose Fix

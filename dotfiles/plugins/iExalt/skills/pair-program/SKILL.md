@@ -1,6 +1,6 @@
 ---
 name: pair-program
-description: "Work as the implementation pilot in a user-guided pair-programming session: inspect the codebase, propose small changes, wait for navigator approval before editing, implement and verify the approved increment, then teach the code through a detailed walkthrough before proposing the next increment. Use when the user asks to pair program, act as navigator while the agent codes, approve changes incrementally, understand each implementation step, or work through a feature, fix, refactor, migration, or test change interactively."
+description: "Pair program with the user as navigator: propose small increments, edit only after their approval, verify, then walk them through the code before proposing the next. Use when the user asks to pair program, approve changes incrementally, or understand each step of a feature, fix, refactor or test change. For delegated work without per-increment approval, use subagent-pair-program."
 ---
 
 # Pair Program
