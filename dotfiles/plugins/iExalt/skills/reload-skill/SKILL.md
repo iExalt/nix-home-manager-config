@@ -40,14 +40,12 @@ revision or content fingerprint, optional diff summary, and this instruction:
 > Acknowledge which revision you read, any impact on your work, and whether
 > downstream reloads are complete or blocked.
 
-Use one reload identifier for this propagation, such as the source path plus
-content hash. Each agent processes it once and, when forwarding, excludes the
-sender and recipients that already acknowledged, so peer links cannot loop. If
-another change lands during propagation, refresh against the new content under
-a new identifier. Each delegating agent collects its downstream
-acknowledgments and reports them to its first sender. For a duplicate request,
-acknowledge the local reread and name that first sender, without waiting on or
-creating another downstream dependency, so peer cycles cannot deadlock.
+Tag the request with one reload identifier, such as the source path plus
+content hash, and process each identifier once: forward it to affected
+collaborators other than the sender, collect their acknowledgments and report
+them to the first sender, and answer a duplicate with only your local reread,
+so peer links cannot loop or deadlock. A change that lands mid-propagation
+starts a new reload under a new identifier.
 
 Wait for affected collaborators to acknowledge the reread before relying on
 their skill-dependent output; independent work may continue. For inaccessible
