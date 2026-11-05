@@ -1,6 +1,6 @@
 ---
 name: frontend-design
-description: "Design, build, critique, and refine usable, accessible, good-looking frontends with the agent supplying the design judgment and the user supplying goals and feedback. Use whenever work touches a user interface: new apps, pages, dashboards, components, forms, settings, onboarding, empty or error states, and agent or chat UIs that show progress, approvals, cancel, and retry; also for UX review, accessibility or responsive audits, visual polish, UX copy, and recording design conventions in DESIGN.md. Use even when the request mentions only a feature and the UI is incidental. Merges Impeccable, Vercel's Web Interface Guidelines, and Anthropic's frontend-design."
+description: "Design, build, critique, and refine usable, accessible, good-looking frontends with the agent supplying the design judgment and the user supplying goals and feedback. Use whenever work touches a user interface: new apps, pages, dashboards, components, forms, settings, onboarding, empty or error states, and agent or chat UIs that show progress, approvals, cancel, and retry; also for UX review, accessibility or responsive audits, visual polish, UX copy, and recording design conventions in DESIGN.md. Use even when the request mentions only a feature and the UI is incidental."
 ---
 
 # Frontend Design
@@ -24,19 +24,16 @@ rather than templated.
   copy, and everything outside scope. Ask before replacing factual copy or adding claims.
 - **Real content, never invented claims.** Use realistic data at real ranges. Label illustrative
   values as samples and never invent prices, customers, metrics, or capabilities.
-- **Loaded symbols stay out of the decoration.** A subject's world does not license emblems tied
-  to militarism, supremacy, or hate movements as motifs, badges, or ornament, such as the Rising
-  Sun flag's rays, the Confederate battle flag, or Nazi-era insignia and their stylised variants;
-  reach for that world's neutral forms instead. Content that documents such a symbol as fact stays
-  as it is.
+- **Loaded symbols stay out of the decoration.** Never use emblems tied to militarism, supremacy,
+  or hate movements, or their stylised variants (such as the Rising Sun flag's rays), as motifs,
+  badges, or ornament, even when the subject's world suggests them. Content that documents such a
+  symbol as fact stays as it is.
 - **Verify by looking.** Code review alone is not verification. Inspect the rendered result at the
   sizes it ships at and exercise the interactions.
 - **Finish the job.** Every state the flow can reach is designed, not just the happy path.
-- **One product across devices.** Keep look-and-feel and feature coverage the same, or as close
-  as practical, across desktop, tablet, and phone. Adapt layout and controls to real viewport and
-  input constraints (touch is not normally expected on desktop), while preserving equivalent
-  task outcomes. A smaller screen alone is not a reason to drop a feature. Record necessary
-  differences and their rationale in DESIGN.md.
+- **One product across devices.** Keep look-and-feel and features the same across desktop,
+  tablet, and phone, adapting layout and controls to each viewport and input; a smaller screen
+  alone is not a reason to drop a feature. Record necessary differences in DESIGN.md.
 
 ## Modes
 
@@ -45,7 +42,7 @@ because a tool's landing page is Persuade while its settings screen is Operate.
 
 - **Operate:** the user completes a task (app UI, dashboards, agent consoles, admin, settings,
   tools). Scanability, consistency, and familiar patterns outrank expression; brand lives in precise
-  details. Most agentic projects are mainly this.
+  details.
 - **Read:** the user understands something (docs, reports, changelogs, run summaries). Structure
   for comprehension, then make reading pleasant.
 - **Persuade:** the user decides and acts (landing pages, marketing, pricing). Earn attention with
@@ -57,8 +54,7 @@ Read show ambition through precision and restraint.
 
 ## Workflow
 
-Track these steps in a short checklist for medium-sized work and above. For a narrow fix
-inside an established design, start at step 3 with the existing conventions.
+For a narrow fix inside an established design, start at step 3 with the existing conventions.
 
 ### 1. Establish users and tasks
 
@@ -93,8 +89,8 @@ agreed decisions in DESIGN.md ([references/design-record.md](references/design-r
 
 When the user must pick between visual alternatives (directions, mockups, competing builds or
 skill outputs), follow the judging rule in your global instructions; the judge also drops any that
-fail the craft floor, accessibility or the brief. Show the survivors as same-scale images with
-realistic data, not prose descriptions, each with a one-line tradeoff, plus your recommendation.
+fail the craft floor, accessibility or the brief. Show them as same-scale images with realistic
+data, not prose descriptions.
 
 When no user can answer (a delegated or autonomous run), mark each assumption plainly in the
 brief, with the option you chose. If your instructions authorize implementation, also record the
@@ -120,24 +116,19 @@ Build one flow end to end before broadening. Read the "Craft floor" in
 ### 4. Verify in a browser
 
 Run the app and drive it with browser automation: Playwright, a browser MCP, or the harness's
-browser tools. [scripts/browser_check.py](scripts/browser_check.py) handles the repeatable part. It
-serves a static build or targets a running URL, screenshots named states at each width, runs
-reduced-motion and 200%-zoom passes on the first (key) state, counts Tab presses to a target
-control, and reports HTTP errors, failed requests, console errors, and horizontal overflow. Install
-its browser once with `mise exec -- uv run <skill-dir>/scripts/browser_check.py --install-browser`;
-`--help` explains the options for SPAs, late-loading or transient states, expected error statuses,
-streaming UIs, and controls that move between widths. Narrow widths emulate a phone (viewport meta
-tag, touch, coarse pointer). Script the app-specific interactions separately. Give transient
-states (posting, slow loads) a URL or fixture switch so they stay on screen long enough to capture.
-Ask before anything that would disrupt the user's machine, such as installing system browsers,
-taking over their open browser, or binding common ports.
+browser tools. [scripts/browser_check.py](scripts/browser_check.py) handles the repeatable part:
+screenshots of named states at each width (1440, 820, and 375 by default; widths up to 1024 get a
+touch context), reduced-motion and 200%-zoom passes on the first (key) state, a Tab walk to a target
+control, and HTTP, console, and overflow problems. Install its browser once with
+`mise exec -- uv run <skill-dir>/scripts/browser_check.py --install-browser`; `--help` lists the
+options. Script the app-specific interactions separately. Give transient states (posting, slow
+loads) a URL or fixture switch so they stay on screen long enough to capture.
 
 - **Widths:** desktop (about 1440px), tablet (about 820px), and phone (about 375px), plus any width
-  where the layout changes. Check 200% zoom on key screens (headless: half the CSS width at 2x density).
+  where the layout changes. Check 200% zoom on key screens.
 - **Across devices:** compare matching screens and states with the same data and theme, and
-  complete the same tasks on each supported form factor. Check visual identity, terminology,
-  navigation, available actions, and outcomes; report unexplained drift or missing capabilities.
-  Distinguish justified viewport/input adaptations from defects and name any untested device.
+  complete the same tasks on each supported form factor. Report unexplained drift or missing
+  capabilities, and name any untested device.
 - **Keyboard:** Tab through the whole task. Focus must be visible, in a logical order, and never
   hidden behind sticky elements; check traps against Conflicts › Focus traps. Escape closes
   overlays, Enter submits, and focus moves sensibly when dialogs open and close.
@@ -145,14 +136,12 @@ taking over their open browser, or binding common ports.
   empty, and long-data fixtures. Watch the console for errors.
 - **Preferences:** reduced motion, and dark mode if the product supports it.
 - **Accessibility tree:** check that controls have names and roles. Run an automated checker such
-  as axe if one is available; it catches only a subset of problems, so the manual pass still
-  matters.
+  as axe if one is available, as well as the manual pass.
 
-Look at every screenshot you take; a screenshot nobody inspected proves nothing. Batch your fixes
+Look at every screenshot you take. Batch your fixes
 between looks. A visual fix, such as CSS added after a screenshot showed a problem, is not done
 until a new screenshot shows it fixed; if you can't take one, say so in the report. Save screenshots
-of the final states in the project (for example `design/screenshots/`), not only in /tmp, and report
-what was not verified.
+of the final states in the project (for example `design/screenshots/`).
 
 ### 5. Critique, audit, and fix
 
@@ -162,7 +151,7 @@ P2 and P3 items briefly instead of burying the user in them.
 
 Then, before showing the user a built or changed UI, run the `frontend-dogfood` skill when it is
 installed: a fresh tester uses the running app the way this user would, and you fix or file what it
-finds. Your own checks here are the developer's; dogfood is the independent QA pass.
+finds.
 
 ### 6. Iterate and preserve consistency
 
@@ -173,70 +162,22 @@ should change everywhere. Record agreed conventions and the feedback behind them
 later sessions stay consistent. Before adding a new screen, reuse the established patterns rather
 than inventing new ones.
 
-Learn from feedback throughout this skill's use, including briefs and visual alternatives, not
-only after a dogfood pass. For feedback that reveals a reusable personal preference, read the
-shared [taste profile](../frontend-dogfood/references/taste-profile.md) and propose an addition or
-revision:
-the principle, the user's own words as the receipt, its scope and strength of evidence, and a
-concrete probe that would catch a violation. Do not turn a one-off product choice into a universal
-rule. If feedback contradicts an existing rule or dismisses a finding it predicted, propose
-narrowing or removing that rule. Show the proposed lines and edit the profile only after the user
-approves; a UI change request alone does not approve a shared-profile edit. Coordinate with
-frontend-dogfood so the same feedback is recorded once.
+Learn from feedback throughout, not only after a dogfood pass. When it reveals a reusable personal
+preference, propose a taste-profile addition or revision as frontend-dogfood › Learn from the
+user's review describes, with its scope and strength of evidence, and record each piece of feedback
+once. Edit the profile only after the user approves the proposed lines; a UI change request alone
+is not approval.
 
 ## Agentic interfaces
 
-When the UI fronts an agent or any long-running automated work, the user must always be able to
-answer five questions at a glance.
-
-**What is the agent doing?**
-- Show a clear run state: queued, running, waiting for you, done, failed, cancelled. Use text and
-  icon, not color alone.
-- Show the current step in plain language ("Reading 3 files", not a tool name or raw JSON), with
-  elapsed time. Show determinate progress only when it is real.
-- Stream meaningful progress, but keep raw logs, tool calls, and reasoning one click away. Don't
-  put them in the main path.
-- Announce state changes politely to assistive tech (`aria-live="polite"`) without announcing every
-  token.
-- Run state survives reload and navigation. A long run must not depend on the tab staying open.
-
-**What needs my attention?**
-- Requests for approval or input get a distinct, consistent treatment, and you can find them from
-  anywhere: a badge, an attention list, or a notification when the user is elsewhere.
-- An approval states exactly what will happen, what it affects, and whether it can be undone, with
-  specific action labels ("Delete 12 files", "Send email to 3 recipients"). Approve and deny are
-  keyboard-reachable, with default focus on the safe choice (Conflicts › Destructive actions).
-- Separate "needs you" from "FYI". Too many interruptions train users to approve without reading.
-
-**How do I stop it?**
-- Cancel or Stop is visible and reachable by keyboard whenever work is in progress, never hidden in
-  a menu.
-- Stopping takes effect right away in the UI ("Stopping…" then "Stopped") and reports honestly what
-  already happened and what did not, especially side effects that cannot be reversed.
-
-**What changed?**
-- End each run with a summary of outcomes: files changed, records created, messages sent, cost or
-  usage where relevant. Link to the details (diffs, artifacts, logs).
-- Show changes as diffs or before/after comparisons when the user must review them. Offer undo or
-  revert where the system supports it.
-- Distinguish agent-made changes from user-made ones, and show when each happened.
-
-**What happens if I retry?**
-- Say whether retry resumes, starts over, or repeats side effects ("Retry will send the email
-  again"). Preserve the user's input and prior output across retries.
-- Errors say what failed, what was completed before the failure, and the safe next action.
-- When retry, edit-and-rerun, and branch all exist, name them distinctly and keep earlier runs
-  inspectable.
-
-Prefer purpose-built views (status lists, review queues, diff viewers, forms) over making the chat
-transcript the only interface for structured work. Avoid anthropomorphic filler ("I'm thinking
-really hard!"). Precise status builds more trust than personality.
+When the UI fronts an agent or any long-running automated work, read
+[references/agentic-interfaces.md](references/agentic-interfaces.md) before drafting the brief. The
+user must always be able to see what the agent is doing, what needs their attention, how to stop it,
+what changed, and what retry will do.
 
 ## Conflicts
 
-This section is the single authority wherever the sources or references disagree. References keep
-upstream wording and point here with a one-line `Override: see SKILL.md › Conflicts › <rule>` note.
-Change a rule here, not at the pointer.
+This section is the single authority wherever the sources or references disagree.
 
 - **Contrast:** WCAG 2.2 AA (4.5:1 text, 3:1 large text and UI components) is the pass/fail floor.
   APCA is optional extra guidance.
@@ -279,8 +220,6 @@ Change a rule here, not at the pointer.
   outline. Use one only when the user's brief names it, or when the established design (DESIGN.md
   or the existing code) already uses it, which includes a world the user chose, such as
   neobrutalism or a blueprint canvas. Never introduce one because the subject suggests it.
-- **Distinctiveness:** on Operate surfaces, familiarity wins; spend boldness on one memorable
-  detail, not on unfamiliar controls. Read surfaces follow Modes › Read.
 - **Radii and brief:** Craft floor values (such as 12–16px card radii, pills only for small
   controls) are defaults for when the design leaves them open. A pinned brief or established
   design overrides them; Conflicts rules still apply.
@@ -292,6 +231,7 @@ Change a rule here, not at the pointer.
 | [references/visual-direction.md](references/visual-direction.md) | Choosing or changing a visual direction; skim "Craft floor" before UI edits |
 | [references/states-and-edge-cases.md](references/states-and-edge-cases.md) | Building or hardening a flow; seeding fixtures |
 | [references/copy.md](references/copy.md) | Writing labels, errors, empty states, or any UI text |
+| [references/agentic-interfaces.md](references/agentic-interfaces.md) | The UI fronts an agent or long-running automated work |
 | [references/web-interface-guidelines.md](references/web-interface-guidelines.md) | Building forms, motion, or navigation; reviewing finished UI |
 | [references/critique.md](references/critique.md) | Step 5, or whenever the user asks for a review or audit |
 | [references/design-record.md](references/design-record.md) | Creating or updating DESIGN.md |
