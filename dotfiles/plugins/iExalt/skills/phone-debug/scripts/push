@@ -13,19 +13,22 @@ fi
 store="${PASEO_HOME:-$HOME/.paseo}/push-tokens.json"
 [[ -r $store ]] || { print -u2 "no push-token store at $store"; exit 1; }
 
-# Pick the newest subscription that hasn't expired. expiresAt is an ISO 8601
-# timestamp; epoch seconds or milliseconds and absence are tolerated too.
+# Pick the most recently renewed subscription that hasn't expired. Paseo sets
+# expiresAt to renewal time plus a fixed lease, so the latest expiry is the
+# newest. expiresAt is an ISO 8601 timestamp; epoch seconds or milliseconds
+# and absence (sorted as oldest) are tolerated too.
 token=$(jq -r --argjson now "$(date +%s)" '
   def epoch: if type == "string" then sub("\\.[0-9]+Z$"; "Z") | fromdateiso8601
              elif . > 1e12 then . / 1000 else . end;
   [.subscriptions[]?
    | select(.token | startswith("ExponentPushToken["))
    | select(.expiresAt == null or (.expiresAt | epoch) > $now)]
-  | last | .token // empty' "$store")
+  | sort_by(.expiresAt // 0 | epoch) | last | .token // empty' "$store")
 [[ -n $token ]] || { print -u2 "no unexpired Expo push token in $store"; exit 1; }
 
-response=$(jq -n --arg to "$token" --arg title "$1" --arg body "$2" \
-    '{to: $to, title: $title, body: $body, sound: "default", priority: "high"}' |
+# The token goes to jq through the environment, not argv, so ps can't show it.
+response=$(PUSH_TOKEN=$token jq -n --arg title "$1" --arg body "$2" \
+    '{to: $ENV.PUSH_TOKEN, title: $title, body: $body, sound: "default", priority: "high"}' |
   curl -sS --max-time 20 https://exp.host/--/api/v2/push/send \
     -H 'Accept: application/json' -H 'Content-Type: application/json' --data-binary @-)
 

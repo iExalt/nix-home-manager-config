@@ -14,16 +14,10 @@ way you found it.
 
 By invoking this skill, the user explicitly permits you to:
 
-- **use their Expo push token** from Paseo's push-token store
-  (`$PASEO_HOME/push-tokens.json`, normally `~/.paseo/push-tokens.json`) to
-  send push notifications to their phone. The only purpose is
-  telling them about the debugging session before, during and after it: that
-  you need the phone, how long for, that you need them (to unlock it, say),
-  and that you're done. Never use the token for anything else, never print it
-  in full in chat, logs or files, and never send it anywhere except Expo's
-  push API;
-- run adb against the phone outside the sandbox, because adb needs network
-  and USB access;
+- **use their Expo push token**, through `scripts/push` only, to tell them
+  about the debugging session before, during and after it: that you need
+  the phone, how long for, that you need them (to unlock it, say), and that
+  you're done. Never use the token for anything else;
 - change the screen timeout, lock timeout, stay-awake, rotation and Do Not
   Disturb settings for the session, provided the original values are
   restored at the end;
@@ -36,8 +30,7 @@ under the skill directory (for example
 `~/.codex/plugins/cache/iexalt/iExalt/1.0.0/skills/phone-debug/scripts/push`). The user's Claude and Codex
 configs allow that exact command. It reads the token itself and never prints
 it, so the token never enters your context. Don't read the token store
-directly. If the script is blocked anyway, ask the user rather than looking
-for a way around the check.
+directly.
 
 ## Before taking the phone
 
@@ -52,13 +45,12 @@ for a way around the check.
    has the phone. Wireless installs are slow: a 168 MB release APK took over
    5 minutes, against about 1 minute for a debug APK.
 4. **Time estimate.** Tell the user how long you need the phone, broken
-   into setup, the checks and teardown, and give the end time as UTC with
-   local time in parentheses (from `date`). If they set a time limit, it's a
-   hard limit. Without one, plan for a stint of about 10 minutes, which is
-   what the user usually lends, and your estimate is the limit. If the work
-   needs more than 10 minutes, split it into several stints. Record the
-   deadline and check `date` between steps. If you'll overrun, stop at a safe
-   point, restore the phone, and ask for more time.
+   into setup, the checks and teardown, and give the end time. If they set
+   a time limit, it's a hard limit. Without one, plan for a stint of about
+   10 minutes, and your estimate is the limit. If the work needs more than
+   10 minutes, split it into several stints. Record the deadline and check
+   `date` between steps. If you'll overrun, stop at a safe point, restore
+   the phone, and ask for more time.
 5. **Ask once for a device window.** Device go-aheads are among the user's
    most frequent and least consequential questions, so ask in one question
    for every stint the thread will need: how many, how long each, and the
@@ -76,8 +68,7 @@ for a way around the check.
 
 ## Connect
 
-Read `~/.config/phone-debug/environment.md` first for the devices' serial,
-Tailscale address and UDID (see "This user's setup").
+Read `~/.config/phone-debug/environment.md` first (see "This user's setup").
 
 Call the adb binary directly, outside the sandbox. The mise shim fails with
 "No version is set for shim: adb":
@@ -86,7 +77,7 @@ Call the adb binary directly, outside the sandbox. The mise shim fails with
 A=~/.local/share/mise/installs/android-sdk/23.0/platform-tools/adb   # or: mise exec android-sdk@23.0 -- adb
 $A connect <host>:<port>   # wireless only
 $A devices -l
-a() { $A -s <serial-or-host:port> "$@"; }   # a function, not D="-s x"; zsh won't word-split $D
+a() { $A -s <serial-or-host:port> "$@"; }
 ```
 
 Wireless debugging over the LAN (mDNS) has failed here, but it works over
@@ -107,7 +98,8 @@ value you remember isn't a baseline.
    ```zsh
    state=<repo-or-scratch-dir>/phone-settings-before.txt
    for k in "system screen_off_timeout" "secure lock_screen_lock_after_timeout" \
-            "global stay_on_while_plugged_in" "system accelerometer_rotation" "system user_rotation"; do
+            "global stay_on_while_plugged_in" "system accelerometer_rotation" "system user_rotation" \
+            "global zen_mode"; do
      print -r -- "$k=$(a shell settings get $k)"
    done | tee $state
    a shell settings put system screen_off_timeout 2147483647
@@ -132,8 +124,8 @@ value you remember isn't a baseline.
    Kill it at teardown. If the phone locks anyway (`mCurrentFocus` shows
    `NotificationShade`, or `isKeyguardShowing=true`), you can't unlock a PIN.
    Ask the user to unlock it, by push notification if they may be away.
-4. **Do Not Disturb.** Save `settings get global zen_mode` (0 means off),
-   then turn on priority-only DND with `a shell cmd notification set_dnd priority`
+4. **Do Not Disturb.** Turn on priority-only DND with
+   `a shell cmd notification set_dnd priority`
    (or `settings put global zen_mode 1`), so heads-up notifications can't
    cover the app under test. Send your own pushes before you enable DND or
    after you restore it, because DND may suppress them.
@@ -195,12 +187,8 @@ only with the user's go-ahead.
 
 ## Tell the user what's happening
 
-Run `<skill-dir>/scripts/push "<title>" "<body>"`. It picks the newest
-unexpired Expo token from the push-token store, posts to Expo's push API,
-prints Expo's response with the token redacted, and exits non-zero unless
-Expo says `ok`. Send a notification when you need the device, when you need
-the user (to unlock it, reconnect it, or give more time), and when you're
-done. Keep the text short and specific, for example
+Run `<skill-dir>/scripts/push "<title>" "<body>"`; it exits non-zero
+unless Expo accepts the push. Keep the text short and specific, for example
 `push "Phone free" "Done after 8 min; restored settings, back on Paseo."`.
 
 ## Hand the phone back
@@ -216,8 +204,9 @@ Do every step, even if the session failed or was cut short:
    `/data/local/tmp`. Uninstall the debug build unless the user wants to
    keep it.
 4. Return to the app that was in front at the start, and confirm with
-   `mCurrentFocus`. Bringing prod Paseo to the front is also the user's
-   agreed "done, or I need you" signal.
+   `mCurrentFocus`. The closing push in step 6 is the "done" signal. When
+   the starting app was prod Paseo, bringing it to the front is also the
+   user's agreed "done, or I need you" signal.
 5. Disconnect wireless adb: `$A disconnect <host>:<port>`.
 6. Send the done push notification, then tell the user in chat how long you
    had the phone, what you found, what was restored, and anything you left
@@ -225,100 +214,14 @@ Do every step, even if the session failed or was cut short:
 
 ## iOS tablet (iPad)
 
-The rules above apply to the iPad too, with the page under test in place of
-the app; tell the user what's happening through the Android phone's push
-notifications. Only wired (USB) iPad debugging has been proven. The user
-has one free port, so iPad and phone runs take turns. Say when the iPad run
-is done so they can swap the cable.
-
-**One-time setup on the iPad, done by the user:** trust this Mac
-("Trust This Computer?" plus the passcode, again after every replug that
-reports `device is not paired`). Then, under Settings → Apps → Safari →
-Advanced, turn on both **Remote Automation** (for safaridriver) and **Web
-Inspector** (for pymobiledevice3). They are separate switches.
-
-**What you can't do from the Mac, so ask the user:**
-- Auto-Lock, Do Not Disturb, brightness and rotation have no programmatic
-  control. Before the run, ask the user to set Auto-Lock to Never and
-  turn on Do Not Disturb, and note their original values so you can remind
-  them to set them back at the end.
-- For orientation checks, have the script wait (poll
-  `screen.orientation.type`) and ask the user to rotate once, rather than
-  asking for one rotation per check.
-
-**Check the iPad is there and unlocked** (run from `~`):
-
-```zsh
-xcrun devicectl list devices    # name, UDID, "available (paired)"
-xcrun devicectl device info lockState --device <UDID>
-```
-
-**Drive Safari with the built-in safaridriver** (W3C WebDriver over HTTP):
-
-- Before you start it, check the port with
-  `lsof -nP -iTCP:4723 -sTCP:LISTEN`. Kill a holder only if it's a
-  safaridriver you started; otherwise pick another port or ask the user.
-  Then run `/usr/bin/safaridriver -p 4723` (or your chosen port), recording
-  its PID.
-- `POST /session` with
-  `{"capabilities":{"alwaysMatch":{"platformName":"iOS","browserName":"Safari","safari:deviceType":"iPad"}}}`.
-  The response's `safari:deviceName`, `safari:platformVersion` and
-  `browserVersion` belong in your receipts.
-- To open a page, `POST /url` with the dev server's tailnet URL.
-- To evaluate JS, `POST /execute/async`.
-- For input, `POST /actions` with a single `pointerType: "touch"` pointer,
-  then `DELETE /actions`.
-- For screenshots, `GET /screenshot` (base64 PNG of the viewport only).
-- Always finish with `DELETE /session`, even on failure. Otherwise Safari
-  stays under the automation overlay and the user can't use it.
-
-safaridriver opens its own automation tab with separate storage, so the
-user's tabs are safe. Still check the target before each tap with
-`document.elementFromPoint(x, y).closest(<selector>)`, and wait for the
-app's ready signal before you interact.
-
-**Its limits:** touch only and single finger (no pinch). Pen input arrives
-as touch. Typed text never lands, so drive input by tapping. The lift
-point of a synthetic touch is reported at (0, 0). There's nothing like
-`uiautomator` and no capture outside Safari's viewport. Anything that needs
-real touch, the Apple Pencil or multi-touch has to be done by the user.
-
-**Reading the user's own tab** (for example after they draw with the
-Pencil): pymobiledevice3 attaches to Safari's Web Inspector without the
-automation overlay.
-
-```zsh
-mise install pipx:pymobiledevice3@latest   # PyPI install: ask first if it isn't installed
-pymobiledevice3 usbmux list
-pymobiledevice3 webinspector opened-tabs
-```
-
-For scripted reads, run the script under pymobiledevice3's own Python
-(`"$(mise where pipx:pymobiledevice3)/pymobiledevice3/bin/python"`). Use
-`WebinspectorService(...).get_open_application_pages()` and then
-`runtime_evaluate(expr, return_by_value=True)`, and select exactly one tab
-by URL. Only read from it; never navigate or evaluate side effects in the
-user's tab.
-
-**Failures seen:**
-- `device is locked` (500): the iPad locked during the session. Ask the
-  user to unlock it.
-- `devices were found, but could not be used`: the iPad is unplugged or
-  locked.
-- A 408 timeout on `/execute/async`: transient, so rerun.
-- macOS has no `timeout` command.
-
-**Before relying on the iPad,** cover what you can with WebKit in
-Playwright at the iPad's measured viewports (820×1106 and 1180×746 at
-DPR 2), and save the device for what emulation can't show.
+When the device is the iPad, follow [references/ipad.md](references/ipad.md).
 
 ## This user's setup
 
 The user's device identities (models, USB serial, Tailscale address, iPad
 UDID) and the path to a worked iPad driver live in
-`~/.config/phone-debug/environment.md`, outside this public repository. Read
-it before connecting. If it's missing, ask the user once for those details
-and write the file.
+`~/.config/phone-debug/environment.md`, outside this public repository. If
+it's missing, ask the user once for those details and write the file.
 
 - Packages:
   - prod Paseo is `sh.paseo.iexalt` (`sh.paseo.iexalt/.MainActivity`); never
