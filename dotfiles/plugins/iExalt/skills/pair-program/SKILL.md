@@ -16,10 +16,10 @@ Here the user, not an agent, gives each approval those rules describe.
 
 ## Work item size
 
-Size items as `working-conventions` › Work-item size describes. Group
-checklist items only when their implementation boundary is tightly coupled
-and they share an acceptance check, and split an umbrella checkbox with unresolved design decisions before
-implementation.
+Size items as `working-conventions` › Work-item size describes. Group items
+only when their implementation boundary is tightly coupled and they share an
+acceptance check, and split an umbrella item with unresolved design decisions
+before implementation.
 
 Size each approval to a reviewable behavior change or a related compiler-error
 family, not to a single mechanical fix. Keep batching inside the approved item.
@@ -29,20 +29,9 @@ If the boundary is unclear, investigate first and propose a bounded item.
 
 1. Establish the goal, constraints, and completion criteria. Inspect the
    workspace and relevant source before choosing an implementation.
-2. As the main agent, keep a user-visible checklist for the whole task,
-   covering implementation, review, and verification. Show it before the first
-   increment, in a user-visible plan tool when available or as a concise
-   Markdown checklist in progress updates. Update it when an item starts, awaits
-   approval or review, completes, becomes blocked, or changes scope. Mark an
-   item complete only after its required verification and navigator review, and
-   show the final state at handoff. For substantial work, propose a
-   repository-local Markdown checklist when it would make fine-grained progress
-   easier to audit; creating that file is itself a change that requires
-   approval. Distinguish implemented or staged work from integrated, verified,
-   accepted work.
-3. Select the next bounded work item and identify its dependencies. Keep the
+2. Select the next bounded work item and identify its dependencies. Keep the
    wider roadmap as reference instead of planning every remaining detail now.
-4. Before changing files or running a command expected to mutate the workspace:
+3. Before changing files or running a command expected to mutate the workspace:
    - Summarize the proposed behavior and scope.
    - Name the files or components expected to change.
    - Explain the implementation approach and important tradeoffs.
@@ -51,23 +40,23 @@ If the boundary is unclear, investigate first and propose a bounded item.
      expensive experiments, propose a small feasibility check and an estimated
      total runtime including setup, drain, and analysis before a full campaign.
    - Ask the navigator for explicit approval.
-5. Pause. Do not edit, format, generate files, install dependencies, or run
+4. Pause. Do not edit, format, generate files, install dependencies, or run
    other workspace-mutating commands until the navigator approves. Read-only
    investigation may continue when it answers the navigator's questions. When
    unsure whether a command mutates the workspace, treat it as mutating and
    request approval first.
-6. After approval, recheck `git status`, the relevant diff, and the source files
+5. After approval, recheck `git status`, the relevant diff, and the source files
    before editing. Incorporate navigator edits made during the pause and never
    overwrite unrelated work.
-7. Implement only the approved increment. If new information materially changes
+6. Implement only the approved increment. If new information materially changes
    the proposed scope or design, stop and request fresh approval.
-8. Run focused verification appropriate to the change. Report failures
+7. Run focused verification appropriate to the change. Report failures
    directly. Repair routine failures within the approved scope; do not broaden
    the fix or change acceptance criteria without approval.
-9. Stop when the approved item is ready for review or reaches a material blocker.
-   Do not pull the next checklist item into scope.
-10. Walk the navigator through the code, then propose the next increment and
-    request approval again.
+8. Stop when the approved item is ready for review or reaches a material blocker.
+   Do not pull the next item into scope.
+9. Walk the navigator through the code, then propose the next increment and
+   request approval again.
 
 Repeat this loop until the agreed task is complete.
 
