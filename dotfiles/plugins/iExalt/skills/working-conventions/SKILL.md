@@ -5,17 +5,15 @@ description: "The shared rules every workflow skill follows: authority and appro
 
 # Working Conventions
 
-The user's workflow skills share these conventions; each says what is
-particular to it and points here for the rest. An explicit exception a
-workflow skill names wins for that skill. The user's global instructions
-(`AGENTS.md`, loaded as `CLAUDE.md` in Claude Code) come first; this skill adds
-detail and never relaxes them. Open every brief you write for a lead,
-reviewer or worker with the instruction to load this skill before any other
-step; a pilot's brief carries the rules its task needs instead.
+An explicit exception a workflow skill names wins for that skill. The user's
+global instructions (`AGENTS.md`, loaded as `CLAUDE.md` in Claude Code) come
+first; this skill adds detail and never relaxes them. Open every brief you
+write for a lead, reviewer or worker with the instruction to load this skill
+before any other step; a pilot's brief carries the rules its task needs
+instead.
 
-The user's skills ship in the `iExalt` plugin, so harnesses list them as
-`iExalt:<skill>`. A bare skill name in them, such as `keep-me-in-the-loop`,
-means `iExalt:keep-me-in-the-loop`; invoke it by the namespaced name.
+A bare skill name here, such as `keep-me-in-the-loop`, means
+`iExalt:keep-me-in-the-loop`; invoke it by the namespaced name.
 
 ## Authority
 
@@ -54,9 +52,9 @@ inherit your authority.
 
 | Level | When to involve the user |
 | --- | --- |
-| **Low** | Invite the user into consequential choices within scope: meaningful implementation tradeoffs, phase direction, re-sequencing and recovery options. Recommend an option before proceeding with the affected work. Handle routine execution and settled decisions yourself. |
-| **Medium (default)** | Use best judgment, as the workflow skill describes by default: approve work within scope that the workflow lets you approve, choose routine implementation details, re-sequence work and recover stalled agents. Consult when a tradeoff or uncertainty materially affects what the user agreed. |
-| **High** | Decide within scope and resolve recoverable issues yourself, reporting meaningful decisions afterward. Interrupt only for the mandatory consultations below, an explicit planned human intervention, or a blocker only the user can clear. |
+| **Low** | Invite the user into consequential choices within scope: implementation tradeoffs, phase direction, re-sequencing and recovery. Recommend an option before the affected work proceeds. |
+| **Medium (default)** | Approve in-scope work the workflow lets you approve, choose routine details, re-sequence work and recover stalled agents. Consult when a tradeoff materially affects what the user agreed. |
+| **High** | Decide within scope and resolve recoverable issues yourself, reporting meaningful decisions afterward. Interrupt only for the mandatory consultations below, a planned human intervention, or a blocker only the user can clear. |
 
 At **every level**, always consult the user for:
 
@@ -69,42 +67,22 @@ At **every level**, always consult the user for:
 - Projected costs beyond the agreed limits. When costs were not discussed,
   the limit is **zero/free**. Ask before incurring the increase, not after.
 
-No level changes the agreed scope, acceptance boundaries, the gates a
-workflow skill puts in the user's hands (such as `keep-me-in-the-loop`'s phase
-approval, which an overseer may give only within the scope the user agreed,
-`pair-program`'s per-increment approval, or `three-tiered-plan`'s
-confirmation), explicit human checkpoints, permission requirements or the
-rules under Authority. A workflow skill may require an explicit grant before
-high autonomy takes effect, as `overseer` does. Use already authorized
+No level changes the agreed scope, acceptance boundaries, a gate a workflow
+skill puts in the user's hands, explicit human checkpoints, permission
+requirements or the rules under Authority. A workflow skill may require an
+explicit grant before high autonomy takes effect. Use already authorized
 containment when needed to prevent further harm.
 
 ### Test measurable behavior before escalating
 
-"Look and feel" or "design" is not by itself a reason to ask the user.
-Separate testable behavior from subjective preference, including when both
-appear in one review item. At medium and high autonomy, err toward having
-agents script, test and benchmark the measurable part, fix problems within
-scope and verify the result, without asking the user for manual evaluation
-or making it a review gate. Filter delegated agents' review requests before
-relaying them; an agent calling something subjective does not make it so.
-
-For example, evaluate zoom, pan and drag smoothness with representative
-interactions and P50/P75/P95/P99 frame times, dropped frames and relevant
-latency, against agreed targets on the relevant browsers and available
-hardware. Reuse existing benchmarks and record their conditions and limits.
-Do not ask "does it feel smooth on your laptop?" when a scripted benchmark
-can answer the performance question. At low autonomy, invite an optional
-hands-on trial when the user wants involvement; agents still own objective
-verification, and the user's impression doesn't replace it.
-
-Escalate only the remaining preference or product tradeoff that the evidence
-cannot settle, or another mandatory consultation. The evidence must fit the
-claim: a working shortcut does not establish discoverability, nor does
-counting keystrokes alone prove a picker is faster for users. Keep unproven
-claims qualified. If required hardware or access is unavailable, report that
-concrete limit and ask only for the necessary access or bounded action; do
-not relabel the gap as a taste question. Keep routine measurement in the work
-evidence and normal progress reports; it creates no extra user decisions.
+"Look and feel" alone is no reason to ask the user. Separate testable
+behavior from subjective preference, including within one review item. At
+medium and high autonomy, have agents measure, fix and verify the testable
+part, such as frame times against agreed targets, instead of asking the user
+to try it. An agent calling something subjective doesn't make it so. Escalate
+only the preference the evidence can't settle, and keep claims within what
+the evidence shows. If hardware or access is missing, ask only for that
+access; don't relabel the gap as a taste question.
 
 ## Record the user's decisions
 
@@ -119,39 +97,29 @@ item or thread. A rule nobody asked them about is Proposed, not theirs.
   Codex's `request_user_input_async` when available, otherwise a dialog such
   as `AskUserQuestion`. Never substitute a prose questionnaire. Never re-send
   a dialog unchanged.
-- Facts the environment can settle, and anything measurable, are yours to
-  find. Ask only for decisions, knowledge only the user holds, and taste
-  still unresolved after Autonomy › Test measurable behavior before
-  escalating.
-- Make each question self-contained: context, options with their consequences
-  for results, effort, risk and what gets postponed, and a recommendation with
-  its evidence. Batch questions that come due together.
-- While an answer is pending, continue independent work; hold only the work
-  that depends on it.
+- Ask only for decisions, knowledge only the user holds, and taste still
+  unresolved after Autonomy › Test measurable behavior before escalating.
+  Give each option's consequences for results, effort, risk and what gets
+  postponed, and the evidence behind your recommendation.
 
 ## Review loops
 
 - Use one persistent reviewer for the job and reuse it across increments,
   chunks and phases. A review notification, an unacknowledged draft or
   silence is not review.
-- Agree the materiality bar up front; loops end on materiality, never on an
-  empty review, as the user's global instructions say. A material finding
-  makes the outcome wrong, unsafe, lossy or short of its acceptance criteria.
-  Verify each finding against the source and record it as material, optional
-  or rejected, with the reason. Fix material findings; batch optional ones for
-  the user as deferrals instead of fixing them in the loop, since each extra
-  change gives the next review more to find. Triage output from extra
-  one-shot reviews, such as a user-requested `/code-review`, the same way.
-- After each round, add one ledger line with its material and total finding
-  counts beside the previous round's. The review-trend rule in the user's
-  global instructions decides when to ask the user before another round. An
-  agent the user granted high autonomy, such as an overseer, approves repair
-  and review rounds itself and reports the trend afterward. A finding that
-  undermines an earlier choice still goes to the user; when the same finding
-  returns after its fix, that agent stops patching and has the design
-  reassessed right away instead of asking. A finding that challenges the
-  design's altitude, or invalidates the effort, risk or simplicity estimate
-  behind a user's choice, reopens that choice: ask before the next round.
+- A material finding makes the outcome wrong, unsafe, lossy or short of its
+  acceptance criteria. Record each verified finding as material, optional or
+  rejected, with the reason, and batch optional ones for the user as
+  deferrals. Triage extra one-shot reviews, such as a user-requested
+  `/code-review`, the same way.
+- After each round, add a ledger line with its material and total counts
+  beside the previous round's. An agent the user granted high autonomy, such
+  as an overseer, approves repair and review rounds itself and reports the
+  trend afterward. When the same finding returns after its fix, that agent
+  has the design reassessed instead of patching again. A finding that
+  undermines an earlier choice of the user's, including its altitude or the
+  effort, risk or simplicity estimate behind it, goes to the user before the
+  next round.
 - "Reviewed" and "accepted" name the revision the reviewer saw. Commits after
   it are "not re-reviewed" until the reviewer sees them, including a fix for
   the reviewer's own finding. Check the reviewer's last verdict against the
@@ -167,11 +135,10 @@ When the same failure returns after two repairs at the same gate, or each
 repair exposes a new failure in the same interaction, stop patching. Have the
 design reassessed (which code owns the behavior, which invariants hold, the
 simplest change that satisfies them) or escalate with the hypotheses ruled out
-and the next discriminating experiment. Repair resumes from that
-reassessment. A contract may set a different threshold for its workload.
-Findings on a new increment start a new count. Passing local tests don't
-resolve a failing end-to-end reproducer, and an approach doesn't run
-past its agreed stop condition.
+and the next discriminating experiment. A contract may set a different
+threshold for its workload. Findings on a new increment start a new count.
+Passing local tests don't resolve a failing end-to-end reproducer, and an
+approach doesn't run past its agreed stop condition.
 
 ## Evidence
 
@@ -194,10 +161,8 @@ past its agreed stop condition.
   when the rest of the work is done. A deferral names the later gate it moves
   to, what remains unproven, and the evidence required there. Reusing earlier
   evidence, substituting a check or moving a required proof to a later gate
-  needs the user's approval unless already agreed. Adopt a change made
-  conditional on a measurement only when the measurement meets the gate; if
-  it is unmet or unmeasured, report it as unmet and ask instead. Never weaken
-  acceptance silently.
+  needs the user's approval unless already agreed. Never weaken acceptance
+  silently.
 
 ## Work states
 
@@ -216,23 +181,15 @@ subtasks or a passing subset of tests don't make a milestone complete.
 
 ## Test cost
 
-- Put most behavioral coverage in fast unit tests, fewer integration tests on
-  contracts, and a small end-to-end set for critical journeys. Judge the
-  pyramid by runtime as well as count, with no fixed ratio. Challenge
-  redundant higher-layer tests, oversized fixtures and repeated expensive
-  setup as readily as missing coverage.
-- Carry the routine-check command, its wall-clock budget, the stable accepted
-  baseline and its machine, cache and concurrency conditions into every plan
-  and brief where tests grow or change. If absent, establish them
-  proportionately, from existing timings or the next required run, before
-  substantial suite growth.
+Beyond the global instructions' test-cost rules:
+
+- Carry the routine-check command, its wall-clock budget and the stable
+  baseline, with its machine, cache and concurrency conditions, into every
+  plan and brief where tests grow or change. If absent, establish them
+  proportionately before substantial suite growth.
 - Compare across the whole run; never reset the baseline at a chunk or
-  hand-off. Reuse required-run timings to expose cumulative growth and its
-  largest contributors.
-- Fix a confirmed regression in the change that caused it, through cheaper
-  fixtures, less redundancy or a lower layer. Explain any necessary increase
-  within the agreed authority. Don't plan a cleanup milestone, raise the
-  budget, make required checks optional or add concurrency to hide growth.
+  hand-off. Don't plan a cleanup milestone or raise the budget to absorb
+  growth.
 - Consolidating tests or lowering their cost is ordinary maintenance when
   every required proof survives. Moving a required proof to a later gate or
   making it optional is an acceptance change.
@@ -253,9 +210,8 @@ subtasks or a passing subset of tests don't make a milestone complete.
   routine recovery, waits or traffic with a reviewer. When several events land
   together, send one update covering them.
 - Stay silent otherwise. A turn with nothing to report ends with no text,
-  even if the harness re-prompts an empty turn. Never send filler: "No news.",
-  a line naming what you're waiting on, an acknowledgement, or a repeat of an
-  earlier update.
+  even if the harness re-prompts an empty turn. Never send filler, such as
+  "No news." or a repeat of an earlier update.
 - Write for a technically capable owner without expertise in the subsystem:
   what changed, why it matters, what remains unproven, and what's next.
   Explain necessary terms through their purpose.
@@ -267,15 +223,13 @@ one-line prefix or `overseer`'s roll call.
 
 ## Waiting
 
-- Prefer completion notifications to polling. Otherwise wait in a bounded
-  blocking check that returns on its next qualifying event or a timeout. Use
-  one monitor per process, with failure filters that don't match success
+- Prefer completion notifications to polling; otherwise use a bounded
+  blocking check. Give each monitor failure filters that don't match success
   output such as `failed=0`.
 - A timeout alone creates no work: wait again without reading logs or asking
   for status.
 - Before ending a turn to wait on a peer, confirm it is still running or has a
-  message in flight. End a turn only on something armed to wake you. A
-  subagent's final hand-back is its last message; act on it.
+  message in flight.
 - An agreed checkpoint is a stall threshold, not a reporting deadline. When an
   agent goes quiet past it, inspect it first (a permission prompt, exhausted
   context, a crash), then make one bounded inquiry.
@@ -301,28 +255,9 @@ one-line prefix or `overseer`'s roll call.
 
 ### Model routing
 
-| Role | Codex | Claude | Effort |
-| --- | --- | --- | --- |
-| Top orchestrator: an overseer, or the main navigator of a team | GPT Astra | Opus | `high` |
-| Lead: phase or item coordination, integration decisions | GPT Sol | Sonnet (`developer-routine`) | `medium`; `high` for substantive review or complex decisions |
-| Independent substantive reviewer | GPT Sol | Sonnet (`developer-routine` when it matches) | `high` |
-| Pilot: implementation, diagnosis, bounded discovery | GPT Luna | Haiku (`developer-trivial` when its scope fits, otherwise explicit Haiku routing) | Codex `high`; Claude `medium` |
-| Pilot: mechanical edits, lookups, monitoring | GPT Luna | Haiku (`developer-trivial`) | Codex `medium`, `low` for monitoring; Claude `medium` |
-
-- Preserve the user's explicit provider, model and effort choices.
-- Resolve each class to the latest model the provider advertises; never
-  invent identifiers. Set model and effort explicitly at launch and at resume.
-  For Codex native agents, pass `fork_turns: "none"` with a scoped brief so
-  no pilot inherits a top-tier model through a full-history fork.
-- Verify the effective model and effort where the harness shows them,
-  including after a resume, and correct unintended routing before dependent
-  work starts.
-- Difficulty, failed checks, slot pressure, a long campaign or "keep going"
-  never move an agent up a tier. Difficult pilot work returns to its lead.
-  `developer-demanding` (Opus) belongs to the top tier unless a workflow skill
-  names an exception or the user approves one.
-- If the required route is unavailable, report it and hold the affected
-  launches; never silently inherit a more expensive model or drop a tier.
+Before launching, resuming or rerouting any agent, read
+[references/model-routing.md](references/model-routing.md); it holds the role
+table and routing rules.
 
 ## Work-item size
 
@@ -348,12 +283,9 @@ the one evidence archive `maintain-project-status` describes.
 
 ## Publication
 
-- Use conventional commits, and conventional comments (`issue:`,
-  `suggestion:`, `question:`) in reviews.
 - Stage only reviewed, accepted changes; never commit unreviewed work unless a
   standing policy allows it. Push after required checks and review pass,
   unless repository rules or the user say otherwise.
-- Confirm publication before reporting it, and disclose any failure.
 - Other sessions may share the repository: rebase before pushing, commit only
   your files, reconcile shared documents without overwriting others' entries,
   and never amend or force-push work that isn't yours.
@@ -371,9 +303,9 @@ the one evidence archive `maintain-project-status` describes.
 
 ## Workspace and cleanup
 
-- Put worktrees in sibling directories such as `../<repo>-worker-<slug>/`, or
-  where the harness manages them, never in `/tmp`; they hold work in progress.
-  Never check out old revisions in another agent's working tree.
+- Put worktrees in sibling directories or where the harness manages them,
+  never in `/tmp`. Never check out old revisions in another agent's working
+  tree.
 - Never change state in the user's own checkouts or machines destructively,
   such as `git stash`, reset or checkout in a dirty tree. Report the blocker
   and the options instead.
