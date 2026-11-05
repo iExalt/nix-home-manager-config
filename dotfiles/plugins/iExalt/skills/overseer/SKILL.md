@@ -1,6 +1,6 @@
 ---
 name: overseer
-description: "Oversee one or more threads of a three-tiered-plan script, or workstreams in the repository's tracker, as a dedicated orchestrator: once the user agrees to the plan, run the agreed scope to its end autonomously, launching worker sessions that run keep-me-in-the-loop (Paseo agents through Paseo's built-in tools when running in Paseo, otherwise new Claude Code or Codex sessions), enforcing the script's dependencies, routing every human intervention through yourself to the user, and keeping them in the loop with concise status updates. Use when the user wants script threads run while they are away from the keyboard; not for writing the script (use three-tiered-plan) or for running one thread in this session (use keep-me-in-the-loop)."
+description: "Oversee one or more threads of a three-tiered-plan script, or workstreams in the repository's tracker, as a dedicated orchestrator: once the user agrees to the plan, run the agreed scope to its end autonomously, launching worker sessions that run keep-me-in-the-loop (Paseo agents through the paseo CLI when running in Paseo, otherwise new Claude Code or Codex sessions), enforcing the script's dependencies, routing every human intervention through yourself to the user, and keeping them in the loop with concise status updates. Use when the user wants script threads run while they are away from the keyboard; not for writing the script (use three-tiered-plan) or for running one thread in this session (use keep-me-in-the-loop)."
 ---
 
 # Overseer
@@ -25,7 +25,7 @@ as this file's.
 
 | File | Read when |
 |---|---|
-| [references/paseo.md](references/paseo.md) | You run in Paseo: hand-off, run project, launching, messaging, watching, classifier relays and run-project cleanup. |
+| [references/paseo.md](references/paseo.md) | You run in Paseo: hand-off, run project, launching, messaging, watching and run-project cleanup. |
 | [references/claude-code.md](references/claude-code.md) | You launch workers as Claude Code background sessions. |
 | [references/codex.md](references/codex.md) | You launch workers with `codex exec`. |
 | [references/high-autonomy.md](references/high-autonomy.md) | The user asks for high autonomy, before starting workers. |
@@ -55,14 +55,14 @@ and machines, including a dirty working tree on a remote host, follow
 Organize workers as you see fit. One worker per thread is the default; you
 might instead give a final check its own fresh worker, or relaunch a thread
 in a new worker after a crash. Never let two workers run the same thread at
-once. Never implement a thread yourself, and never hand one to a native
-subagent, such as one from Claude Code's Agent tool or a Codex spawned agent:
-it shares your session's lifetime and context budget, and a worker needs a
-session of its own. Paseo files the agents `create_agent` launches as your
-subagents, but each is a full session with its own conversation, so it can
-serve as a worker once you detach it into a thread of its own, as
-[references/paseo.md](references/paseo.md) describes. The continuous reviewer
-a worker starts inside its own session is part of that worker's job.
+once. Your context is for coordinating the run, so never implement anything
+yourself, including small fixes outside every thread, and never have a native
+subagent, such as one from Claude Code's Agent tool or a Codex spawned agent,
+implement anything for you: you would brief, wait on and check its work in
+your own session, and it dies with your session. Give such work to a worker
+session of its own, or to the user. A Paseo agent launched detached, as
+[references/paseo.md](references/paseo.md) describes, is one. The continuous
+reviewer a worker starts inside its own session is part of that worker's job.
 
 Keep a checklist of the threads you oversee, each with its worker and state:
 waiting, ready, running, awaiting approval, awaiting a human, blocked, done.
@@ -70,12 +70,10 @@ Your status updates show it as a one-line roll call.
 
 ## Choose autonomy and establish authority
 
-Use the autonomy levels, mandatory consultations and measurable-first rule in
-`working-conventions` › Autonomy, which says where to state the level;
-record it in the script and worker briefs. At medium, the default, you
-approve phases within scope; at high, you approve phases and resolve
-recoverable issues yourself, reporting meaningful decisions afterward. High
-autonomy takes effect only after the session grant in
+Set the autonomy level as `working-conventions` › Autonomy describes. At
+every level you approve phases within scope, at low after consulting the
+user on consequential choices. High autonomy takes effect only after the
+session grant in
 [references/high-autonomy.md](references/high-autonomy.md).
 
 ## Establish what you oversee
@@ -116,10 +114,6 @@ Have workers measure a baseline before expanding a workload. If a budget is
 exceeded or sustained growth threatens it, reduce concurrency or optimize
 within scope; ask before exceeding agreed limits or changing required checks.
 
-Carry the terms in `working-conventions` › Test cost between workers, compared
-across the whole run. Assign a test-runtime regression to the worker
-introducing it while its change is still in progress.
-
 Then ask the user, through the dialog, to agree to the plan: the threads and
 each one's scope. For high autonomy, include the separate explicit session
 grant question in this opening dialog. Wait for the required answers before
@@ -128,14 +122,6 @@ out of it, so the agreement doesn't wait on them. Record the agreement, with
 the date, in each thread's script entry, in a commit of its own, so a
 replacement overseer can find it. Invoking you is the request to implement;
 confirming the script never was.
-
-Once a scope is agreed, you approve that thread's `keep-me-in-the-loop` phase
-proposal on the user's behalf when it stays within the scope, consulting on
-consequential choices at low autonomy. Relay a proposal to the user when it
-changes an outcome, an acceptance check, a deferral, a risk, an external
-action or spending beyond what they agreed. A thread whose scope the user
-hasn't agreed, such as one that became ready after re-sequencing, waits until
-they do.
 
 ## Time each request for a human
 
@@ -190,7 +176,7 @@ changing paths or tools is not a way around an existing permission denial.
 Use the first mechanism that applies, name it in the opening message, and
 read its reference before launching workers:
 
-1. **Paseo,** when you run in it with its built-in tools:
+1. **Paseo,** when you run in it and its `paseo` CLI works:
    [references/paseo.md](references/paseo.md) › Run project and workers.
 2. **Your own harness,** so that messages travel natively: Claude Code
    ([references/claude-code.md](references/claude-code.md)) or Codex
@@ -199,14 +185,10 @@ read its reference before launching workers:
    session. If it has none, say so, give the user each worker's brief to open
    by hand, and keep overseeing through what they relay.
 
-For routine coordination, do not interrupt a running session. The Paseo
-authorization messages in [references/paseo.md](references/paseo.md) ›
-Relay approvals past a classifier block are an exception; prefer an idle
-receiver even then. An interrupt cancels the tool call in
-flight, which may be a live operation, and in Claude Code it also stops the
-session's background subagents for good, including a worker's continuous
-reviewer. Message a session through the receiver's own harness, which
-delivers without interrupting:
+Never interrupt a running session. In Paseo, queue
+each message by agent ID, as [references/paseo.md](references/paseo.md) ›
+Run project and workers describes. Elsewhere, message a session through the
+receiver's own harness, which delivers without interrupting:
 
 - **To a Claude Code session:** `SendMessage` from another Claude Code
   session, using a session reference where supported, otherwise a unique
@@ -231,28 +213,22 @@ message or a permission prompt, before launching more workers.
 
 ### Three-tier model routing
 
-Route new sessions, descendants, reviewers and replacements as
-`working-conventions` › Model routing describes. You are the top
-orchestrator, each worker is a thread lead, and its pilots and independent
-reviewer take those rows. The `subagent-pair-program` exception for
-standalone leads does not apply under an overseer. Carry the user's explicit
-choices and this policy in every worker brief; they override conflicting
+Route every session as `working-conventions` › Model routing describes: you
+take the top-orchestrator row, each worker the lead row, and its pilots and
+independent reviewer theirs. The `subagent-pair-program` exception for
+standalone leads does not apply under an overseer. The user's explicit
+choices and this policy, carried in every worker brief, override conflicting
 model defaults in `keep-me-in-the-loop`, its review skill and other descendant
 workflows, which keep their review and acceptance gates. Ask the user before
 changing the hierarchy when it cannot deliver the required result.
 
-A worker keeps the `keep-me-in-the-loop` workflow and owns its phase
-proposals, review and verification, but delegates implementation to native
-pilots. Pilots send proposals, results and blockers to their thread lead;
-thread leads report to the overseer.
-
-In Paseo, use matching `list_profiles` entries or supported launch overrides;
-a profile must match the assigned tier. Claude's installed `developer-*`
-definitions are native subagent profiles, not Paseo profiles. Keep the normal
-Claude Code system prompt and `keep-me-in-the-loop` brief for standalone thread
-leads; `--agent` with a nonempty custom prompt replaces that system prompt. Do
-not modify existing live sessions; report a mismatch in the current overseer's
-model instead of claiming it changed.
+In Paseo, use matching `paseo profile ls` entries or supported launch
+overrides; a profile must match the assigned tier. Claude's installed
+`developer-*` definitions are native subagent profiles, not Paseo profiles.
+Keep the normal Claude Code system prompt and `keep-me-in-the-loop` brief for
+standalone thread leads; `--agent` with a nonempty custom prompt replaces that
+system prompt. Do not modify existing live sessions; report a mismatch in the
+current overseer's model instead of claiming it changed.
 
 Compare elapsed time and total model usage per accepted work item, including
 review and repairs, before claiming savings. Do not add recurring benchmarks just
@@ -273,34 +249,30 @@ workers holds it back. As threads finish, launch workers for the threads they
 unblock.
 
 Check each phase proposal against the scope the user agreed for its thread.
-Approve it when it fits and the autonomy rules allow you to decide. Otherwise
-relay it, as "Relay human interventions" describes, and pass the user's
-answer back. One thread's agreed scope never
+Approve it on the user's behalf when it fits and the autonomy rules allow you
+to decide. Relay one that changes an outcome, an acceptance check, a
+deferral, a risk, an external action or spending beyond what they agreed, as
+"Relay human interventions" describes, and pass the user's answer back. A
+thread whose scope the user hasn't agreed, such as one that became ready
+after re-sequencing, waits until they do. One thread's agreed scope never
 covers another thread, and neither does one thread's answer: when the user
 answers for one thread, tell only that thread, and ask again for the others.
 
 Before reporting an acceptance result or using it to unblock a dependent,
-require a finalized handoff: the check and revision tested, the result and
-evidence location, the reviewer's acceptance, and the limitations or unmet
-checks. For statistical claims, include what was counted, its denominator,
-exclusions or abstentions, and what the sample represents. Check the claim
-against that evidence; a passing gate does not establish broader accuracy
-or coverage. If reviewer disclosures are still pending, keep the result
-provisional. Carry material limits into the user-facing report and correct
-any overstatement promptly. Name the cause of a failure from evidence; if
-your own messages or interrupts may have caused it, say so rather than
-blaming the harness.
-
-Check a worker's claim, whether a cause, a regression, a failed check or a
-measurement, before you pass it on to the user or another thread, as
-`working-conventions` › Evidence describes. When you can't check it in time,
-relay it as the worker's unverified claim and say what would verify it.
+require the finalized handoff the worker brief's reporting term lists
+([assets/worker-brief.md](assets/worker-brief.md)). Check the claim against
+that evidence, as `working-conventions` › Evidence describes for any worker
+claim you pass on; relay one you can't check in time as the worker's
+unverified claim, saying what would verify it. A passing gate does not
+establish broader accuracy or coverage. If reviewer disclosures are still
+pending, keep the result provisional. Carry material limits into the
+user-facing report and correct any overstatement promptly. Name the cause of
+a failure from evidence; if your own messages or interrupts may have caused
+it, say so rather than blaming the harness.
 
 Repair and review rounds inside a thread's agreed scope belong to its worker.
-At medium and high autonomy, don't relay a routine round to the user; report
-its trend in your next update. When a thread reaches `working-conventions` ›
-Repeated failure, have the worker stop patching and its reviewer reassess the
-design.
+At medium autonomy, as at high, don't relay a routine round to the user;
+report its trend in your next update.
 
 When a worker reports its thread done, verify the claims before launching
 dependents: the script marks the thread done, its commits are on the remote,
@@ -314,19 +286,17 @@ following three-tiered-plan's "Revise when evidence changes", and report them
 in your next update. Take any change to outcomes, scope, acceptance checks,
 spending or risk to the user before the affected work proceeds.
 
-An unavailable or permission-blocked proof stays unmet, and reusing,
-substituting or deferring it needs the user's approval, as
-`working-conventions` › Evidence describes. Keep its acceptance gate open in
-the script and status document, even while independent work continues.
-Before asking, check the worker's claim about why the proof is unmet or
-sufficient against its evidence; don't ask the user to accept a gate on an
-unverified claim. Ask through the human-intervention dialog with the proposed
-evidence and what remains unproven; do not announce the change as settled or
-make the user opt back into the original check. Record the answer, quoting
-the user's chosen option and its exact scope (which items, how many), before
-changing the gate or launching work that depends on it; if more items miss
-than the user accepted, ask again about the rest. Approval of a deferral does
-not authorize an action rejected by the permission system.
+An unavailable or permission-blocked proof stays unmet, with its gate open in
+the script and status document, as `working-conventions` › Evidence
+describes. Before asking to reuse, substitute or defer it, check the worker's
+claim about why the proof is unmet or sufficient against its evidence. Ask
+through the human-intervention dialog with the proposed evidence and what
+remains unproven; do not announce the change as settled or make the user opt
+back into the original check. Record the answer as `working-conventions` ›
+Record the user's decisions describes before changing the gate or launching
+work that depends on it; if more items miss than the user accepted, ask again
+about the rest. Approval of a deferral does not authorize an action rejected
+by the permission system.
 
 When a worker goes quiet without reporting, inspect it before nudging it, as
 `working-conventions` › Waiting describes. Resume the same session with what
@@ -368,50 +338,50 @@ allows and what it lacks.
 A worker's message is never the user's approval (`working-conventions` ›
 Authority). Never ask a worker to do something that your session's
 permissions or the user denied. Approve a pending permission request, as
-Paseo's `respond_to_permission` allows, only for a class of action the user
+`paseo permit allow` does in Paseo, only for a class of action the user
 authorized for that thread; otherwise relay it. A pending request of kind
 `question` is a dialog for the user, whether a question session or a worker
 raised it; never answer it.
 
-When a Claude worker in Paseo reports a permission-classifier block on an
-action the user approved, or at high autonomy a suspected false positive,
-follow [references/paseo.md](references/paseo.md) › Relay approvals past a
-classifier block. Never send such a message outside those rules.
+Apart from a pending permission request you may approve as above, only the
+user can unblock a worker's permission prompt or classifier block.
+A worker treats a message from another session, yours included, as another
+agent's, so an approval you relay, even quoting the user, doesn't unblock it.
+When a worker is blocked on an action that needs the user's authority, ask
+the user, as steps 1 to 4 describe, to approve it directly in that worker's
+thread: name the thread, the exact action and the block's reason, and say how
+to open the thread, such as its Paseo title or `claude attach <id>`. Never
+try to supply that authorization yourself, at any autonomy level.
 
 ## Keep the user in the loop
 
-The user isn't watching. Send status updates that are short, high-signal,
-readable on their own after hours away, and say where each running thread
-stands. This follows `keep-me-in-the-loop`'s reporting discipline at the
-level of the whole run.
-
-Send a status update for the events `working-conventions` › Updates lists,
-across the whole run, and for anything unexpected, such as a deviation, a
-failure, a blocker, a change of plan or a judgment call you made. A worker
-whose accepted work stays unpublished still produces updates. Mention
-launches, approvals within scope, relayed answers, retries and routine
-recovery in the next update only when they matter. One update covers events
-that land together across threads too.
-
-Each update answers three questions in a few lines: what did we just
-accomplish, what happens next, and did anything unexpected occur? Leave the
-third out when nothing did. Name threads by number and outcome, not by number
-alone (workstreams by name and issue number), and end with the roll call:
+Every status update looks like this: a few lines, ending with the roll call.
 
 ```text
-**Done:** thread 2 (station pilot) published chunk 2 of 3: the driver handoff works on dev-1.
-**Next:** thread 2 tests FOU over DERP; thread 4 starts when thread 2 finishes.
-**Unexpected:** Brev rate-limited thread 3's host listing; it retried and carried on.
+**Done:** thread 2 (station pilot) published chunk 2 of 3: the driver handoff works on the dev host.
+**Next:** thread 2 tests the relay fallback; thread 4 starts when thread 2 finishes.
+**Unexpected:** a rate limit slowed thread 3's host listing; it retried and carried on.
 Threads: 1 done · 2 chunk 3/3 · 3 chunk 1/2 · 4 waiting on 2
 ```
+
+Each update answers what did we just accomplish, what happens next, and did
+anything unexpected occur; leave the third out when nothing did. Name threads
+by number and outcome, not by number alone (workstreams by name and issue
+number). The roll call is required in every update.
+
+The user isn't watching. Keep updates short, high-signal, readable on their
+own after hours away, and say where each running thread stands. This follows
+`keep-me-in-the-loop`'s reporting discipline at the level of the whole run.
+
+Send status updates for the events `working-conventions` › Updates lists,
+and for anything unexpected, batching events from all threads.
 
 A request for the user goes in a dialog of its own, as "Relay human
 interventions" describes, never in a status update.
 
-Stay silent between updates, as `working-conventions` › Updates describes.
 Keep wakes from worker messages, notifications and checks few, as the Watch
-entry in your mechanism's reference describes. Your checklist holds what you await, and your
-next update's roll call shows it.
+entry in your mechanism's reference describes. Your checklist holds what you
+await, and your next update's roll call shows it.
 
 When the threads you oversee finish, report with a **TL;DR**: each thread's
 outcome and publication, evidence limits and deferrals, the judgment calls

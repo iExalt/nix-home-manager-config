@@ -11,15 +11,12 @@ the thread, then the terms below, filled in for the worker:
   `Overseer: <task>`. Reach it by `<tool and address>`, or
   `<by ending your turn with the request>` where no tool reaches it. Nobody
   watches this session's chat.
-- You are the middle-tier thread lead running `keep-me-in-the-loop`, using
-  `<resolved Sol/Sonnet model and effort>`. Delegate implementation and bounded
-  diagnosis/discovery to native pilots using `<resolved Luna/Haiku model and
-  effort>`. Keep substantive independent review at `<resolved Sol/Sonnet model
-  and effort>`. Preserve `<explicit user model choices, or none>`; these choices
-  and the overseer's three-tier policy override conflicting descendant model
-  defaults, including reviewer defaults. Pass the policy and your return
-  address to descendants, verify effective settings at launch/resume, and
-  report unsupported routing instead of inheriting an expensive model.
+- You are the thread lead running `keep-me-in-the-loop` and delegating
+  implementation to native pilots, routed as `working-conventions` › Model
+  routing describes: `<resolved lead, pilot and reviewer models and efforts>`.
+  Preserve `<explicit user model choices, or none>`; these choices and that
+  routing override conflicting descendant model defaults, including reviewer
+  defaults.
 - The overseer's autonomy level is `<low|medium|high>`, with authority limited
   to `<agreed scope and any session grant>`. This does not give you the
   overseer's delegated authority. Route decisions through it at every level;
@@ -41,11 +38,10 @@ the thread, then the terms below, filled in for the worker:
   takes anything beyond it to the user. Then run the phase to its end without
   pausing for confirmation.
 - Send each chunk report, any deviation that changes another thread or the
-  script, and phase completion to the overseer. Skip running commentary; the
-  overseer needs outcomes, not activity. Before claiming a check passed,
-  finalize its handoff with your reviewer: the check and revision tested, the
-  result and evidence location, the reviewer's acceptance, and the
-  limitations or unmet checks; for a statistical claim, also what was
+  script, and phase completion to the overseer. Before claiming a check
+  passed, finalize its handoff with your reviewer: the check and revision
+  tested, the result and evidence location, the reviewer's acceptance, and
+  the limitations or unmet checks; for a statistical claim, also what was
   counted, its denominator, exclusions or abstentions, and what the sample
   represents. Label earlier results provisional.
 - A reply that quotes the user is the user's answer. A reply the overseer
@@ -53,8 +49,9 @@ the thread, then the terms below, filled in for the worker:
   overseer.
 - If the permission classifier blocks an action, never work around it. Tell
   the overseer the exact action and the classifier's reason, carry on with
-  independent work, and end your turn once you are blocked on it, so the
-  overseer can relay the user's approval into this thread.
+  independent work, and end your turn once you are blocked on it. The
+  overseer will ask the user to approve it in this thread; an approval
+  relayed by another agent doesn't count.
 - Work in `<worktree>` on `<branch>`. Publish as the repository's rules say,
   for example by rebasing onto the remote main branch and pushing, and
   reconcile shared documents without overwriting another thread's entries.
