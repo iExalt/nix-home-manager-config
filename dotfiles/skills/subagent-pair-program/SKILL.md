@@ -18,59 +18,34 @@ Keep routine approval and review between agents. Assign a lead for every item,
 including straightforward work; reuse agents when their context remains useful.
 Reserve capacity for the lead and at least one pilot. Serialize rather than bypass
 this structure. If subagent tools or required capacity are unavailable, report the
-limitation; do not claim delegation or silently take over implementation.
+limitation; do not claim delegation or silently take over implementation. Follow
+`working-conventions` for the rules shared across the workflow skills, and pass
+it in lead and pilot briefs.
 
 ## Required models and routing
 
-These requirements apply to all descendants, replacements, reviewers, and discovery
-workers unless the user explicitly authorizes an exception:
+Route every descendant, replacement, reviewer and discovery worker as
+`working-conventions` › Model routing describes, unless the user explicitly
+authorizes an exception. The main navigator is the top orchestrator, the work
+item lead is a lead, and implementation pilots are pilots. Pass the policy to
+descendants, and reuse an agent only at a compatible model and effort; "think
+harder" is not a configuration change.
 
-### Codex
+This skill names one exception. When no overseer sits above the run, the
+navigator may give a lead `developer-demanding` in Claude Code, or GPT Sol at
+`high` in Codex, when the item requires substantive review, complex diagnosis,
+concurrency or lifecycle decisions, demanding integration, or explicitly
+escalated implementation.
 
-| Assignment | Model | Effort |
-| --- | --- | --- |
-| Lead: routine coordination | GPT Sol | `medium` |
-| Lead: substantive review or complex implementation, ownership, concurrency, or lifecycle decisions | GPT Sol | `high` |
-| Implementation, diagnosis, independent code review | GPT Luna | `high` |
-| Mechanical edits, simple fixtures, code location, bounded factual discovery | GPT Luna | `medium` |
-| External process monitoring | GPT Luna | `low` |
-
-Resolve GPT Sol and GPT Luna to the latest available model in each class using
-the tool's advertised models; do not invent identifiers. Supply the resolved
-model identifier and effort explicitly. Use `fork_turns: "none"` and a scoped
-brief where supported; never inherit Astra through a full-history fork. Pass this
-policy to descendants. Check returned configuration when exposed; interrupt and
-correct unintended settings. Reuse an agent only at a compatible model/effort;
-"think harder" is not a configuration change.
-
-Do not spawn Astra or use unlisted combinations without explicit user permission.
-Difficulty, failed checks, slot pressure, and "keep going" are not exceptions.
-Difficult Luna work goes to the Sol lead.
-
-### Claude Code
-
-Use the installed user agents in `~/.claude/agents/` with a scoped assignment:
-
-| Assignment | Agent profile | Model | Effort |
-| --- | --- | --- | --- |
-| Trivial lookups, single-file mechanical edits, simple external monitoring | `developer-trivial` | `claude-haiku-5-5` | `medium` |
-| Routine coordination, bounded implementation, mechanical refactors, focused discovery | `developer-routine` | `claude-sonnet-5-5` | `medium` |
-| Substantive lead review, complex diagnosis, concurrency/lifecycle decisions, demanding integration, explicitly escalated implementation | `developer-demanding` | `claude-opus-5-5` | `medium` |
-
-Select the profile through the Agent tool's `subagent_type`; omit a conflicting
-per-invocation model override. Routine is the default tier. Assign demanding
-when the item requires it, including a lead expected to perform substantive review.
-A pilot escalates difficult work to its lead, who may assign a demanding pilot;
-do not silently change effort or treat “think harder” as a setting. Keep the same
-navigator–lead–pilot structure and pass the relevant workflow rules in each brief.
-Do not preload this entire orchestration skill into every pilot or launch extra
-agents simply because a profile exists.
-
-These profiles inherit tools and permissions; they grant no additional authority.
-Verify the effective model and effort in returned configuration or `/tasks` when
-available, especially after resuming. Do not silently fall back to an expensive
-inherited model. If selection or routing is unavailable in either harness, report
-it and continue only independent read-only preparation until resolved.
+In Claude Code, leads use `developer-routine` and pilots use Haiku. Select the profile
+through the Agent tool's `subagent_type` and omit a per-invocation model override
+that conflicts with the profile's own model. When no profile matches a pilot's
+scope at Haiku, launch it with an explicit Haiku model override rather than
+falling back to `developer-routine`. The profiles inherit tools and permissions and grant no
+additional authority. Keep the navigator–lead–pilot structure and pass the
+relevant workflow rules in each brief; do not preload this entire
+orchestration skill into every pilot or launch extra agents simply because a
+profile exists.
 
 ### Internal coordination
 
@@ -160,10 +135,8 @@ waiting, exit, wakeups, and backpressure before proposing performance changes.
 The navigator resolves the decision and returns execution to the lead. Ask the
 user only for missing information/authority or changes to priorities, hard
 constraints, or substantial effort commitments; keep independent work moving.
-Agent approval cannot expand user authorization. A decision attributed to the
-user in a brief or relay quotes their words or chosen option and where it came
-from, and keeps its exact scope; never write that the user decided something they
-were not asked, or decided for a different item.
+Agent approval cannot expand user authorization. Attribute decisions to the user
+only as `working-conventions` › Record the user's decisions describes.
 
 ## Pilot and lead discipline
 
@@ -189,15 +162,10 @@ Include these rules in pilot briefs; do not assume inherited context:
 - If the lead has ended or been replaced, send the result to the navigator once
   and stop; do not idle waiting for a review that cannot come.
 
-Include the routine-check command, stable timing baseline, budget and execution
-conditions in pilot briefs when tests will grow or change. Pilots should put
-most coverage in fast unit tests, fewer integration tests at component boundaries,
-and a small end-to-end set for critical journeys. The lead challenges redundant
-case matrices, oversized fixtures and expensive setup, considering runtime as
-well as test count. Reuse required-run timings; have the pilot address confirmed
-material or cumulative growth in the work item rather than accumulating cleanup
-work. Preserve required proofs and gates when consolidating or lowering tests;
-do not move the baseline or make checks optional to conceal a regression.
+When tests will grow or change, brief pilots on `working-conventions` › Test
+cost with the routine-check command, baseline, budget and execution conditions.
+The lead challenges redundant case matrices, oversized fixtures and expensive
+setup, and has the pilot fix confirmed growth within the work item.
 
 The lead does not implement its item itself, even when it looks small. If the
 brief requires a pilot and none can be spawned, escalate to the navigator.
@@ -283,18 +251,17 @@ merely to watch the lead or duplicate monitoring.
 
 ## User-facing updates
 
-Periodic commentary is a non-goal. This skill overrides default or recommended
-commentary intervals, including 60 seconds. After the initial checklist, update
-only for an appropriate lead event: reviewed acceptance, a material finding,
-decision request, or changed scope, route, blocker, or delivery expectation.
-Respond directly to new user instructions. Internal coordination does not always
-warrant a chat update; skip routine activity and unchanged status.
+Update the user as `working-conventions` › Updates describes; this skill
+overrides default or recommended commentary intervals, including 60 seconds.
+After the initial checklist, the qualifying events are lead events: reviewed
+acceptance, a material finding, a decision request, or a changed scope, route,
+blocker or delivery expectation. Respond directly to new user instructions.
+Internal coordination does not warrant a chat update, and a silent-turn
+reminder from the harness does not require a reply. Never inspect workers
+just to fill a message.
 
-Write for a technically capable owner without subsystem expertise. Connect the
-result to the original objective: what changed, why it matters, what remains
-unproved, and why the next step helps. Explain necessary terms through their
-purpose. Supply enough background to make sense without opening a pilot chat;
-do not merely compress the lead's packet. Use natural paragraphs, decisive evidence,
+Supply enough background to make sense without opening a pilot chat; do not
+merely compress the lead's packet. Use natural paragraphs, decisive evidence,
 and existing links rather than mandatory headings or a repeated roadmap.
 
 Combine actual checklist changes with these updates and show the final state at
@@ -303,26 +270,15 @@ label pending submissions, and edits after review, as under review or not
 re-reviewed. Preserve material failures and limitations, including the lead's
 and pilots' caveats, in the user's report.
 
-Remain silent during unchanged waits. A silent-turn reminder from the harness does
-not require a reply under this skill. When a notification or reminder wakes you
-without an appropriate lead event, continue or end the turn without text. Never
-repeat or paraphrase an earlier update, or inspect workers, just to fill a message.
-
 ## Documentation footprint
 
-Use the existing project status/progress document and active implementation plan.
-Follow [maintain-project-status](../maintain-project-status/SKILL.md) when updating
-that record. Component docs should explain durable usage/design; a new document
-needs a distinct ongoing reader need, not an item, run, checkpoint, or handoff.
-
-The navigator sets retention; the lead consolidates findings with one document
-owner. Inline short results and small tables; put moderately larger useful details
-in an appendix. Summarize bulky output and omit raw data from commits unless exact
-files are essential for a named purpose. Then use one shared `.tar.zstd` archive,
-updating the existing archive without losing members, and record its purpose and
-extraction command. Verify readability and required contents before removing
-originals; do not commit expanded copies too. Keep reusable source, harnesses,
-tests, and required fixtures as normal files.
+Records follow `working-conventions` › Records and
+[maintain-project-status](../maintain-project-status/SKILL.md), including its
+evidence archive. Component docs should explain durable usage/design; a new
+document needs a distinct ongoing reader need, not an item, run, checkpoint, or
+handoff. The navigator sets retention; the lead consolidates findings with one
+document owner. Keep reusable source, harnesses, tests, and required fixtures as
+normal files.
 
 Review documentation footprint in the normal publication diff, without an extra
 approval stage. Rigorous verification does not require retaining every output.
@@ -350,10 +306,10 @@ disposable data within authorization.
 - For interruption or context reset, retain the item/acceptance boundary, accepted
   work, outstanding diffs/owners, active processes, results, next action, and open
   decisions. Recheck current state on resume instead of repeating broad discovery.
-- When publication is authorized, one owner stages only accepted changes and uses
-  conventional commits. Preserve unrelated work and use conventional review
-  comments (`issue:`, `suggestion:`, `question:`). Finish with completed behavior,
-  verification, and limitations; keep detailed walkthroughs inside the team.
+- When publication is authorized, one owner publishes accepted changes as
+  `working-conventions` › Publication describes, preserving unrelated work.
+  Finish with completed behavior, verification, and limitations; keep detailed
+  walkthroughs inside the team.
 
 When evaluating this workflow, compare elapsed time and model usage per accepted
 item across all agents, rework, and quality outcomes. Include navigator diagnostic
