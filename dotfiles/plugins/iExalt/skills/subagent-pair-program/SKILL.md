@@ -5,6 +5,11 @@ description: "Coordinate autonomous pair programming with the main agent as navi
 
 # Subagent Pair Program
 
+**Load `iExalt:working-conventions` before any other step.** It holds the
+rules shared across the workflow skills, and this skill cites its sections as
+`working-conventions` › Section without restating them. Invoke it as a skill,
+or read its `SKILL.md` where your harness lists the path.
+
 Coordinate through three roles:
 
 - **Main navigator:** own direction, cross-item design, the user-visible checklist,
@@ -18,9 +23,9 @@ Keep routine approval and review between agents. Assign a lead for every item,
 including straightforward work; reuse agents when their context remains useful.
 Reserve capacity for the lead and at least one pilot. Serialize rather than bypass
 this structure. If subagent tools or required capacity are unavailable, report the
-limitation; do not claim delegation or silently take over implementation. Follow
-`working-conventions` for the rules shared across the workflow skills, and pass
-it in lead and pilot briefs.
+limitation; do not claim delegation or silently take over implementation. Open every lead's
+brief with the same instruction to load `iExalt:working-conventions`. Pilots
+don't load it; their briefs carry the rules their task needs.
 
 ## Required models and routing
 
