@@ -149,9 +149,13 @@ item or thread. A rule nobody asked them about is Proposed, not theirs.
   nothing" is never a stop condition. End loops on materiality.
 - After each round, add one ledger line with its material and total finding
   counts beside the previous round's. Whether to ask the user before another
-  round follows the review-trend rule in the user's global instructions: the
-  trend is judged per change, and a high-autonomy agent approves rounds
-  itself. A finding that challenges the design's altitude, or invalidates the
+  round follows the review-trend rule in the user's global instructions,
+  which judges the trend per change. An agent the user granted high
+  autonomy, such as an overseer, approves repair and review rounds itself and
+  reports the trend afterward, except for a finding that undermines an
+  earlier choice, which still goes to the user. When the same finding returns
+  after its fix, it stops patching and has the design reassessed right away
+  instead of asking the user. A finding that challenges the design's altitude, or invalidates the
   effort, risk or simplicity estimate behind a user's choice, reopens that
   choice: ask before the next round.
 - "Reviewed" and "accepted" name the revision the reviewer saw. Commits after
