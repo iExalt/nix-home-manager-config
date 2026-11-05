@@ -16,10 +16,7 @@ Here the user, not an agent, gives each approval those rules describe.
 
 ## Work item size
 
-Size items as `working-conventions` › Work-item size describes. Group items
-only when their implementation boundary is tightly coupled and they share an
-acceptance check, and split an umbrella item with unresolved design decisions
-before implementation.
+Size items as `working-conventions` › Work-item size describes.
 
 Size each approval to a reviewable behavior change or a related compiler-error
 family, not to a single mechanical fix. Keep batching inside the approved item.
@@ -48,17 +45,12 @@ If the boundary is unclear, investigate first and propose a bounded item.
 5. After approval, recheck `git status`, the relevant diff, and the source files
    before editing. Incorporate navigator edits made during the pause and never
    overwrite unrelated work.
-6. Implement only the approved increment. If new information materially changes
-   the proposed scope or design, stop and request fresh approval.
+6. Implement only the approved increment.
 7. Run focused verification appropriate to the change. Report failures
-   directly. Repair routine failures within the approved scope; do not broaden
-   the fix or change acceptance criteria without approval.
+   directly, and repair routine ones within the approved scope.
 8. Stop when the approved item is ready for review or reaches a material blocker.
-   Do not pull the next item into scope.
 9. Walk the navigator through the code, then propose the next increment and
    request approval again.
-
-Repeat this loop until the agreed task is complete.
 
 ## Approval rules
 
@@ -71,14 +63,10 @@ Repeat this loop until the agreed task is complete.
   dependencies, or modifying additional components. Standing approvals work as
   `working-conventions` › Authority describes.
 - Respect a navigator request to pause, skip, revert, or change direction.
-  Explain technical objections when warranted, but do not silently proceed.
-- Follow higher-priority safety, repository, and user instructions even when an
-  approved proposal conflicts with them. Surface the conflict and renegotiate
-  the increment.
 
 ## Code walkthrough
 
-Do more than summarize changed files. Teach and defend the implementation:
+Teach and defend the implementation:
 
 - Start with where the increment fits in the existing system and execution flow.
 - Walk through the important code in reading order with file and symbol
@@ -97,29 +85,19 @@ diffstat or terse bullet summary.
 ## Verification and continuity
 
 Include test design in the increment proposal, following
-`working-conventions` › Test cost, and repair confirmed runtime regressions
-within the approved increment.
+`working-conventions` › Test cost.
 
-Record exact commands, outcomes, the revision or diff they ran against, and any
-configuration or environment needed to interpret the result. Link to long logs
-instead of repeating them. Reuse evidence while it still applies; rerun affected
-checks after relevant source, dependency, configuration, or environment changes,
-since rerunning a check on changed code is not redundant in itself.
+Record each check's command, outcome, and the revision or diff it ran against,
+as `working-conventions` › Evidence describes. Rerun affected checks after
+relevant source, dependency, configuration, or environment changes.
 
-Keep required acceptance separate from optional investigation. Do not silently
-strengthen tolerances or expand a benchmark matrix. Reassess an unproductive
-approach at its agreed stop condition instead of extending it indefinitely.
+Keep required acceptance separate from optional investigation.
 
-Wait on long processes as `working-conventions` › Waiting describes, and report
-meaningful changes, not unchanged log snapshots. Include build caches and
-temporary artifacts in resource planning; avoid copying them into each staging
-directory.
+Wait on long processes as `working-conventions` › Waiting describes.
 
-Before an interruption or handoff, keep a compact checkpoint of the approved
-item, accepted work, outstanding changes, active processes, verification
-evidence, and next decision. Resume from it after checking the current workspace
-state. A pause means stopping productive work until the navigator says to
-resume.
+Checkpoint and resume as `working-conventions` › Continuity describes, before
+any interruption or handoff as well as at milestone boundaries. A pause means
+stopping productive work until the navigator says to resume.
 
 ## Pilot judgment
 
@@ -133,9 +111,8 @@ applicable constraints.
 
 - Commit periodically at coherent feature or fix boundaries, not at every review
   pause.
-- Never commit unreviewed work. Obtain navigator acceptance of the completed
-  behavior before committing unless the navigator granted a standing commit
-  policy for the session.
+- Commit only behavior the navigator accepted, unless they granted a standing
+  commit policy for the session.
 - State the intended commit scope and message before committing, and follow the
   repository's commit conventions and `working-conventions` › Publication.
 - Do not include unrelated navigator changes without explicit agreement.
