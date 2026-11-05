@@ -11,32 +11,24 @@ rules shared across the workflow skills, and this skill cites its sections as
 or read its `SKILL.md` where your harness lists the path.
 
 Facilitate the human decisions in the
-[Agentic Workflow Primer](../../../../../AGENTIC_WORKFLOW_PRIMER.md). The user chooses
-outcomes and tradeoffs; the agent investigates technical options and owns routine
-execution. Finish with a concise decision record and a concrete next step.
+[Agentic Workflow Primer](../../../../../AGENTIC_WORKFLOW_PRIMER.md).
 This skill's dialog rules add to `working-conventions` › Ask the user. Two of
 them deliberately override the user's global rules to batch questions and
 always recommend one: ask one consequential question at a time, and recommend
 only when evidence supports it. Here earlier answers reshape later questions,
 and an unsupported recommendation anchors the user.
 
-The primer is written for humans; do not treat it as another instruction file.
-In a Home Manager installation, resolve this `SKILL.md` through its symlinks
-before following the relative link. Read the primer's main body for context and
-its appendices only when useful. Without the primer, the workflow below stands
-alone.
+The primer restates this workflow for humans; don't load it. Point the user to
+it when they want the background.
 
 ## Use the Q&A dialog
 
-Ask every question through a native structured question tool, never in
-commentary, a numbered chat questionnaire, or a request to reply in prose.
-Commentary may explain the tradeoff; the question belongs in the dialog.
+Ask every question through a native structured question tool. Commentary may
+explain the tradeoff; the question belongs in the dialog.
 
-- Prefer `request_user_input_async` when available. Otherwise use
-  `request_user_input` only when the current mode permits it, or an equivalent
-  native dialog such as `AskUserQuestion` when the harness exposes it. Follow
-  the live tool schema and its restrictions, including any limits on permission
-  requests. Do not claim to switch modes or invent a tool call.
+- Use the synchronous `request_user_input` only when the current mode permits
+  it. Follow the live tool schema and its restrictions, including any limits
+  on permission requests. Don't claim to switch modes or invent a tool call.
 - Ask one consequential question at a time by default; bundle up to three
   closely related questions when their answers are independent. Offer two or
   three concrete choices with their consequences, recommending one only when
@@ -45,18 +37,10 @@ Commentary may explain the tradeoff; the question belongs in the dialog.
   an `Other` choice. When a free-text answer is itself a question, answer it in
   commentary, with evidence where you can, then re-ask only if the choice still
   stands, revised in light of your answer.
-- Phrase choices by results, effort, fidelity, maintainability, and what gets
-  postponed. Do not ask a nonexpert user to select an API or architecture whose
-  consequences you have not explained.
-- While asynchronous answers are pending, continue independent read-only
-  discovery, and do no work that depends on a required answer. A preselected
-  option, timeout, or silence is neither an answer nor authorization. If the
-  user skips an optional question, keep known preferences or state a
-  provisional assumption within existing scope; do not keep re-asking it.
-- If no permitted dialog tool exists, explain that the interactive workflow
-  needs a dialog-capable environment or mode. Provide a provisional brief from
-  known facts with the unresolved choices marked. Do not fall back to a prose
-  interview or claim those choices are settled.
+- If the user skips an optional question, keep known preferences or state a
+  provisional assumption within existing scope; don't re-ask it.
+- If no permitted dialog tool exists, say the workflow needs one and give a
+  provisional brief with the unresolved choices marked, not a prose interview.
 
 ## Guide the decisions
 
@@ -71,12 +55,10 @@ well-understood change.
 Draft the outcome and first observable deliverable in plain language. Separate
 hard constraints, ranked preferences, and deferred work. Resolve conflicts
 through the dialog, explaining what each choice postpones. Keep independent
-requirements separate: choosing a framework, keeping data on a device, and
-controlling iteration on that device are distinct decisions.
+requirements as separate decisions.
 
-For example, ask whether the user prioritizes a working single-session player
-with later ownership work, or session isolation before native delivery. Do not
-assume that faster initial delivery always outranks framework quality or fidelity.
+Don't assume that faster initial delivery always outranks framework quality or
+fidelity.
 
 ### 2. Identify the decision a spike would change
 
@@ -93,9 +75,7 @@ tradeoffs through the dialog; retain budgets already supplied by the user.
 A request for guided planning permits preparation and read-only investigation;
 it does not by itself authorize production changes or a long experiment. If a
 bounded probe is already authorized, run it within that scope and the current
-mode's permissions; otherwise return its concrete proposal as the next step. Ask
-for authorization through a permitted dialog tool, not one that forbids
-permission requests.
+mode's permissions; otherwise return its concrete proposal as the next step.
 
 A falsified assumption or an identified missing capability is a valid discovery
 result. Record what ran and what remains unproven. A toy or stubbed probe must
@@ -112,41 +92,29 @@ instead of presenting a speculative implementation plan as settled.
 
 Keep later milestones coarse. Specify the next item's behavior, dependencies,
 acceptance check, exclusions, and conditions for reconsideration. Optional ideas
-go to the backlog unless the user raises their priority. If an expensive or
-ambiguous choice warrants independent review, scope that review to the route
-decision and delegate it only when authorized. Do not require independent
-review for every item.
+go to the backlog unless the user raises their priority.
 
 ### 4. Hand off autonomous execution
 
 Return a compact decision record: outcome, first deliverable, constraints and
 priorities, scope and authorization, main uncertainty, probe/evidence, route,
-next item and acceptance check, and reconsideration triggers. Distinguish
-proposed work from executed and verified results. Use the conversation or an
-existing project document; create a new document only when requested or needed.
+next item and acceptance check, and reconsideration triggers. Keep it in the
+conversation or an existing project document.
 
-When implementation is requested, use `subagent-pair-program` if available and
-appropriate, reading its current instructions at handoff; don't duplicate its
-team hierarchy here. Preserve existing implementation authorization: do not add
-a final confirmation just because this interview has ended. When the request is
-planning only, finish with the next action and its boundary instead of silently
-starting a campaign.
-
-Ask for progress reported as capabilities and uncertainties as well as checklist
-items: what the user can now run, observe, or decide, and what remains. Routine
-technical proposals, reviews, tests, and repairs stay within the agent team.
+When implementation is requested, route it by size as `assign` does:
+`continuous-peer-review` for a small one-shot task, `subagent-pair-program` for
+medium work, and `keep-me-in-the-loop` for large, multi-phase work. Preserve
+existing implementation authorization: do not add a final confirmation just
+because this interview has ended. When the request is planning only, finish
+with the next action and its boundary instead of silently starting a campaign.
 
 ### 5. Reassess when evidence changes
 
 Agree on proportional route-level triggers: a falsified central assumption, an
 unexpected subsystem on the critical path, materially increased remaining effort,
 or repeated increments without the promised demonstration or new useful evidence.
-Avoid mandatory recurring review meetings. Repeated repairs at one gate follow
-`working-conventions` › Repeated failure instead.
+Repeated repairs at one gate follow `working-conventions` › Repeated failure
+instead.
 
 For a campaign already underway, begin here: compare the best remaining routes,
-including switching costs, and preserve useful completed work. Return product
-tradeoffs to the user through the dialog when outcomes, priorities, constraints,
-or substantial effort commitments change; resolve routine technical replanning
-yourself within existing authorization. Never silently relax acceptance
-criteria to end the campaign or treat sunk effort as a reason to continue it.
+including switching costs, and preserve useful completed work.
