@@ -23,10 +23,7 @@ Tier 3 can instead live in the repository's issue tracker as **workstreams**,
 one issue per thread ("Keep tier 3 as tracker workstreams").
 
 Grill each tier out of the user and write it with a continuous reviewer, in
-order, then ask the user to confirm the complete set in one dialog. The user
-owns outcomes, scope and tradeoffs, and holds history and expertise the
-repository doesn't record. You find facts, propose, challenge and write; the
-reviewer challenges you.
+order, then ask the user to confirm the complete set in one dialog.
 
 ## Start from the right tier
 
@@ -66,32 +63,20 @@ instructions. The reviewer reads the sources independently and challenges you,
 but never answers the user's decisions or addresses the user; take decisions
 its findings raise to the user through the dialog.
 
-- **Grounding:** the reviewer checks your summary against the sources and looks
-  for history and constraints you missed or inferred.
-- **Rounds:** send each round's questions before asking them. The reviewer
-  challenges missing branches, questions that depend on another in the same
-  round, facts posed as decisions, misrepresented options and unsupported
-  recommendations. Brief agreement suffices for a routine round.
-- **Drafts:** hand over each drafted section as a stable snapshot. The reviewer
-  checks fidelity to the user's recorded answers, internal consistency,
-  coverage of the tier above, evaluable gates, unstated assumptions, missing
-  dependencies and human actions left unmarked.
-- **Script:** shape the thread boundaries and dependencies with the reviewer
-  before the user sees them, as `keep-me-in-the-loop` does for chunk plans.
-- **The user's thinking time:** before asking a round, give the reviewer
-  bounded work for the wait, such as reading sources for the next branch,
-  checking the draft's claims or preparing counterexamples to your leading
+- **Grounding:** check your summary against the sources.
+- **Rounds:** send each round's questions before asking them, for missing
+  branches, dependent questions, facts posed as decisions and unsupported
   recommendations.
-
-Implementation keeps the same discipline: every script thread runs under
-`keep-me-in-the-loop`, which brings its own continuous reviewer.
+- **Drafts:** hand over each section as a stable snapshot, checked against the
+  user's recorded answers and the tier above.
+- **Script:** shape thread boundaries and dependencies before the user sees
+  them.
+- **The user's thinking time:** give the reviewer bounded work while a round
+  is out.
 
 ## Ground before the first question
 
-History and the user's expertise ground a plan best: earlier attempts explain
-why the obvious route was already rejected, and the user knows which resources
-are irreplaceable, which credentials are shared, what the budget is and how the
-domain behaves in practice. Gather what exists before asking for the rest:
+Gather what exists before asking the user for the rest:
 
 - Read prior plans and design documents, including related projects they cite;
   run records and incident notes; decision records; the Git history of the
@@ -115,10 +100,7 @@ Separate three kinds of input:
   constraint from an absence of evidence.
 
 Memories on both sides can be wrong: check the user's recollections against the
-environment as you would your own, and raise disagreements. Learn early where
-the user is expert and where they want explanation. Where they are expert, ask
-before proposing; elsewhere, explain briefly and support recommendations with
-evidence rather than authority.
+environment as you would your own, and raise disagreements.
 
 Open the first round with grounding: restate the north star in the user's words,
 summarize what you found, and ask what history, constraints and expertise the
@@ -139,8 +121,7 @@ milestones and decisions, and each decision into the ones that depend on it. The
   options table (option, for, against) and recommendation into the draft's
   decisions section first, then ask, pointing there.
 - Challenge answers that conflict with the code, the evidence or an earlier
-  answer. A session without disagreement probably asked questions below the
-  fidelity the campaign needs.
+  answer.
 - When talking can't settle a question because it needs evidence or something
   to react to, stop grilling it. Propose the smallest spike, following
   `agentic-workflow`'s spike guidance, and mark the decision Open pending it.
@@ -172,12 +153,9 @@ scope, and history and expertise into the background. Keep the current frontier
 as the draft's open questions. A fresh agent, or you after compaction, must be
 able to resume the interview from the draft alone.
 
-- Use the repository's attribution form when it has one, such as
-  `(you, 2026-09-29)` or `(the user, 2026-09-26)`; otherwise
-  `(the user, <date>)`. Record the reason, in the user's words when short.
-  Record the option the user chose with its description, not a paraphrase: its
-  scope and trigger are what they chose, even when your wording would be
-  tidier, as `working-conventions` › Record the user's decisions requires.
+- Attribute each decision as `(the user, <date>)`, or in the repository's
+  own form, with the reason in the user's words when short, and record it as
+  `working-conventions` › Record the user's decisions requires.
 - Say who proposed what with the plan template's labels: **Decided**,
   **Agreed**, **Proposed**, **Open**, **Rejected** and **Verified**.
 - Revise in place and keep the trail: "**Changed (the user, <date>):** …,
@@ -210,10 +188,8 @@ ordering tradeoffs, grouping steps across milestones, live-resource lifetimes
 and budgets, and which human interventions can be settled now.
 
 For implementation campaigns, include a testing strategy that follows
-`working-conventions` › Test cost: the routine-check command, runtime budget,
-stable baseline and comparable execution conditions, from existing evidence or
-a named early measurement. Keep expensive evidence checks attached to explicit
-gates, and make suite-runtime maintenance part of each implementing step.
+`working-conventions` › Test cost, and attach expensive evidence checks to
+explicit gates.
 
 Write it from [assets/roadmap-template.md](assets/roadmap-template.md), whose
 "How to read it" defines steps, **Needs**, **Proof**, **Ticks** and the tick
@@ -256,14 +232,10 @@ access ahead of time, and move mid-step interventions to the thread's
 approval. Record each answer in the table; what remains is the planned human
 work.
 
-Settle first any decision whose answer changes an invariant that other steps
-rely on, such as a layout policy that decides whether neighboring items move
-and so what framing and selection must preserve. Don't leave it as an open
-item inside the steps it shapes. Give every step that depends on its answer a
-Needs on the decision, and walk through each option's effect on those steps
-while grilling so the user sees what they pull in. When the user can't decide
-yet, keep the dependent steps provisional and out of any thread the script
-marks ready.
+Settle first any decision whose answer changes an invariant other steps rely
+on, rather than leaving it open inside them. Give each dependent step a Needs
+on it, and keep those steps provisional and out of ready threads until the
+user decides.
 
 ## Tier 3: the script
 
@@ -293,15 +265,11 @@ Group roadmap steps into threads:
 - Group across phases when steps share an environment or one fills another's
   wait, and keep each thread within reach of one context window.
 - Keep steps that change one behavior or invariant in one thread, even when
-  the plan files them under different milestones or topics: on a shared
-  canvas, for example, layout packing, camera framing and selection. Split
-  across threads, the later thread rediscovers and breaks the earlier one's
-  assumptions. When coupled steps are too large for one thread, cut where the
+  the plan files them under different milestones, such as layout, framing and
+  selection on a shared canvas. Split across threads, the later thread
+  rediscovers and breaks the earlier one's assumptions. When coupled steps are too large for one thread, cut where the
   first thread settles a contract and proves it with tests, and name that
   contract in the second thread's Depends on.
-- When a thread's work can't run inside the loop's own session, such as a final
-  check that needs a fresh agent with only the docs, say how the loop session
-  launches that agent, checks each attempt and fixes root causes between them.
 - Put steps that fit no thread in a deferred list with the reason and trigger.
 
 ### Order threads only by explicit dependencies
@@ -371,25 +339,19 @@ Ask unresolved user decisions when needed; batching confirmation does not
 authorize you to settle them. If the user requests approval between tiers,
 honor that cadence instead.
 
-Present the complete set for confirmation only after the reviewer has reviewed
-the final snapshots and their consistency across tiers, and you agree, or the
-disagreement is clear. Say "reviewer-checked" only of the revision the reviewer
-saw, have it check any later edit before you tell the user the set is
-reviewed, and present its position, all as `working-conventions` › Review
-loops describes.
+Present the complete set for confirmation only after the reviewer has checked
+the final snapshots and their consistency across tiers, reporting its
+position as `working-conventions` › Review loops describes.
 
 Ask one confirmation question covering all three tiers in one dialog, with
 links and a reading guide for each: which sections to check first, starting
 with the summary and every Decided row. Offer confirmation of the complete set
-or a request for revisions. When
-revising an existing set, identify which tiers changed and include those in
+or a request for revisions. When revising an existing set, identify which tiers changed and include those in
 the same confirmation. If revisions affect an upstream tier, propagate them
 downward and have the reviewer check the updated set before asking again.
 Don't publish the tiers or start implementation until the user explicitly
 confirms them, as `working-conventions` › Authority describes. Confirmation
-covers the tiers only, never a release. Offer a diagram-led companion, such as
-a lifecycle with Mermaid diagrams, when the design is cheaper to disagree with
-visually.
+covers the tiers only, never a release.
 
 ## Publish and link
 
