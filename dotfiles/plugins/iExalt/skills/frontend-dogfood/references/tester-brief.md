@@ -32,9 +32,10 @@ or fix anything. You never contact the user; questions for them go in your repor
 
 ## Setup
 
-- Read in full, in this order: `{skill-dir}/references/qa-conduct.md`,
-  `{skill-dir}/references/taste-profile.md`, then the parts of `{skill-dir}/references/devices.md`
-  and of `~/.config/frontend-dogfood/environment.md` for your form factor.
+- Read, in this order: sections 1, 2 and 4 of `{skill-dir}/references/qa-conduct.md` (the rest is
+  for the main agent), all of `{skill-dir}/references/taste-profile.md`, then the parts of
+  `{skill-dir}/references/devices.md` and of `~/.config/frontend-dogfood/environment.md` for your
+  form factor.
 - Browser session `{session}` on test host `{host}` is open at the URL and initialised for
   `{skill-dir}/scripts/dogfood.py`, with local evidence directory `{evidence-dir}`. Drive the
   browser only through that script (devices.md › Drive the browser) and take screenshots with its
@@ -44,7 +45,6 @@ or fix anything. You never contact the user; questions for them go in your repor
   Pedantic: find every defect, big or small. Step 4 says which probes each mode runs.
 - Budget: {N} browser actions and {M} minutes. When you reach either, stop and report, listing
   what you did not get to.
-- Profile receipts tagged CLI apply only if the scope names a CLI surface.
 
 ## How to test
 
