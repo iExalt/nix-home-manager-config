@@ -1,6 +1,6 @@
 ---
 name: working-conventions
-description: "The shared rules every workflow skill follows: authority and approvals, autonomy levels, asking the user, review loops, repeated failure, evidence and work states, test cost, updates, waiting, delegation and model routing, work-item size, records, publication, continuity and cleanup. Load it before any other step whenever a workflow skill such as overseer, keep-me-in-the-loop, subagent-pair-program, continuous-peer-review, pair-program, three-tiered-plan or agentic-workflow runs, and have the leads, reviewers and workers you brief load it too. Not a workflow of its own."
+description: "Shared rules for the workflow skills: authority, autonomy, asking the user, review loops, evidence, tests, updates, waiting, delegation, records, publication and cleanup. Load it first whenever a workflow skill runs (overseer, keep-me-in-the-loop, subagent-pair-program, continuous-peer-review, pair-program, three-tiered-plan, agentic-workflow), and have the leads, reviewers and workers you brief load it too. Not a workflow itself."
 ---
 
 # Working Conventions
