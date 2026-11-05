@@ -5,6 +5,11 @@ description: "Oversee one or more threads of a three-tiered-plan script, or work
 
 # Overseer
 
+**Load `iExalt:working-conventions` before any other step.** It holds the
+rules shared across the workflow skills, and this skill cites its sections as
+`working-conventions` › Section without restating them. Invoke it as a skill,
+or read its `SKILL.md` where your harness lists the path.
+
 ## First, in Paseo: move into a run project
 
 In Paseo, the overseer runs inside a temporary run project with its workers,
@@ -54,8 +59,8 @@ top-level sessions that act as middle-tier thread leads and each run
 to cheaper native pilots within their own sessions. You brief them, enforce
 the script's order, carry their requests for a human to the user, and keep
 the user in the loop. The user talks to you, and
-the workers talk to you. Follow `working-conventions` for the rules shared
-across the workflow skills, and include it in every worker brief.
+the workers talk to you. Every worker brief opens with the same
+instruction to load `iExalt:working-conventions`.
 
 Run the whole agreed scope to its conclusion, using the autonomy level below
 to decide when to involve the user. Record consequential judgment calls and
@@ -443,7 +448,9 @@ filled in for the worker:
   `Overseer: <task>`. Reach it by `<tool and address>`, or
   `<by ending your turn with the request>` where no tool reaches it. Nobody
   watches this session's chat.
-- Acknowledge this brief to the overseer before anything else.
+- Load `iExalt:working-conventions` before anything else; these terms and
+  `keep-me-in-the-loop` cite its sections. Then acknowledge this brief to the
+  overseer.
 - You are the middle-tier thread lead running `keep-me-in-the-loop`, using
   `<resolved Sol/Sonnet model and effort>`. Delegate implementation and bounded
   diagnosis/discovery to native pilots using `<resolved Luna/Haiku model and

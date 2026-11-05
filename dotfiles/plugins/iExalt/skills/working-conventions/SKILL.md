@@ -1,6 +1,6 @@
 ---
 name: working-conventions
-description: "The shared rules every workflow skill follows: authority and approvals, autonomy levels, asking the user, review loops, repeated failure, evidence and work states, test cost, updates, waiting, delegation and model routing, work-item size, records, publication, continuity and cleanup. Read it when a workflow skill such as overseer, keep-me-in-the-loop, subagent-pair-program, continuous-peer-review, pair-program, three-tiered-plan, agentic-workflow or assign points here, and pass it to agents you brief. Not a workflow of its own."
+description: "The shared rules every workflow skill follows: authority and approvals, autonomy levels, asking the user, review loops, repeated failure, evidence and work states, test cost, updates, waiting, delegation and model routing, work-item size, records, publication, continuity and cleanup. Load it before any other step whenever a workflow skill such as overseer, keep-me-in-the-loop, subagent-pair-program, continuous-peer-review, pair-program, three-tiered-plan or agentic-workflow runs, and have the leads, reviewers and workers you brief load it too. Not a workflow of its own."
 ---
 
 # Working Conventions
@@ -10,8 +10,9 @@ skill says what is particular to it and points here for the rest. When a
 workflow skill names an explicit exception to a rule here, the exception wins
 for that skill. The user's global instructions (`AGENTS.md`, loaded as
 `CLAUDE.md` in Claude Code) come first; this skill adds detail to them and
-never relaxes them. Pass this skill to every agent you brief, alongside the
-workflow skill it runs.
+never relaxes them. Open every brief you write for a lead, reviewer or worker
+with the instruction to load this skill before any other step; a pilot's
+brief carries the rules its task needs instead.
 
 The user's skills ship in the `iExalt` plugin, so harnesses list them as
 `iExalt:<skill>`. A bare skill name in them, such as `keep-me-in-the-loop`,

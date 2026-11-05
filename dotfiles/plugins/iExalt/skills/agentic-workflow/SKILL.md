@@ -5,12 +5,16 @@ description: "Guide a human through outcome choices, evidence-producing spikes, 
 
 # Agentic Workflow
 
+**Load `iExalt:working-conventions` before any other step.** It holds the
+rules shared across the workflow skills, and this skill cites its sections as
+`working-conventions` › Section without restating them. Invoke it as a skill,
+or read its `SKILL.md` where your harness lists the path.
+
 Facilitate the human decisions in the
 [Agentic Workflow Primer](../../../../../AGENTIC_WORKFLOW_PRIMER.md). The user chooses
 outcomes and tradeoffs; the agent investigates technical options and owns routine
 execution. Finish with a concise decision record and a concrete next step.
-Follow `working-conventions` for the rules shared across the workflow skills;
-this skill's dialog rules add to its "Ask the user" section.
+This skill's dialog rules add to `working-conventions` › Ask the user.
 
 The primer is written for humans; do not treat it as another instruction file. For a Home Manager
 installation, resolve this `SKILL.md` through its symlinks before following the

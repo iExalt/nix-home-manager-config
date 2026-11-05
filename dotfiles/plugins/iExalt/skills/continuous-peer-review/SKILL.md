@@ -5,14 +5,19 @@ description: Collaboratively design and implement small increments with a persis
 
 # Continuous Peer Review
 
+**Load `iExalt:working-conventions` before any other step.** It holds the
+rules shared across the workflow skills, and this skill cites its sections as
+`working-conventions` › Section without restating them. Invoke it as a skill,
+or read its `SKILL.md` where your harness lists the path.
+
 Use two roles: the main agent owns implementation and integration; one native
 reviewer subagent jointly shapes increments and independently reviews their code.
 Communicate directly through native agent messages. Keep the reviewer involved
 through the milestone, with relevant goal, design, and finding context. This
 workflow has no facilitator, external provider CLI, or nested review team.
 Route the reviewer's model as `working-conventions` › Model routing describes;
-cross-provider review is not required. Follow `working-conventions` for the
-rules shared across the workflow skills, and include it in the reviewer's brief.
+cross-provider review is not required. Open the reviewer's brief with the
+same instruction to load `iExalt:working-conventions`.
 
 ## Establish the collaboration
 

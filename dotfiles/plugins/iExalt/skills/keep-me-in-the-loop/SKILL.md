@@ -5,6 +5,11 @@ description: Execute an existing roadmap in coherent chunks with upfront phase a
 
 # Keep Me in the Loop
 
+**Load `iExalt:working-conventions` before any other step.** It holds the
+rules shared across the workflow skills, and this skill cites its sections as
+`working-conventions` › Section without restating them. Invoke it as a skill,
+or read its `SKILL.md` where your harness lists the path.
+
 Turn the next substantial phase of an existing plan into a few meaningful chunks.
 Shape that chunk plan with the reviewer, obtain the user's approval once, then
 implement, review, verify, commit, and push each chunk autonomously. Report
@@ -29,10 +34,8 @@ Use `maintain-project-status` for the durable progress record and
 `continuous-peer-review` for implementation and review. Read their current
 instructions; resolve them from the available skill catalog or sibling skill
 directories. Keep this skill responsible for phase boundaries and user reports,
-and leave status semantics and reviewer mechanics to those skills. Follow
-`working-conventions` for the rules shared across the workflow skills:
-authority, review loops, evidence, work states, test cost, updates, waiting,
-delegation and publication. Pass it to the reviewer with this skill's brief. If a required
+and leave status semantics and reviewer mechanics to those skills. Open the
+reviewer's brief with the same instruction to load `iExalt:working-conventions`. If a required
 skill or native review capability is unavailable, explain the limitation and
 resolve the execution approach before claiming the workflow can proceed.
 
