@@ -75,12 +75,6 @@ Impeccable adds these defaults to the list. Each is legitimate only when the bri
   zero-offset colored glows used as depth.
 - Monospace as a costume for "technical" rather than for code, data, or measurement.
   > **Override:** see SKILL.md › Conflicts › Monospace.
-- Eyebrow or kicker labels above headings; a system display face (Impact, Arial Black, the
-  platform sans) as the display voice of a Persuade or Experience page; sketch-style SVG
-  illustration; decorative `repeating-linear-gradient` stripes or grid overlays without a real
-  canvas, map, or blueprint under them; geometric masks approximating a photographic subject's
-  outline.
-  > **Override:** see SKILL.md › Conflicts › Generated-look defaults.
 - Unicode glyphs or emoji standing in for an icon system. Use a real icon library or authored SVG
   in one consistent stroke and weight.
 - Sparklines, progress rings, and soft-shadowed rounded rectangles standing in for content.

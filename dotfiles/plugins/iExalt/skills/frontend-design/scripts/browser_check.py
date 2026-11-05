@@ -5,7 +5,7 @@
 """Screenshot named UI states at several widths in headless Chromium.
 
 Covers the repeatable part of browser verification: serving a static build,
-capturing each state at desktop and narrow widths, reduced-motion and 200%-zoom
+capturing each state at desktop, tablet, and phone widths, reduced-motion and 200%-zoom
 passes on the first (key) state (every state with --all-passes), a keyboard walk
 to a target control, and HTTP, console, and horizontal-overflow problems. Script
 app-specific interactions (click, submit, retry) separately; give transient
@@ -48,7 +48,8 @@ def parse_args():
                              "(status 200, so client-rendered 404 pages need no --status)")
     parser.add_argument("--state", action="append", default=[], metavar="NAME=PATH",
                         help="named state and its path/query; repeatable")
-    parser.add_argument("--widths", default="1440,375", help="comma-separated viewport widths")
+    parser.add_argument("--widths", default="1440,820,375",
+                        help="comma-separated viewport widths; widths up to 1024 get a touch context")
     parser.add_argument("--out", type=pathlib.Path, help="screenshot directory (keep it in the project)")
     parser.add_argument("--full-page", action="store_true", help="capture the full scroll height")
     parser.add_argument("--ready", action="append", default=[], metavar="NAME=SELECTOR",
@@ -276,8 +277,9 @@ def main():
         # once per width, since reduced motion and zoom do not change focus order.
         extra_states = states if args.all_passes else states[:1]
         for width in widths:
-            narrow = width <= 800
-            # Narrow widths emulate a phone: the viewport meta tag, touch, and coarse pointer apply.
+            narrow = width <= 1024
+            # Phone and tablet widths emulate a touch device: the viewport meta tag, touch, and
+            # coarse pointer apply.
             options = {"viewport": {"width": width, "height": 812 if narrow else 900},
                        "device_scale_factor": 2 if narrow else 1, "is_mobile": narrow,
                        "has_touch": narrow}
