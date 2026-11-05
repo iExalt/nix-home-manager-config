@@ -1,6 +1,6 @@
 ---
 name: assign
-description: Take a tracked work item (GitHub issue, Linear issue, Jira ticket, or similar), size it, and hand it to the matching implementation workflow - continuous-peer-review for small one-shot tasks, subagent-pair-program for medium tasks, keep-me-in-the-loop for large tasks, epics, and plan threads. Use when the user assigns, delegates, or says "take", "pick up", or "implement" a ticket, issue, or task by reference or link.
+description: Take a tracked work item (GitHub issue, Linear issue, Jira ticket, or similar), size it, and hand it to the matching implementation workflow (continuous-peer-review for small one-shot tasks, subagent-pair-program for medium tasks, keep-me-in-the-loop for large tasks, epics, and plan threads). Use when the user assigns, delegates, or says "take", "pick up", or "implement" a ticket, issue, or task by reference or link.
 ---
 
 # Assign
@@ -29,9 +29,9 @@ rules, or these instructions.
 
 Identify the target repository from the item, its links, or the current
 checkout. When it is elsewhere, locate or clone it as the user's instructions
-direct. Read the repository's agent instructions, current Git state, and the
-code the item touches before sizing; a short ticket can hide a large change,
-and a long one can be a one-line fix.
+direct. Before sizing, read the repository's agent instructions, current Git state,
+and the code the item touches; a short ticket can hide a large change, and a
+long one can be a one-line fix.
 
 ## Choose the workflow
 
@@ -44,12 +44,11 @@ length or label:
 | Medium | Several separable work items or increments; benefits from delegated pilots and a lead; one bounded deliverable that needs no roadmap or phase approvals | `subagent-pair-program` |
 | Large | Epic, multi-phase work, many sub-issues, a workstream or thread from a campaign plan, or days of work needing checkpoints | `keep-me-in-the-loop` |
 
-When the item sits between two sizes, choose the smaller one if its workflow
-can hold the whole item without losing needed checkpoints; otherwise choose
-the larger. Give the user a one-line TL;DR of the item, the chosen workflow,
+Between two sizes, choose the smaller if its workflow can hold the whole item
+without losing needed checkpoints; otherwise choose the larger. Give the user a one-line TL;DR of the item, the chosen workflow,
 and the deciding reason, then proceed. Ask only when the answer changes what
-happens next, such as an unclear target repository or acceptance criteria that
-conflict.
+happens next, such as an unclear target repository or conflicting acceptance
+criteria.
 
 ### Large items need a plan
 
@@ -85,7 +84,7 @@ this hand-off doesn't restate it.
 ## Tracker updates
 
 Changing the item (assignee, status, labels, comments) is visible to others.
-Do it only when the user or repository instructions call for it, or the
+Do it only when the user or repository instructions call for it, or when the
 workflow's publication step implies it, such as a pull request that references
 the item. When finished, report the outcome with links to the pull request or
 commits and anything left open on the item; leave closing it to the merge,

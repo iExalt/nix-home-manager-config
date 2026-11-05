@@ -12,9 +12,9 @@ or read its `SKILL.md` where your harness lists the path.
 
 Use two roles: the main agent owns implementation and integration; one native
 reviewer subagent jointly shapes increments and independently reviews their code.
-Communicate directly through native agent messages. Keep the reviewer involved
-through the milestone, with relevant goal, design, and finding context. This
-workflow has no facilitator, external provider CLI, or nested review team.
+Keep the reviewer involved through the milestone, with relevant goal, design, and
+finding context. This workflow has no facilitator, external provider CLI, or
+nested review team.
 Route the reviewer's model as `working-conventions` › Model routing describes;
 cross-provider review is not required. Open the reviewer's brief with the
 same instruction to load `iExalt:working-conventions`.
@@ -32,30 +32,29 @@ together; do not split into fragments that cannot be meaningfully tested or revi
 Respect existing implementation and publication authority; invoking this skill
 does not authorize unrelated work.
 
-Spawn the reviewer with a scoped brief: goal, milestone boundaries, supported
-behavior, non-goals, acceptance criteria, the materiality bar for blocking
-findings, repository instructions, baseline,
-available tests, deferred verification, the author's native agent address, and
-whether the user authorized idle review of unrelated repository areas.
-Include these skill instructions. Give raw source/evidence locations as well as
-prior decisions; distinguish constraints from claims that the code is correct.
-The reviewer reads the relevant source independently and challenges shared design
-assumptions as well as departures from the plan.
+Brief the reviewer as `working-conventions` › Delegation describes, with the
+author's native agent address as its return address, and add milestone
+boundaries, supported behavior, repository instructions, baseline, available
+tests, deferred verification, whether the user authorized idle review of
+unrelated repository areas, and these skill instructions. The reviewer reads
+the relevant source independently and challenges shared design assumptions as
+well as departures from the plan.
 
 The reviewer must be a native subagent with direct message delivery. If the
-harness cannot provide that, report the limitation instead of substituting an
-external CLI or pretending concurrent review occurred. Do not spawn extra agents
+harness cannot provide one, handle it as `working-conventions` › Delegation
+describes; never substitute an external CLI or pretend concurrent review
+occurred. Do not spawn extra agents
 unless separately authorized. The reviewer does not edit the author's files,
 commit, publish, or launch another reviewer. It may inspect, suggest concrete
 fixes, and run permitted isolated probes without changing the reviewed artifact.
 
 ## Joint design, risk-based overlap
 
-Jointly shape each increment before implementation, focusing the exchange on
-unresolved decisions, changed assumptions, and consequential failure cases. Refer
-to settled designs and criteria; a brief amendment and agreement suffice for a
-routine increment. Expand the proposal when behavior, interfaces, dependencies,
-or acceptance evidence need discussion. Obtain agreement on the design and closure
+Jointly shape each increment before implementation, focusing on unresolved
+decisions, changed assumptions, and consequential failure cases. Refer to settled
+designs and criteria; a routine increment needs only a brief amendment and
+agreement. Expand the proposal when behavior, interfaces, dependencies, or
+acceptance evidence need discussion. Obtain agreement on the design and closure
 criteria, batching upcoming proposals when useful so the reviewer can answer while
 reviewing the preceding increment. Do not repeat a full brief or manufacture a
 confirmation call when agreement is already explicit.
@@ -93,9 +92,8 @@ evidence locations; do not require that ceremony for every routine increment.
 Include relevant untracked artifacts. Keep one compact ledger in the conversation
 or an existing task document, not a new receipt per message.
 
-Prefer existing exact commits and `git show REV:path` for source inspection; a
-separate snapshot copy or manifest is unnecessary when the commit supplies the
-review inputs.
+Prefer existing exact commits and `git show REV:path` for source inspection; when
+the commit supplies the review inputs, skip a separate snapshot copy or manifest.
 A changing checkout, HEAD label, or diff alone is not a stable source snapshot.
 For uncommitted work, freeze the relevant source and dependencies in an identified
 read-only review snapshot; keep actual implementation in the original repository.
@@ -112,16 +110,18 @@ snapshots with `git checkout --detach REV` and rebuild incrementally; do not cre
 a fresh worktree or build cache per increment or revision. Keep mutable test outputs
 separate. Rebuild affected artifacts; do not reuse results across changed inputs.
 Use an empty build/output directory only when clean-checkout behavior is the
-property under test, and remove it afterward. Preserve independent counterexamples, but repeat expensive
-unchanged checks only when a changed dependency, failure, or coverage gap warrants
-them. Name the snapshot and environment for evidence carried forward.
+property under test, and remove it afterward. Preserve independent
+counterexamples, but repeat expensive unchanged checks only when a changed
+dependency, failure, or coverage gap warrants them. Name the snapshot and
+environment for evidence carried forward.
 
 Track increment states: planned, design-agreed, implementing, awaiting-review,
 changes-requested, awaiting-verification, accepted. "Accepted" is
 `working-conventions`' reviewer-accepted: it names the reviewed snapshot and
-has no pending required closure checks. Distinguish code review complete, ready for a bounded live validation,
-and ready to publish. When closure needs live evidence, agree the permitted trial
-and its bounds within the user's authorization, then keep the increment pending
+has no pending required closure checks. Distinguish code review complete, ready
+for a bounded live validation, and ready to publish. When closure needs live
+evidence, agree the permitted trial and its bounds within the user's
+authorization, then keep the increment pending
 until the evidence is reconciled. Publication requires the applicable review and
 checks to be complete; needing live proof does not itself justify an early push.
 Later changes invalidate acceptance only for their affected delta and dependencies,
@@ -159,10 +159,9 @@ test may need a cleaner boundary.
 Use native direct messaging (for example `collaboration.send_message` in Codex,
 or the available equivalent in Claude). Use the harness's resume/follow-up tool
 when a reviewer has finished its turn and needs new work; do not assume a message
-to an idle agent starts execution. Reuse the same reviewer rather than spawning
-one per increment. The direct message carries the content; end a reviewer turn
-with a one-line final response naming what was sent rather than restating it.
-A native notification is delivery, not an acknowledgment.
+to an idle agent starts execution. The direct message carries the content; end a
+reviewer turn with a one-line final response naming what was sent rather than
+restating it.
 Do not promise preemption of an in-flight tool call; process messages at the next
 available boundary and before starting dependent or consequential actions.
 Send urgent messages in a separate completed tool step before starting a long
@@ -194,10 +193,10 @@ or the boundary at which it will repair. Do not stop unrelated work for every ni
 One reviewer has finite attention. Prioritize urgent findings/design blockers,
 then the oldest outstanding review, then upcoming design proposals. The author
 can prepare proposals and tests while waiting, but cannot count a pending proposal
-as agreement. When only blocked work remains, use native interruptible waits or
-completion notifications; avoid polling loops and unchanged-status messages.
-Before ending a turn to wait for the reviewer, confirm it is still running or has a
-message in flight; a stopped reviewer sends nothing more until resumed.
+as agreement. When only blocked work remains, wait as `working-conventions` ›
+Waiting describes, using native interruptible waits and avoiding polling loops
+and unchanged-status messages; a stopped reviewer sends nothing more until
+resumed.
 
 ## Reviewer idle time
 
@@ -206,9 +205,9 @@ never delay a response. Inbound messages always take priority. Work in short,
 interruptible steps without long-running commands so messages are handled at the
 next tool boundary. Idle work may run read-only checks against live or shared
 systems the session is already permitted to access, but must not change their
-state or place noticeable load on them. Do not
-message the author merely to report idle activity; send results through the normal
-design, finding, or review-result messages once they are actionable.
+state or place noticeable load on them. Do not message the author just to report
+idle activity; send actionable results in the normal design, finding, or
+review-result messages.
 
 In priority order, the reviewer may:
 
@@ -231,16 +230,16 @@ only actionable results.
 
 Keep idle-time probes, fixtures, and build outputs in the reviewer's session
 verification environment; never add them to the author's tree. Prefer lightweight
-scripts and targeted tests, building only when a probe requires it. Reviewer probes stay independent evidence
-and do not become part of the author's test suite. Suggest a probe worth retaining as a
-regression test in a finding or review result; the author decides whether to adopt
-and write it.
+scripts and targeted tests, building only when a probe requires it. Reviewer
+probes stay independent evidence outside the author's test suite. Suggest a probe
+worth retaining as a regression test in a finding or review result; the author
+decides whether to adopt and write it.
 
-Pre-existing defects that affect the milestone are ordinary findings. Record other
-out-of-scope findings in a parking-lot list instead of messaging them, keeping only
-material ones with evidence. Deliver the list once at the milestone boundary,
-labeled out of scope; the author relays it to the user and does not act on it
-without separate authorization.
+Pre-existing defects that affect the milestone are ordinary findings. Park other
+out-of-scope findings as `working-conventions` › Work-item size describes instead
+of messaging them, keeping only material ones with evidence and labeling the list
+out of scope; the author relays it to the user and does not act on it without
+separate authorization.
 
 ## Resolve findings and retain context
 
@@ -281,15 +280,14 @@ Maintain a compact shared record: goal and boundaries, settled designs and reaso
 current snapshots, dependencies, finding dispositions, closure evidence, pending
 questions, and next reviewer work. Messages report changes to this record instead
 of repeating the complete ledger and evidence. At natural milestone boundaries,
-consolidate settled decisions and evidence references into a compact checkpoint.
+consolidate it into the checkpoint `working-conventions` › Continuity describes,
+with evidence references, omitting obsolete source dumps and superseded narration.
 When the harness allows requesting compaction, compact after the checkpoint rather
 than waiting for automatic compaction; otherwise keep the checkpoint current so
-automatic compaction preserves it. Preserve the same reviewer. Do not imply that writing a summary alone removes prior context.
-Retain unresolved findings, pending checks, deferrals, and reasons for decisions;
-omit obsolete source dumps and superseded narration. If a reviewer must be replaced
-or context refreshed, transfer this record and evidence references, preserving
-all unresolved findings;
-do not silently restart discovery or erase disagreements.
+automatic compaction preserves it. Preserve the same reviewer, and do not imply
+that writing a summary alone removes prior context. If a reviewer must be replaced
+or context refreshed, transfer this record and evidence references; do not
+silently restart discovery.
 
 ## Integration and completion
 
@@ -302,12 +300,12 @@ alone is not integration acceptance.
 
 Finish only when the reviewer and main agent agree the final milestone satisfies
 its criteria with no unresolved material findings under the agreed bar; deferred
-optional findings do not block. Identify accepted deferrals,
-verification limits, and the reviewer's parked out-of-scope findings, and put them
-in the report to the user, not only in the exchange with the reviewer. Report
-checks as `working-conventions` › Evidence describes.
-At session end, the reviewer removes its verification environment and reports the space freed;
-if it cannot, the author removes it. Changes after acceptance need proportional delta review;
+optional findings do not block. The report to the user names accepted deferrals,
+verification limits, and the reviewer's parked out-of-scope findings, as
+`working-conventions` › Updates describes, and reports checks as
+`working-conventions` › Evidence describes. At session end, the reviewer removes
+its verification environment and reports the space freed; if it cannot, the
+author removes it. Changes after acceptance need proportional delta review;
 preserve the task's existing commit, push, and deployment authorization.
 
 For an efficiency trial, capture milestone start/end, review dispatch and acceptance

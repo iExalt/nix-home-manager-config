@@ -1,8 +1,7 @@
 # Devices and hosts
 
 Where the browser runs, how it reaches the app, and how to cover each form factor. Use the lowest
-tier that can answer the question. Tier 3 needs the user's agreement, and the user has asked for
-it only when absolutely necessary.
+tier that can answer the question.
 
 **The environment file.** This file describes the kinds of machine. The user's actual machines are
 in `~/.config/frontend-dogfood/environment.md`: the browser host's ssh name and quirks, how to reach
@@ -21,8 +20,8 @@ Report anything no reachable tier covers as untested, with the reason.
 
 ## Tier 1: agent-browser on the browser host
 
-`<host>` is a Linux machine the user lets agents use freely. Never run browsers on the laptop. If
-the host is unreachable, ask the user once instead of falling back.
+`<host>` is a Linux machine the user lets agents use freely. Never run browsers on the laptop
+(SKILL.md step 2 covers an unreachable host).
 
 **Setup, once per host.** If mise is only on a login shell's PATH there (the environment file
 says), wrap commands in `bash -lc` and call `mise exec -- agent-browser`; the commands below assume
@@ -44,8 +43,8 @@ browser's idle timeout, failing with exit 3 if not: re-run `init --open` or
 `hold` rather than carrying on, because a restarted browser has default settings and no touch.
 Turning lingering on (`loginctl enable-linger`) changes the user's machine, so ask them first.
 
-The laptop gets the same `npm:agent-browser@latest` from this repo's `home.nix`; agent-browser is
-installed there only so its version and docs match, never to run a browser. Compare
+The laptop gets the same `npm:agent-browser@latest` from this repo's `home.nix`, only so its
+version and docs match. Compare
 `agent-browser --version` on both hosts and update the older one if they differ. Testing needs real
 scrollbars, and Chrome needs `--no-sandbox` where AppArmor blocks its user-namespace sandbox (stock
 Ubuntu does), so keep this config at `~/.agent-browser/dogfood.json` on the host and export
@@ -88,7 +87,7 @@ headless Chrome reports `(hover: hover)` and `(pointer: fine)` as false, so an a
 them shows a desktop tester its touch layout. `init` prints `mouse: true` when the page sees a real
 mouse. Pass `--headless` only if the host lacks Xvfb, and report hover- and pointer-dependent
 behaviour untested. It first closes any browser and touch hold left under that
-session name, so re-running it starts clean. The daemon and browser persist between calls; give every
+session name, so a re-run starts clean. The daemon and browser persist between calls; give every
 parallel tester its own session name. The main agent usually runs `init` and hands the session to
 the tester; the tester leaves it open for the main agent to close.
 

@@ -7,7 +7,7 @@ The `phone-debug` skill covers the mechanics of borrowing a device; the rules be
 ## 1. Verify it yourself; ask the user only for judgement
 - Drive functional and end-to-end checks yourself. "You don't need to block on me for functional/e2e tests, especially since I allowed you to run headfully on the [browser host] :)". This applies to every project: "I'd like agents to verify the frontend themselves/in tests as much as possible".
 - The user's time is for look and feel and for product decisions: "Reserve my judgement for look and feel."
-- Measure anything that can be measured, including smoothness, frame time and latency, and never ask whether it feels smooth. "I should be consulted for visual/design look-and-feel, but you and the workers are perfectly equipped to answer mechanical questions."
+- Measure what can be measured, including smoothness, frame time and latency, and never ask whether it feels smooth. "I should be consulted for visual/design look-and-feel, but you and the workers are perfectly equipped to answer mechanical questions."
 - Do your own headed pass before you involve them. "I think you should try testing it for yourself on the [browser host] headfully."
 - Fix or file what you notice instead of leaving it as their call or dropping it. They pasted back an agent's note that left two iPad defects as `both your call`, asking "Did we fix this?"
 - Before you hand over a URL, command or checklist, run it from the user's real starting state and quote the real output. "Before asking me to try the benchmark, the worker should probably ensure that it's fully working/bug free :)"; "I don't see that line or table to be honest, here's the bottom of the output:". Any file you name must exist where they will look: "I can't find the .json files for the original placement check".
@@ -31,7 +31,7 @@ The `phone-debug` skill covers the mechanics of borrowing a device; the rules be
 ## 4. Test data, cleanup and side effects
 - Test on an isolated copy of real data, never on the live store. "(In a cloned/isolated checkout of course)". For remote state, use the named sandbox they gave you: "using [a sandbox remote] as remote storage (clean it up after)".
 - Clean up in teardown, whether the run passes or fails, including projects, settings and tabs left in the user's real folders. "Please clean up - once, as a one-time cleanup - and always, after the test is done."; "Clean up your worktree too." Test pages must not write into the user's real saved preferences.
-- No real OS notifications or other outward effects without a good reason and asking first. "Please avoid sending real/true macOS notifications without good reason + asking me first." Record or stub them instead.
+- No real OS notifications or other outward effects without a good reason and asking first. "Please avoid sending real/true macOS notifications without good reason + asking me first." Record or stub them instead; scripted journeys never raise them (SKILL.md step 2).
 - Try irreversible actions on a trial run first, and show the result before the real one. "Hold on, let's do some trial imports first before we do the real deal."
 - Keep anything identifying out of public repositories, including screenshots, fixtures and host names. "Never put anything identifying or anything that shouldn't be public there." Never read or print secrets: "WITHOUT reading the secrets".
 
@@ -48,5 +48,5 @@ The `phone-debug` skill covers the mechanics of borrowing a device; the rules be
 - Lead with what you need from them, in plain words, and explain jargon. "It's not clear what you're waiting for."; "I don't quite understand your caveats"; "What's the G1 question?"
 - When asking them to decide, give the pros and cons in prose. "Give me the +- in prose." Give phone reviewers a short numbered checklist, which they answer item by item (`1. Cellular`).
 - Batch the findings and don't flood them. "I'm getting a little overwhelmed with the cards, can you brain dump them".
-- State what you could not verify, such as real-finger gestures, a quiet machine or outdoor light. This rule comes from the user's global instructions rather than a transcript quote. They accept skipped checks when you name them: "Let's skip the outdoor and night checks".
+- State what you could not verify, such as real-finger gestures, a quiet machine or outdoor light (a rule from the user's global instructions, not a transcript). They accept skipped checks when you name them: "Let's skip the outdoor and night checks".
 - Say when background work finishes; don't make them chase you. "Are notifications not working? It's 2:13."

@@ -22,8 +22,8 @@ Coordinate through three roles:
 Keep routine approval and review between agents. Assign a lead for every item,
 including straightforward work; reuse agents when their context remains useful.
 Reserve capacity for the lead and at least one pilot. Serialize rather than bypass
-this structure. If subagent tools or required capacity are unavailable, report the
-limitation; do not claim delegation or silently take over implementation. Open every lead's
+this structure. If subagent tools or required capacity are unavailable, handle it
+as `working-conventions` › Delegation describes. Open every lead's
 brief with the same instruction to load `iExalt:working-conventions`. Pilots
 don't load it; their briefs carry the rules their task needs.
 
@@ -42,14 +42,14 @@ navigator may give a lead `developer-demanding` in Claude Code, or GPT Sol at
 concurrency or lifecycle decisions, demanding integration, or explicitly
 escalated implementation.
 
-In Claude Code, leads use `developer-routine` and pilots use Haiku. Select the profile
-through the Agent tool's `subagent_type` and omit a per-invocation model override
-that conflicts with the profile's own model. When no profile matches a pilot's
-scope at Haiku, launch it with an explicit Haiku model override rather than
-falling back to `developer-routine`. The profiles inherit tools and permissions and grant no
+In Claude Code, select the profile from the Model routing table through the Agent
+tool's `subagent_type` and omit a per-invocation model override that conflicts
+with the profile's own model. When no profile matches a pilot's scope at Haiku,
+launch it with an explicit Haiku model override rather than falling back to
+`developer-routine`. The profiles inherit tools and permissions and grant no
 additional authority. Keep the navigator–lead–pilot structure and pass the
 relevant workflow rules in each brief; do not preload this entire
-orchestration skill into every pilot or launch extra agents simply because a
+orchestration skill into every pilot or launch extra agents just because a
 profile exists.
 
 ### Internal coordination
@@ -75,11 +75,11 @@ corrects routing. If the route fails, report through the normal parent response.
 1. Inspect the workspace, instructions, relevant source, and existing changes.
    Establish the user's outcome and constraints, reusing settled decisions. Show a
    navigator-owned checklist covering implementation, review, and verification.
-2. Select **one component-level checklist item**. Milestones are roadmap context,
-   never lead assignments. Group items only when they share a tightly coupled
-   implementation boundary and acceptance check. Split independent outcomes or
-   unresolved design decisions; use bounded discovery if the item cannot yet be
-   specified. Keep its acceptance boundary distinct from the backlog.
+2. Select **one component-level checklist item**, sized as `working-conventions`
+   › Work-item size describes; group items only when they are tightly coupled
+   and share an acceptance check.
+   Split out unresolved design decisions, and use bounded discovery if the item
+   cannot yet be specified. Keep its acceptance boundary distinct from the backlog.
 3. Give the lead a contract containing:
    - The desired outcome, why this item matters now, and acceptance criteria.
    - Scope, exclusions, tolerances, architectural constraints, and dependencies.
@@ -108,8 +108,8 @@ priorities, constraints, and acceptance boundaries. At meaningful handoffs or
 route-changing events, judge whether the next prerequisite is necessary and sized
 appropriately, and whether implementation, verification, or preservation effort
 remains worthwhile. Accept, narrow, redirect, or stop as warranted; do not rubber
-stamp or disagree by ritual. Reuse route decisions when evidence
-has not changed, accounting for switching costs.
+stamp or disagree by ritual. Reuse route decisions when evidence has not
+changed, accounting for switching costs.
 
 Set rigor proportional to the user's needs and consequences of failure. Challenge
 both insufficient checks and effort that exceeds its value. Reviews must not
@@ -117,9 +117,9 @@ silently expand acceptance requirements.
 
 Do not diagnose routine failures, inspect intermediate patches, prescribe repairs,
 or rerun delegated checks. Deriving a fix yourself and sending it through the lead
-still duplicates the lead's work. Inspect implementation only for a specific escalation or
-acceptance concern. While execution is delegated, independent navigator work is
-limited to the next item's contract or a named strategic/cross-item uncertainty
+still duplicates the lead's work. Inspect implementation only for a specific
+escalation or acceptance concern. While execution is delegated, independent
+navigator work is limited to the next item's contract or a named strategic/cross-item uncertainty
 that could change direction. Otherwise park.
 
 The lead escalates when:
@@ -131,17 +131,16 @@ The lead escalates when:
 - Repeated repairs fail to advance the real acceptance gate: by default, **two
   failed attempts**, unless the contract sets a workload-specific threshold.
 
-Return the decision needed, evidence, options, and recommendation. For repeated
-failures, identify rejected hypotheses and the next discriminating experiment;
-retain or remove provisional repairs deliberately. Local passing tests do not
-resolve a failing end-to-end reproducer. For hangs, distinguish actual execution,
+Return the decision needed, evidence, options, and recommendation. Repeated
+failures escalate as `working-conventions` › Repeated failure describes; retain or
+remove provisional repairs deliberately. For hangs, distinguish actual execution,
 waiting, exit, wakeups, and backpressure before proposing performance changes.
 
 The navigator resolves the decision and returns execution to the lead. Ask the
 user only for missing information/authority or changes to priorities, hard
 constraints, or substantial effort commitments; keep independent work moving.
-Agent approval cannot expand user authorization. Attribute decisions to the user
-only as `working-conventions` › Record the user's decisions describes.
+Attribute decisions to the user only as `working-conventions` › Record the
+user's decisions describes.
 
 ## Pilot and lead discipline
 
@@ -181,8 +180,8 @@ The lead follows four review rules:
    do not independently repeat its investigation.
 2. **Review at handoff.** Inspect proposals and completed diffs, not ongoing work
    merely to check progress. A named concern can justify bounded inspection.
-3. **Reuse valid verification.** Give each run one owner. Preserve enough context
-   to identify tested changes and relevant configuration. Invalidate only results
+3. **Reuse valid verification.** Preserve enough context to identify tested
+   changes and relevant configuration. Invalidate only results
    affected by source, dependency, configuration, or environment changes; handoff
    or resumption alone never justifies rerunning checks.
 4. **Justify additional checks.** Name missing/contradictory evidence, an invalidated
@@ -193,8 +192,8 @@ The lead follows four review rules:
 When the navigator asks the lead to confirm conditions before a consequential
 build or run, confirm each against the diff or evidence, or report which are
 unconfirmed and wait. "Seems fine to proceed" is not confirmation. A pass on a
-criterion names the evidence the lead checked; a criterion resting only on a
-pilot's report is "reported, not checked".
+criterion names the evidence the lead checked, as `working-conventions` ›
+Evidence describes.
 
 Batch known corrections and publication chores in the existing handoff. The lead
 may make small factual documentation corrections after taking file ownership,
@@ -242,17 +241,18 @@ respect mandatory tool limits and remain responsive to incoming events.
 
 Resume for an acceptance packet, escalation, material blocker/dependency change,
 missed agreed checkpoint, or new user instruction. A timeout alone creates no
-work: wait again without reading worker logs, polling `list_agents`, searching
-source, requesting status, or acknowledging informational messages.
+work, as `working-conventions` › Waiting describes: don't read worker logs, poll
+`list_agents`, search source, request status, or acknowledge informational
+messages.
 
-The agreed checkpoint is a stall threshold, not a recurring report deadline. If
-missed, make one bounded inquiry to establish the blocker and next checkpoint;
-do not take over debugging or repeatedly poll while the lead responds.
+When the lead misses the agreed checkpoint, follow `working-conventions` ›
+Waiting to establish the blocker and the next checkpoint; do not take over
+debugging or repeatedly poll while the lead responds.
 
 For external processes, prefer completion notifications. Otherwise designate one
-monitor, run handle, cadence, and stall/failure conditions; a monitoring subagent
-uses Luna low in Codex or `developer-trivial` in Claude Code. Do not add an agent
-merely to watch the lead or duplicate monitoring.
+monitor, run handle, cadence, and stall/failure conditions, and route a
+monitoring subagent as `working-conventions` › Model routing describes. Do not
+add an agent just to watch the lead or duplicate monitoring.
 
 ## User-facing updates
 
@@ -261,9 +261,7 @@ overrides default or recommended commentary intervals, including 60 seconds.
 After the initial checklist, the qualifying events are lead events: reviewed
 acceptance, a material finding, a decision request, or a changed scope, route,
 blocker or delivery expectation. Respond directly to new user instructions.
-Internal coordination does not warrant a chat update, and a silent-turn
-reminder from the harness does not require a reply. Never inspect workers
-just to fill a message.
+Never inspect workers just to fill a message.
 
 Supply enough background to make sense without opening a pilot chat; do not
 merely compress the lead's packet. Use natural paragraphs, decisive evidence,
@@ -292,12 +290,12 @@ disposable data within authorization.
 
 ## Parallel work, continuity, and publication
 
-- Overlap independent work only when it shortens delivery. Dependent work remains
-  sequenced; independent checklist items need explicit navigator assignments.
-  Spare slots are not a reason to invent work.
-- Before parallel edits, record file ownership. One active owner per file,
-  including generated files and configuration; different regions still overlap.
-  Serialize shared edits or isolate worktrees with an integration owner/sequence.
+- Overlap and file ownership follow `working-conventions` › Delegation. Dependent
+  work remains sequenced; independent checklist items need explicit navigator
+  assignments.
+- Before parallel edits, record file ownership; different regions of one file
+  still overlap. Serialize shared edits or isolate worktrees with an integration
+  owner/sequence.
 - Review shared-workspace edits in place. Integrate accepted worktree patches once.
   Coordinate formatters, generators, dependency updates, and Git mutations to avoid
   races; give integration edits an owner and review them before acceptance.
@@ -310,7 +308,7 @@ disposable data within authorization.
   skill instructions cannot suppress runtime wakeups.
 - For interruption or context reset, retain the item/acceptance boundary, accepted
   work, outstanding diffs/owners, active processes, results, next action, and open
-  decisions. Recheck current state on resume instead of repeating broad discovery.
+  decisions, and resume as `working-conventions` › Continuity describes.
 - When publication is authorized, one owner publishes accepted changes as
   `working-conventions` › Publication describes, preserving unrelated work.
   Finish with completed behavior, verification, and limitations; keep detailed

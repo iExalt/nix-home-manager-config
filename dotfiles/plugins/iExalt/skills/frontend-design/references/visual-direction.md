@@ -2,18 +2,11 @@
 
 Merged from Anthropic's `frontend-design` skill (Apache-2.0) and Impeccable's craft floor,
 Operate-mode depth (`operate.md`, `mode-operate.md`), and new-work triage ("Decide what is already
-true") (Apache-2.0; trimmed and
-deduplicated). Anthropic's design principles, calibration list, planning process, and restraint
-paragraph are copied verbatim, with three exceptions: the studio-persona opening is dropped, the
-"Consider written content carefully" paragraph is replaced by a pointer to copy.md, and the
-restraint paragraph's quality-floor sentence moved into "Craft floor". One-line **Override**
-pointers mark where SKILL.md › Conflicts differs. Load this when choosing or changing a visual
-direction, and skim "Craft floor" before any UI edit.
-
-The user's priorities win over novelty: on task surfaces, clarity, consistency, and task efficiency
-come first, and distinctiveness shows up as precision. Where the brief or DESIGN.md pins a visual
-direction, follow it exactly, including when it asks for one of the looks listed under
-"Calibration".
+true") (Apache-2.0; trimmed and deduplicated). Anthropic's design principles, calibration list,
+planning process, and restraint paragraph are copied verbatim, with three exceptions: the
+studio-persona opening is dropped, the "Consider written content carefully" paragraph is replaced
+by a pointer to copy.md, and the restraint paragraph's quality-floor sentence moved into "Craft
+floor". One-line **Override** pointers mark where SKILL.md › Conflicts differs.
 
 ## Decide what is already true
 
@@ -86,8 +79,7 @@ Impeccable adds these defaults to the list. Each is legitimate only when the bri
   platform sans) as the display voice of a Persuade or Experience page; sketch-style SVG
   illustration; decorative `repeating-linear-gradient` stripes or grid overlays without a real
   canvas, map, or blueprint under them; geometric masks approximating a photographic subject's
-  outline. Impeccable bans eyebrows outright; the rest are its Refuse-list defaults or Codex-only
-  rules.
+  outline.
   > **Override:** see SKILL.md › Conflicts › Generated-look defaults.
 - Unicode glyphs or emoji standing in for an icon system. Use a real icon library or authored SVG
   in one consistent stroke and weight.
@@ -111,9 +103,6 @@ what each is for, the data the visitor reads first and its states, and one signa
 visual world lends type, palette, density, and that move; it never supplies the layout, navigation
 model, or controls, which stay the platform's standard ones.
 
-Record the agreed plan in DESIGN.md (see [design-record.md](design-record.md)) once the user
-accepts it.
-
 When writing the code, be careful of structuring your CSS selector specificities. It's easy to generate CSS classes that cancel each other out (especially with a type-based selector like .section and an element-based selector like .cta). This can happen often with padding/margin between sections.
 
 ## Restraint and self-critique
@@ -125,8 +114,8 @@ Spend your boldness in one place. Let one element be the memorable thing, keep e
 Check these on the built result, together, in each look at the render. A pinned brief or the
 established design overrides any value here; see SKILL.md › Conflicts › Radii and brief.
 
-- **Contrast:** body and placeholder text ≥4.5:1, large text ≥3:1 (WCAG AA). On colored surfaces,
-  tint secondary text from that hue rather than using gray. Interactive states (hover, active,
+- **Contrast:** per SKILL.md › Conflicts › Contrast, placeholder text included. On colored
+  surfaces, tint secondary text from that hue rather than using gray. Interactive states (hover, active,
   focus) have more contrast than the rest state.
 - **Depth:** shadows carry an offset and a soft blur; layered shadows (ambient plus direct) read
   more natural. Borders with shadows: see SKILL.md › Conflicts › Elevation.
@@ -162,7 +151,6 @@ The tool should disappear into the task.
 - **Typography.** One well-tuned sans family is often right. Use a fixed rem scale with a tight
   ratio (1.125–1.2), not fluid headings. Titles that come from user or system data (issue titles,
   error strings, file paths) stay at a modest heading size and wrap or clamp on narrow screens.
-  Measure per SKILL.md › Conflicts › Line length.
 - **Color.** Restrained by default; inactive states never get heavy color or full-saturation
   accents. The accent marks primary actions, current selection, and state
   only, not decoration. Standardize a semantic state vocabulary: hover, focus, active, disabled,
@@ -171,12 +159,8 @@ The tool should disappear into the task.
 - **Layout.** Responsive behavior is structural (collapse the sidebar, reflow the table, change
   columns), not fluid typography. Overlays escape their container: use `<dialog>`, the popover API,
   `position: fixed`, or a portal so dropdowns are not clipped by `overflow` ancestors.
-- **Components.** Every interactive component has default, hover, focus, active, disabled,
-  loading, and error states. Same button shape, same form-control vocabulary, same icon style
-  everywhere; if the save button looks different in two places, one is wrong. Skeletons, not
-  spinners, inside content. Empty states teach the interface.
-- **Motion.** Motion conveys state, not decoration; timing and page-load rules per SKILL.md ›
-  Conflicts › Motion.
+- **Components.** Same button shape, same form-control vocabulary, same icon style everywhere; if
+  the save button looks different in two places, one is wrong.
 - **Permissions.** Task surfaces can afford system fonts, standard navigation (top bar plus side
   nav, breadcrumbs, tabs, command palettes), density when users need it, and consistency over
   surprise. Save delight for moments, not pages.

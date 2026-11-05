@@ -1,10 +1,8 @@
 # <Campaign> plan
 
 <!--
-Tier 1 of three-tiered-plan: what the campaign delivers and why. Verbose by design: this is the context store that
-the roadmap, the script and every implementing agent read, including you after compaction. Adapt the headings to the
-project, but keep the stable IDs (D1…, §N.M item K, milestone boxes, gates) that later tiers cite. Delete these
-comments.
+Tier 1 of three-tiered-plan: what the campaign delivers and why. Adapt the headings to the project, but keep the
+stable IDs (D1…, §N.M item K, milestone boxes, gates) that later tiers cite. Delete these comments.
 -->
 
 The [roadmap](<ROADMAP>.md) says how the steps run, the [script](<SCRIPT>.md) says which threads to open, and the
@@ -41,10 +39,8 @@ in any conflict, the user's latest word.
 
 ## 2. Background and history
 
-<!--
-What a newcomer needs before any decision makes sense. Cite records; quote the user where their words carry the
-reason. Keep corrections in place with their dates.
--->
+<!-- What a newcomer needs before any decision makes sense. Cite records; quote the user where their words carry the
+reason. -->
 
 ### 2.1 From the user
 
@@ -116,5 +112,4 @@ that keeps failing. -->
 
 ## 9. Rejected and corrected ideas
 
-<!-- What was proposed, who corrected it and why, so later agents don't propose it again. Mark **Lesson:** where a
-working rule came out of it. -->
+<!-- What was proposed, who corrected it and why. Mark **Lesson:** where a working rule came out of it. -->

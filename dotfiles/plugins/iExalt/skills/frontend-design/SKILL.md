@@ -64,18 +64,16 @@ inside an established design, start at step 3 with the existing conventions.
 
 Read DESIGN.md (and PRODUCT.md, if the project keeps users and purpose there) if they exist, then
 read the shared [taste profile](../frontend-dogfood/references/taste-profile.md) when available.
-Apply relevant recorded preferences without re-asking; the current brief and latest feedback win.
-Then inspect the code, routes, components, tokens, and any data or API the UI will show.
-Write down what you can infer, then ask the user to confirm or correct it
-instead of interviewing from scratch. Use a structured question tool when one is available. Ask two
-or three questions per round, usually one round:
+Apply preferences recorded in DESIGN.md and the profile without re-asking; the current brief and latest
+feedback win. Then inspect the code, routes, components, tokens, and any data or API the UI will
+show. Write down what you can infer, then ask the user to confirm or correct it instead of
+interviewing from scratch. Use a structured question tool when one is available. Ask two or three
+questions per round, usually one round:
 
 - Who uses this, in what situation, and how often?
 - What are the one to three things they must get done, and what does success look like?
 - What must not change, and what would make a polished result feel wrong?
 - Are there products they like using, or a look they want to avoid?
-
-Do not ask for CSS values, component libraries, or other technical choices.
 
 ### 2. Propose the flow before implementing
 
@@ -94,11 +92,9 @@ when the layout is genuinely open, and recommend one. Get the user's go-ahead, t
 agreed decisions in DESIGN.md ([references/design-record.md](references/design-record.md)).
 
 When the user must pick between visual alternatives (directions, mockups, competing builds or
-skill outputs), have a separate judge agent screen them first: drop any that fail the craft floor,
-accessibility or the brief, and settle what can be measured. Show the user at most three, as
-same-scale images side by side with realistic data, not prose descriptions. Give a one-line
-tradeoff for each, your recommendation, and the one taste question left. Settled preferences in
-DESIGN.md are not open questions: apply them without asking.
+skill outputs), follow the judging rule in your global instructions; the judge also drops any that
+fail the craft floor, accessibility or the brief. Show the survivors as same-scale images with
+realistic data, not prose descriptions, each with a one-line tradeoff, plus your recommendation.
 
 When no user can answer (a delegated or autonomous run), mark each assumption plainly in the
 brief, with the option you chose. If your instructions authorize implementation, also record the
@@ -111,14 +107,12 @@ them.
 Build one flow end to end before broadening. Read the "Craft floor" in
 [references/visual-direction.md](references/visual-direction.md) before editing UI.
 
-- Seed realistic fixtures: long names, large datasets, empty results, slow responses, errors, and
-  permission limits. Keep them reusable for later checks. See
+- Seed realistic, reusable fixtures (long names, large datasets, empty results, slow responses,
+  errors, permission limits) and design every reachable state; see
   [references/states-and-edge-cases.md](references/states-and-edge-cases.md).
-- Design every reachable state: loading, empty, error and recovery, success, disabled, partial.
 - Use semantic HTML and the project's existing components and tokens. Use standard controls for
   standard tasks.
-- Write the interface copy deliberately ([references/copy.md](references/copy.md)): specific
-  action labels, errors that say how to recover, and one name per concept.
+- Write the interface copy deliberately with [references/copy.md](references/copy.md).
 - Skim the matching section of
   [references/web-interface-guidelines.md](references/web-interface-guidelines.md) before building
   forms, animation, or navigation.
@@ -130,16 +124,13 @@ browser tools. [scripts/browser_check.py](scripts/browser_check.py) handles the 
 serves a static build or targets a running URL, screenshots named states at each width, runs
 reduced-motion and 200%-zoom passes on the first (key) state, counts Tab presses to a target
 control, and reports HTTP errors, failed requests, console errors, and horizontal overflow. Install
-its browser once with `mise exec -- uv run <skill-dir>/scripts/browser_check.py --install-browser`,
-then see `--help`. Useful options: `--spa` for client-routed static builds; `--ready NAME=SELECTOR`
-for a state whose data loads after the page or that is transient; `--status NAME=404` for error
-pages the server returns with an error status (not client-rendered SPA 404s, which return 200);
-`--idle-timeout 0` for streaming UIs; `--tab-to WIDTH=SELECTOR` when a control moves (into a menu on
-phones, say); and `--all-passes` to run reduced motion and zoom on every state. Narrow widths
-emulate a phone (viewport meta tag, touch, coarse pointer). Script the app-specific interactions
-separately. Give transient states (posting, slow loads) a URL or fixture switch so they stay on
-screen long enough to capture. Ask before anything that would disrupt the user's machine, such as
-installing system browsers, taking over their open browser, or binding common ports.
+its browser once with `mise exec -- uv run <skill-dir>/scripts/browser_check.py --install-browser`;
+`--help` explains the options for SPAs, late-loading or transient states, expected error statuses,
+streaming UIs, and controls that move between widths. Narrow widths emulate a phone (viewport meta
+tag, touch, coarse pointer). Script the app-specific interactions separately. Give transient
+states (posting, slow loads) a URL or fixture switch so they stay on screen long enough to capture.
+Ask before anything that would disrupt the user's machine, such as installing system browsers,
+taking over their open browser, or binding common ports.
 
 - **Widths:** desktop (about 1440px), tablet (about 820px), and phone (about 375px), plus any width
   where the layout changes. Check 200% zoom on key screens (headless: half the CSS width at 2x density).
@@ -165,16 +156,13 @@ what was not verified.
 
 ### 5. Critique, audit, and fix
 
-Before asking for feedback, run [references/critique.md](references/critique.md) on the flow:
-design review, cognitive load, Nielsen heuristics, two or three personas, and the
-[web interface guidelines](references/web-interface-guidelines.md) as a checklist. Fix every P0
-and P1 finding and re-verify in the browser. Report the remaining P2 and P3 items briefly instead
-of burying the user in them.
+Before asking for feedback, run [references/critique.md](references/critique.md) on the flow. Fix
+every P0 and P1 finding, re-verify in the browser, and report what you fixed. Report the remaining
+P2 and P3 items briefly instead of burying the user in them.
 
 Then, before showing the user a built or changed UI, run the `frontend-dogfood` skill when it is
 installed: a fresh tester uses the running app the way this user would, and you fix or file what it
-finds.
-Your own checks here are the developer's; dogfood is the independent QA pass.
+finds. Your own checks here are the developer's; dogfood is the independent QA pass.
 
 ### 6. Iterate and preserve consistency
 
@@ -186,9 +174,9 @@ later sessions stay consistent. Before adding a new screen, reuse the establishe
 than inventing new ones.
 
 Learn from feedback throughout this skill's use, including briefs and visual alternatives, not
-only after a dogfood pass. Keep project-specific conventions in DESIGN.md. For feedback that
-reveals a reusable personal preference, read the shared
-[taste profile](../frontend-dogfood/references/taste-profile.md) and propose an addition or revision:
+only after a dogfood pass. For feedback that reveals a reusable personal preference, read the
+shared [taste profile](../frontend-dogfood/references/taste-profile.md) and propose an addition or
+revision:
 the principle, the user's own words as the receipt, its scope and strength of evidence, and a
 concrete probe that would catch a violation. Do not turn a one-off product choice into a universal
 rule. If feedback contradicts an existing rule or dismisses a finding it predicted, propose
@@ -290,14 +278,9 @@ Change a rule here, not at the pointer.
   decorative stripe or grid backgrounds, and geometric masks standing in for a subject's real
   outline. Use one only when the user's brief names it, or when the established design (DESIGN.md
   or the existing code) already uses it, which includes a world the user chose, such as
-  neobrutalism or a blueprint canvas. Never introduce one because the subject suggests it. This
-  relaxes Impeccable's outright eyebrow ban and makes its Codex-only sketch-SVG and stripe/grid
-  rules apply everywhere. Anthropic's calibration traits (cream and terracotta, near-black with one
-  acid accent, and the rest) remain what that list says: legitimate for some briefs, but never the
-  way to spend a free axis.
+  neobrutalism or a blueprint canvas. Never introduce one because the subject suggests it.
 - **Distinctiveness:** on Operate surfaces, familiarity wins; spend boldness on one memorable
-  detail, not on unfamiliar controls. On Read surfaces, structure for comprehension first, then
-  make the reading experience worth staying in.
+  detail, not on unfamiliar controls. Read surfaces follow Modes › Read.
 - **Radii and brief:** Craft floor values (such as 12–16px card radii, pills only for small
   controls) are defaults for when the design leaves them open. A pinned brief or established
   design overrides them; Conflicts rules still apply.
