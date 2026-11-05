@@ -204,8 +204,7 @@ absolute path: a path relative to the project sent the user looking for it.
 - how many findings you filed, and where;
 - how long the pass took against its budget, and the mode it ran in.
 
-Tear down what you started (qa-conduct and `working-conventions` › Workspace and cleanup):
-servers by PID, tunnels, browser sessions, test data, guest settings you changed, and LOCK files.
+Tear down what you started (qa-conduct): servers by PID, tunnels, browser sessions, test data, guest settings you changed, and LOCK files.
 
 ### 7. Learn from the user's review
 

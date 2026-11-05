@@ -79,8 +79,8 @@ the harness's session tooling and pass the same brief. Give the workflow:
 - publication expectations: whether to commit, push, open a pull request, and
   how to reference the item (for example `Fixes #<N>` or the tracker's key).
 
-The selected workflows follow `working-conventions`; this hand-off doesn't
-restate it.
+The selected workflow has its agent load `iExalt:working-conventions`;
+this hand-off doesn't restate it.
 
 ## Tracker updates
 
