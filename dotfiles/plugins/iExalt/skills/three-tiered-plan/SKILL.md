@@ -1,6 +1,6 @@
 ---
 name: three-tiered-plan
-description: "Grill the user about a campaign spanning days or weeks, then write and maintain, with a continuous peer reviewer, three planning tiers: a verbose, history-grounded plan (what and why), a concise roadmap of steps with proofs (how), and keep-me-in-the-loop threads with explicit dependencies and human interventions, as a literal script or as workstream issues in the repository's tracker. Use when starting or re-planning such a campaign, deriving or revising its roadmap, script or workstreams, or closing a finished one; not for work one session can hold (use agentic-workflow) or for executing a thread (use keep-me-in-the-loop)."
+description: "Grill the user about a campaign spanning days or weeks, then write and maintain, with a continuous reviewer, a history-grounded plan, a roadmap of steps with proofs, and a script of keep-me-in-the-loop threads (or tracker workstreams) with dependencies and human interventions. Use to start, re-plan, revise or close such a campaign; not for work one session can hold (agentic-workflow) or for running a thread (keep-me-in-the-loop)."
 ---
 
 # Three-Tiered Plan

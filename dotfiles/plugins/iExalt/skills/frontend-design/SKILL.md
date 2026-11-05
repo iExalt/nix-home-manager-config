@@ -1,6 +1,6 @@
 ---
 name: frontend-design
-description: "Design, build, critique, and refine usable, accessible, good-looking frontends with the agent supplying the design judgment and the user supplying goals and feedback. Use whenever work touches a user interface: new apps, pages, dashboards, components, forms, settings, onboarding, empty or error states, and agent or chat UIs that show progress, approvals, cancel, and retry; also for UX review, accessibility or responsive audits, visual polish, UX copy, and recording design conventions in DESIGN.md. Use even when the request mentions only a feature and the UI is incidental."
+description: "Design, build, critique and refine usable, accessible, good-looking frontends, with the agent supplying the design judgment. Use whenever work touches a user interface: pages, components, forms, empty and error states, and agent or chat UIs; UX, accessibility and responsive reviews; visual polish, UX copy and DESIGN.md. Use even when the request mentions only a feature and the UI is incidental."
 ---
 
 # Frontend Design
