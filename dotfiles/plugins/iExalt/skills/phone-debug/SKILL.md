@@ -1,6 +1,6 @@
 ---
 name: phone-debug
-description: Borrow the user's Android phone over adb (wired by default, or wireless) or their iPad over USB to test or debug an app or web page without disrupting them. Covers time-boxing, input-focus guards, keeping the screen awake, Expo push notifications for hand-off, and restoring the device afterwards. Use when the user offers their phone or tablet for testing, or when a task needs a real device.
+description: "Borrow the user's Android phone over adb, or their iPad over USB, to test or debug an app or web page without disrupting them: time-boxed, input-guarded and kept awake, with Expo push hand-offs and the device restored afterwards. Use when the user offers a phone or tablet for testing, or a task needs a real device."
 ---
 
 # Phone Debug

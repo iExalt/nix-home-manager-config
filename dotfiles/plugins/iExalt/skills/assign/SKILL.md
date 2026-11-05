@@ -1,6 +1,6 @@
 ---
 name: assign
-description: Take a tracked work item (GitHub issue, Linear issue, Jira ticket, or similar), size it, and hand it to the matching implementation workflow (continuous-peer-review for small one-shot tasks, subagent-pair-program for medium tasks, keep-me-in-the-loop for large tasks, epics, and plan threads). Use when the user assigns, delegates, or says "take", "pick up", or "implement" a ticket, issue, or task by reference or link.
+description: "Size a tracked work item (a GitHub, Linear or Jira issue, or similar) and hand it to the matching workflow: continuous-peer-review for small one-shot tasks, subagent-pair-program for medium tasks, keep-me-in-the-loop for large tasks, epics and plan threads. Use when the user says to take, pick up, implement or assign a ticket or issue by reference or link."
 ---
 
 # Assign

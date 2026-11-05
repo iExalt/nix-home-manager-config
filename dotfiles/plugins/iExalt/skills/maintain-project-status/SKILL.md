@@ -1,6 +1,6 @@
 ---
 name: maintain-project-status
-description: "Create or maintain an evidence-backed project status document that bridges strategic plans and exhaustive implementation checklists. Use to reconstruct current progress from plans, Git history, source, tests, benchmarks, artifacts, and worktree state; define intermediate outcome gates and dependencies; distinguish designed, implemented, verified, active, blocked, and future work; recommend the next sequence; track deferrals and risks; or audit unsupported milestone-completion claims."
+description: "Create or maintain an evidence-backed project status document between strategic plans and implementation checklists. Use to reconstruct progress from plans, Git history, source, tests and artifacts; set outcome gates and dependencies; recommend the next sequence; track deferrals and risks; or audit unsupported completion claims."
 ---
 
 # Maintain project status
