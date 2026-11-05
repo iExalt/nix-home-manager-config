@@ -29,7 +29,10 @@ Use `maintain-project-status` for the durable progress record and
 `continuous-peer-review` for implementation and review. Read their current
 instructions; resolve them from the available skill catalog or sibling skill
 directories. Keep this skill responsible for phase boundaries and user reports,
-and leave status semantics and reviewer mechanics to those skills. If a required
+and leave status semantics and reviewer mechanics to those skills. Follow
+`working-conventions` for the rules shared across the workflow skills:
+authority, review loops, evidence, work states, test cost, updates, waiting,
+delegation and publication. Pass it to the reviewer with this skill's brief. If a required
 skill or native review capability is unavailable, explain the limitation and
 resolve the execution approach before claiming the workflow can proceed.
 
@@ -64,30 +67,23 @@ Make the overall phase boundary and important decisions clear. State that approv
 covers autonomous execution across these chunks, progress reports between them,
 and committing/pushing each completed chunk after required checks and review.
 Do not infer permission for unrelated external actions, destructive operations,
-or infrastructure spending from the publication default. Cutting or publishing
-a release (a release PR merge that publishes, `gh release create` or `edit`, a
-draft made public, a tag) is not covered by this approval or by "keep going";
-it needs the user's separate explicit approval naming that release. Carry
-forward existing authorization and identify any additional authority actually
-needed. When the user approves with conditions, restate them in the chunk plan
-and check each before committing or pushing; a push that breaches one is a
-decision to return to the user first, not to report afterwards.
+or infrastructure spending from the publication default. Carry forward existing
+authorization and identify any additional authority actually needed. Releases
+and conditional approvals follow `working-conventions` › Authority: this
+approval never covers a release, and each condition is checked before
+committing or pushing.
 
 Jointly shape the proposal with the reviewer before presenting it. Send the draft
 chunk plan, its acceptance checks, deferral gates, risks, and requested authority
 with the raw roadmap and evidence locations, so the reviewer can challenge the
 boundaries, ordering, and verification independently. Revise until you agree or
-the disagreement is clear. Present the reviewer's position in the proposal: its
-agreement, material amendments it secured, and any unresolved disagreement with
-both positions and your recommendation. A reviewer notification or an
-unacknowledged draft does not count as review.
+the disagreement is clear, and present the reviewer's position in the proposal
+as `working-conventions` › Review loops describes.
 
 Obtain phase approval before implementation unless the current instructions
-already approve that concrete scope. Silence is not approval. Use a permitted
-native dialog when available, respecting its restrictions on permission requests.
-Do not repeat settled questions or request approval for every internal increment.
-Don't ask who merges: follow the repository's rules and the user's standing
-merge policy.
+already approve that concrete scope, asking as `working-conventions` › Ask the
+user describes and respecting the dialog's restrictions on permission requests.
+Do not request approval for every internal increment.
 If outcomes or major tradeoffs are still unclear, use `agentic-workflow` to resolve
 them before turning a speculative route into an implementation commitment.
 
@@ -108,16 +104,9 @@ was approved, or that reaches a decision the approval left to them.
 Keep a visible checklist of phase chunks, with the current chunk and outstanding
 checks clear. Work through the approved chunks in dependency order.
 
-For changes that grow or restructure tests, carry the repository's routine-check
-command, wall-clock budget and stable accepted baseline into the chunk plan.
-If absent, establish them proportionately before substantial suite growth,
-using existing timings or the next required run. Record machine, cache and
-concurrency assumptions with the baseline; do not reset it each chunk. Reuse
-required-run timings to expose cumulative growth and its largest contributors.
-Have the author and reviewer address confirmed regressions in the current chunk
-through cheaper fixtures, less redundant coverage and the testing pyramid.
-Preserve required proofs and named execution gates; do not create a cleanup
-milestone or increase the budget merely to close the chunk.
+For changes that grow or restructure tests, apply `working-conventions` › Test
+cost: carry the routine-check command, budget and baseline into the chunk plan,
+and have the author and reviewer fix confirmed regressions in the current chunk.
 
 Within each chunk:
 
@@ -133,31 +122,20 @@ Within each chunk:
    one and report it, and file the rest for a later bugfix run. Ask before
    materially expanding scope.
 3. Run available discriminating checks now. Defer expensive or unavailable
-   verification only when the chunk's acceptance criteria permit it. Attach each
-   deferral to a specific later roadmap gate, naming what remains unproven and
-   the evidence required there. Never silently move a required closure check to
-   a later gate merely to finish or publish the chunk. A gate, roadmap item or
-   acceptance criterion whose proof is unmet stays unticked: report it as unmet
+   verification only when the chunk's acceptance criteria permit it, attaching
+   each deferral to a specific later roadmap gate. Never move a required
+   closure check merely to finish or publish the chunk. Unmet proofs and
+   deferrals follow `working-conventions` › Evidence: report an unmet proof
    and ask, even when the rest of the thread is done.
 4. Complete the review skill's milestone/integration closure and required checks
-   for the chunk. Distinguish implemented, verified, reviewer-accepted, and
-   published states. A deferred live proof does not establish live correctness.
-   "Reviewed" or "accepted" names the revision the reviewer saw; commits after
-   it are "not re-reviewed" until the reviewer sees them, including a fix made
-   to close the reviewer's own gap. Before writing "reviewed" in a status
-   document or report, check the reviewer's last verdict against the head.
-5. Reconcile the plan/checklist and project-status document with the evidence.
-   A check, result or behavior claimed in the status document, a commit
-   message or a hand-off cites its command and result line or its artifact;
-   anything not observed is written as "not run" or "unverified". Do not
-   commit a hand-off that contradicts your own measurement, and state only
-   behavior the code and environment can produce (not "runs every 5 min on
-   prod" for something not deployed). A decision attributed to the user
-   quotes their words or chosen option and its source, with its exact scope;
-   a rule nobody asked them about is Proposed, not theirs.
-   Commit scoped changes using conventional commits and push after required
-   checks and review pass, unless repository rules or explicit instructions
-   override that default. Verify publication before reporting it as complete.
+   for the chunk. Use `working-conventions`' work states and its rule for what
+   "reviewed" covers. A deferred live proof does not establish live correctness.
+5. Reconcile the plan/checklist and project-status document with the evidence,
+   citing claims and recording the user's decisions as `working-conventions`
+   › Evidence and › Record the user's decisions describe (not "runs every
+   5 min on prod" for something not deployed). Commit and push as
+   `working-conventions` › Publication describes, and verify publication
+   before reporting it as complete.
 6. Report the outcome and proceed directly to the next approved chunk. Do not
    append an approval question or end execution just because a report is due.
 
@@ -182,18 +160,11 @@ silently weaken acceptance criteria or treat sunk effort as a reason to continue
 
 ## Update at increment outcomes
 
-Tell the user about outcomes and leave activity out. This skill overrides
-default guidance to announce actions before tool calls or narrate work as it
-happens. Do not write
-lines that announce your next step, such as `Now the status document.` or
-`Publishing A3a-2.`; let tool calls proceed without commentary. Between the
-phase proposal and chunk reports, send an update only when:
-
-- a chunk's increment design is agreed and implementation starts;
-- a reviewer increment is accepted or published;
-- a live operation starts, deviates materially, or finishes;
-- a finding changes confidence, the plan, scope, or timing;
-- a decision, blocker, or new user instruction needs a response.
+Between the phase proposal and chunk reports, send updates for the events
+`working-conventions` › Updates lists, plus one when a chunk's increment
+design is agreed and implementation starts, and stay silent otherwise. Do not
+write lines that announce your next step, such as `Now the status document.`
+or `Publishing A3a-2.`; let tool calls proceed without commentary.
 
 Check each reviewer message against these events when it arrives, including one
 queued during a tool loop; report a qualifying event at the next tool boundary
@@ -214,29 +185,24 @@ update rather than announcing them separately.
 For a live operation, state its start with the stop condition, then report only
 an unexpected state, an interruption, or a decision, and finally its result.
 Monitor it for those events only: failures, unexpected states, and the whole
-operation's completion. Do not emit successful stage completions, recaps, or
-unchanged polls, and check that failure filters do not match success output such
-as `failed=0`. When the user asks for action-only updates, restart the monitor
+operation's completion, with filters as `working-conventions` › Waiting
+describes. Do not emit successful stage completions, recaps, or unchanged
+polls. When the user asks for action-only updates, restart the monitor
 with a filter that matches only events needing action and check its first
 events against that request. Keep routine progress in a log read at decision
 points. A wake-up is costly because a turn almost always ends with text.
 
 Stay silent between these events, including during long implementation stretches
 and waits. When a monitor event, completion notification, or silent-turn reminder
-wakes you without one of these events, continue without text. Never repeat or
-paraphrase an earlier update to fill a turn.
+wakes you without one of these events, continue without text.
 
-Some harnesses force a visible reply when a turn ends without text; Claude Code
-does. Avoid ending turns with nothing to say. Wait for an external process or
-live operation inside a bounded blocking check that returns on its next qualifying
-event or a timeout within the tool's limit, rather than ending the turn and being
-woken. Reviewer and user replies arrive only between turns, so continue
-independent work while they are pending. When a turn must end to await one with
-nothing new to report, close it with one short line naming what you await, such
-as `Waiting on the reviewer for C3.`, and write it once per wait. End a turn only
-on something that will wake you: a pending reply from an agent that is still
-running, a background task, a Monitor, or a scheduled wake-up. A subagent's final
-hand-back is its last message, so act on it rather than waiting for more.
+Avoid ending turns with nothing to say: wait for an external process or live
+operation inside a bounded blocking check, as `working-conventions` › Waiting
+describes, rather than ending the turn and being woken. Reviewer and user
+replies arrive only between turns, so continue independent work while they are
+pending. When a turn must end to await one with nothing new to report, end it
+with no text, even when the harness re-prompts an empty turn (Claude Code
+re-prompts turns that end without text).
 
 ## Report for quick reading
 

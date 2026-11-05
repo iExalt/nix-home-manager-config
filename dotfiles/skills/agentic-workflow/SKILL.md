@@ -9,6 +9,8 @@ Facilitate the human decisions in the
 [Agentic Workflow Primer](../../../AGENTIC_WORKFLOW_PRIMER.md). The user chooses
 outcomes and tradeoffs; the agent investigates technical options and owns routine
 execution. Finish with a concise decision record and a concrete next step.
+Follow `working-conventions` for the rules shared across the workflow skills;
+this skill's dialog rules add to its "Ask the user" section.
 
 The primer is written for humans; do not treat it as another instruction file. For a Home Manager
 installation, resolve this `SKILL.md` through its symlinks before following the
@@ -128,10 +130,11 @@ technical proposals, reviews, tests, and repairs stay within the agent team.
 
 ### 5. Reassess when evidence changes
 
-Agree on proportional triggers: a falsified central assumption, an unexpected
-subsystem on the critical path, materially increased remaining effort, or repeated
-increments without the promised demonstration or new useful evidence. Avoid
-arbitrary universal retry counts or mandatory recurring review meetings.
+Agree on proportional route-level triggers: a falsified central assumption, an
+unexpected subsystem on the critical path, materially increased remaining effort,
+or repeated increments without the promised demonstration or new useful evidence.
+Avoid mandatory recurring review meetings. Repeated repairs at one gate follow
+`working-conventions` › Repeated failure instead.
 
 For a campaign already underway, begin here: compare the best remaining routes,
 including switching costs, and preserve useful completed work. Return product
