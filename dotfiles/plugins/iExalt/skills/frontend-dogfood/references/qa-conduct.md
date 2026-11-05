@@ -5,8 +5,6 @@ tablet, and the user's own laptop, phone and tablet are described in devices.md 
 The `phone-debug` skill covers the mechanics of borrowing a device; the rules below are the etiquette.
 
 ## 1. Verify it yourself; ask the user only for judgement
-- Drive functional and end-to-end checks yourself. "You don't need to block on me for functional/e2e tests, especially since I allowed you to run headfully on the [browser host] :)". This applies to every project: "I'd like agents to verify the frontend themselves/in tests as much as possible".
-- The user's time is for look and feel and for product decisions: "Reserve my judgement for look and feel."
 - Measure what can be measured, including smoothness, frame time and latency, and never ask whether it feels smooth. "I should be consulted for visual/design look-and-feel, but you and the workers are perfectly equipped to answer mechanical questions."
 - Do your own headed pass before you involve them. "I think you should try testing it for yourself on the [browser host] headfully."
 - Fix or file what you notice instead of leaving it as their call or dropping it. They pasted back an agent's note that left two iPad defects as `both your call`, asking "Did we fix this?"
@@ -18,7 +16,6 @@ The `phone-debug` skill covers the mechanics of borrowing a device; the rules be
 - Cap browser-host use and keep the laptop free. "limit worker processes to 7 vCPU and 16GB RAM maximum"; "The worker's Python processes are pegging my laptop at 100%."
 - The laptop is only for benchmarks that need its hardware, and you ask when one is due. "I'm fine with you asking me to do the benchmarks on the laptop since that's disruptive."
 - Leave the user's own Chrome alone: don't open tabs in it, read its tabs or drive it. When they asked the agent to "Clear the site data", it re-served the old review ports instead of touching their Chrome, and they interrupted: "Why are we opening localhost:7479?" Don't leave site data or service workers behind in the user's browser either. They review in Chrome on the laptop (`Chrome`, picks).
-- Stop only processes you started, yourself. "Yes, stop them y ourself." Ask before changing their machine (`cargo clean` got "Yes, you may.").
 - Don't break their session. Review servers that shared a cookie across ports unpaired them in the middle of testing: "I was interrupted in the middle of testing".
 
 ## 3. Phone and tablet etiquette
@@ -41,12 +38,9 @@ The `phone-debug` skill covers the mechanics of borrowing a device; the rules be
 - Galleries default to the real project data, with fixtures only for edge cases the real data lacks. "Whenever you show me a gallery demo, let's default to using the real acyclic task DAG".
 - Keep artefacts sharp, uncluttered and in one tab. "Turn it into a real gallery so when I click on a small thumbnail it pops up the image at full res."; "The 2026-10-31-compare folder is very cluttered".
 - On a phone, give them one tappable link per variant. "remember, I'm on mobile now so it's annoying to copy-paste." When they want to try the UI themselves, offer a live server on a throwaway copy and keep it up until they are done: they picked `Keep it on during M7's reviews` over the recommended option (pick).
-- For command-line surfaces, show a worked walkthrough with the real output. "That gives me the best feel for what you just accomplished".
 
 ## 6. Reporting
 - Cover three things: your opinion of the UI, the bugs you found, and features worth adding. "It should report what it thinks of the UI, any bugs it encounters, and any potential valuable new features/changes." Fix bugs; collect feature ideas for the user to decide on: "(don't plan them yet, collect them and I'll decide when to cut a milestone for them)".
 - Lead with what you need from them, in plain words, and explain jargon. "It's not clear what you're waiting for."; "I don't quite understand your caveats"; "What's the G1 question?"
-- When asking them to decide, give the pros and cons in prose. "Give me the +- in prose." Give phone reviewers a short numbered checklist, which they answer item by item (`1. Cellular`).
+- Give phone reviewers a short numbered checklist, which they answer item by item (`1. Cellular`).
 - Batch the findings and don't flood them. "I'm getting a little overwhelmed with the cards, can you brain dump them".
-- State what you could not verify, such as real-finger gestures, a quiet machine or outdoor light (a rule from the user's global instructions, not a transcript). They accept skipped checks when you name them: "Let's skip the outdoor and night checks".
-- Say when background work finishes; don't make them chase you. "Are notifications not working? It's 2:13."
