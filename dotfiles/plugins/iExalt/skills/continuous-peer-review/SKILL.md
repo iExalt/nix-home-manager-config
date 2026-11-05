@@ -15,9 +15,6 @@ reviewer subagent jointly shapes increments and independently reviews their code
 Keep the reviewer involved through the milestone, with relevant goal, design, and
 finding context. This workflow has no facilitator, external provider CLI, or
 nested review team.
-Route the reviewer's model as `working-conventions` › Model routing describes;
-cross-provider review is not required. Open the reviewer's brief with the
-same instruction to load `iExalt:working-conventions`.
 
 ## Establish the collaboration
 
@@ -26,11 +23,6 @@ of small, coherent behavioral increments and their dependencies. An increment
 has an outcome and acceptance check, not an arbitrary file or line-count limit.
 Agree increment boundaries with the reviewer before implementation, separating
 independently verifiable behavior when it would otherwise delay useful feedback.
-For example, extraction rules, fitting against synthetic truth, and execution with
-retry/provenance handling can be separate increments. Keep tightly coupled behavior
-together; do not split into fragments that cannot be meaningfully tested or reviewed.
-Respect existing implementation and publication authority; invoking this skill
-does not authorize unrelated work.
 
 Brief the reviewer as `working-conventions` › Delegation describes, with the
 author's native agent address as its return address, and add milestone
@@ -51,13 +43,11 @@ fixes, and run permitted isolated probes without changing the reviewed artifact.
 ## Joint design, risk-based overlap
 
 Jointly shape each increment before implementation, focusing on unresolved
-decisions, changed assumptions, and consequential failure cases. Refer to settled
-designs and criteria; a routine increment needs only a brief amendment and
-agreement. Expand the proposal when behavior, interfaces, dependencies, or
-acceptance evidence need discussion. Obtain agreement on the design and closure
-criteria, batching upcoming proposals when useful so the reviewer can answer while
-reviewing the preceding increment. Do not repeat a full brief or manufacture a
-confirmation call when agreement is already explicit.
+decisions, changed assumptions, and consequential failure cases. A routine
+increment needs only a brief amendment to settled designs and agreement; expand
+the proposal when behavior, interfaces, dependencies, or acceptance evidence need
+discussion. Agree the design and closure criteria, batching upcoming proposals so
+the reviewer can answer while reviewing the preceding increment.
 
 Agree on the discriminating verification before coding: what would distinguish
 correct behavior from the plausible failure? For consequential execution paths,
@@ -82,15 +72,13 @@ Ordinary implementation choices within the agreed design need no extra approval.
 
 ## Review stable increments while implementing
 
-Default to a short handoff: increment ID, stable revision and raw delta reference,
-behavior change, relevant tests/evidence and limits, and unresolved questions.
-Identify the comparison baseline and any changed dependencies without repeating
-settled context. Present raw delta/evidence references before the author's
-interpretation so the reviewer can form an independent assessment. For complex or
-consequential changes, map agreed criteria to expected and observed results and
-evidence locations; do not require that ceremony for every routine increment.
-Include relevant untracked artifacts. Keep one compact ledger in the conversation
-or an existing task document, not a new receipt per message.
+Hand off each increment with a review request (see Messages and attention),
+naming the comparison baseline and any changed dependencies. Give raw delta and
+evidence references before your interpretation so the reviewer forms an
+independent assessment. For complex or consequential changes, map agreed
+criteria to expected and observed results and evidence locations. Include
+relevant untracked artifacts. Keep one compact ledger in the conversation or an
+existing task document.
 
 Prefer existing exact commits and `git show REV:path` for source inspection; when
 the commit supplies the review inputs, skip a separate snapshot copy or manifest.
@@ -98,10 +86,8 @@ A changing checkout, HEAD label, or diff alone is not a stable source snapshot.
 For uncommitted work, freeze the relevant source and dependencies in an identified
 read-only review snapshot; keep actual implementation in the original repository.
 If probes need a filesystem, run them against that snapshot in an isolated test
-location. Do not check out old revisions in the author's active working tree.
-If stable review inputs cannot be supplied, pause conflicting edits during review
-and disclose the reduced parallelism. Tests of a newer checkout do not establish
-results for an older snapshot.
+location. Tests of a newer checkout do not establish results for an older
+snapshot.
 
 Keep one reviewer-owned verification environment for the session: a detached
 worktree and build/output directory in a predictable sibling location such as
@@ -116,13 +102,13 @@ dependency, failure, or coverage gap warrants them. Name the snapshot and
 environment for evidence carried forward.
 
 Track increment states: planned, design-agreed, implementing, awaiting-review,
-changes-requested, awaiting-verification, accepted. "Accepted" is
-`working-conventions`' reviewer-accepted: it names the reviewed snapshot and
-has no pending required closure checks. Distinguish code review complete, ready
-for a bounded live validation, and ready to publish. When closure needs live
-evidence, agree the permitted trial and its bounds within the user's
-authorization, then keep the increment pending
-until the evidence is reconciled. Publication requires the applicable review and
+changes-requested, awaiting-verification, accepted. They refine
+`working-conventions` › Work states: design-agreed is designed, implementing
+through awaiting-verification are implemented, and accepted is reviewer-accepted.
+Distinguish code review complete, ready for a bounded live validation, and ready
+to publish. When closure needs live evidence, agree the permitted trial and its
+bounds within the user's authorization, then keep the increment pending until
+the evidence is reconciled. Publication requires the applicable review and
 checks to be complete; needing live proof does not itself justify an early push.
 Later changes invalidate acceptance only for their affected delta and dependencies,
 which must be reviewed before completion. Pushing to an open PR, including a CI
@@ -140,34 +126,26 @@ The reviewer examines correctness, affected callers, failure paths, regressions,
 and acceptance coverage proportional to the increment. The author's checklist is
 evidence and does not bound the review: seek independent counterexamples to shared
 assumptions and use targeted probes where they add confidence beyond rerunning the
-author's tests. The reviewer sends each actionable finding as soon as evidence
-establishes it instead of holding it for a final batch, then continues reviewing
-and explicitly reports completion and coverage limits.
-Silence or a preliminary finding is neither acceptance nor completed review.
-Use targeted source reads, bounded output, and references to unchanged evidence.
-Re-review a revision from its delta against the previously reviewed snapshot,
-limited to affected paths; reread whole files only where the delta is insufficient.
+author's tests. The reviewer sends findings as Messages and attention describes,
+then explicitly reports completion and coverage limits; silence or a preliminary
+finding is neither acceptance nor completed review. Re-review a revision from its
+delta against the previously reviewed snapshot, limited to affected paths.
 
-When tests change, author and reviewer assess their recurring cost as well as
-their coverage, as `working-conventions` › Test cost describes, and resolve
-confirmed regressions in the increment. Keep detailed case matrices at the
-lowest reliable layer. Ordinary logic that requires a browser or deployment to
-test may need a cleaner boundary.
+When tests change, author and reviewer assess their cost as
+`working-conventions` › Test cost describes. Ordinary logic that requires a
+browser or deployment to test may need a cleaner boundary.
 
 ## Messages and attention
 
 Use native direct messaging (for example `collaboration.send_message` in Codex,
-or the available equivalent in Claude). Use the harness's resume/follow-up tool
+or `SendMessage` in Claude Code). Use the harness's resume/follow-up tool
 when a reviewer has finished its turn and needs new work; do not assume a message
 to an idle agent starts execution. The direct message carries the content; end a
 reviewer turn with a one-line final response naming what was sent rather than
 restating it.
-Do not promise preemption of an in-flight tool call; process messages at the next
-available boundary and before starting dependent or consequential actions.
-Send urgent messages in a separate completed tool step before starting a long
-operation; batching them together can delay delivery. When subsequent action
-depends on the peer's response, obtain acknowledgment and the required decision
-before proceeding. A logged send timestamp alone does not prove receipt.
+Process messages at the next available boundary and before starting dependent or
+consequential actions. Send urgent messages in a separate completed tool step
+before starting a long operation; batching them together can delay delivery.
 
 Keep messages concise and distinguish these purposes:
 
@@ -176,13 +154,10 @@ Keep messages concise and distinguish these purposes:
   evidence/limits, and unresolved questions; name affected pending work when relevant.
 - **Finding:** stable ID, severity, evidence/revision, impact, affected increments,
   suggested repair and closure case; mark provisional uncertainty explicitly.
-  Label each claim read, ran or inferred, as `working-conventions` › Evidence
-  describes.
 - **Decision:** accepted/challenged/deferred finding or amended design, with reasons.
 - **Review result:** reviewed snapshot; changed finding dispositions; coverage and
   limits; explicit acceptance, pending verification, or changes requested. Name
-  remaining checks and any agreed live-validation bounds. Design agreement is not
-  code acceptance, and review completion alone is not publication readiness.
+  remaining checks and any agreed live-validation bounds.
 
 Deliver findings immediately but interrupt work by impact. Safety issues and
 invalidated assumptions redirect affected work as soon as delivered. Local fixes
@@ -193,53 +168,18 @@ or the boundary at which it will repair. Do not stop unrelated work for every ni
 One reviewer has finite attention. Prioritize urgent findings/design blockers,
 then the oldest outstanding review, then upcoming design proposals. The author
 can prepare proposals and tests while waiting, but cannot count a pending proposal
-as agreement. When only blocked work remains, wait as `working-conventions` ›
-Waiting describes, using native interruptible waits and avoiding polling loops
-and unchanged-status messages; a stopped reviewer sends nothing more until
-resumed.
+as agreement.
 
 ## Reviewer idle time
 
-Spare reviewer capacity keeps handoff turnaround fast, so idle work must
-never delay a response. Inbound messages always take priority. Work in short,
-interruptible steps without long-running commands so messages are handled at the
-next tool boundary. Idle work may run read-only checks against live or shared
-systems the session is already permitted to access, but must not change their
-state or place noticeable load on them. Do not message the author just to report
-idle activity; send actionable results in the normal design, finding, or
-review-result messages.
+The reviewer spends spare capacity on the prioritized idle work in
+[references/idle-time.md](references/idle-time.md); inbound messages always take
+priority. Where the harness ends the reviewer's run after each reply, as Claude
+Code does, the author reads that file to assign bounded idle work.
 
-In priority order, the reviewer may:
-
-1. Read source affected by planned increments and challenge their designs before
-   implementation starts.
-2. Prepare counterexamples and probes for the agreed verification of the increment
-   being implemented, then run them against its snapshot at handoff.
-3. Review interactions between accepted increments so the final integration review
-   covers only the remaining delta.
-4. Inspect callers, dependencies, and pre-existing defects in code the milestone
-   changes or relies on.
-5. Review unrelated repository areas, only when the user authorized it.
-
-Some harnesses, including Claude Code, end the reviewer's run after each reply and
-resume it only for the next message, so the reviewer has no idle time of its own.
-In those harnesses the author assigns bounded idle work from this list when it
-acknowledges a review result and expects no request soon, naming the item and
-its scope. The reviewer stops that work at the next inbound message and reports
-only actionable results.
-
-Keep idle-time probes, fixtures, and build outputs in the reviewer's session
-verification environment; never add them to the author's tree. Prefer lightweight
-scripts and targeted tests, building only when a probe requires it. Reviewer
-probes stay independent evidence outside the author's test suite. Suggest a probe
-worth retaining as a regression test in a finding or review result; the author
-decides whether to adopt and write it.
-
-Pre-existing defects that affect the milestone are ordinary findings. Park other
-out-of-scope findings as `working-conventions` › Work-item size describes instead
-of messaging them, keeping only material ones with evidence and labeling the list
-out of scope; the author relays it to the user and does not act on it without
-separate authorization.
+Pre-existing defects that affect the milestone are ordinary findings. Park the
+rest as `working-conventions` › Work-item size describes; the author relays the
+list to the user and does not act on it without separate authorization.
 
 ## Resolve findings and retain context
 
@@ -248,46 +188,33 @@ Neither role wins by authority. Use a focused probe when it can settle a dispute
 Escalate a material stalemate to the user when correctness, safety, scope, or
 architecture remains unresolved; keep affected work blocked and continue
 independent work. Defer optional improvements explicitly rather than making them
-completion requirements. Gates are pass/fail, as `working-conventions` ›
-Evidence describes; the report states the measurement behind a conditional
-change.
+completion requirements.
 
-If a proposed repair adds substantial behavior, such as retry orchestration,
-provenance enforcement, or a rehearsal command, treat it as a design delta before
-coding. Agree its boundaries, affected dependencies, and discriminating tests;
-use a separate increment when independently reviewable, subject to the same backlog
-cap. Preserve the original finding's closure conditions. A small correction within
-an agreed repair needs no new design exchange.
+If a proposed repair adds substantial behavior, treat it as a design delta before
+coding: agree its boundaries, affected dependencies, and discriminating tests,
+and use a separate increment when independently reviewable, subject to the same
+backlog cap. Preserve the original finding's closure conditions.
 
 The author implements agreed fixes and exercises the affected counterexamples and
-any newly added execution paths before resubmission. For later findings, distinguish
-incomplete fixes, introduced regressions, missed original defects, and scope
-expansion. Preserve IDs and trace incomplete fixes to implementation deviations
-or flaws in the agreed proposal.
+any newly added execution paths before resubmission, preserving finding IDs.
 Reassess as soon as a design flaw is apparent instead of repeating partial fixes;
 `working-conventions` › Repeated failure sets the default threshold.
 
-Triage every finding against the materiality bar agreed in the brief, keep the
-round ledger, and apply the trend check, all as `working-conventions` › Review
-loops describes. Output from extra one-shot reviewers is not the completion
-gate. When the trend check or a reopened choice calls for the user, stop and
-ask, showing the ledger lines, and offer accepting with deferrals, a redesign,
-or an agreed number of further rounds; don't leave it for the final report.
-Findings about other subsystems go to the parking lot, however the loop was
-requested.
+Run review rounds as `working-conventions` › Review loops describes, against
+the materiality bar agreed in the brief; output from extra one-shot reviewers is
+triaged but is not the completion gate. When the loop calls for the user, stop
+and ask, showing the ledger lines, and offer accepting with deferrals, a
+redesign, or an agreed number of further rounds; don't leave it for the final
+report.
 
-Maintain a compact shared record: goal and boundaries, settled designs and reasons,
-current snapshots, dependencies, finding dispositions, closure evidence, pending
-questions, and next reviewer work. Messages report changes to this record instead
-of repeating the complete ledger and evidence. At natural milestone boundaries,
-consolidate it into the checkpoint `working-conventions` › Continuity describes,
-with evidence references, omitting obsolete source dumps and superseded narration.
-When the harness allows requesting compaction, compact after the checkpoint rather
-than waiting for automatic compaction; otherwise keep the checkpoint current so
-automatic compaction preserves it. Preserve the same reviewer, and do not imply
-that writing a summary alone removes prior context. If a reviewer must be replaced
-or context refreshed, transfer this record and evidence references; do not
-silently restart discovery.
+Maintain a compact shared record: the checkpoint contents `working-conventions`
+› Continuity lists, plus dependencies, closure evidence and next reviewer work.
+Messages report changes to this record instead of repeating it. At milestone
+boundaries, consolidate it into that checkpoint with evidence references. When
+the harness allows requesting compaction, compact after the checkpoint rather
+than waiting for automatic compaction. If the reviewer must be replaced,
+transfer this record and evidence references; do not silently restart
+discovery.
 
 ## Integration and completion
 
@@ -300,22 +227,9 @@ alone is not integration acceptance.
 
 Finish only when the reviewer and main agent agree the final milestone satisfies
 its criteria with no unresolved material findings under the agreed bar; deferred
-optional findings do not block. The report to the user names accepted deferrals,
-verification limits, and the reviewer's parked out-of-scope findings, as
-`working-conventions` › Updates describes, and reports checks as
-`working-conventions` › Evidence describes. At session end, the reviewer removes
-its verification environment and reports the space freed; if it cannot, the
-author removes it. Changes after acceptance need proportional delta review;
-preserve the task's existing commit, push, and deployment authorization.
+optional findings do not block. At session end, the reviewer removes its
+verification environment and reports the space freed; if it cannot, the author
+removes it.
 
-For an efficiency trial, capture milestone start/end, review dispatch and acceptance
-times per revision, and actual blocked intervals for either role with their cause.
-Use native event timestamps where available, otherwise record them as events occur
-in the existing ledger. Snapshot creation times do not establish dispatch,
-acceptance, or blocking; pending review is not blocked time while other useful work
-continues. Mark unavailable measurements as unknown instead of reconstructing them
-from snapshots. Report elapsed milestone time, dispatch-to-acceptance turnaround,
-blocking, peak outstanding increments, and rework attributable to late findings.
-Do not add overlapping agent time to claim elapsed time saved. Distinguish actual
-parallel work and early messages from capabilities the trial did not exercise.
-Ordinary use needs only the compact coordination record, not trial instrumentation.
+For an efficiency trial, record what
+[references/efficiency-trial.md](references/efficiency-trial.md) lists.
