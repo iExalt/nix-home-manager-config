@@ -1,6 +1,6 @@
 ---
 name: frontend-dogfood
-description: "QA a finished web or PWA interface the way this user would: a fresh tester subagent uses the running app like a person on desktop, tablet, and phone form factors, judges it against the user's recorded taste profile, measures feel instead of guessing, and reports evidence-backed findings; the main agent then verifies, fixes, and hands over only what needs human judgment. The default focused mode reports the few problems that would bother the user most in about 45 minutes; pedantic mode ('pedantic', 'thorough', 'find everything') hunts every defect, big or small. Use after a UI is built or changed and before showing it to the user, whenever asked to dogfood, QA, smoke-test, click through, try out, or 'use it like a user', and at the end of frontend-design work. Not for designing or building UI (frontend-design) or for CLIs."
+description: "QA a finished web or PWA interface the way this user would: a fresh tester subagent uses the running app like a person on desktop, tablet, and phone, judges it against the user's recorded taste profile, measures feel instead of guessing, and reports evidence-backed findings; the main agent then verifies, fixes, and hands over only what needs human judgment. The default focused mode reports the few problems that would bother the user most in about 45 minutes; pedantic mode ('pedantic', 'thorough', 'find everything') hunts every defect, big or small. Use after a UI is built or changed and before showing it to the user, whenever asked to dogfood, QA, smoke-test, click through, try out, or 'use it like a user', and at the end of frontend-design work. Not for designing or building UI (frontend-design) or for CLIs."
 ---
 
 # Frontend Dogfood
@@ -9,8 +9,8 @@ Find what the user would find before they have to. They review UIs by using them
 and reliably catch the same kinds of problem: unreadable first views, dark themes that are not
 dark, wasted space, states that cannot be told apart, duplicated or noisy details, controls hidden
 by the keyboard, and clicks that do not land at once. Agents have repeatedly handed over work with
-these defects, or seen them and filed them as cosmetic. This skill runs a QA pass between building
-and handover, with a tester who judges by the user's recorded taste rather than generic heuristics.
+these defects, or seen them and filed them as cosmetic. This skill adds a QA pass between building
+and handover, with a tester who judges by the user's recorded taste, not generic heuristics.
 
 Two roles keep the judgment honest:
 
@@ -31,7 +31,7 @@ how much gets fixed in the pass:
 | Tester searches | Impression pass, task walks, then the probes what it saw calls for | Impression pass, task walks, then every applicable probe |
 | Tester reports | Top five in full; other P0/P1 in full; P2/P3 one line each | Top five, then every finding in full |
 | Budget per form factor | About 60 browser actions and 10 minutes | About 120 actions and 25 minutes |
-| Fixed in the pass | P0, P1, and cheap P2s | Step 5's small/larger rule: all of P0–P2 when small |
+| Fixed in the pass | P0, P1, and cheap P2s | Step 5's small/larger rule: all of P0 to P2 when small |
 | Whole pass, to handover | About 45 minutes | About 90 minutes |
 
 Focused mode exists because the exhaustive version took hours per round, buried the user in long
@@ -43,9 +43,10 @@ wants the papercuts too.
 
 Read [references/qa-conduct.md](references/qa-conduct.md) before you start: it is how the user
 expects agents to behave while testing, and it binds you and the tester alike.
-[references/taste-profile.md](references/taste-profile.md) is the tester's yardstick; skim it so
-you can judge its findings. [references/devices.md](references/devices.md) says where browsers run
-and how to reach each form factor.
+[references/taste-profile.md](references/taste-profile.md) is the tester's yardstick, which it
+loads in full; skim it so you can judge its findings. [references/devices.md](references/devices.md)
+says where browsers run and how to reach each form factor (step 2), and
+[references/tester-brief.md](references/tester-brief.md) is the brief (step 3).
 
 ## Workflow
 
@@ -63,9 +64,9 @@ Write down, from the project's docs (DESIGN.md, PRODUCT.md, README) and the chan
   which is primary, and whether it has a dark theme.
 - **Real data:** the realistic dataset the tester will use, at the sizes the user works with.
 - **Device consistency:** expect the same look-and-feel and feature coverage, as close as practical,
-  across supported desktop, tablet, and phone. Include documented viewport/input adaptations and
-  their rationale, without presenting them as proven correct. Small screens alone do not justify
-  dropping features; adapted controls should preserve equivalent task outcomes.
+  across the supported form factors. List documented viewport or input adaptations and their
+  rationale as claims, not as proven correct. Small screens alone do not justify dropping features;
+  adapted controls should preserve equivalent task outcomes.
 
 Pass the tester the product, not your opinion of it. Leave out known issues, what you already
 checked, and why you think it works: anchoring makes testers confirm instead of explore.
@@ -75,9 +76,9 @@ checked, and why you think it works: anchoring makes testers confirm instead of 
 Follow qa-conduct and [references/devices.md](references/devices.md):
 
 - Serve a production build of the app (a dev or debug build makes every timing look slow) from a
-  throwaway copy of real data on its own port, and record the PID. Real data matters: synthetic
-  fixtures hide problems that only the user's data shows. A copy
-  still talks to the outside world unless you cut it off: remove or blank git remotes and sync
+  throwaway copy of real data on its own port, and record the PID; synthetic fixtures hide problems
+  that only the user's data shows. A copy still talks to the outside world unless you cut it off:
+  remove or blank git remotes and sync
   targets, turn sync off, and strip push subscriptions, tokens, and webhooks. Then confirm nothing
   leaves: run the server with outbound network blocked where the project supports it, and check the
   browser's `network requests` for third-party or real-backend calls during a first journey.
@@ -127,14 +128,14 @@ Treat the report as claims to check, not results. The tester writes every findin
 - Fold duplicates into one finding with every place it occurs.
 - Re-measure any slow timing before it counts: one browser on the host, no other tester or
   server running, and on the laptop too if the user allows it. Parallel testers and servers
-  share the host's CPU; one round reported multi-second writes that took 290–565 ms on a quiet
+  share the host's CPU; one round reported multi-second writes that took 290 to 565 ms on a quiet
   machine. Report the quiet number and how you got it.
-- Explicitly compare matching screens, states, and task outcomes across form factors, using the
-  same data and theme. Check visual identity, terminology, navigation, and feature access; verify
-  that differences are justified by actual viewport/input constraints (desktop need not support
+- Explicitly compare matching screens, states, and task outcomes across form factors, with the
+  same data and theme: visual identity, terminology, navigation, and feature access. Verify that
+  each difference is justified by real viewport or input constraints (desktop need not support
   touch). If testers covered separate devices, reconcile their evidence yourself or assign a
-  comparison pass. Require a device comparison summary, including justified adaptations, defects,
-  and untested combinations; separate device reports alone do not establish consistency.
+  comparison pass. Separate device reports alone do not establish consistency, so require a device
+  comparison summary covering justified adaptations, defects, and untested combinations.
 
 ### 5. Fix, re-check, and file
 
@@ -145,14 +146,14 @@ What gets fixed in the pass depends on the mode:
   fixes alone need several commits, design decisions, or changes outside the frontend, report and
   ask before fixing, as for a larger pedantic list.
 - **Pedantic:** the size of the verified list decides.
-  - **Small:** the verified P0–P2 findings are about ten or fewer, need no design decision from
+  - **Small:** the verified P0 to P2 findings are about ten or fewer, need no design decision from
     the user, and stay inside the frontend. Fix them all yourself; the user wants papercuts fixed
     in the same pass, not filed.
   - **Larger:** anything else, such as an audit of an existing UI. Stop after verification and
     report before fixing anything: verified counts per severity, the top five with screenshots,
     the decisions only the user can make, and what fixing will cost (chunks or pull requests,
     surfaces, anything outside the UI, a rough duration). Offer scopes: P0 and P1 only, with the
-    rest filed (what the user chose for large passes); all of P0–P2; or the list as a handover.
+    rest filed (what the user chose for large passes); all of P0 to P2; or the list as a handover.
     Fix only what they choose. In one audit, "fix all of it" became more than five hours of
     chunks, reviews, and CI before a second round could start.
 
@@ -164,8 +165,7 @@ sequence.
 a private repository's issues), file each unfixed finding as an item without asking, grouped under
 one thread named for the pass, with its severity and evidence path in the notes. A public tracker
 needs the user's agreement first, and its items must not carry screenshots of or quotes from real
-data: findings describe the user's data, and public posts need their approval. Otherwise, or
-until they agree, keep the findings in the git-excluded `<evidence-dir>/findings.md`. Leave out
+data. Otherwise, or until they agree, keep the findings in the git-excluded `<evidence-dir>/findings.md`. Leave out
 anything on the "Already decided or filed" list and P3s the user has already declined. Don't list
 filed findings in chat beyond a count and the link: long lists in chat read as no progress, and
 the user had to ask for them to be catalogued afterwards.
@@ -204,7 +204,8 @@ absolute path: a path relative to the project sent the user looking for it.
 - how many findings you filed, and where;
 - how long the pass took against its budget, and the mode it ran in.
 
-Tear down what you started (qa-conduct): servers by PID, tunnels, browser sessions, test data, guest settings you changed, and LOCK files.
+Tear down what you started (qa-conduct): servers by PID, tunnels, browser sessions, test data,
+guest settings you changed, and LOCK files.
 
 ### 7. Learn from the user's review
 
@@ -218,15 +219,6 @@ removing that rule.
 ## Severity
 
 Use the scale in taste-profile.md › Severity calibration, which maps this user's reactions to
-P0–P3. The short version: P0 blocks or makes the UI unusable on a target device; P1 is what they
-notice at first look (agents have wrongly called these cosmetic); P2 is a papercut, fixed in the
-pass when cheap (focused) or under step 5's rule (pedantic), and filed otherwise; P3 is filed.
-
-## References
-
-| File | Read it when |
-|---|---|
-| [references/qa-conduct.md](references/qa-conduct.md) | Before starting; rules for both roles |
-| [references/taste-profile.md](references/taste-profile.md) | Judging findings; the tester loads it in full |
-| [references/tester-brief.md](references/tester-brief.md) | Briefing the tester (step 3) |
-| [references/devices.md](references/devices.md) | Preparing hosts, browsers, and form factors (step 2) |
+P0 to P3. In short: P0 blocks or makes the UI unusable on a target device; P1 is what they notice
+at first look (agents have wrongly called these cosmetic); P2 is a papercut, fixed or filed as
+step 5 decides; P3 is filed.

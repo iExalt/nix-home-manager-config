@@ -41,8 +41,6 @@ This script groups the [roadmap](<ROADMAP>.md)'s steps; the [plan](<PLAN>.md) sa
 
 ## When a human is needed
 
-<!-- Every Human entry with a date, a time or a mid-run point, in time order, so the user can plan around them. -->
-
 - <Date, or thread and point>: <what the user does> (thread <n>).
 
 ## Threads

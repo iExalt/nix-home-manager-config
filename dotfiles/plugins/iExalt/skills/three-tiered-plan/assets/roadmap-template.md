@@ -62,11 +62,7 @@ Live runs are where the time and money go:
 
 ## Human interventions
 
-<!--
-Every point where a person must act. Kinds: decision; access, such as a token or client only the user can create;
-presence, such as a browser login or being online at a time; manual action; and approval of spending, destructive or
-external operations. Shrink the list before implementation by settling decisions, provisioning access ahead of time
-and moving mid-step interventions to approval.
+<!-- Every point where a person must act, shrunk as three-tiered-plan's "Make human interventions explicit" describes.
 -->
 
 | Step | Kind | What the user does | When | Status |

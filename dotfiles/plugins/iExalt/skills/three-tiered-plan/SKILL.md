@@ -1,6 +1,6 @@
 ---
 name: three-tiered-plan
-description: "Grill the user about a campaign that will span days or weeks, then write and maintain, with a continuous peer reviewer, three planning tiers: a verbose, history-grounded plan (what and why), a concise roadmap of steps with proofs (how), and keep-me-in-the-loop threads with explicit dependencies and human interventions, written as a literal script or as workstream issues in the repository's tracker. Use when starting or re-planning such a campaign, when deriving or revising its roadmap, script or workstreams, or when closing a finished one; not for work one session can hold (use agentic-workflow) or for executing a thread (use keep-me-in-the-loop)."
+description: "Grill the user about a campaign spanning days or weeks, then write and maintain, with a continuous peer reviewer, three planning tiers: a verbose, history-grounded plan (what and why), a concise roadmap of steps with proofs (how), and keep-me-in-the-loop threads with explicit dependencies and human interventions, as a literal script or as workstream issues in the repository's tracker. Use when starting or re-planning such a campaign, deriving or revising its roadmap, script or workstreams, or closing a finished one; not for work one session can hold (use agentic-workflow) or for executing a thread (use keep-me-in-the-loop)."
 ---
 
 # Three-Tiered Plan
@@ -23,11 +23,11 @@ Tier 3 can instead live in the repository's issue tracker as **workstreams**,
 one issue per thread ("Keep tier 3 as tracker workstreams"). Where this skill
 says script or thread, read workstream issues and workstreams in that form.
 
-Grill each tier out of the user, then write it with a continuous reviewer.
-Draft and review the tiers in order, then ask the user to confirm the complete
-set in one dialog. The user owns outcomes, scope and
-tradeoffs, and holds history and expertise the repository doesn't record. You
-find facts, propose, challenge and write; the reviewer challenges you.
+Grill each tier out of the user and write it with a continuous reviewer, in
+order, then ask the user to confirm the complete set in one dialog. The user
+owns outcomes, scope and tradeoffs, and holds history and expertise the
+repository doesn't record. You find facts, propose, challenge and write; the
+reviewer challenges you.
 
 ## Start from the right tier
 
@@ -79,21 +79,20 @@ its findings raise to the user through the dialog.
   dependencies and human actions left unmarked.
 - **Script:** shape the thread boundaries and dependencies with the reviewer
   before the user sees them, as `keep-me-in-the-loop` does for chunk plans.
-- **The user's thinking time:** before asking a round, assign the reviewer
-  bounded idle work for the wait, such as reading sources for the next branch,
+- **The user's thinking time:** before asking a round, give the reviewer
+  bounded work for the wait, such as reading sources for the next branch,
   checking the draft's claims or preparing counterexamples to your leading
-  recommendations, so the reviewer keeps working while a dialog blocks you.
+  recommendations.
 
 Implementation keeps the same discipline: every script thread runs under
 `keep-me-in-the-loop`, which brings its own continuous reviewer.
 
 ## Ground before the first question
 
-History and the user's expertise ground a plan better than anything else.
-Earlier attempts explain why the obvious route was already rejected. The user
-knows which resources are irreplaceable, which credentials are shared, what the
-budget is and how the domain behaves in practice. Gather what exists before
-asking for the rest:
+History and the user's expertise ground a plan best: earlier attempts explain
+why the obvious route was already rejected, and the user knows which resources
+are irreplaceable, which credentials are shared, what the budget is and how the
+domain behaves in practice. Gather what exists before asking for the rest:
 
 - Read prior plans and design documents, including related projects they cite;
   run records and incident notes; decision records; the Git history of the
@@ -135,9 +134,8 @@ milestones and decisions, and each decision into the ones that depend on it. The
 - Ask the whole frontier each round. Keep a question out of a round when it
   depends on another question in that round. Recompute the tree after each
   round, since answers move the frontier and can reopen settled branches.
-- For each question, give the context, the options with their consequences for
-  results, effort, risk and what gets postponed, and your recommendation with
-  its evidence. Present the strongest alternative fairly.
+- Shape each question as `working-conventions` › Ask the user describes, and
+  present the strongest alternative fairly.
 - When a decision's tradeoffs exceed what a dialog option can carry, write its
   options table (option, for, against) and recommendation into the draft's
   decisions section first, then ask, pointing there.
@@ -164,9 +162,8 @@ Route every question through a native structured question tool, following
 `agentic-workflow`'s "Use the Q&A dialog" section, with one exception: ask the
 whole frontier per round instead of one question at a time. When the frontier
 exceeds the tool's per-call limit, split it across consecutive dialogs,
-grouping related questions. Before each dialog, explain the context and
-tradeoffs in commentary. Use free-text answers for open questions such as the
-north star, history and expertise.
+grouping related questions. Use free-text answers for open questions such as
+the north star, history and expertise.
 
 ### Keep the draft as the ledger
 
@@ -181,11 +178,9 @@ able to resume the interview from the draft alone.
   `(the user, <date>)`. Record the reason, in the user's words when short.
   Record the option the user chose with its description, not a paraphrase: its
   scope and trigger are what they chose, even when your wording would be
-  tidier, as `working-conventions` › Record the user's decisions requires. A
-  call the user wasn't asked is Proposed, never Decided.
-- Say who proposed what: **Decided** (the user's call), **Agreed** (your
-  proposal, accepted), **Proposed**, **Open** (with its spike or trigger),
-  **Rejected** (with why) and **Verified** (with evidence).
+  tidier, as `working-conventions` › Record the user's decisions requires.
+- Say who proposed what with the plan template's labels: **Decided**,
+  **Agreed**, **Proposed**, **Open**, **Rejected** and **Verified**.
 - Revise in place and keep the trail: "**Changed (the user, <date>):** …,
   replacing …". Record corrected and rejected ideas as lessons, so later agents
   don't propose them again.
@@ -216,29 +211,20 @@ ordering tradeoffs, grouping steps across milestones, live-resource lifetimes
 and budgets, and which human interventions can be settled now.
 
 For implementation campaigns, include a testing strategy that follows
-`working-conventions` › Test cost. Define the routine-check command, runtime
-budget, stable baseline and comparable execution conditions, using existing
-evidence or a named early measurement. Keep expensive evidence checks attached
-to explicit gates, and make suite-runtime maintenance part of each
-implementing step.
+`working-conventions` › Test cost: the routine-check command, runtime budget,
+stable baseline and comparable execution conditions, from existing evidence or
+a named early measurement. Keep expensive evidence checks attached to explicit
+gates, and make suite-runtime maintenance part of each implementing step.
 
-Write it from [assets/roadmap-template.md](assets/roadmap-template.md):
+Write it from [assets/roadmap-template.md](assets/roadmap-template.md), whose
+"How to read it" defines steps, **Needs**, **Proof**, **Ticks** and the tick
+rule:
 
-- A **step** is one unit of agent work: a few commits ending in its proof.
-  List steps in a workable order, spikes before the work they de-risk. Group
+- List steps in a workable order, spikes before the work they de-risk. Group
   steps from different milestones when that improves flow, such as steps that
   share one live environment.
-- Each step states what changes, its **Needs**, its **Proof** (offline, or live
-  with named resources and a retained record) and its **Ticks** (the plan's
-  boxes and items it closes). Agents tick a step and its plan boxes in the same
-  commit.
-- **Needs** names the steps, gates or decisions the step depends on, or
-  "nothing". It is the constraint; list order is only a suggestion. The script
-  derives which threads can run in parallel from it, so never leave a
-  dependency implied by the order.
-- Lead with a progress table, a table of the live runs where time and money go,
-  and a point-form summary per phase whose bullets cite step numbers and end
-  with the phase's gate. End with every human intervention.
+- The script derives which threads can run in parallel from Needs, so never
+  leave a dependency implied by the order.
 
 Check coverage both ways: every open plan box and item maps to a step, and
 every step ticks something or says what it enables. Check that the Needs graph
@@ -282,10 +268,10 @@ marks ready.
 
 ## Tier 3: the script
 
-The script turns the roadmap into the implementation threads to open, each
-with a literal opening prompt, its dependencies and its human interventions,
-so neither the user nor an orchestrating agent has to guess the next grouping,
-what can run at once, or when a person is needed.
+The script lists the threads to open, each with a literal opening prompt, its
+dependencies and its human interventions, so neither the user nor an
+orchestrating agent has to guess the next grouping, what can run at once, or
+when a person is needed.
 
 Read the roadmap, the status document, `keep-me-in-the-loop`'s current
 instructions and the live state: resources that are up, leases and their
@@ -342,20 +328,16 @@ only reflect a preferred order, and split threads along independent surfaces
 or contracts. Mark the threads that can run together in the graph. When the
 critical path still covers most of the script, say so at the top with the
 reason, so the user and the overseer know the campaign runs serially.
-State how parallel threads stay isolated: each works in its own worktree,
-rebases before every push, and reconciles shared documents (roadmap ticks,
-status, the script) without overwriting another thread's entries.
 
 ### List each thread's human interventions
 
 Give every thread a **Human** entry, drawn from the roadmap's interventions
-and grouped by timing: before opening, at approval, mid-run at a named point
-(saying whether the thread pauses affected work or continues around it), and
-after. The approval is itself an intervention; list what it settles. Aim for
-nothing mid-run, and write "none after approval" when that holds so the user
-knows the thread runs away from the keyboard. Collect every intervention with
-a date, a time or a mid-run point into the script's "when a human is needed"
-list.
+and grouped by timing as the script template's thread entry shows. The
+approval is itself an intervention; list what it settles. Aim for nothing
+mid-run, and write "none after approval" when that holds so the user knows the
+thread runs away from the keyboard. Collect every intervention with a date, a
+time or a mid-run point, in time order, into the script's "When a human is
+needed" list.
 
 Grill only what grouping needs from the user: their availability for the
 listed interventions, how many threads they will run at once, spending pace,
@@ -363,8 +345,8 @@ and whether to approve at a gate.
 
 Write it from [assets/script-template.md](assets/script-template.md), covering
 every thread to the plan's final gate; threads past the current evidence stay
-coarse and provisional. Keep each opening prompt short and stable: invoke
-`keep-me-in-the-loop`, point at the script's rules and the thread's entry
+coarse and provisional. Keep each opening prompt short and stable, as the
+template's prompt shows: point at the script's rules and the thread's entry
 rather than restating facts that will go stale, and end with the obligation to
 mark the thread done and record deviations that change other threads. When a
 status document exists, make its recommended next sequence point at the
@@ -439,26 +421,24 @@ loops describes.
 Ask one confirmation question covering all three tiers in one dialog, with
 links and a reading guide for each: which sections to check first, starting
 with the summary and every Decided row. Offer confirmation of the complete set
-or a request for revisions; don't ask three separate approval questions. When
+or a request for revisions. When
 revising an existing set, identify which tiers changed and include those in
 the same confirmation. If revisions affect an upstream tier, propagate them
 downward and have the reviewer check the updated set before asking again.
 Don't publish the tiers or start implementation until the user explicitly
 confirms them, as `working-conventions` › Authority describes. Confirmation
-covers the tiers only, never a release.
-Offer a diagram-led
-companion, such as a lifecycle with Mermaid diagrams, when the design is
-cheaper to disagree with visually.
+covers the tiers only, never a release. Offer a diagram-led companion, such as
+a lifecycle with Mermaid diagrams, when the design is cheaper to disagree with
+visually.
 
 ## Publish and link
 
-Commit each confirmed tier on its own with a conventional commit, and push
-unless repository rules or the user say otherwise. Other sessions may be
-editing the same documents: check the worktree and the remote first, commit
-only your files, and never amend or force-push over work that isn't yours. Run
-the repository's Markdown formatter and linter. Link the plan, roadmap, script
-and status document to each other, and point the repository's agent
-instructions at the roadmap's tick rule when nothing does yet.
+Commit each confirmed tier on its own and push, following
+`working-conventions` › Publication. Other sessions may be editing the same
+documents, so check the worktree and the remote first. Run the repository's
+Markdown formatter and linter. Link the plan, roadmap, script and status
+document to each other, and point the repository's agent instructions at the
+roadmap's tick rule when nothing does yet.
 
 For workstreams, publish by creating the confirmed issues, their links,
 labels and membership fields, then running the readiness tool and its drift
@@ -509,8 +489,8 @@ working documents from crowding the repository's current docs:
 
 ## Hand off the confirmed set
 
-Begin with a one- or two-line **TL;DR**. Then give each document's path and
-publication state, how it is laid out, what it adds that the tier above
+After the **TL;DR** (`working-conventions` › Updates), give each document's
+path and publication state, how it is laid out, what it adds that the tier above
 doesn't say, the reviewer's closing position, which decisions remain open and
 who owns them, and the next action: any remaining tier, or the script's ready
 threads with their prompts and when a human is next needed. For workstreams,

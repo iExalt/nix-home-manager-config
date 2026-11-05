@@ -1,17 +1,18 @@
 ---
 name: maintain-project-status
-description: "Create or maintain an evidence-backed project status document that bridges strategic plans and exhaustive implementation checklists. Use when Codex must reconstruct current progress from plans, Git history, source, tests, benchmarks, artifacts, and worktree state; define intermediate outcome gates and dependencies; distinguish designed, implemented, verified, active, blocked, and future work; recommend the next sequence; track deferrals and risks; or audit unsupported milestone-completion claims."
+description: "Create or maintain an evidence-backed project status document that bridges strategic plans and exhaustive implementation checklists. Use to reconstruct current progress from plans, Git history, source, tests, benchmarks, artifacts, and worktree state; define intermediate outcome gates and dependencies; distinguish designed, implemented, verified, active, blocked, and future work; recommend the next sequence; track deferrals and risks; or audit unsupported milestone-completion claims."
 ---
 
 # Maintain project status
 
-Create a durable project-status bridge between governing strategy and detailed
-implementation tasks. Keep it concise enough to guide current execution without
-becoming a duplicate checklist.
+Keep a durable project-status document that bridges governing strategy and
+detailed implementation tasks, concise enough to guide current execution
+without becoming a duplicate checklist.
 
-Use [assets/status-document-template.md](assets/status-document-template.md) as
-the starting structure when creating a document. Adapt headings to the project,
-but preserve the evidence, boundary, dependency, and update semantics.
+Start a new document from
+[assets/status-document-template.md](assets/status-document-template.md).
+Adapt headings to the project, but preserve the evidence, boundary, dependency,
+and update semantics.
 
 ## Core invariants
 
@@ -20,8 +21,8 @@ but preserve the evidence, boundary, dependency, and update semantics.
 - Treat the detailed checklist as authoritative for exhaustive task coverage.
 - Treat current source, tests, measurements, and artifacts as authoritative for
   present behavior.
-- Use Git history to reconstruct when and why work landed, not as sole proof
-  that the current tree still satisfies a claim.
+- Use Git history to reconstruct when and why work landed, not as the sole
+  proof that the current tree still satisfies a claim.
 - Never infer milestone completion from partial implementation, checked
   subtasks, code existence, or a passing subset of tests.
 - Keep accomplishments evidence-backed and state the incomplete boundary
@@ -35,40 +36,42 @@ but preserve the evidence, boundary, dependency, and update semantics.
 
 ## Documentation and evidence retention
 
-Default to one project-wide status/progress document and the active implementation
-plan, which may contain its checklist. Reuse these documents instead of creating
-per-item reports, acceptance receipts, benchmark writeups, or handoff documents.
-Component READMEs and `docs` directories suit durable usage, interface, and
-design knowledge, but their existence does not make them a place for run logs. Add a separate document only for a distinct ongoing reader need
-that the existing documents cannot reasonably serve.
+Default to one project-wide status/progress document and the active
+implementation plan, which may contain its checklist. Reuse them instead of
+creating per-item reports, acceptance receipts, benchmark writeups, or handoff
+documents. Component READMEs and `docs` directories hold durable usage,
+interface, and design knowledge, not run logs. Add a separate document only
+for a distinct ongoing reader need that the existing documents cannot
+reasonably serve.
 
 Choose the smallest useful retained representation:
 
 - Inline short results and small tables in the progress document. Keep only a
-  small number of decisive receipts, with enough conditions and limitations to
-  interpret the result.
+  few decisive receipts, with enough conditions and limitations to interpret
+  them.
 - Put moderately larger useful tables or details in an appendix to that same
   document. Do not paste raw logs or unbounded datasets into an appendix.
-- For larger output, retain the conclusion and relevant reproduction command or
-  source reference; omit raw output from the commit by default. If exact raw
-  results were not retained, say so; do not link disposable local files as
+- For larger output, keep the conclusion and the reproduction command or
+  source reference, and omit raw output from the commit by default. If exact
+  raw results were not retained, say so; do not link disposable local files as
   durable evidence.
 - Only when preserving exact files is essential to an explicit requirement or
   named future use, consolidate them into a benchmark/evidence `.tar.zstd` archive.
-  Reuse the existing archive when present; update it without losing existing
+  Reuse the existing archive when present, updating it without losing
   members. Do not create one archive per run or retain both the archive and its
-  expanded contents. In the progress document, briefly state why it is retained,
-  what it contains, and how to extract the relevant files. Verify that the archive
-  is readable and contains required files before removing task-owned originals.
+  expanded contents. In the progress document, state briefly why it is
+  retained, what it contains, and how to extract the relevant files. Verify
+  that the archive is readable and contains the required files before removing
+  task-owned originals.
 
-Verification and retention are separate decisions: running a rigorous benchmark
-does not require committing all its outputs. Keep reusable tests, benchmark
-harnesses, and required runtime/test fixtures as normal source files. This policy
-covers generated evidence; it does not permit hiding source in archives or
-weakening checks.
-Keep working evidence only as long as needed for review; remove only task-owned
-disposable material within the authorized scope. Do not turn a status update into
-an unsolicited repository-wide cleanup or create preservation machinery by default.
+Verification and retention are separate decisions: a rigorous benchmark does
+not require committing all its outputs. Keep reusable tests, benchmark
+harnesses, and required runtime/test fixtures as normal source files. This
+policy covers generated evidence; it does not permit hiding source in archives
+or weakening checks. Keep working evidence only as long as review needs it, and
+remove only task-owned disposable material within the authorized scope. Do not
+turn a status update into an unsolicited repository-wide cleanup or create
+preservation machinery by default.
 
 ## Status model
 
@@ -106,8 +109,8 @@ Identify:
 4. repository instructions and the preferred tool runner;
 5. the baseline revision, relevant branches, and worktree state.
 
-Read the status document first when updating an existing one. Then inspect its
-linked sources and verify that the hierarchy is still accurate.
+When updating, read the existing status document first, then inspect its
+linked sources and confirm the hierarchy is still accurate.
 
 ### 2. Inspect the evidence surface
 
@@ -123,7 +126,7 @@ Inspect before writing:
   decisions.
 
 Prefer repository-managed tools and commands. Keep a small evidence ledger in
-working context or the existing status document, not a new receipt file:
+working context or the existing status document, not in a new receipt file:
 
 | Claim | Evidence | Current-tree check | Classification |
 | --- | --- | --- | --- |
@@ -174,13 +177,13 @@ goal:
 - one decision owner and one exit-condition owner;
 - evidence when complete or partially verified.
 
-Keep intermediate goals large enough to represent meaningful outcomes and small
-enough to unblock sequencing. A goal should normally combine related checklist
-tasks that produce one reviewable capability, evidence package, or decision.
+Size each goal to a meaningful outcome that is still small enough to unblock
+sequencing; it normally combines related checklist tasks that produce one
+reviewable capability, evidence package, or decision.
 
 ### 6. Audit dependencies and claims
 
-Perform these checks before recommending work:
+Before recommending work, check:
 
 1. **Dependency cycles:** Build a directed graph from each goal to its
    prerequisites. A valid next goal must have all required incoming evidence.
@@ -203,11 +206,11 @@ Perform these checks before recommending work:
 
 ### 7. Recommend the next sequence
 
-Normally recommend three to seven concrete steps. Order them by dependency and
-evidence production, not by convenience. Explain any bounded parallelism or
-early spike that intentionally crosses a milestone boundary.
+Normally recommend three to seven concrete steps, ordered by dependency and
+evidence production, not convenience. Explain any bounded parallelism or early
+spike that intentionally crosses a milestone boundary.
 
-List explicitly deferred work separately. Name the missing prerequisite or
+List explicitly deferred work separately, naming the missing prerequisite or
 intermediate exit condition for each deferred group.
 
 ### 8. Track risks without duplicating tasks
@@ -245,8 +248,8 @@ When updating:
 - preserve prior log entries unless correcting a documented factual error.
 
 Update after a meaningful implementation increment, changed decision, measured
-result, newly discovered blocker, or invalidated claim. Do not churn the
-document for inconsequential edits.
+result, newly discovered blocker, or invalidated claim, not for inconsequential
+edits.
 
 ### 10. Verify before finishing
 
@@ -262,8 +265,8 @@ Verify:
 - `git diff --check` and the final worktree diff.
 
 Record exact commands and results in the handoff or progress log when useful.
-If a relevant test or factual claim cannot be verified, state that limitation
-and do not classify the affected outcome as verified.
+If a relevant test or factual claim cannot be verified, say so and do not
+classify the affected outcome as verified.
 
 ## Output standard
 

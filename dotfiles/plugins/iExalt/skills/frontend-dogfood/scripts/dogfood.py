@@ -125,10 +125,10 @@ def cmd_init(a):
     (pathlib.Path(cfg["evidence"]) / "view").mkdir(parents=True, exist_ok=True)
     xvfb = "" if a.headless else ('command -v Xvfb >/dev/null || { echo "Xvfb missing on the host: install it, '
                                   'or pass --headless and report hover untested"; exit 1; }\n')
-    print(remote(cfg, """command -v agent-browser >/dev/null || { echo "agent-browser missing on the host; see devices.md › Setup"; exit 1; }
+    print(remote(cfg, """command -v agent-browser >/dev/null || { echo "agent-browser missing on the host; see devices.md › Tier 1 › Setup, once per host"; exit 1; }
 command -v uv >/dev/null || { echo "uv missing on the host: mise use -g uv"; exit 1; }
 """ + xvfb + """[ "$(loginctl show-user "$USER" -p Linger --value 2>/dev/null)" = yes ] ||
-  echo "warning: lingering is off on the host, so the browser and touch hold stop if your last login session there ends (devices.md › Setup)" """), end="")
+  echo "warning: lingering is off on the host, so the browser and touch hold stop if your last login session there ends (devices.md › Tier 1 › Setup, once per host)" """), end="")
     subprocess.run(["scp", "-q", str(PROBE), f"{a.host}:/tmp/dogfood-{a.session}/touch_probe.py"], check=True)
     if a.open:
         # A browser still running under this name would take the open and leave the new scope empty,

@@ -57,9 +57,8 @@ information or disappear.
   promise a cause or resolution the system cannot know. Treat privacy, payment, deletion, access
   loss, and blocked work seriously; warmth is welcome, jokes are not.
 - **Loading.** Name the real operation and end with an ellipsis: "Saving…", "Generating report…".
-- **Empty.** Distinguish first use, no results, filters, permissions, and failure, and give the next
-  action.
-- **Success.** Confirm the outcome briefly.
+- **Empty and success.** Follow [states-and-edge-cases.md](states-and-edge-cases.md) › The states
+  to design.
 - **Help.** Where help lives follows SKILL.md › Conflicts › Help and onboarding. Helper text answers
   an implicit question instead of restating the control. Link text makes sense out of context.
 
@@ -74,8 +73,8 @@ information or disappear.
 - Consistent currency precision within a context (0 or 2 decimals, never mixed).
 - Keep nouns consistent: introduce as few unique terms as possible, and keep a short glossary when
   terms span the product.
-- Avoid the generated-page tells: an accent on a single word in a headline, ALL-CAPS labels,
-  eyebrow labels above every heading, `A · B · C` meta strings, and `→` appended to every link.
+- Avoid the generated-page tells in [visual-direction.md](visual-direction.md): the typographic
+  treatments under Design principles and the template chrome under Calibration.
   > **Override:** see SKILL.md › Conflicts › Generated-look defaults.
 
 ## Accessibility and localization
