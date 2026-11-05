@@ -15,14 +15,12 @@ Shape that chunk plan with the reviewer, obtain the user's approval once, then
 implement, review, verify, commit, and push each chunk autonomously. Report
 between chunks and continue; seek approval for the next phase after finishing
 the current one, unless the user approved the remaining phases together.
-Preserve explicit user overrides and repository rules.
 
 ## Establish the current boundary
 
 Read the governing plan, roadmap/checklist, and existing project-status document.
 Inspect current source, relevant verification evidence, Git state, and repository
-instructions to establish what is complete and what remains. Do not infer phase
-completion from checked subtasks or prior summaries alone. Preserve unrelated work.
+instructions to establish what is complete and what remains.
 
 When invoked for a workstream issue, such as `Run workstream #<N>`, the issue
 is the phase's entry: its scope, proposed chunks, dependencies, human
@@ -31,25 +29,16 @@ it implies, and finish it as the repository's instructions say. Record a
 deviation that changes another workstream on that workstream's issue.
 
 Use `maintain-project-status` for the durable progress record and
-`continuous-peer-review` for implementation and review. Read their current
-instructions; resolve them from the available skill catalog or sibling skill
-directories. This skill owns phase boundaries and user reports; status
-semantics and reviewer mechanics belong to those skills. If a required skill
-or native review capability is unavailable, explain the limitation and
-resolve the execution approach before claiming the workflow can proceed.
+`continuous-peer-review` for implementation and review; status semantics and
+reviewer mechanics belong to those skills.
 
 Start the `continuous-peer-review` reviewer before drafting the first phase
 proposal; it persists across chunks and phases as `working-conventions` ›
 Review loops describes.
 
-Records follow `working-conventions` › Records. When the status document is
-missing, create it through `maintain-project-status` using the repository's
-documentation conventions. Keep only a few decisive receipts inline.
-
 ## Propose one substantial phase
 
-Open with a one- or two-line **TL;DR** of the current outcome and the proposed
-next result, then briefly say what the phase or plan has accomplished so far,
+After the TL;DR, briefly say what the phase or plan has accomplished so far,
 including its verification boundary.
 
 Propose roughly 2 to 4 coherent chunks; the range guides sizing and is not a
@@ -65,103 +54,68 @@ For each chunk, name:
 - its acceptance checks and any verification assigned to a named later gate;
 - material exclusions, risks, or external actions the user needs to assess.
 
-Make the overall phase boundary and important decisions clear. State that approval
-covers autonomous execution across these chunks, progress reports between them,
-and committing/pushing each completed chunk after required checks and review.
-The publication default grants no permission for unrelated external actions,
-destructive operations, or infrastructure spending. Carry forward existing
-authorization and name any additional authority actually needed. Releases
-and conditional approvals follow `working-conventions` › Authority: this
-approval never covers a release, and each condition is checked before
-committing or pushing.
+Make the overall phase boundary and important decisions clear. State that
+approval covers autonomous execution across these chunks, progress reports
+between them, and committing and pushing each completed chunk after required
+checks and review. Name any further authority needed, such as unrelated
+external actions, destructive operations or spending.
 
-Jointly shape the proposal with the reviewer before presenting it. Send the draft
-chunk plan, its acceptance checks, deferral gates, risks, and requested authority
-with the raw roadmap and evidence locations, so the reviewer can challenge the
-boundaries, ordering, and verification independently. Revise until you agree or
-the disagreement is clear, and present the reviewer's position in the proposal
-as `working-conventions` › Review loops describes.
+Shape the proposal with the reviewer before presenting it: send the draft chunk
+plan, acceptance checks, deferral gates, risks and requested authority with the
+raw roadmap and evidence locations. Revise until you agree or the disagreement
+is clear, and present the reviewer's position as `working-conventions` ›
+Review loops describes.
 
 Obtain phase approval before implementation unless the current instructions
 already approve that concrete scope, asking as `working-conventions` › Ask the
 user describes and respecting the dialog's restrictions on permission requests.
-Do not request approval for every internal increment. If outcomes or major
-tradeoffs are still unclear, use `agentic-workflow` to resolve them before
-turning a speculative route into an implementation commitment.
+If outcomes or major tradeoffs are still unclear, use `agentic-workflow` to
+resolve them before turning a speculative route into an implementation
+commitment.
 
-Phase gates are the user's most common question, usually answered "approve as
-proposed". When the roadmap's later phases stay inside the agreed scope and
-hold no taste, scope, cost or release decision, offer to approve them together
-with this phase, and recommend it. List those phases coarsely, and name any
-decision you already know will come back to the user. Offer approving only
-this phase as the alternative. Under a multi-phase approval, shape each next
-phase with the reviewer, describe it in the phase-completion report, and start
-it in the same turn; a report that ends on "Phase N starts next" stalls until
-the user asks. Return to the user before a phase whose scope, acceptance
-criteria, cost, risk or external actions differ from what was approved, or
-that reaches a decision the approval left to them.
+When the roadmap's later phases stay inside the agreed scope and hold no taste,
+scope, cost or release decision, offer to approve them together with this
+phase, and recommend it. List those phases coarsely, and name any decision you
+already know will come back to the user. Offer approving only this phase as the
+alternative. Under a multi-phase approval, shape each next phase with the
+reviewer, describe it in the phase-completion report, and start it in the same
+turn. Return to the user before a phase that departs from the approval or
+reaches a decision it left to them.
 
 ## Execute approved chunks
 
 Keep a visible checklist of phase chunks, with the current chunk and outstanding
 checks clear. Work through the approved chunks in dependency order.
 
-For changes that grow or restructure tests, apply `working-conventions` › Test
-cost in the chunk plan; the author and reviewer fix confirmed regressions in
-the current chunk.
-
 Within each chunk:
 
 1. Use `continuous-peer-review` to jointly shape and review small implementation
    increments within the approved chunk plan. A user-facing chunk may contain
    several reviewer increments. Do not add a separate peer-review loop or
-   duplicate the review skill's controls. If an agreed design amendment changes
-   an approved outcome, acceptance check, deferral, risk, or external action,
-   return it to the user before affected work proceeds.
-2. Implement and resolve routine technical decisions and necessary fixes
-   autonomously within the approved outcome. Handle unrelated improvements and
-   pre-existing bugs by the "by the way" rule in the user's global
-   instructions. Ask before materially expanding scope.
-3. Run available discriminating checks now. Defer expensive or unavailable
-   verification only when the chunk's acceptance criteria permit it, attaching
-   each deferral to a specific later roadmap gate. Never move a required
-   closure check merely to finish or publish the chunk. Unmet proofs and
-   deferrals follow `working-conventions` › Evidence: report an unmet proof
-   and ask, even when the rest of the thread is done.
-4. Complete the review skill's milestone/integration closure and required checks
-   for the chunk. Use `working-conventions`' work states and its rule for what
-   "reviewed" covers. A deferred live proof does not establish live correctness.
-5. Reconcile the plan/checklist and project-status document with the evidence,
-   citing claims and recording the user's decisions as `working-conventions`
-   › Evidence and › Record the user's decisions describe (not "runs every
-   5 min on prod" for something not deployed). Commit and push as
-   `working-conventions` › Publication describes.
-6. Report the outcome and proceed directly to the next approved chunk. Do not
+   duplicate the review skill's controls.
+2. Run available discriminating checks now. Defer verification only to a named
+   later roadmap gate the chunk's acceptance criteria allow, never merely to
+   finish or publish the chunk; `working-conventions` › Evidence governs
+   deferrals and unmet proofs.
+3. Complete the review skill's milestone/integration closure and required checks
+   for the chunk, using `working-conventions`' work states.
+4. Reconcile the plan/checklist and project-status document with the evidence,
+   then commit and push as `working-conventions` › Publication describes.
+5. Report the outcome and proceed directly to the next approved chunk. Do not
    append an approval question or end execution just because a report is due.
-
-Mid-phase skill updates, context refreshes and session resumes follow
-`working-conventions` › Continuity; carry accepted decisions and verification
-obligations across them as well.
 
 ## Reassess when evidence changes
 
-Follow `continuous-peer-review`'s existing backlog and disagreement controls.
-Surface a material stall with its cause, impact, and a recommended adjustment.
-Do not impose an inherited two-round limit, launch extra review loops, or close
-required findings to meet a time target. Keep affected work pending until the
-required findings and checks are resolved; continue independent authorized work.
-
-Replanning, and returning to the user when evidence requires a material
-change, follow `working-conventions` › Authority; acceptance never weakens
-silently (› Evidence).
+Follow `continuous-peer-review`'s backlog and disagreement controls, and
+`working-conventions` › Authority for replanning. Surface a material stall with
+its cause, impact, and a recommended adjustment. Never close required findings
+to meet a time target.
 
 ## Update at increment outcomes
 
 Between the phase proposal and chunk reports, send updates for the events
 `working-conventions` › Updates lists, plus one when a chunk's increment
-design is agreed and implementation starts, and stay silent otherwise. Lines
-such as `Now the status document.` or `Publishing A3a-2.` are the next-step
-announcements that section forbids; let tool calls proceed without commentary.
+design is agreed and implementation starts.
 
 Check each reviewer message against these events when it arrives, including one
 queued during a tool loop; report a qualifying event at the next tool boundary
@@ -169,41 +123,20 @@ rather than folding it into later work.
 
 Write each update as a status prefix (the chunk and its accepted increments
 out of those planned) followed by one sentence on what is now true and what
-follows. Move anything longer into the chunk report. For example:
-`Chunk A · 0/4 — design agreed; A1, mini's inventory, first.` or
+follows, such as
 `Chunk B · 3/5 accepted — Ceph pools are now selected by node label; B4 next.`
-State the outcome and why it matters, not the work that produced it. Work sent to
-the reviewer, awaiting sign-off, or returned with fixes is not an outcome; report
-the acceptance or finding when it arrives. Omit routine fixes, retries, lint,
-commit mechanics, review handoffs, and test counts; carry consequential
-details into the chunk report. Fold checklist changes into an update instead
-of announcing them separately.
+Move anything longer into the chunk report.
 
-For a live operation, state its start with the stop condition, then report only
-an unexpected state, an interruption, or a decision, and finally its result.
-Monitor it for failures, unexpected states and the whole operation's
-completion only, with filters as `working-conventions` › Waiting describes.
-Do not emit successful stage completions, recaps, or unchanged polls. When the
+Monitor a live operation only for failures, unexpected states and its
+completion, keeping routine progress in a log read at decision points. When the
 user asks for action-only updates, restart the monitor with a filter that
-matches only events needing action and check its first events against that
-request. Keep routine progress in a log read at decision points. A wake-up is
-costly because a turn almost always ends with text.
-
-Stay silent between these events, including during long implementation
-stretches and waits; a monitor event, completion notification, or silent-turn
-reminder that brings none of them gets no text. Wait for an external process
-or live operation inside a bounded blocking check, as `working-conventions` ›
-Waiting describes, rather than ending the turn and being woken. Reviewer and
-user replies arrive only between turns, so continue independent work while
-they are pending. A turn that must end to await one with nothing new to
-report ends with no text, as `working-conventions` › Updates describes
-(Claude Code re-prompts turns that end without text).
+matches only events needing action, and check its first events against that
+request.
 
 ## Report for quick reading
 
 Use compact bullets by default; expand for consequential changes, surprises, or
-decisions. Explain outcomes and what the user can now do or know before technical
-details. Avoid replaying the implementation chronology or dumping test counts.
+decisions.
 
 A typical chunk report covers:
 
@@ -213,17 +146,15 @@ A typical chunk report covers:
   required review closure, skipped or unrun checks, known limits, and named
   deferred verification gates. State whether newly reported bugs are fixed,
   still open, or explicitly deferred.
-- **Publication:** commit/push status with a useful revision reference; disclose
-  any publication failure without claiming the chunk is fully delivered.
+- **Publication:** commit/push status with a useful revision reference.
 - **Next:** the next approved chunk and its outcome, or the specific decision
   needed if the approved route can no longer proceed.
 
 This is a content guide, not a requirement for four headings in every update.
-Keep detailed evidence in the project-status document.
 
 At phase completion, reconcile the phase's full exit criteria with current
 evidence and report results, accepted deferrals, and remaining boundaries.
-Shape the next phase's chunks with the reviewer, propose them, and await approval
-before implementing them, unless the user has explicitly authorized that next
-phase already, including through a multi-phase approval. If the roadmap is
-finished, report completion and remaining limitations without inventing work.
+Shape the next phase's chunks with the reviewer, propose them, and await
+approval, unless a multi-phase approval already covers that phase. If the
+roadmap is finished, report completion and remaining limitations without
+inventing work.
