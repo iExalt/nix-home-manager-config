@@ -15,7 +15,7 @@
 * Run work that may take over 10 minutes in the background or under a watcher, and wait for its notification; never start a second watcher on something already watched.
 * Check what actually runs, such as the daemon's version rather than the app bundle's, and prefer watchers that stop at the first failure, such as `gh pr checks --watch --fail-fast`.
 * Never end a turn on a promise. If your last message says you're waiting, something armed must wake you: a background task, Monitor, a scheduled wake-up, or a peer that is still running. A subagent's final hand-back is its last message. When the next piece of work is already approved, start it instead of announcing it.
-* Never create Paseo background workspaces or agents (`--background`, or `background: true`). Paseo hides them from their project, so I lose track of running work. To recover one, run `paseo workspace update --no-background <id>`; `paseo workspace ls --background` lists them.
+* Never create Paseo background workspaces or agents (`--background`, or `background: true`).
 
 ## Git and workspace
 
