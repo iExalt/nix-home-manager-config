@@ -25,35 +25,27 @@ project, and your whole job is the hand-off, done straight away:
 2. Create a workspace there:
    `paseo workspace create --isolation local --path <run checkout> --project <project-id> --title "Overseer: <task>" --json`.
 3. Launch the overseer in it with
-   `paseo agent run --no-wait --relationship detached --notify-on-finish --workspace <workspace-id> --title "Overseer: <task>" --provider <provider> --mode <mode> --model <model> --thinking <effort> "<prompt>"`,
+   `paseo agent run --no-wait --relationship detached --no-notify-on-finish --workspace <workspace-id> --title "Overseer: <task>" --provider <provider> --mode <mode> --model <model> --thinking <effort> "<prompt>"`,
    with your own provider and mode from `paseo agent status`, and the
    overseer model and effort from `SKILL.md` › Three-tier model routing. Its
    prompt invokes this skill and carries the user's request verbatim, with
    anything else they said in this thread, and your agent ID as the
    launcher's.
-4. Right after the launch, without waiting on the overseer, ask the user in a
-   blocking dialog whether to archive this thread, naming the overseer thread
-   and its project. Record the answer on yourself with
-   `paseo agent update "$PASEO_AGENT_ID" --label overseer.launcher=<archive|keep>`.
-   On yes, run `paseo workspace archive <workspace-id>` on your workspace
-   when no other agent is in it (check each agent in `paseo agent ls --json`
-   with `paseo agent status <agent-id> --json`, whose `snapshot.workspaceId`
-   names its workspace), and
-   `paseo agent archive --force "$PASEO_AGENT_ID"` otherwise. On no, stay
-   idle: the overseer's finish notifications still reach you, and you answer
-   each with no text at all.
+4. Right after the launch, tell the user in one line where the overseer
+   runs (its thread and project), then archive yourself: with
+   `paseo workspace archive <your workspace-id>` when you are the only agent
+   in your workspace (`paseo agent status <agent-id> --json` shows each
+   agent's `snapshot.workspaceId`), otherwise with
+   `paseo agent archive --force "$PASEO_AGENT_ID"`.
 
 If the `paseo` CLI is missing or fails, skip the hand-off, say so, and oversee
 from this thread in the repository's existing project.
 
-The user answers that dialog while viewing the launcher's thread, and Paseo
-reopens an archived session the user is viewing, so the launcher's own archive
-doesn't stick. As the overseer, finish it: whenever you wake, including when a
-dialog returns, read the launcher's labels with
-`paseo agent status <launcher-id> --json`. Once `overseer.launcher` is
-`archive` and its status isn't `closed`, run
-`paseo agent archive --force <launcher-id>`. Stop checking once it is closed
-or the label is `keep`.
+Paseo reopens an archived session the user is viewing, so the launcher's own
+archive may not stick. As the overseer, finish it: whenever you wake, check
+`paseo agent status <launcher-id> --json`, and if it isn't `closed`, run
+`paseo agent archive --force <launcher-id>`. Stop checking once it is
+closed.
 
 ## Run project and workers
 
