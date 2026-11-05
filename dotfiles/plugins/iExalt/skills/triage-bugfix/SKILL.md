@@ -5,11 +5,11 @@ description: Diagnose reported software or operational failures, develop and ver
 
 # Triage and bugfix
 
-Guide the work from symptom to mechanism, remedy, and recurrence prevention. Scale the investigation to impact and uncertainty; a small bug does not need an incident ceremony. Routine feature work and mechanical repairs need this workflow only when they involve a failure investigation.
+Guide the work from symptom to mechanism, remedy, and recurrence prevention, scaled to impact and uncertainty.
 
 ## Establish the problem and scope
 
-Identify observed and expected behavior, impact, the affected environment or version, and concrete success criteria. Reuse available context before asking questions. Determine whether the request authorizes diagnosis, a proposed fix, or implementation; carry forward existing authorization and explicit pause or wait points.
+Identify observed and expected behavior, impact, the affected environment or version, and concrete success criteria. Reuse available context before asking questions. Determine whether the request authorizes diagnosis, a proposed fix, or implementation.
 
 ## Diagnose the mechanism
 
@@ -33,6 +33,6 @@ Separate local verification, CI results, deployment, and live-system proof. Stat
 
 Name the failure class and explain why existing safeguards missed it, distinguishing evidence from inference. Recommend measures tied to that mechanism: an enforced invariant, reliable failure propagation, targeted regression coverage, better diagnostics, or a justified workflow change.
 
-Explain the expected benefit and ongoing cost. Prefer distinct safeguards at the cheapest reliable layer, accounting for cumulative test runtime and maintenance. Do not require a new test for every incident or expand prevention into an unrelated hardening project. Separate prevention included in the authorized fix from proposed follow-up work.
+Explain the expected benefit and ongoing cost. Separate prevention included in the authorized fix from proposed follow-up work, and don't grow it into an unrelated hardening project.
 
-Close with the diagnosis and evidence, fix status, verification and remaining uncertainty, and proportionate prevention recommendations, in the structure the task needs rather than a fixed report template.
+Close with the diagnosis and evidence, fix status, what remains unverified, and prevention recommendations.

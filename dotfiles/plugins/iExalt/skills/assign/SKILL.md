@@ -29,9 +29,8 @@ rules, or these instructions.
 
 Identify the target repository from the item, its links, or the current
 checkout. When it is elsewhere, locate or clone it as the user's instructions
-direct. Before sizing, read the repository's agent instructions, current Git state,
-and the code the item touches; a short ticket can hide a large change, and a
-long one can be a one-line fix.
+direct. Before sizing, read the repository's agent instructions, current Git
+state, and the code the item touches.
 
 ## Choose the workflow
 
@@ -45,10 +44,9 @@ length or label:
 | Large | Epic, multi-phase work, many sub-issues, a workstream or thread from a campaign plan, or days of work needing checkpoints | `keep-me-in-the-loop` |
 
 Between two sizes, choose the smaller if its workflow can hold the whole item
-without losing needed checkpoints; otherwise choose the larger. Give the user a one-line TL;DR of the item, the chosen workflow,
-and the deciding reason, then proceed. Ask only when the answer changes what
-happens next, such as an unclear target repository or conflicting acceptance
-criteria.
+without losing needed checkpoints; otherwise choose the larger. Give the user
+a one-line TL;DR of the item, the chosen workflow, and the deciding reason,
+then proceed.
 
 ### Large items need a plan
 
@@ -77,9 +75,6 @@ the harness's session tooling and pass the same brief. Give the workflow:
 - linked items, prior attempts, and open questions from comments;
 - publication expectations: whether to commit, push, open a pull request, and
   how to reference the item (for example `Fixes #<N>` or the tracker's key).
-
-The selected workflow has its agent load `iExalt:working-conventions`;
-this hand-off doesn't restate it.
 
 ## Tracker updates
 

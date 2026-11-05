@@ -21,19 +21,14 @@ subagent to:
    Resolve the active skill's symlink or catalog location when necessary; do
    not edit a generated or installed copy when a maintained source exists.
    If copies disagree, establish which one the current thread uses.
-2. Read the applicable `AGENTS.md` files from the source repository root down
-   to the target skill. When editing skills in
-   `$HOME/dev/Projects/nix-home-manager-config/dotfiles/plugins/iExalt/skills`, explicitly read
-   `$HOME/dev/Projects/nix-home-manager-config/dotfiles/AGENTS.md`; do not
-   assume they were loaded when invoked from another repository. Read the Git
-   state, the full skill, and relevant supporting files. Use the available
-   skill-creation guidance. Keep a checklist and make the requested scoped edit
-   while preserving unrelated work.
-3. Validate the skill and any changed executable behavior. Follow the source
-   repository's provisioning and publication rules, including Home Manager
-   reload for added, removed, or renamed skills, refreshing the Codex copy of
-   the iExalt plugin after any edit, and scoped commits/pushes where
-   authorized. Report failures separately from completed edits.
+2. Read every `AGENTS.md` from the source repository root down to the target
+   skill; when invoked from another repository, they aren't loaded. Read the
+   Git state, the full skill, and relevant supporting files. Use the available
+   skill-creation guidance, and make the requested scoped edit while
+   preserving unrelated work.
+3. Validate the skill and any changed executable behavior, then provision and
+   publish as those `AGENTS.md` files direct. Report failures separately from
+   completed edits.
 4. Return the skill name, authoritative path, revision or content fingerprint,
    brief diff summary, validation result, and provisioning/publication status.
    End a successful handoff with: `Immediately run /iExalt:reload-skill <skill> using
@@ -48,9 +43,8 @@ instead of claiming delegation or silently substituting an in-thread edit.
 ## Reload before resuming
 
 On the completion handoff, immediately apply [reload-skill](../reload-skill/SKILL.md)
-to the reported source with the diff summary. Do not merely print the command or
-ask the user to invoke it. If programmatic slash commands are not supported,
-read that skill and follow its instructions directly.
+to the reported source with the diff summary. If programmatic slash commands are
+not supported, read that skill and follow its instructions directly.
 
 If validation or provisioning failed, resolve the blocker before treating the
 updated skill as ready. A publication-only failure does not block rereading
