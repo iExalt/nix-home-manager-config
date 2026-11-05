@@ -1,6 +1,6 @@
 ---
 name: working-conventions
-description: "The shared rules every workflow skill follows: authority and approvals, asking the user, review loops, repeated failure, evidence and work states, test cost, updates, waiting, delegation and model routing, work-item size, records, publication, continuity and cleanup. Read it when a workflow skill such as overseer, keep-me-in-the-loop, subagent-pair-program, continuous-peer-review, pair-program, three-tiered-plan, agentic-workflow or assign points here, and pass it to agents you brief. Not a workflow of its own."
+description: "The shared rules every workflow skill follows: authority and approvals, autonomy levels, asking the user, review loops, repeated failure, evidence and work states, test cost, updates, waiting, delegation and model routing, work-item size, records, publication, continuity and cleanup. Read it when a workflow skill such as overseer, keep-me-in-the-loop, subagent-pair-program, continuous-peer-review, pair-program, three-tiered-plan, agentic-workflow or assign points here, and pass it to agents you brief. Not a workflow of its own."
 ---
 
 # Working Conventions
@@ -39,6 +39,72 @@ workflow skill it runs.
   exact action and the reason, continue independent work, and wait for the
   user's authorization.
 
+## Autonomy
+
+The autonomy level sets when you involve the user in decisions inside the
+agreed scope. Use the level the user names, or **medium** when they name
+none; never raise it yourself. State the level in your opening proposal or
+plan, and record it in the plan and in every brief. The level governs your
+own decisions: agents you brief route their requests through you and don't
+inherit your authority.
+
+| Level | When to involve the user |
+| --- | --- |
+| **Low** | Invite the user into consequential choices within scope: meaningful implementation tradeoffs, phase direction, re-sequencing and recovery options. Recommend an option before proceeding with the affected work. Handle routine execution and settled decisions yourself. |
+| **Medium (default)** | Use best judgment, as the workflow skill describes by default: approve work within scope that the workflow lets you approve, choose routine implementation details, re-sequence work and recover stalled agents. Consult when a tradeoff or uncertainty materially affects what the user agreed. |
+| **High** | Minimize interruptions. Decide within scope and resolve recoverable issues yourself, reporting meaningful decisions afterward. Interrupt only for the mandatory consultations below, an explicit planned human intervention, or a genuine blocker that requires the user. |
+
+At **every level**, always consult the user for:
+
+- Matters of taste or design that need an unresolved subjective preference,
+  after separating out what agents can test or measure, as described below.
+  Apply an already settled preference without asking again.
+- A serious unexpected event or issue that is unrecoverable or has wide or
+  deep effects, even if part of it can be recovered. For other recoverable
+  issues, decide whether to consult according to the level.
+- Projected costs beyond the agreed limits. When costs were not discussed,
+  the limit is **zero/free**. Ask before incurring the increase, not after.
+
+No level changes the agreed scope, acceptance boundaries, the gates a
+workflow skill puts in the user's hands (such as `keep-me-in-the-loop`'s phase
+approval, which an overseer may give only within the scope the user agreed,
+`pair-program`'s per-increment approval, or `three-tiered-plan`'s
+confirmation), explicit human checkpoints, permission requirements or the
+rules under Authority. A workflow skill may require an explicit grant before
+high autonomy takes effect, as `overseer` does. Hold affected work while an
+answer is pending and continue independent work. Use already authorized
+containment when needed to prevent further harm.
+
+### Test measurable behavior before escalating
+
+"Look and feel" or "design" is not by itself a reason to ask the user.
+Separate testable behavior from subjective preference, including when both
+appear in one review item. At medium and high autonomy, err toward having
+agents script, test and benchmark the measurable part, fix problems within
+scope, and verify the result without asking for manual evaluation or making
+it a user review gate. Filter delegated agents' review requests before
+relaying them; an agent calling something subjective does not make it so.
+
+For example, zoom, pan and drag smoothness should be evaluated with
+representative interactions and P50/P75/P95/P99 frame times, dropped frames
+and relevant latency, against agreed targets on the relevant browsers and
+available hardware. Reuse existing benchmarks and record their conditions
+and limits. Do not ask "does it feel smooth on your laptop?" when a scripted
+benchmark can answer the performance question. At low autonomy, invite an
+optional hands-on trial when the user wants involvement; agents still own
+objective verification rather than replacing it with the user's impression.
+
+Escalate only the remaining preference or product tradeoff that the evidence
+cannot settle, or another mandatory consultation. Metrics and functional
+tests must support the claim: a working shortcut does not establish
+discoverability, nor does counting keystrokes alone prove a picker is faster
+for users. Use suitable evidence and keep unproven claims qualified. If
+required hardware or access is unavailable, report that concrete limit and
+ask only for the necessary access or bounded action; do not relabel the gap
+as a taste question. Obtain permission for checks that would disrupt the
+user's machine. Keep routine measurement in the work evidence and normal
+progress reports, without generating extra user decisions.
+
 ## Record the user's decisions
 
 A decision attributed to the user quotes their words or the option they chose,
@@ -54,7 +120,8 @@ item or thread. A rule nobody asked them about is Proposed, not theirs.
   a dialog unchanged.
 - Facts the environment can settle, and anything measurable, are yours to
   find. Ask only for decisions, unresolved taste, and knowledge only the user
-  holds. Test the measurable part of look and feel before calling it taste.
+  holds. Test the measurable part of look and feel before calling it taste,
+  as Autonomy › Test measurable behavior before escalating describes.
 - Make each question self-contained: context, options with their consequences
   for results, effort, risk and what gets postponed, and a recommendation with
   its evidence. Batch questions that come due together.
