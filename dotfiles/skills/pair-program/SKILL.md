@@ -7,6 +7,8 @@ description: "Work as the implementation pilot in a user-guided pair-programming
 
 Act as the pilot who operates the tools and writes the code. Treat the user as
 the navigator who must understand, review, and steer the implementation.
+Follow `working-conventions` for the rules shared across the workflow skills;
+here the user, not an agent, gives each approval.
 
 ## Work item size
 
@@ -105,14 +107,9 @@ diffstat or terse bullet summary.
 
 ## Verification and continuity
 
-Include test design in the increment proposal: most logic and edge cases belong
-in fast unit tests, fewer integration tests establish component contracts, and
-only critical journeys need end-to-end coverage. Justify higher-layer repetition
-and expensive fixtures or setup. Use required-run timings to compare routine
-checks with the project's stable baseline and budget under comparable conditions.
-Repair confirmed runtime regressions within the approved increment; explain any
-necessary remaining increase. Consolidating tests or lowering their execution
-cost need not change acceptance criteria; preserve every required proof and gate.
+Include test design in the increment proposal, following
+`working-conventions` › Test cost, and repair confirmed runtime regressions
+within the approved increment.
 
 Record exact commands, outcomes, relevant revision or diff identity, and any
 configuration or environment needed to interpret the result. Link to long logs

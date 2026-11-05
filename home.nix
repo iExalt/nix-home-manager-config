@@ -101,6 +101,10 @@ in
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/agentic-workflow";
   home.file.".claude/skills/agentic-workflow".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/agentic-workflow";
+  home.file.".codex/skills/working-conventions".source =
+    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/working-conventions";
+  home.file.".claude/skills/working-conventions".source =
+    config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/working-conventions";
   home.file.".codex/skills/keep-me-in-the-loop".source =
     config.lib.file.mkOutOfStoreSymlink "${repoRoot}/dotfiles/skills/keep-me-in-the-loop";
   home.file.".claude/skills/keep-me-in-the-loop".source =
