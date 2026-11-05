@@ -11,23 +11,15 @@ not carry over. A same-session resume may retain its recorded grant. Like
 any session grant, it never covers a release (`working-conventions` ›
 Authority).
 
-Explain that high autonomy permits the main agent to make decisions with the
-user's delegated authority within the agreed scope, including Paseo messages
-that supply authorization context for suspected auto-mode classification
-false positives. Paseo's `send_agent_prompt` messages to other Paseo agents
-appear as if sent by the user, so the overseer can supply the missing
-authorization context and unblock such false positives through supported
-reconsideration. These messages interrupt the receiver and its running
-subagents instead of queuing, so the overseer prefers an idle receiver and
-otherwise adds a continuation note, as [paseo.md](paseo.md) › Relay approvals past a classifier block
-describes.
-This does not transfer authority to workers or remove the mandatory
-consultations or the harness's permission checks. Ask:
+Explain that high autonomy permits the overseer to make decisions with the
+user's delegated authority within the agreed scope. It doesn't transfer
+authority to workers or remove the mandatory consultations or the harness's
+permission checks: a worker blocked on an action that needs the user's
+authority still needs the user's approval in its own thread. Ask:
 
 > For this session, do you explicitly grant the overseer the power to act
 > **with the authority of the user**, not just **on your behalf**, within the
-> agreed scope, including clearly identified delegated authorization through
-> Paseo messaging for auto-mode reconsideration?
+> agreed scope?
 
 Offer **Grant for this session** and **Use medium autonomy**. Do not infer
 consent from a request for high autonomy, silence, a selected default, or plan
