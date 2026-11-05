@@ -608,6 +608,24 @@ stays inferred or unrun in your relay and your report. Name the cause of a
 failure from evidence; if your own messages or interrupts may have caused it,
 say so rather than blaming the harness.
 
+Check a worker's claim before you pass it on to the user or another thread,
+whether it's a cause, a regression, a failed check or a measurement. Read the
+evidence it rests on: the diff, the failing test and its version on the base
+branch, the screenshot, trace or log. Confirm that a failing test still
+asserts what the original asserted; a test whose expectation changed does not
+show a product regression. Confirm that a measurement names the element or
+quantity the requirement is about. When you can't check a claim in time,
+relay it as the worker's unverified claim and say what would verify it.
+
+Repair and review rounds inside a thread's agreed scope belong to its worker.
+Apply the review-trend rule in the user's instructions at your autonomy level:
+at medium and high autonomy, don't relay a routine round to the user; report
+its trend in your next update. When the same failure returns after two
+repairs, or each repair exposes a new failure in the same interaction, have
+the worker stop patching and its reviewer reassess the design: which code owns
+the behavior, which invariants hold, and the simplest change that satisfies
+them. Repair resumes from that reassessment, not from the next patch.
+
 When a worker reports its thread done, verify the claims before launching
 dependents: the script marks the thread done, its commits are on the remote,
 the status document is updated, and its done check passed. If a worker can't
