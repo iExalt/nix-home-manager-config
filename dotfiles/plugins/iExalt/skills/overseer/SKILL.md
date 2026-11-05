@@ -12,46 +12,28 @@ or read its `SKILL.md` where your harness lists the path.
 
 ## First, in Paseo: move into a run project
 
-In Paseo, the overseer runs inside a temporary run project with its workers,
-as "Paseo" describes. Before any other overseer work, including reading the
-script, the plan or the repository's instructions, check where you are: find
-your `workspaceId` with `get_agent_status` on your own agent ID, then your
-workspace's project and checkout in `list_workspaces`. If your checkout is a
-run checkout, `../<repo>-overseer-<slug>`, you are the overseer; skip to the
-rest of this skill. Otherwise the user started you in the repository's own
-project, and your whole job is the hand-off, done straight away:
+In Paseo, before any other overseer work, including reading the script, the
+plan or the repository's instructions, read
+[references/paseo.md](references/paseo.md) › First, move into a run project
+and follow it. It decides whether you are the overseer or the launcher that
+hands off to one.
 
-1. Create the run project and its checkout, as "Paseo" describes, taking
-   `<task>` and `<slug>` from the user's request.
-2. Create a workspace there with `create_workspace`: local isolation, the run
-   checkout as `path`, the run project's `projectId` and the title
-   `Overseer: <task>`.
-3. Launch the overseer in it with `create_agent`, titled `Overseer: <task>`,
-   with your own provider and mode from `get_agent_status`, and the overseer
-   model and effort from "Three-tier model routing". Its prompt invokes this
-   skill and carries the user's request verbatim, with anything else they
-   said in this thread, and your agent ID as the launcher's. Clear its
-   `paseo.parent-agent-id` label, as
-   "Paseo" describes for workers.
-4. Right after the launch, without waiting on the overseer, ask the user in a
-   blocking dialog whether to archive this thread, naming the overseer thread
-   and its project. Record the answer on yourself with `update_agent`, as the
-   label `overseer.launcher` set to `archive` or `keep`. On yes, call
-   `archive_workspace` on your workspace when `list_agents` shows no other
-   agent in it, and `archive_agent` on yourself otherwise. On no, stay idle:
-   the overseer's finish notifications still reach you, and you answer each
-   with no text at all.
+## References
 
-If the `paseo` CLI is missing or fails, skip the hand-off, say so, and oversee
-from this thread in the repository's existing project.
+Load each file when its situation applies; the rules in them are as binding
+as this file's.
 
-The user answers that dialog while viewing the launcher's thread, and Paseo
-reopens an archived session the user is viewing, so the launcher's own archive
-doesn't stick. As the overseer, finish it: whenever you wake, including when a
-dialog returns, read the launcher's labels with `get_agent_status`. Once
-`overseer.launcher` is `archive` and its status isn't `closed`, call
-`archive_agent` on it. Stop checking once it is closed or the label is
-`keep`.
+| File | Read when |
+|---|---|
+| [references/paseo.md](references/paseo.md) | You run in Paseo: hand-off, run project, launching, messaging, watching, classifier relays and run-project cleanup. |
+| [references/claude-code.md](references/claude-code.md) | You launch workers as Claude Code background sessions. |
+| [references/codex.md](references/codex.md) | You launch workers with `codex exec`. |
+| [references/high-autonomy.md](references/high-autonomy.md) | The user asks for high autonomy, before starting workers. |
+| [references/tracker-workstreams.md](references/tracker-workstreams.md) | The campaign keeps tier 3 as tracker workstreams. |
+| [references/question-session.md](references/question-session.md) | Your only dialog blocks your session, as Claude Code's does. |
+| [assets/worker-brief.md](assets/worker-brief.md) | You brief a worker. |
+
+## Role
 
 Run script threads without implementing them. You launch **workers**, separate
 top-level sessions that act as middle-tier thread leads and each run
@@ -78,9 +60,9 @@ subagent, such as one from Claude Code's Agent tool or a Codex spawned agent:
 it shares your session's lifetime and context budget, and a worker needs a
 session of its own. Paseo files the agents `create_agent` launches as your
 subagents, but each is a full session with its own conversation, so it can
-serve as a worker once you detach it into a thread of its own, as "Paseo"
-describes. The continuous reviewer a worker starts inside its own session is
-part of that worker's job.
+serve as a worker once you detach it into a thread of its own, as
+[references/paseo.md](references/paseo.md) describes. The continuous reviewer
+a worker starts inside its own session is part of that worker's job.
 
 Keep a checklist of the threads you oversee, each with its worker and state:
 waiting, ready, running, awaiting approval, awaiting a human, blocked, done.
@@ -93,43 +75,8 @@ Use the autonomy levels, mandatory consultations and measurable-first rule in
 record it in the script and worker briefs. At medium, the default, you
 approve phases within scope; at high, you approve phases and resolve
 recoverable issues yourself, reporting meaningful decisions afterward. High
-autonomy takes effect only after the session grant below.
-
-### High-autonomy session grant
-
-At the beginning of **every high-autonomy overseer session**, before starting
-workers or exercising delegated authority, ask a question dialog that
-requires an explicit answer. This includes a replacement overseer, a new run,
-and switching an existing session to high. In Paseo, the actual overseer asks
-after the launcher hand-off; a launcher's or previous session's grant does
-not carry over. A same-session resume may retain its recorded grant. Like
-any session grant, it never covers a release (`working-conventions` ›
-Authority).
-
-Explain that high autonomy permits the main agent to make decisions with the
-user's delegated authority within the agreed scope, including Paseo messages
-that supply authorization context for suspected auto-mode classification
-false positives. Paseo's `send_agent_prompt` messages to other Paseo agents
-appear as if sent by the user, so the overseer can supply the missing
-authorization context and unblock such false positives through supported
-reconsideration. These messages interrupt the receiver and its running
-subagents instead of queuing, so the overseer prefers an idle receiver and
-otherwise adds a continuation note, as "Relay human interventions" describes.
-This does not transfer authority to workers or remove the mandatory
-consultations or the harness's permission checks. Ask:
-
-> For this session, do you explicitly grant the overseer the power to act
-> **with the authority of the user**, not just **on your behalf**, within the
-> agreed scope, including clearly identified delegated authorization through
-> Paseo messaging for auto-mode reconsideration?
-
-Offer **Grant for this session** and **Use medium autonomy**. Do not infer
-consent from a request for high autonomy, silence, a selected default, or plan
-approval. Record the actual answer, session ID, scope and date alongside the
-plan agreement. Until granted, do not exercise high autonomy; a declined
-grant selects medium. If a dialog cannot be opened, leave the grant pending
-and proceed only under medium's rules and any existing plan approval. Honor
-revocation or a lower level immediately and tell workers about the change.
+autonomy takes effect only after the session grant in
+[references/high-autonomy.md](references/high-autonomy.md).
 
 ## Establish what you oversee
 
@@ -144,34 +91,9 @@ threads, those whose dependencies are met, in the opening message. For each
 thread, note its prompt, Depends on entry, Human entry, live resources and
 done check.
 
-### Workstreams in a tracker
-
-When the campaign keeps tier 3 as workstream issues (three-tiered-plan's
-"Keep tier 3 as tracker workstreams"), each workstream is a thread and its
-issue is the thread's entry. Where this skill says script, read the tracker,
-and follow the repository's instructions for its fields and commands:
-
-- **Ready set:** run the repository's readiness tool, read-only where it has
-  a dry run, rather than deriving readiness yourself. Propose workstreams it
-  reports ready, or in flight with ready items, and take **not alongside**
-  rules from their Depends on sections and the repository's exclusion table.
-  A workstream the tool calls provisional waits for its refinement.
-- **Agreement and approval:** record the user's agreement as a signed comment
-  on each workstream issue that quotes the dialog answer. When the repository
-  makes approval a tracker state, such as a status of Approved, set it from
-  that agreement only where its instructions let an agent record the user's
-  approval; otherwise ask the user to set it, as a planned any-time
-  intervention. A workstream without its approval state doesn't launch.
-- **Workers:** brief each with the workstream prompt, such as
-  `/iExalt:keep-me-in-the-loop Run workstream #<N>`. The worker claims the
-  issue as the repository's instructions say and keeps the sibling worktree
-  they name. Name it after the workstream, such as `Worker: <name> #<N>`.
-- **Judgment calls and deviations:** record them as signed comments on the
-  affected workstream issues, update those issues' bodies or links, and rerun
-  the readiness tool before launching their dependents.
-- **Done:** besides the checks in "Run the threads", the workstream issue is
-  closed, the readiness tool has run, and the summary shows its dependents
-  unblocked. Report its drift check with the done check.
+When the campaign keeps tier 3 as workstream issues, read
+[references/tracker-workstreams.md](references/tracker-workstreams.md); where
+this skill says script, it means the tracker.
 
 ## Agree on the plan
 
@@ -265,13 +187,22 @@ changing paths or tools is not a way around an existing permission denial.
 
 ## Choose the session mechanism
 
-Use the first mechanism that applies, and name it in the opening message.
-Outside Paseo, launch workers in your own harness, so that messages travel
-natively.
+Use the first mechanism that applies, name it in the opening message, and
+read its reference before launching workers:
+
+1. **Paseo,** when you run in it with its built-in tools:
+   [references/paseo.md](references/paseo.md) › Run project and workers.
+2. **Your own harness,** so that messages travel natively: Claude Code
+   ([references/claude-code.md](references/claude-code.md)) or Codex
+   ([references/codex.md](references/codex.md)).
+3. **Elsewhere:** the harness's equivalent of a resumable, addressable
+   session. If it has none, say so, give the user each worker's brief to open
+   by hand, and keep overseeing through what they relay.
 
 For routine coordination, do not interrupt a running session. The Paseo
-authorization messages in "Relay human interventions" are an exception;
-prefer an idle receiver even then. An interrupt cancels the tool call in
+authorization messages in [references/paseo.md](references/paseo.md) ›
+Relay approvals past a classifier block are an exception; prefer an idle
+receiver even then. An interrupt cancels the tool call in
 flight, which may be a live operation, and in Claude Code it also stops the
 session's background subagents for good, including a worker's continuous
 reviewer. Message a session through the receiver's own harness, which
@@ -285,63 +216,18 @@ delivers without interrupting:
   from any shell. The session runs it as its next turn once the current turn
   ends.
 - **From a Codex session to a Claude Code one:** there is no such channel.
-  The sender ends its turn with its message, as "Codex" describes.
+  The sender ends its turn with its message, as
+  [references/codex.md](references/codex.md) describes.
 
-### Paseo
-
-When you are running in Paseo with its built-in tools (`create_agent`,
-`send_agent_prompt` and the rest), use them:
-
-- **Run project:** keep the run's threads together in a temporary Paseo
-  project of their own. The built-in tools can't create projects, but the
-  `paseo` CLI can; the macOS app bundles it at
-  `/Applications/Paseo.app/Contents/Resources/bin/paseo`. Add a checkout for
-  the run with
-  `git worktree add ../<repo>-overseer-<slug> -b overseer/<slug> origin/main`,
-  register it with `paseo project create ../<repo>-overseer-<slug> --json`,
-  and name it with `paseo project rename <project-id> "Overseer: <task>"`.
-  The session the user started does this and hands off to an overseer inside
-  the project, as "First, in Paseo: move into a run project" describes. If
-  the user doesn't agree to the plan, offer to clean up the project, as
-  "Clean up" describes.
-- **Isolation:** create a workspace with worktree isolation for each worker
-  with `create_workspace`, passing the run checkout as `path` and the run
-  project's `projectId`, branching off the remote main branch, such as
-  `origin/main` rather than the local `main`, and name it after the worker.
-  Paseo puts these worktrees under `~/.paseo/worktrees/`. Use the
-  repository's `paseo.json` setup for ignored files when it provides them. A
-  lone worker may use the run checkout itself: `create_workspace` with local
-  isolation, its path and the run project's `projectId`. Never launch a worker
-  into your own workspace.
-- **Launch:** call `create_agent` with the worker's `workspaceId` and the
-  brief as its initial prompt, and name it with `update_agent` if the launch
-  can't. Paseo labels the new agent with `paseo.parent-agent-id` and shows it
-  as your subagent; right after the launch, call `update_agent` with
-  `labels: {"paseo.parent-agent-id": ""}` so it appears as a top-level thread
-  in its project. You still get its finish notifications. Choose the provider
-  and model as Paseo's guidance says: the profile the user named, or the one
-  from `list_profiles` whose notes fit implementation, otherwise your own
-  provider. Apply "Three-tier model routing" below to both providers when
-  choosing the model and effort. Name yourself with `update_agent` too.
-- **Address:** `send_agent_prompt` interrupts a running agent and its
-  subagents instead of queuing. For routine messages, use it only when
-  `get_agent_status` shows idle; otherwise message as above. Authorization
-  messages follow "Relay human interventions". A Claude agent is a Claude
-  Code peer session: give workers the peer name `ListAgents` reports for you,
-  and take each worker's peer name from the `from` attribute of its
-  acknowledgement. A Codex agent's session ID is
-  `persistence.metadata.threadId` in `get_agent_status`.
-  Workers reach you the same way. A Codex worker reporting to a Claude
-  overseer ends its turn with its message; Paseo's finish notification
-  brings it to you without interrupting, and you answer with
-  `send_agent_prompt` once it is idle.
-- **Watch:** Paseo notifies you once when a run started by `create_agent` or
-  `send_agent_prompt` finishes, errors or needs permission. Add no idle
-  subscriptions on top. Whenever something wakes you, check the other
-  workers with `get_agent_status`, and look into one that is idle without
-  having reported or is stuck in `list_pending_permissions`. In case nothing
-  wakes you, keep one hourly `create_heartbeat` while workers run, and delete
-  it when they finish. At decision points, read `get_agent_activity`.
+Confirm each channel before relying on it: a worker's first action is to
+acknowledge its brief to you. Record both ends' immutable session IDs and
+the harness-specific delivery addresses in your checklist and the brief.
+Deliver by session ID or session reference where supported. If the harness
+only accepts peer names, verify a unique name-to-session mapping; never route
+through an ambiguous display name. Confirm the return channel with your reply
+to the acknowledgement, and recheck the mapping after a resume or handoff. If
+no acknowledgement arrives, find out why, such as a wrong address, a held
+message or a permission prompt, before launching more workers.
 
 ### Three-tier model routing
 
@@ -372,135 +258,12 @@ Compare elapsed time and total model usage per accepted work item, including
 review and repairs, before claiming savings. Do not add recurring benchmarks just
 to measure orchestration; reuse session usage and existing acceptance evidence.
 
-### Claude Code
-
-Launch each worker as a background session from its worktree:
-
-```sh
-cd ../<repo>-worker-<slug>
-claude --bg -n "Worker: <subtask>" --model <resolved-Sonnet-model> --effort <medium-or-high> --permission-mode <your mode> "<brief>"
-```
-
-- **Trust:** the launch fails with "Workspace not trusted" unless the
-  worktree or a parent directory is trusted, as `~/Projects` may be. If it
-  fails, launch from the main checkout with `claude --bg -w <slug>` instead,
-  which creates a worktree inside the repository at `.claude/worktrees/<slug>`;
-  never stage `.claude/` in the main checkout.
-- **Address:** your session name, as `ListAgents` shows it. Workers message
-  you with `SendMessage`, and you reach a worker by its name.
-- **Permission mode:** use yours. A session in a different mode may hold
-  cross-session messages for its user's approval. A background session that
-  hits a permission prompt waits until someone runs `claude attach <id>`;
-  treat that as a human intervention.
-- **Watch:** don't keep `notify_when_idle` subscriptions running; a notice
-  usually lands right after the worker's own message and wakes you for
-  nothing. Whenever something wakes you, check `claude agents --json` for a
-  worker that stopped without reporting. In case nothing wakes you, schedule
-  one hourly `CronCreate` check while workers run, and delete it when they
-  finish; such jobs expire after 7 days. The transcripts under
-  `~/.claude/projects/` show what happened. `claude logs` prints raw terminal
-  output, so don't parse it.
-
-### Codex
-
-Launch each worker in the background with
-`codex exec --json --model <resolved-Sol-model> -c 'model_reasoning_effort="<medium-or-high>"' -C <worktree> -o <reply file> "<brief>"`, using the sandbox
-and approval policy the user authorized, and resume it with
-`codex exec resume --model <resolved-Sol-model> -c 'model_reasoning_effort="<medium-or-high>"' <session> "<message>"`. Exec mode can't answer an approval
-prompt, so a policy that asks for approval blocks the worker.
-
-A Codex overseer's workers reach it with `codex queue` on its session. A
-`codex exec` worker exits when its turn ends, so a message queued for it sits
-in its history unanswered; reply to an exec worker by resuming it instead.
-When a worker has no way to message you, its final message is the channel:
-it ends its turn with the request once its independent work is done, and you
-resume it with the answer.
-
-### Elsewhere
-
-Use the harness's equivalent of a resumable, addressable session. If it has
-none, say so, give the user each worker's brief to open by hand, and keep
-overseeing through what they relay.
-
-Confirm each channel before relying on it: a worker's first action is to
-acknowledge its brief to you. Record both ends' immutable session IDs and
-the harness-specific delivery addresses in your checklist and the brief.
-Deliver by session ID or session reference where supported. If the harness
-only accepts peer names, verify a unique name-to-session mapping; never route
-through an ambiguous display name. Confirm the return channel with your reply
-to the acknowledgement, and recheck the mapping after a resume or handoff. If
-no acknowledgement arrives, find out why, such as a wrong address, a held
-message or a permission prompt, before launching more workers.
-
 ## Brief each worker
 
-Each brief opens with this load instruction, then the script's prompt for
-the thread, then the terms below, filled in for the worker:
-
-> Load `iExalt:working-conventions` before anything else; the terms below and
-> `keep-me-in-the-loop` cite its sections. Then acknowledge this brief to the
-> overseer named below.
-
-- You are `Worker: <subtask>`, one of several sessions run by
-  `Overseer: <task>`. Reach it by `<tool and address>`, or
-  `<by ending your turn with the request>` where no tool reaches it. Nobody
-  watches this session's chat.
-- You are the middle-tier thread lead running `keep-me-in-the-loop`, using
-  `<resolved Sol/Sonnet model and effort>`. Delegate implementation and bounded
-  diagnosis/discovery to native pilots using `<resolved Luna/Haiku model and
-  effort>`. Keep substantive independent review at `<resolved Sol/Sonnet model
-  and effort>`. Preserve `<explicit user model choices, or none>`; these choices
-  and the overseer's three-tier policy override conflicting descendant model
-  defaults, including reviewer defaults. Pass the policy and your return
-  address to descendants, verify effective settings at launch/resume, and
-  report unsupported routing instead of inheriting an expensive model.
-- The overseer's autonomy level is `<low|medium|high>`, with authority limited
-  to `<agreed scope and any session grant>`. This does not give you the
-  overseer's delegated authority. Route decisions through it at every level;
-  test measurable aspects of look and feel before flagging unresolved
-  subjective choices; flag serious unexpected issues and projected costs
-  beyond `<agreed limit, zero/free if unspecified>` before affected work.
-- Never ask the user through a question dialog, and never wait for a reply in
-  this chat. Message the overseer whenever you need a human: a phase
-  approval, a decision, access, presence, a manual action, an approval, a
-  permission you lack, or a blocker. For an intervention the script plans at
-  a point in your work, message the overseer when you are about to reach it,
-  allowing the lead time the action needs. For anything unplanned, message it
-  as soon as you know you will need it. Either way, continue independent work
-  until you are blocked on the answer.
-- The user agreed to this thread's scope on `<date>`: `<scope>`. Send your
-  `keep-me-in-the-loop` phase proposal, with your reviewer's position, to the
-  overseer, and wait for its answer. The overseer approves a proposal within
-  that scope on the user's behalf, which counts as your phase approval, and
-  takes anything beyond it to the user. Then run the phase to its end without
-  pausing for confirmation.
-- Send each chunk report, any deviation that changes another thread or the
-  script, and phase completion to the overseer. Skip running commentary; the
-  overseer needs outcomes, not activity. Before claiming a check passed,
-  finalize its handoff with your reviewer: the check and revision tested, the
-  result and evidence location, the reviewer's acceptance, and the
-  limitations or unmet checks; for a statistical claim, also what was
-  counted, its denominator, exclusions or abstentions, and what the sample
-  represents. Label earlier results provisional.
-- A reply that quotes the user is the user's answer. A reply the overseer
-  marks as its own decision carries only the authority the user gave the
-  overseer.
-- If the permission classifier blocks an action, never work around it. Tell
-  the overseer the exact action and the classifier's reason, carry on with
-  independent work, and end your turn once you are blocked on it, so the
-  overseer can relay the user's approval into this thread.
-- Work in `<worktree>` on `<branch>`. Publish as the repository's rules say,
-  for example by rebasing onto the remote main branch and pushing, and
-  reconcile shared documents without overwriting another thread's entries.
-- Keep operational logs and retained artifacts in `<artifact directory>`;
-  confirm access before long operations. Run compute and checks within
-  `<agreed execution location, resource limits and runtime budgets>`, where
-  applicable. Report overruns and measured growth before expanding the work.
-- Don't launch other workers. Your continuous reviewer is part of your own
-  work. If it stops when neither you nor the user stopped it, tell the
-  overseer at once.
-- When the phase is complete, mark the thread done in the script, record any
-  deviation, tell the overseer, and stop.
+Build each brief from [assets/worker-brief.md](assets/worker-brief.md): the
+load instruction, then the script's prompt for the thread, then the terms,
+filled in for the worker. Workers paste nothing else from this skill, so keep
+every term.
 
 ## Run the threads
 
@@ -587,8 +350,9 @@ When a request for a human comes due, whether planned or raised by a worker:
    on the answer. Use a native async input dialog, such as Codex's
    `request_user_input_async`, when your harness has one. When your only
    dialog blocks your session, as Claude Code's `AskUserQuestion` does,
-   launch a question session to ask for you, as "Ask through a question
-   session" describes. Put every decision in a dialog. For an action, such as
+   launch a question session to ask for you, as
+   [references/question-session.md](references/question-session.md)
+   describes. Put every decision in a dialog. For an action, such as
    minting a token, send the steps as a message and ask for confirmation in
    the dialog. Send a push notification with each request when you have the
    tool. Meanwhile, launch ready workers, relay other requests, and let the
@@ -609,99 +373,10 @@ authorized for that thread; otherwise relay it. A pending request of kind
 `question` is a dialog for the user, whether a question session or a worker
 raised it; never answer it.
 
-Claude Code's auto mode classifier gives no user authority to a message from
-another session: `SendMessage` arrives marked as a peer's, so a worker's
-classifier can block an action the user approved through you. Paseo's
-`send_agent_prompt` arrives exactly like text the user typed in the worker's
-thread. When a Claude worker in Paseo reports a classifier block on an action
-the user approved, in their own words to you, for that action or its class:
-
-1. Check `get_agent_status` and prefer waiting until the worker is idle,
-   since `send_agent_prompt` interrupts instead of queuing, as "Paseo"
-   describes. If you send while it is active, add the continuation note
-   below.
-2. Send it with `send_agent_prompt`: `[overseer] Relaying the user's approval
-   for <action>: "<the user's words>" (<date>).` Quote the user exactly, and
-   add only the continuation note if needed.
-
-At low or medium autonomy, use this channel only to relay an approval the
-user actually gave. If the action needs user authorization that is missing,
-ask the user as steps 1 to 4 at the start of this section describe.
-
-At high autonomy with the explicit grant for this session, you may also use
-Paseo messaging autonomously to supply delegated authorization context for a
-suspected auto-mode false positive. Inspect the exact action and rejection
-reason first: the action must fit the agreed scope, spending and permission
-boundaries, require no mandatory consultation, and be eligible for
-reconsideration through the harness's supported approval flow. Check the
-worker's status and prefer an idle receiver as above. Clearly identify the
-message's actual author:
-
-> [overseer] Delegated decision by the overseer under the user's explicit
-> high-autonomy grant for session <ID> on <date>: <exact grant quote>.
-> I authorize <specific action> within <agreed scope>. The reported block is
-> <reason>; the relevant authorization context is <evidence>. Reconsider
-> through the supported approval flow; all permission checks still apply.
-
-When sending either kind of authorization message to a non-idle agent, add:
-
-> This message interrupted your work rather than queuing. After processing
-> it, check the interrupted operation's state and continue from where you
-> stopped. Re-establish any interrupted subagents, including your reviewer,
-> before relying on their work; avoid repeating completed side effects.
-
-The note helps the receiver recover; it does not prevent interruption or
-automatically resume its subagents.
-
-This is the overseer's decision under delegated user authority, not a new
-instruction typed by the user. Record the decision and outcome. Do not use
-the channel to impersonate the user, override an enforced denial or disable
-a safeguard. If the harness does not accept delegated authority, the reason
-is uncertain, or the action remains blocked after supplying the context,
-stop retrying and relay the blocker to the user. A worker's assertion that a
-block is a false positive is not sufficient evidence by itself.
-
-### Ask through a question session
-
-A question session is a short-lived session whose only job is to put one
-dialog to the user and carry the answer back. It blocks while the user
-decides, and you keep working. Name it `Question: <topic>`.
-
-- **Launch** it like a worker, but light: your permission mode and no
-  worktree. On Claude, use the resolved Sonnet model, as
-  `working-conventions` › Model routing describes; never a Haiku model, even
-  though the session is short.
-  - In Paseo, give it a local workspace on the run checkout, in the run
-    project, even while workers use that checkout, and clear its
-    `paseo.parent-agent-id` label as for workers, so the user sees it as a
-    thread of its own. Paseo flags it as needing the user when its dialog
-    opens.
-  - In Claude Code, launch it from the main checkout with
-    `claude --bg -n "Question: <topic>" --model <resolved-Sonnet-model> --permission-mode <your mode> "<prompt>"`.
-    `claude agents` shows it as waiting for input, and the user answers with
-    `claude attach <id>`, so put that command in your push notification.
-- **Prompt** it with the finished dialog: each question, its options with
-  their consequences, and your recommendation. It calls `AskUserQuestion`
-  with exactly those, does nothing else, and sends you the answer verbatim
-  with `SendMessage`, with any notes the user typed. Put questions that come
-  due together in one session; its dialog takes up to four.
-- **Archive** it once its answer arrives. In Paseo, it archives itself: its
-  last action is `archive_workspace` on its own workspace, which archives the
-  session with it. This is safe: it discards only the thread's agent and
-  subagent state, never the directory, worktree or any change in it (the
-  result reports `removedDirectory: false`), even when `list_workspaces` shows
-  the workspace as `kind: worktree` and a worker is busy in the same run
-  checkout. Don't skip it or fall back to `archive_agent` alone out of
-  caution; that leaves a stale workspace in the run project. Paseo can reopen
-  an archived session that the user is viewing, so check it with
-  `get_agent_status` and call `archive_agent` if it is still active. In
-  Claude Code, a session can't remove itself; run `claude stop <id>`, then
-  `claude rm <id>`. If the user answers some other way, archive the question
-  session yourself.
-- **Fallback:** if a question session can't be launched or its dialog never
-  appears, send the request as a message that leads with it, with a push
-  notification, and open your own blocking dialog only when nothing useful
-  remains that doesn't depend on the answer.
+When a Claude worker in Paseo reports a permission-classifier block on an
+action the user approved, or at high autonomy a suspected false positive,
+follow [references/paseo.md](references/paseo.md) › Relay approvals past a
+classifier block. Never send such a message outside those rules.
 
 ## Keep the user in the loop
 
@@ -734,8 +409,8 @@ A request for the user goes in a dialog of its own, as "Relay human
 interventions" describes, never in a status update.
 
 Stay silent between updates, as `working-conventions` › Updates describes.
-Keep wakes from worker messages, notifications and checks few, as "Watch"
-describes for your mechanism. Your checklist holds what you await, and your
+Keep wakes from worker messages, notifications and checks few, as the Watch
+entry in your mechanism's reference describes. Your checklist holds what you await, and your
 next update's roll call shows it.
 
 When the threads you oversee finish, report with a **TL;DR**: each thread's
@@ -753,23 +428,5 @@ normalized. Delete a `worker/<slug>` branch once its commits are on the
 remote main branch. Say what you removed in the final report. Unpushed work
 follows `working-conventions` › Workspace and cleanup.
 
-A Paseo run project is the exception: leave its workers' agents, workspaces
-and worktrees in place until the run's goal is complete, so the user can look
-through the threads. After the final report, ask the user in a blocking
-dialog, such as `AskUserQuestion`, whether to clean up the run project; with
-nothing left to run, the dialog blocks nothing. Name what cleanup would
-remove and anything unpushed it would keep.
-
-- **Clean up:** archive each worker's and question session's agent and
-  workspace, and remove each worker's worktree under `~/.paseo/worktrees/`
-  as above. Say what you removed and what goes next, since your own thread
-  goes with it. Then, as your last action, remove the run checkout and its
-  `overseer/<slug>` branch with `git -C <main checkout>`, since you are
-  running in it, and delete the project with
-  `paseo project delete <project-id>`. That only unregisters the project and
-  its workspaces, your own included; their worktrees, directories and
-  branches stay unless you remove them first. Deleting your own workspace
-  kills your session mid-command, so put the deletion last in that command;
-  Paseo then drops your agent from every list.
-- **Keep:** leave it all, and tell the user the project ID and the commands
-  that would remove it later.
+A Paseo run project is the exception: follow
+[references/paseo.md](references/paseo.md) › Clean up the run project.
