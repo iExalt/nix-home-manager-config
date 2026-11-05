@@ -13,7 +13,11 @@ claude --bg -n "Worker: <subtask>" --model <resolved-Sonnet-model> --effort <med
   which creates a worktree inside the repository at `.claude/worktrees/<slug>`;
   never stage `.claude/` in the main checkout.
 - **Address:** your session name, as `ListAgents` shows it. Workers message
-  you with `SendMessage`, and you reach a worker by its name.
+  you with `SendMessage`, and you reach a worker by its name; it arrives after
+  the receiver's current tool call. Use a session reference where supported,
+  otherwise a peer name you verified is unique in `ListAgents`, and recheck
+  it after a resume. A Codex session can't message a Claude Code one; see
+  [codex.md](codex.md).
 - **Permission mode:** use yours. A session in a different mode may hold
   cross-session messages for its user's approval. A background session that
   hits a permission prompt waits until someone runs `claude attach <id>`;

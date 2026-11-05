@@ -24,20 +24,12 @@ decides, and you keep working. Name it `Question: <topic>`.
   `paseo agent send --no-wait --if-running queue --no-notify-on-finish <your agent ID> "<answer>"`,
   otherwise with `SendMessage`. Put questions that come
   due together in one session; its dialog takes up to four.
-- **Archive** it once its answer arrives. In Paseo, it archives itself: its
-  last action is `paseo workspace archive <workspace-id>` on its own
-  workspace, which archives the session with it. This is safe: it discards
-  only the thread's agent and subagent state, never the directory, worktree
-  or any change in it (the result reports `removedDirectory: false`), even
-  when `paseo workspace ls` shows the workspace as `kind: worktree` and a
-  worker is busy in the same run checkout. Don't skip it or fall back to
-  `paseo agent archive` alone out of caution; that leaves a stale workspace
-  in the run project. Paseo can reopen an archived session that the user is
-  viewing, so check it with `paseo agent status <agent-id>` and run
-  `paseo agent archive --force <agent-id>` if it is still active. In
-  Claude Code, a session can't remove itself; run `claude stop <id>`, then
-  `claude rm <id>`. If the user answers some other way, archive the question
-  session yourself.
+- **Archive** it once its answer arrives. In Paseo, its last action is
+  `paseo workspace archive <workspace-id>` on its own workspace, which keeps
+  the directory. Then check it with `paseo agent status <agent-id>`, and if
+  Paseo reopened it, run `paseo agent archive --force <agent-id>`. In Claude Code, run
+  `claude stop <id>`, then `claude rm <id>`. If the user answers some other
+  way, archive it yourself.
 - **Fallback:** if a question session can't be launched or its dialog never
   appears, send the request as a message that leads with it, with a push
   notification, and open your own blocking dialog only when nothing useful

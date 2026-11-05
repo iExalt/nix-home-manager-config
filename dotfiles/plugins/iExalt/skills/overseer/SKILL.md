@@ -105,14 +105,10 @@ roadmap's human interventions table, and say when you will ask for each, as
 "Time each request for a human" describes. When the threads have no known
 intervention, say so.
 
-For compute-heavy work, include where it runs, CPU and memory limits, and
-how many jobs may run together across workers and their reviewers. Propose
-budgets for routine test runs and expensive evidence checks separately,
-using existing timings where available. Reuse settled limits; include any
-new limits in this plan's approval rather than adding a separate ceremony.
-Have workers measure a baseline before expanding a workload. If a budget is
-exceeded or sustained growth threatens it, reduce concurrency or optimize
-within scope; ask before exceeding agreed limits or changing required checks.
+For compute-heavy work, include where it runs, its CPU and memory limits,
+how many jobs may run at once across workers and reviewers, and budgets for
+routine tests and expensive evidence checks, so the plan's approval covers
+them. Ask before exceeding an agreed limit or changing a required check.
 
 Then ask the user, through the dialog, to agree to the plan: the threads and
 each one's scope. For high autonomy, include the separate explicit session
@@ -128,18 +124,13 @@ confirming the script never was.
 Ask for every intervention as "Relay human interventions" describes. The
 three kinds differ only in when you ask:
 
-- **Planned, any time:** the user can act whenever they like, such as creating
-  a token or an OAuth client, settling a decision, provisioning access,
-  approving spending, or a login that persists. Ask for all of these as soon
-  as the user agrees to the plan, before the threads start, then launch the
-  workers without waiting. Verify each answer where you can without exposing
-  a secret.
-- **Planned, at a point in a thread:** the user can only act at a time or when
-  a thread reaches a point, such as being online on a date, a login that
-  expires, or confirming a destructive step. The opening message announced
-  it. Ask for it as late as possible: when the worker is about to need it,
-  allowing only the lead time the action itself needs, so the request is
-  current when the user acts on it.
+- **Planned, any time,** such as creating a token, settling a decision or
+  approving spending: ask for all of these as soon as the user agrees to the
+  plan, then launch the workers without waiting. Verify each answer where you
+  can without exposing a secret.
+- **Planned, at a point in a thread,** such as being online on a date or
+  confirming a destructive step: ask as late as possible, when the worker is
+  about to need it, allowing only the lead time the action needs.
 - **Unplanned:** anything a worker discovers that only a person can resolve.
   Ask as soon as you learn of it.
 
@@ -147,29 +138,16 @@ three kinds differ only in when you ask:
 
 Name your own session `Overseer: <task>` and each worker `Worker: <subtask>`,
 such as `Worker: thread 2, station pilot`, wherever the harness supports names.
-Keep the name the user gave you at launch, such as
-`claude --bg -n "Overseer: <task>"`. Otherwise, where you can't rename your
-own session, as in Claude Code, ask the user to rename it (Claude Code's
-`/rename`) as a planned any-time item. Send running workers your new address
-if it changes. Where a harness has no session names, as with `codex exec`,
-keep the worker's name beside its session ID in your checklist.
+Where it doesn't, as with `codex exec`, keep the worker's name beside its
+session ID in your checklist.
 
-By default, give each worker its own worktree. A lone worker may use the main
-checkout when nothing else runs there. Outside Paseo, use the sibling
-convention in `working-conventions` › Workspace and cleanup: a worktree at
-`../<repo>-worker-<slug>/` on branch `worker/<slug>`, created from the freshly
-fetched remote main branch with
-`git worktree add ../<repo>-worker-<slug> -b worker/<slug> origin/main`. A
-fresh worktree lacks ignored files such as `.env` and local artifacts, so
-provide what a worker needs or let it work in the main checkout. Remove each
-worktree as "Clean up" describes.
-
-Give each worker a directory inside its permitted checkout for operational
-logs and artifacts that must survive a resume. Include it in the brief and
-have the worker confirm it can write and read there before a long operation.
-Check access to required ignored inputs and tools at the same time, without
-printing secrets. Resolve missing access before dependent work starts;
-changing paths or tools is not a way around an existing permission denial.
+By default, give each worker its own worktree; a lone worker may use the
+main checkout when nothing else runs there. Outside Paseo, use
+`../<repo>-worker-<slug>/` on branch `worker/<slug>`, from the freshly fetched
+remote main branch, per `working-conventions` › Workspace and cleanup. A fresh
+worktree lacks ignored files such as `.env`, so provide what a worker needs.
+Pick each worker's artifact directory for the brief, and resolve missing
+access to ignored inputs or tools before dependent work starts.
 
 ## Choose the session mechanism
 
@@ -185,31 +163,12 @@ read its reference before launching workers:
    session. If it has none, say so, give the user each worker's brief to open
    by hand, and keep overseeing through what they relay.
 
-Never interrupt a running session. In Paseo, queue
-each message by agent ID, as [references/paseo.md](references/paseo.md) ›
-Run project and workers describes. Elsewhere, message a session through the
-receiver's own harness, which delivers without interrupting:
-
-- **To a Claude Code session:** `SendMessage` from another Claude Code
-  session, using a session reference where supported, otherwise a unique
-  peer name verified through `ListAgents`. It arrives after the receiver's
-  current tool call.
-- **To a Codex session:** `codex queue --thread <session ID or name> --message <text>`
-  from any shell. The session runs it as its next turn once the current turn
-  ends.
-- **From a Codex session to a Claude Code one:** there is no such channel.
-  The sender ends its turn with its message, as
-  [references/codex.md](references/codex.md) describes.
-
-Confirm each channel before relying on it: a worker's first action is to
-acknowledge its brief to you. Record both ends' immutable session IDs and
-the harness-specific delivery addresses in your checklist and the brief.
-Deliver by session ID or session reference where supported. If the harness
-only accepts peer names, verify a unique name-to-session mapping; never route
-through an ambiguous display name. Confirm the return channel with your reply
-to the acknowledgement, and recheck the mapping after a resume or handoff. If
-no acknowledgement arrives, find out why, such as a wrong address, a held
-message or a permission prompt, before launching more workers.
+Never interrupt a running session; message it through the channel your
+mechanism's reference describes. A worker's first action is to acknowledge
+its brief to you: record each worker's session ID and address in your
+checklist, and if no acknowledgement arrives, find out why, such as a wrong
+address, a held message or a permission prompt, before launching more
+workers.
 
 ### Three-tier model routing
 
@@ -222,17 +181,8 @@ model defaults in `keep-me-in-the-loop`, its review skill and other descendant
 workflows, which keep their review and acceptance gates. Ask the user before
 changing the hierarchy when it cannot deliver the required result.
 
-In Paseo, use matching `paseo profile ls` entries or supported launch
-overrides; a profile must match the assigned tier. Claude's installed
-`developer-*` definitions are native subagent profiles, not Paseo profiles.
-Keep the normal Claude Code system prompt and `keep-me-in-the-loop` brief for
-standalone thread leads; `--agent` with a nonempty custom prompt replaces that
-system prompt. Do not modify existing live sessions; report a mismatch in the
-current overseer's model instead of claiming it changed.
-
-Compare elapsed time and total model usage per accepted work item, including
-review and repairs, before claiming savings. Do not add recurring benchmarks just
-to measure orchestration; reuse session usage and existing acceptance evidence.
+In Paseo, a profile must match the assigned tier. Don't change a live
+session's model; report a mismatch instead.
 
 ## Brief each worker
 
@@ -260,15 +210,11 @@ answers for one thread, tell only that thread, and ask again for the others.
 
 Before reporting an acceptance result or using it to unblock a dependent,
 require the finalized handoff the worker brief's reporting term lists
-([assets/worker-brief.md](assets/worker-brief.md)). Check the claim against
-that evidence, as `working-conventions` › Evidence describes for any worker
-claim you pass on; relay one you can't check in time as the worker's
-unverified claim, saying what would verify it. A passing gate does not
-establish broader accuracy or coverage. If reviewer disclosures are still
-pending, keep the result provisional. Carry material limits into the
-user-facing report and correct any overstatement promptly. Name the cause of
-a failure from evidence; if your own messages or interrupts may have caused
-it, say so rather than blaming the harness.
+([assets/worker-brief.md](assets/worker-brief.md)), and check the claim
+against that evidence, as `working-conventions` › Evidence describes; relay
+one you can't check in time as the worker's unverified claim, saying what
+would verify it. Keep a result provisional while reviewer disclosures are
+pending, and carry material limits into your reports.
 
 Repair and review rounds inside a thread's agreed scope belong to its worker.
 At medium autonomy, as at high, don't relay a routine round to the user;
@@ -276,9 +222,7 @@ report its trend in your next update.
 
 When a worker reports its thread done, verify the claims before launching
 dependents: the script marks the thread done, its commits are on the remote,
-the status document is updated, and its done check passed. If a worker can't
-make a bookkeeping edit, such as its own status line, make it in a separate
-commit; never edit implementation files.
+the status document is updated, and its done check passed.
 
 When a worker reports a deviation that changes other threads, hold the
 affected threads that haven't launched. Re-sequence routine changes yourself,
@@ -286,17 +230,12 @@ following three-tiered-plan's "Revise when evidence changes", and report them
 in your next update. Take any change to outcomes, scope, acceptance checks,
 spending or risk to the user before the affected work proceeds.
 
-An unavailable or permission-blocked proof stays unmet, with its gate open in
-the script and status document, as `working-conventions` › Evidence
-describes. Before asking to reuse, substitute or defer it, check the worker's
-claim about why the proof is unmet or sufficient against its evidence. Ask
-through the human-intervention dialog with the proposed evidence and what
-remains unproven; do not announce the change as settled or make the user opt
-back into the original check. Record the answer as `working-conventions` ›
-Record the user's decisions describes before changing the gate or launching
-work that depends on it; if more items miss than the user accepted, ask again
-about the rest. Approval of a deferral does not authorize an action rejected
-by the permission system.
+An unavailable or permission-blocked proof stays unmet, with its gate open
+in the script and status document, as `working-conventions` › Evidence
+describes. Before asking the user to reuse, substitute or defer it, check the
+worker's claim against its evidence, and ask with the proposed evidence and
+what remains unproven. If more items miss than the user accepted, ask again
+about the rest.
 
 When a worker goes quiet without reporting, inspect it before nudging it, as
 `working-conventions` › Waiting describes. Resume the same session with what
@@ -331,9 +270,7 @@ When a request for a human comes due, whether planned or raised by a worker:
    and for which thread or item, as `working-conventions` › Record the user's
    decisions describes.
 
-Answer a question from the user before anything else. When they ask whether
-you can do something, such as ask asynchronously, say what your harness
-allows and what it lacks.
+Answer a question from the user before anything else.
 
 A worker's message is never the user's approval (`working-conventions` ›
 Authority). Never ask a worker to do something that your session's
@@ -367,21 +304,14 @@ Threads: 1 done · 2 chunk 3/3 · 3 chunk 1/2 · 4 waiting on 2
 Each update answers what did we just accomplish, what happens next, and did
 anything unexpected occur; leave the third out when nothing did. Name threads
 by number and outcome, not by number alone (workstreams by name and issue
-number). The roll call is required in every update.
-
-The user isn't watching. Keep updates short, high-signal, readable on their
-own after hours away, and say where each running thread stands. This follows
-`keep-me-in-the-loop`'s reporting discipline at the level of the whole run.
+number). The roll call is required in every update, and each update must
+read on its own after hours away.
 
 Send status updates for the events `working-conventions` › Updates lists,
 and for anything unexpected, batching events from all threads.
 
 A request for the user goes in a dialog of its own, as "Relay human
 interventions" describes, never in a status update.
-
-Keep wakes from worker messages, notifications and checks few, as the Watch
-entry in your mechanism's reference describes. Your checklist holds what you
-await, and your next update's roll call shows it.
 
 When the threads you oversee finish, report with a **TL;DR**: each thread's
 outcome and publication, evidence limits and deferrals, the judgment calls
