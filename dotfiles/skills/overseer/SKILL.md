@@ -54,7 +54,8 @@ top-level sessions that act as middle-tier thread leads and each run
 to cheaper native pilots within their own sessions. You brief them, enforce
 the script's order, carry their requests for a human to the user, and keep
 the user in the loop. The user talks to you, and
-the workers talk to you.
+the workers talk to you. Follow `working-conventions` for the rules shared
+across the workflow skills, and include it in every worker brief.
 
 Run the whole agreed scope to its conclusion, using the autonomy level below
 to decide when to involve the user. Record consequential judgment calls and
@@ -64,10 +65,8 @@ destructive or external action outside the user's authorization, or work
 around a permission boundary. That includes changing state in the user's own
 checkouts or on machines they own, such as `git stash`, reset or checkout in a
 dirty working tree on a remote host: report the blocker and the options
-instead. Cutting or publishing a release (a release PR merge that publishes,
-`gh release create` or `edit`, making a draft public, a tag) needs the user's
-explicit approval naming that release. Plan approval, a session grant, a
-merge approval or "keep going" never covers it.
+instead. A release needs the user's explicit approval naming it, as
+`working-conventions` › Authority describes.
 
 ## Choose autonomy and establish authority
 
@@ -242,17 +241,10 @@ Have workers measure a baseline before expanding a workload. If a budget is
 exceeded or sustained growth threatens it, reduce concurrency or optimize
 within scope; ask before exceeding agreed limits or changing required checks.
 
-Carry the routine-check command, stable accepted timing baseline, budget and
-machine/cache/concurrency assumptions between workers. Compare across the run,
-not just against the previous chunk; do not reset the baseline at each handoff.
-Assign test-runtime regressions to the worker introducing them while its change
-is still in progress. Keep coverage mainly in fast unit tests, with fewer
-integration tests and a small end-to-end set; judge cost as well as test count.
-Consolidating duplicate tests or moving logic checks down a layer is ordinary
-maintenance when the required proof is preserved. Moving a required proof to a
-later gate or making it optional remains an acceptance change. Do not turn
-routine suite maintenance into a separate milestone by default, or hide growth
-by increasing concurrency beyond the agreed resource limits.
+Carry `working-conventions` › Test cost between workers: the routine-check
+command, stable accepted baseline, budget and execution conditions, compared
+across the whole run. Assign a test-runtime regression to the worker
+introducing it while its change is still in progress.
 
 Then ask the user, through the dialog, to agree to the plan: the threads and
 each one's scope. For high autonomy, include the separate explicit session
@@ -402,54 +394,28 @@ When you are running in Paseo with its built-in tools (`create_agent`,
 
 ### Three-tier model routing
 
-Use this hierarchy for new sessions, descendants, reviewers and replacements.
-Preserve explicit user provider, model and effort choices, including reviewer
-choices. Carry those choices and this routing policy in every worker brief;
-they override conflicting model defaults in `keep-me-in-the-loop`, its review
-skill and other descendant workflows. Keep their review and acceptance gates.
+Route new sessions, descendants, reviewers and replacements as
+`working-conventions` › Model routing describes. You are the top
+orchestrator, each worker is a thread lead, and its pilots and independent
+reviewer take those rows. The `subagent-pair-program` exception for
+standalone leads does not apply under an overseer. Carry the user's explicit
+choices and this policy in every worker brief; they override conflicting
+model defaults in `keep-me-in-the-loop`, its review skill and other descendant
+workflows, which keep their review and acceptance gates. Ask the user before
+changing the hierarchy when it cannot deliver the required result.
 
-| Role | Codex model | Claude model | Default effort |
-| --- | --- | --- | --- |
-| Main overseer: direction, cross-thread decisions, final acceptance | GPT Astra | Opus | `high` |
-| Thread lead (the top-level worker): phase coordination, review, integration decisions | GPT Sol | Sonnet | `medium`; `high` for substantive review or complex decisions |
-| Implementation pilot: bounded implementation, diagnosis, discovery, mechanical edits | GPT Luna | Haiku | Codex `high` for implementation/diagnosis, `medium` for mechanical work; Claude `medium` |
-| Independent substantive reviewer within a thread | GPT Sol | Sonnet | `high` |
+A worker keeps the `keep-me-in-the-loop` workflow and owns its phase
+proposals, review and verification, but delegates implementation to native
+pilots. Pilots send proposals, results and blockers to their thread lead;
+thread leads report to the overseer.
 
-The independent reviewer is a peer at the thread lead's tier, not another
-orchestration layer. A worker keeps the `keep-me-in-the-loop` workflow and owns
-its phase proposals, review and verification, but delegates implementation to
-native pilots. Pilots send proposals, results and blockers to their thread lead;
-thread leads report to the overseer. Difficult pilot work returns to the lead
-for diagnosis and a revised bounded assignment. Difficulty, failed checks or a
-long campaign do not authorize moving descendants to Astra or Opus. Ask the
-user before changing the hierarchy when it cannot deliver the required result.
-
-Resolve each class to its latest available model using advertised provider
-models; never invent identifiers. Set model and effort explicitly at launch
-and resume. In Paseo, use matching `list_profiles` entries or supported launch
-overrides; a profile must match the assigned tier. Claude's installed
-`developer-*` definitions are native subagent profiles, not Paseo profiles.
-
-For Codex native pilots, pass the resolved model and effort with
-`fork_turns: "none"` and a scoped brief where supported; a full-history fork
-must not inherit Astra or Sol into an implementation pilot. For Claude native
-pilots, use `developer-trivial` only when its scope fits the assignment, its
-effective model is Haiku and its effort matches. Use `developer-routine` for a
-Sonnet reviewer only when its model and effort match; otherwise use supported
-explicit routing.
-Do not select `developer-demanding` merely because a task is difficult: its
-Opus model belongs to the overseer tier unless the user chose an exception.
-Keep the normal Claude Code system prompt and `keep-me-in-the-loop` brief for
-standalone thread leads; `--agent` with a nonempty custom prompt replaces that
-system prompt.
-
-Verify effective provider, model and effort in launch results, session status
-or native task configuration when exposed, including after resume or reuse.
-Correct unintended routing before dependent work starts. If the required model,
-effort or delegation route is unavailable, report it and hold affected launches;
-continue only independent read-only preparation. Never silently inherit a more
-expensive model or drop the pilot tier. Do not modify existing live sessions;
-report a mismatch in the current overseer's model instead of claiming it changed.
+In Paseo, use matching `list_profiles` entries or supported launch overrides;
+a profile must match the assigned tier. Claude's installed `developer-*`
+definitions are native subagent profiles, not Paseo profiles. Keep the normal
+Claude Code system prompt and `keep-me-in-the-loop` brief for standalone thread
+leads; `--agent` with a nonempty custom prompt replaces that system prompt. Do
+not modify existing live sessions; report a mismatch in the current overseer's
+model instead of claiming it changed.
 
 Compare elapsed time and total model usage per accepted work item, including
 review and repairs, before claiming savings. Do not add recurring benchmarks just
@@ -602,29 +568,19 @@ exclusions or abstentions, and what the sample represents. Check the claim
 against that evidence; a passing gate does not establish broader accuracy
 or coverage. If reviewer disclosures are still pending, keep the result
 provisional. Carry material limits into the user-facing report and correct
-any overstatement promptly. When you relay a worker's finding or fix, keep
-its confidence: a cause the worker calls inferred, or a check it couldn't run,
-stays inferred or unrun in your relay and your report. Name the cause of a
-failure from evidence; if your own messages or interrupts may have caused it,
+any overstatement promptly. Name the cause of a failure from evidence; if your own messages or interrupts may have caused it,
 say so rather than blaming the harness.
 
-Check a worker's claim before you pass it on to the user or another thread,
-whether it's a cause, a regression, a failed check or a measurement. Read the
-evidence it rests on: the diff, the failing test and its version on the base
-branch, the screenshot, trace or log. Confirm that a failing test still
-asserts what the original asserted; a test whose expectation changed does not
-show a product regression. Confirm that a measurement names the element or
-quantity the requirement is about. When you can't check a claim in time,
+Check a worker's claim, whether a cause, a regression, a failed check or a
+measurement, before you pass it on to the user or another thread, as
+`working-conventions` › Evidence describes. When you can't check it in time,
 relay it as the worker's unverified claim and say what would verify it.
 
 Repair and review rounds inside a thread's agreed scope belong to its worker.
-Apply the review-trend rule in the user's instructions at your autonomy level:
-at medium and high autonomy, don't relay a routine round to the user; report
-its trend in your next update. When the same failure returns after two
-repairs, or each repair exposes a new failure in the same interaction, have
-the worker stop patching and its reviewer reassess the design: which code owns
-the behavior, which invariants hold, and the simplest change that satisfies
-them. Repair resumes from that reassessment, not from the next patch.
+At medium and high autonomy, don't relay a routine round to the user; report
+its trend in your next update. When a thread reaches `working-conventions` ›
+Repeated failure, have the worker stop patching and its reviewer reassess the
+design; repair resumes from that reassessment, not from the next patch.
 
 When a worker reports its thread done, verify the claims before launching
 dependents: the script marks the thread done, its commits are on the remote,
@@ -797,17 +753,14 @@ high-signal and readable on their own after hours away. With several workers
 running at once, one update has to say where each thread stands. This follows `keep-me-in-the-loop`'s
 reporting discipline at the level of the whole run.
 
-Send a status update when:
-
-- something is accomplished, such as a worker publishing a chunk or finishing
-  its thread;
-- something unexpected happens, such as a deviation, a failure, a blocker, a
-  change of plan or a judgment call you made.
-
-Send no update for launches, approvals within scope, relayed answers,
-retries, routine recovery, waits or a worker's traffic with its reviewer;
-mention them in the next update only when they matter. When several events
-land together, send one update covering all of them.
+Send a status update for the events `working-conventions` › Updates lists,
+across the whole run: a worker's reviewer-accepted increment or chunk, a
+publication or finished thread, and anything unexpected, such as a deviation,
+a failure, a blocker, a change of plan or a judgment call you made. A worker
+whose accepted work stays unpublished still produces updates. Mention
+launches, approvals within scope, relayed answers, retries and routine
+recovery in the next update only when they matter. When several events land
+together, across threads too, send one update covering all of them.
 
 Each update answers three questions in a few lines: what did we just
 accomplish, what happens next, and did anything unexpected occur? Leave the
@@ -824,14 +777,11 @@ Threads: 1 done · 2 chunk 3/3 · 3 chunk 1/2 · 4 waiting on 2
 A request for the user goes in a dialog of its own, as "Relay human
 interventions" describes, never in a status update.
 
-Stay silent between updates. Worker messages, notifications and checks wake
-you, and most change nothing the user needs to know; keep such wakes few, as
-"Watch" describes for your mechanism. When a turn ends without an update, a
-request or an answer to the user, keep it completely silent from the user's
-point of view: end it with no text. Never send filler to make the turn
-visible, such as `No news.`, a line saying what you are waiting on, or an
-acknowledgement, even if the harness re-prompts an empty turn. Your
-checklist holds what you await, and your next update's roll call shows it.
+Stay silent between updates, as `working-conventions` › Updates describes:
+a turn without an update, a request or an answer to the user ends with no
+text. Worker messages, notifications and checks wake you; keep such wakes
+few, as "Watch" describes for your mechanism. Your checklist holds what you
+await, and your next update's roll call shows it.
 
 When the threads you oversee finish, report with a **TL;DR**: each thread's
 outcome and publication, evidence limits and deferrals, the judgment calls

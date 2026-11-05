@@ -22,7 +22,8 @@ Grill each tier out of the user, then write it with a continuous reviewer.
 Draft and review the tiers in order, then ask the user to confirm the complete
 set in one dialog. The user owns outcomes, scope and
 tradeoffs, and holds history and expertise the repository doesn't record. You
-find facts, propose, challenge and write; the reviewer challenges you.
+find facts, propose, challenge and write; the reviewer challenges you. Follow
+`working-conventions` for the rules shared across the workflow skills.
 
 ## Start from the right tier
 
@@ -176,7 +177,8 @@ able to resume the interview from the draft alone.
   `(the user, <date>)`. Record the reason, in the user's words when short.
   Record the option the user chose with its description, not a paraphrase: its
   scope and trigger are what they chose, even when your wording would be
-  tidier. A call the user wasn't asked is Proposed, never Decided.
+  tidier, as `working-conventions` › Record the user's decisions requires. A
+  call the user wasn't asked is Proposed, never Decided.
 - Say who proposed what: **Decided** (the user's call), **Agreed** (your
   proposal, accepted), **Proposed**, **Open** (with its spike or trigger),
   **Rejected** (with why) and **Verified** (with evidence).
@@ -209,13 +211,12 @@ the plan's own status may be stale. Grill only what the plan leaves open about h
 ordering tradeoffs, grouping steps across milestones, live-resource lifetimes
 and budgets, and which human interventions can be settled now.
 
-For implementation campaigns, include a testing strategy with most behavioral
-coverage in fast unit tests, fewer integration tests for contracts, and a small
-end-to-end set for critical journeys. Define the routine-check command, runtime
+For implementation campaigns, include a testing strategy that follows
+`working-conventions` › Test cost. Define the routine-check command, runtime
 budget, stable baseline and comparable execution conditions, using existing
 evidence or a named early measurement. Keep expensive evidence checks attached
-to explicit gates. Make suite-runtime maintenance part of each implementing
-step; do not plan indefinite test growth followed by a cleanup milestone.
+to explicit gates, and make suite-runtime maintenance part of each
+implementing step.
 
 Write it from [assets/roadmap-template.md](assets/roadmap-template.md):
 
@@ -427,11 +428,9 @@ honor that cadence instead.
 Present the complete set for confirmation only after the reviewer has reviewed
 the final snapshots and their consistency across tiers, and you agree, or the
 disagreement is clear. Say "reviewer-checked" only of the revision the reviewer
-saw: list any edit made after its last pass as not re-reviewed, and have the
-reviewer check it before you tell the user the set is reviewed. Present the
-reviewer's position: its agreement, the material amendments it secured, and any
-unresolved disagreement with both positions and your recommendation. A
-reviewer notification or an unacknowledged draft does not count as review.
+saw, have it check any later edit before you tell the user the set is
+reviewed, and present its position, all as `working-conventions` › Review
+loops describes.
 
 Ask one confirmation question covering all three tiers in one dialog, with
 links and a reading guide for each: which sections to check first, starting
@@ -441,9 +440,8 @@ revising an existing set, identify which tiers changed and include those in
 the same confirmation. If revisions affect an upstream tier, propagate them
 downward and have the reviewer check the updated set before asking again.
 Don't publish the tiers or start implementation until the user explicitly
-confirms them. Silence, a timeout or a preselected option is not confirmation.
-Confirmation covers the tiers only; cutting or publishing a release still needs
-the user's separate explicit approval naming it.
+confirms them, as `working-conventions` › Authority describes. Confirmation
+covers the tiers only, never a release.
 Offer a diagram-led
 companion, such as a lifecycle with Mermaid diagrams, when the design is
 cheaper to disagree with visually.

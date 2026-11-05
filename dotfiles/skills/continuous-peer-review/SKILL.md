@@ -10,8 +10,9 @@ reviewer subagent jointly shapes increments and independently reviews their code
 Communicate directly through native agent messages. Keep the reviewer involved
 through the milestone, with relevant goal, design, and finding context. This
 workflow has no facilitator, external provider CLI, or nested review team.
-Use the user's model preferences or the native tool's inherited/default model;
-cross-provider review is not required.
+Route the reviewer's model as `working-conventions` › Model routing describes;
+cross-provider review is not required. Follow `working-conventions` for the
+rules shared across the workflow skills, and include it in the reviewer's brief.
 
 ## Establish the collaboration
 
@@ -111,17 +112,16 @@ unchanged checks only when a changed dependency, failure, or coverage gap warran
 them. Name the snapshot and environment for evidence carried forward.
 
 Track increment states: planned, design-agreed, implementing, awaiting-review,
-changes-requested, awaiting-verification, accepted. An accepted result names the reviewed snapshot and
-has no pending required closure checks; "accepted if tests pass" remains awaiting
-verification. Distinguish code review complete, ready for a bounded live validation,
+changes-requested, awaiting-verification, accepted. "Accepted" is
+`working-conventions`' reviewer-accepted: it names the reviewed snapshot and
+has no pending required closure checks. Distinguish code review complete, ready for a bounded live validation,
 and ready to publish. When closure needs live evidence, agree the permitted trial
 and its bounds within the user's authorization, then keep the increment pending
 until the evidence is reconciled. Publication requires the applicable review and
 checks to be complete; needing live proof does not itself justify an early push.
 Later changes invalidate acceptance only for their affected delta and dependencies,
-which must be reviewed before completion. Send the reviewer the delta before
-pushing to an open PR, including a CI fix; if pushing first is necessary, report
-the push as not re-reviewed until the reviewer has seen it.
+which must be reviewed before completion. Pushing to an open PR, including a CI
+fix, follows `working-conventions` › Review loops.
 
 Allow at most **two completed increments awaiting acceptance**, counting the one
 under review and any awaiting repairs, re-review, or required verification.
@@ -144,17 +144,10 @@ Re-review a revision from its delta against the previously reviewed snapshot,
 limited to affected paths; reread whole files only where the delta is insufficient.
 
 When tests change, author and reviewer assess their recurring cost as well as
-their coverage. Prefer many fast unit tests for logic, fewer integration tests
-for contracts, and a small set of end-to-end journeys. Keep detailed case
-matrices at the lowest reliable layer; challenge redundant higher-layer tests,
-oversized fixtures and repeated expensive setup as readily as missing coverage.
-Judge the pyramid by runtime as well as count, without a fixed ratio. Ordinary
-logic that requires a browser or deployment to test may need a cleaner boundary.
-Use required-run timings against the project's stable baseline and budget;
-resolve confirmed material or cumulative regressions in the increment, or
-justify a necessary increase within the agreed authority. Preserve the behavior
-and proof required, not the historical test count or implementation. Do not make
-required checks optional to meet a runtime target.
+their coverage, as `working-conventions` › Test cost describes, and resolve
+confirmed regressions in the increment. Keep detailed case matrices at the
+lowest reliable layer. Ordinary logic that requires a browser or deployment to
+test may need a cleaner boundary.
 
 ## Messages and attention
 
@@ -179,9 +172,8 @@ Keep messages concise and distinguish these purposes:
   evidence/limits, and unresolved questions; name affected pending work when relevant.
 - **Finding:** stable ID, severity, evidence/revision, impact, affected increments,
   suggested repair and closure case; mark provisional uncertainty explicitly.
-  Label each claim as read (file and line at the snapshot), ran (command and
-  result), or inferred. Do not say "recomputed" or "verified" for what was not
-  computed or run, and read the source before asserting what code does.
+  Label each claim read, ran or inferred, as `working-conventions` › Evidence
+  describes.
 - **Decision:** accepted/challenged/deferred finding or amended design, with reasons.
 - **Review result:** reviewed snapshot; changed finding dispositions; coverage and
   limits; explicit acceptance, pending verification, or changes requested. Name
@@ -252,11 +244,9 @@ Neither role wins by authority. Use a focused probe when it can settle a dispute
 Escalate a material stalemate to the user when correctness, safety, scope, or
 architecture remains unresolved; keep affected work blocked and continue
 independent work. Defer optional improvements explicitly rather than making them
-completion requirements. Do not silently relax acceptance criteria. Gates are
-binary: a change the plan made conditional on a measurement is adopted only when
-that measurement meets the agreed gate, and the report states the measurement. If
-the gate is unmet or unmeasured, report it as unmet and ask instead of adopting
-the change.
+completion requirements. Gates are pass/fail, as `working-conventions` ›
+Evidence describes; the report states the measurement behind a conditional
+change.
 
 If a proposed repair adds substantial behavior, such as retry orchestration,
 provenance enforcement, or a rehearsal command, treat it as a design delta before
@@ -270,29 +260,17 @@ any newly added execution paths before resubmission. For later findings, disting
 incomplete fixes, introduced regressions, missed original defects, and scope
 expansion. Preserve IDs and trace incomplete fixes to implementation deviations
 or flaws in the agreed proposal.
-Reassess as soon as a design flaw is apparent instead of repeating partial fixes.
+Reassess as soon as a design flaw is apparent instead of repeating partial fixes;
+`working-conventions` › Repeated failure sets the default threshold.
 
-Triage every finding against the materiality bar agreed in the brief: a material
-finding makes the milestone's outcome wrong, unsafe, lossy, or short of its
-acceptance criteria. Verify it against the source before acting, and record each
-finding as material, optional, or rejected with a reason. Output from extra
-one-shot reviewers, such as a user-requested `/code-review`, goes through the
-same triage with the settled decisions; it is not the completion gate.
-Recall-oriented reviewers always report something on a sizable artifact, so "a
-review returned nothing" is never a usable stop condition. Fix material findings;
-batch optional ones for the user as deferrals instead of fixing them in the loop,
-because each extra change gives the next review more to find.
-
-After each review round, add one ledger line with the round's material and total
-finding counts beside the previous round's. Before starting another round, stop
-and ask the user, showing those lines, if the material count did not fall, fixes
-caused new material findings, or findings keep exposing new edge cases of one
-design. Offer accepting with deferrals, a redesign, or an agreed number of further
-rounds; an earlier instruction to keep looping does not waive this check. A
-finding that challenges the design's altitude, or that invalidates the effort,
-risk, or simplicity estimate behind a user's choice, reopens that choice: ask
-before the next round instead of noting it in the final report. Findings about
-other subsystems go to the parking lot, however the loop was requested.
+Triage every finding against the materiality bar agreed in the brief, keep the
+round ledger, and apply the trend check, all as `working-conventions` › Review
+loops describes. Output from extra one-shot reviewers is not the completion
+gate. When the trend check or a reopened choice calls for the user, stop and
+ask, showing the ledger lines, and offer accepting with deferrals, a redesign,
+or an agreed number of further rounds; don't leave it for the final report.
+Findings about other subsystems go to the parking lot, however the loop was
+requested.
 
 Maintain a compact shared record: goal and boundaries, settled designs and reasons,
 current snapshots, dependencies, finding dispositions, closure evidence, pending
@@ -321,8 +299,8 @@ Finish only when the reviewer and main agent agree the final milestone satisfies
 its criteria with no unresolved material findings under the agreed bar; deferred
 optional findings do not block. Identify accepted deferrals,
 verification limits, and the reviewer's parked out-of-scope findings, and put them
-in the report to the user, not only in the exchange with the reviewer. Cite the
-command and result for each check reported as run; write "not run" for the rest.
+in the report to the user, not only in the exchange with the reviewer. Report
+checks as `working-conventions` › Evidence describes.
 At session end, the reviewer removes its verification environment and reports the space freed;
 if it cannot, the author removes it. Changes after acceptance need proportional delta review;
 preserve the task's existing commit, push, and deployment authorization.
