@@ -266,6 +266,15 @@ access ahead of time, and move mid-step interventions to the thread's
 approval. Record each answer in the table; what remains is the planned human
 work.
 
+Settle first any decision whose answer changes an invariant that other steps
+rely on, such as a layout policy that decides whether neighboring items move
+and so what framing and selection must preserve. Don't leave it as an open
+item inside the steps it shapes. Give every step that depends on its answer a
+Needs on the decision, and walk through each option's effect on those steps
+while grilling so the user sees what they pull in. When the user can't decide
+yet, keep the dependent steps provisional and out of any thread the script
+marks ready.
+
 ## Tier 3: the script
 
 The script turns the roadmap into the implementation threads to open, each
@@ -293,6 +302,13 @@ Group roadmap steps into threads:
   the gate.
 - Group across phases when steps share an environment or one fills another's
   wait, and keep each thread within reach of one context window.
+- Keep steps that change one behavior or invariant in one thread, even when
+  the plan files them under different milestones or topics: on a shared
+  canvas, for example, layout packing, camera framing and selection. Split
+  across threads, the later thread rediscovers and breaks the earlier one's
+  assumptions. When coupled steps are too large for one thread, cut where the
+  first thread settles a contract and proves it with tests, and name that
+  contract in the second thread's Depends on.
 - When a thread's work can't run inside the loop's own session, such as a final
   check that needs a fresh agent with only the docs, say how the loop session
   launches that agent, checks each attempt and fixes root causes between them.
@@ -312,6 +328,15 @@ shares, with the reason for each dependency:
 
 Write "none: runs in parallel with any thread" when nothing applies. Check the
 graph for cycles, and draw it at the top of the script with its critical path.
+
+Cut threads so that as many as possible can run at once. A script where every
+thread waits on the one before runs one worker at a time, and any stall stops
+the whole campaign. When the graph is mostly a chain, test each link against a
+real outcome the later thread needs or a resource both use. Drop links that
+only reflect a preferred order, and split threads along independent surfaces
+or contracts. Mark the threads that can run together in the graph. When the
+critical path still covers most of the script, say so at the top with the
+reason, so the user and the overseer know the campaign runs serially.
 State how parallel threads stay isolated: each works in its own worktree,
 rebases before every push, and reconciles shared documents (roadmap ticks,
 status, the script) without overwriting another thread's entries.
