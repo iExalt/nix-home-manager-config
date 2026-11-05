@@ -1,0 +1,12 @@
+{
+  "name": "iexalt",
+  "interface": { "displayName": "iExalt (local)" },
+  "plugins": [
+    {
+      "name": "iExalt",
+      "source": { "source": "local", "path": "./iExalt" },
+      "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
+      "category": "Productivity"
+    }
+  ]
+}

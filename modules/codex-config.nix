@@ -22,5 +22,11 @@ in
         --repo "${repoRoot}" --overlay codex=${overlayConfig} \
         || warnEcho "Agent config sync failed; fix the problem above, then rerun ./reload.sh."
     '';
+
+    # feat(skills): install the user's skills into Codex as the iExalt plugin.
+    home.activation.installCodexPlugin = lib.hm.dag.entryAfter [ "syncAgentConfig" ] ''
+      run ${pkgs.bash}/bin/bash "${repoRoot}/scripts/install-codex-plugin.sh" \
+        || warnEcho "Installing the iExalt Codex plugin failed; fix the problem above, then rerun ./reload.sh."
+    '';
   };
 }

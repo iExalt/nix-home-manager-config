@@ -1,0 +1,7 @@
+{
+  "name": "iExalt",
+  "version": "1.0.0",
+  "description": "iExalt's personal workflow skills: planning, overseeing, pair programming, review, status, prose and device debugging.",
+  "author": { "name": "iExalt", "url": "https://github.com/iExalt" },
+  "repository": "https://github.com/iExalt/nix-home-manager-config"
+}
