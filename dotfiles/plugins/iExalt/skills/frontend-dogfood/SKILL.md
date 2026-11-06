@@ -112,6 +112,9 @@ Treat the report as claims to check, not results. The tester writes every findin
 - Fold duplicates into one finding with every place it occurs.
 - Re-measure any slow timing before it counts, with one browser on the host and no other tester or
   server running. Report the quiet number and how you got it.
+- Treat a tap that landed elsewhere, or a result that changes between runs, as a possible race
+  rather than a defect or noise, and diagnose it with `iExalt:frontend-testing` › When a test
+  flakes. Write the regression test for a fix by that skill too.
 - Compare matching screens, states, and task outcomes across form factors, with the same data and
   theme, reconciling separate testers' evidence yourself. Write a device comparison summary:
   justified adaptations, defects, and untested combinations.
