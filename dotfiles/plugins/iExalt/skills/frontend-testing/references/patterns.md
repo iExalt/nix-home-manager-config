@@ -130,16 +130,20 @@ await page.touchscreen.tap(x, y);            // needs a context created with has
 
 This is a heuristic with a gap between the check and the tap, so prefer an app signal when one
 exists. It sees only DOM rects: on a canvas, `elementFromPoint` returns the canvas while the
-camera moves inside it. For canvas content, poll the app's own position API instead:
+camera moves inside it.
+
+On a canvas, wait for the app's settled signal first, then read the position from the app's own
+API and tap at once:
 
 ```ts
-await expect.poll(async () => {
-  const a = await page.evaluate(() => mapApi.screenPosition("leaf-42"));
-  await page.waitForTimeout(100);             // the sampling interval, not a readiness guess
-  const b = await page.evaluate(() => mapApi.screenPosition("leaf-42"));
-  return a.x === b.x && a.y === b.y;
-}).toBe(true);
+await expect(page.getByTestId("map")).toHaveAttribute("data-framed", "true");
+const p = await page.evaluate(() => mapApi.screenPosition("leaf-42"));
+await page.touchscreen.tap(p.x, p.y);
 ```
+
+Polling the position until two samples match is only a quiet-window heuristic: it passes
+before a late pan has started, so it misses exactly the motion that comes after a slow response.
+Use it only after the app's signal, or over a window longer than the app's worst-case latency.
 
 ## Check what the browser emulates
 
