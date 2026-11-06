@@ -66,6 +66,7 @@ class CodexEvents(unittest.TestCase):
             user('<paseo-system version="1" kind="agent-message" source-agent-id="x">do Y</paseo-system>'),
             user('<paseo-system version="1" kind="agent-notification">agent idle</paseo-system>'),
             user("<skill>\n<name>prose-fix</name>\nbody</skill>"),
+            user("<chat-history-summary>earlier</chat-history-summary>"), twin("<chat-history-summary>earlier</chat-history-summary>"),
             ri({"type": "message", "role": "developer", "content": [{"type": "input_text", "text": "dev"}]}),
             ri({"type": "message", "role": "assistant", "content": [{"type": "output_text", "text": "done"}]}),
         ]
@@ -74,7 +75,8 @@ class CodexEvents(unittest.TestCase):
             ("injected", "prompt", None, "injected_prefix"), ("injected", "prompt", None, "injected_prefix"),
             ("injected", "prompt", None, "no_user_message_twin"), ("human", "prompt", None, "user_message_twin"),
             ("agent", "prompt", None, "paseo_agent-message"), ("harness", "prompt", None, "paseo_agent-notification"),
-            ("injected", "prompt", "prose-fix", "injected_prefix"), ("injected", "prompt", None, "developer_role"),
+            ("injected", "prompt", "prose-fix", "injected_prefix"), ("harness", "prompt", None, "automation"),
+            ("injected", "prompt", None, "developer_role"),
             ("assistant", "reply", None, None)])
 
     def test_first_prompt_attribution(self):
@@ -85,7 +87,13 @@ class CodexEvents(unittest.TestCase):
         recs[0] = meta(originator="codex_exec")
         self.assertEqual([e["author"] for e in self.events(recs)], ["agent", "agent"])
         recs[0] = meta(source={"subagent": {"thread_spawn": {"parent_thread_id": PARENT}}})
-        self.assertEqual([e["author"] for e in self.events(recs)], ["agent", "human"])
+        evs = self.events(recs)
+        self.assertEqual([(e["author"], e["basis"]) for e in evs],
+                         [("agent", "subagent_first_message"), ("human", "subagent_followup_maybe_agent")])
+        recs[0] = meta(originator="Codex Desktop", source={"subagent": {"thread_spawn": {"parent_thread_id": PARENT}}})
+        self.assertEqual([e["basis"] for e in self.events(recs)], ["subagent_first_message", "subagent_followup"])
+        recs[4] = twin("later", client=True)
+        self.assertEqual([e["author"] for e in self.events(recs)], ["agent", "human"])   # typed in the UI
 
     def test_decisions(self):
         reply = '<send_user_message_question_reply>[{"question": "Which?", "answer": "B"}]' \
@@ -109,6 +117,10 @@ class CodexEvents(unittest.TestCase):
             ri({"type": "custom_tool_call", "name": "exec", "call_id": "c2", "input": script}),
             ri({"type": "custom_tool_call_output", "call_id": "c2", "output": "x" * 70000}),
             ri({"type": "reasoning", "summary": [{"type": "summary_text", "text": "thinking"}]}),
+            ri({"type": "function_call", "name": "exec_command", "call_id": "c3", "arguments": "{}"}),
+            em({"type": "item_completed", "item": {"type": "CommandExecution", "command": ["zsh", "-lc", "ls"],
+                                                    "aggregated_output": "dup", "exit_code": 0}}),
+            ri({"type": "function_call_output", "call_id": "c3", "output": "dup"}),
             em({"type": "item_completed", "item": {"type": "CommandExecution", "command": ["zsh", "-lc", "pwd"],
                                                     "aggregated_output": "/tmp", "exit_code": 0}}),
             {"timestamp": TS, "type": "event_msg", "payload": {"type": "token_count"}},
@@ -116,12 +128,13 @@ class CodexEvents(unittest.TestCase):
         full = self.events(recs)
         self.assertEqual([(e["kind"], e["tool"]) for e in full], [
             ("tool_call", "exec_command"), ("tool_result", "exec_command"), ("tool_call", "exec_command"),
-            ("tool_result", "exec_command"), ("thinking", None), ("tool_result", "exec_command")])
+            ("tool_result", "exec_command"), ("thinking", None), ("tool_call", "exec_command"),
+            ("tool_result", "exec_command"), ("tool_result", "exec_command")])    # one result per command
         self.assertEqual(full[0]["command"], "ls -la")
         self.assertIn("rg -l", full[2]["command"])         # invalid JSON escape tolerated
-        self.assertEqual(full[5]["command"], "pwd")
+        self.assertEqual(full[-1]["command"], "pwd")         # orphan CommandExecution kept
         prose = self.events(recs, prose=True)
-        self.assertEqual([e["kind"] for e in prose], ["tool_call", "tool_call"])
+        self.assertEqual([e["kind"] for e in prose], ["tool_call", "tool_call", "tool_call"])
 
     def test_fork_inherited_records_skipped(self):
         recs = [meta(forked_from_id=PARENT), meta(PARENT),

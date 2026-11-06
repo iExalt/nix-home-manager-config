@@ -28,6 +28,7 @@ INJECTED_PREFIXES = (
     "<recommended_plugins>", "<user_instructions>", "<permissions", "<collaboration_mode>",
     "<codex_internal_context>", "<turn_aborted>",
 )
+HARNESS_PREFIXES = ("<heartbeat>", "Automation:", "<chat-history-summary>")
 PASEO_RE = re.compile(r"<paseo-system\s+([^>]*)>(.*?)</paseo-system>", re.S)
 ATTR_RE = re.compile(r'([\w-]+)="([^"]*)"')
 SKILL_RE = re.compile(r"\s*<skill>\s*<name>([^<]+)</name>")
@@ -146,6 +147,7 @@ def iter_events(path: str, prose: bool = False, launched: Optional[str] = None,
     twins, user_keys = _twins(path)
     user_inputs = 0
     calls: Dict[str, str] = {}
+    open_calls = set()
     metas = 0
     inheriting = False
 
@@ -203,7 +205,9 @@ def iter_events(path: str, prose: bool = False, launched: Optional[str] = None,
                         else:
                             yield ev(d, ln, "prompt", "human", text, uuid=it.get("id"),
                                      basis="user_message_without_response_item")
-                    elif k == "CommandExecution" and not prose:
+                    elif k == "CommandExecution" and not prose and not open_calls:
+                        # Inside an open exec/function call its output arrives as that call's result;
+                        # emit CommandExecution only when no call is open (an orphan command).
                         yield ev(d, ln, "tool_result", "tool", it.get("aggregated_output") or "",
                                  tool="exec_command", command=_cmd_of(it.get("command")),
                                  is_error=it.get("status") == "failed" or bool(it.get("exit_code")))
@@ -236,6 +240,7 @@ def iter_events(path: str, prose: bool = False, launched: Optional[str] = None,
             elif pt in ("function_call", "custom_tool_call"):
                 name = p.get("name")
                 calls[p.get("call_id")] = name
+                open_calls.add(p.get("call_id"))
                 if pt == "function_call":
                     try:
                         args = json.loads(p.get("arguments") or "{}")
@@ -252,7 +257,10 @@ def iter_events(path: str, prose: bool = False, launched: Optional[str] = None,
                     calls[p.get("call_id")] = tool
                     yield ev(d, ln, "tool_call", "assistant", script, tool=tool,
                              command="\n".join(c for c in cmds if isinstance(c, str)) or None, uuid=p.get("id"))
-            elif pt in ("function_call_output", "custom_tool_call_output") and not prose:
+            elif pt in ("function_call_output", "custom_tool_call_output"):
+                open_calls.discard(p.get("call_id"))
+                if prose:
+                    continue
                 out = p.get("output")
                 text = _ctext(out) if isinstance(out, list) else (out if isinstance(out, str) else json.dumps(out))
                 yield ev(d, ln, "tool_result", "tool", text, tool=calls.get(p.get("call_id")))
@@ -283,7 +291,7 @@ def _user_events(ev, d, ln, p, text, twin, md, first, originator, sub_source, la
         yield ev(d, ln, "prompt", "injected", text, uuid=p.get("id"), basis="injected_prefix",
                  skill=m.group(1).strip() if m else None)
         return
-    if t.startswith("<heartbeat>") or t.startswith("Automation:"):
+    if t.startswith(HARNESS_PREFIXES):
         yield ev(d, ln, "prompt", "harness", text, uuid=p.get("id"), basis="automation")
         return
     if twin is None and "user_input_order" not in md:
@@ -297,8 +305,12 @@ def _user_events(ev, d, ln, p, text, twin, md, first, originator, sub_source, la
         author, basis = "harness", "paseo_scheduled_first_prompt"
     elif first and launched == "agent":
         author, basis = "agent", "paseo_launched_first_prompt"
-    elif first and sub_source and launched is None:
-        author, basis = "agent", "subagent_first_message"
+    elif sub_source and launched is None and (first or originator == "Codex Desktop"):
+        # A spawned sub-agent's messages come from its parent agent. Codex Desktop marks UI-typed
+        # messages with client_id (handled above), so a Desktop follow-up without one is the parent's.
+        author, basis = "agent", "subagent_first_message" if first else "subagent_followup"
+    elif sub_source and launched is None:
+        author, basis = "human", "subagent_followup_maybe_agent"     # codex-tui: either is possible
     else:
         author, basis = "human", "user_message_twin"
     yield ev(d, ln, "prompt", author, text, uuid=p.get("id"), basis=basis)

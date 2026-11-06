@@ -11,6 +11,7 @@ import json
 import os
 import sys
 import time
+from typing import Dict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -18,6 +19,7 @@ from session_mining.out import DEFAULT_MAX_BYTES, Out, clip, human_size  # noqa:
 from session_mining.events import AUTHORS, KINDS, render  # noqa: E402
 from session_mining.reader import Filter, file_events, paseo_launchers  # noqa: E402
 from session_mining.resolve import Inventory, entity_keys, resolve  # noqa: E402
+from session_mining.search import Query, grep, self_sessions  # noqa: E402
 from session_mining.stores import (Roots, claude_files, codex_db, codex_db_path, codex_files,  # noqa: E402
                                    paseo_agents)
 
@@ -99,9 +101,12 @@ def cmd_resolve(args, roots: Roots, out: Out) -> int:
 
 
 def _add_filters(sp) -> None:
-    sp.add_argument("--author", action="append", choices=AUTHORS, help="repeatable")
-    sp.add_argument("--kind", action="append", choices=KINDS, help="repeatable")
-    sp.add_argument("--tool", action="append", help="tool name, repeatable")
+    sp.add_argument("--author", action="append", type=_choices(AUTHORS),
+                    help="repeatable or comma-separated: %s" % ",".join(AUTHORS))
+    sp.add_argument("--kind", action="append", type=_choices(KINDS),
+                    help="repeatable or comma-separated: %s" % ",".join(KINDS))
+    sp.add_argument("--tool", action="append", type=lambda v: v.split(","),
+                    help="tool name, repeatable or comma-separated")
     sp.add_argument("--skill", help="only events invoking this skill (slash command, Skill call, Codex marker)")
     sp.add_argument("--match", help="regex over event text (case-insensitive)")
     sp.add_argument("--since", help="ISO date/time lower bound (UTC)")
@@ -127,8 +132,23 @@ def _positive(v: str) -> int:
     return n
 
 
+def _choices(allowed):
+    def parse(v: str):
+        vals = [x.strip() for x in v.split(",") if x.strip()]
+        bad = [x for x in vals if x not in allowed]
+        if bad:
+            raise argparse.ArgumentTypeError("invalid %s; choose from %s" % (",".join(bad), ",".join(allowed)))
+        return vals
+    return parse
+
+
+def _flat(v):
+    return [x for group in v or [] for x in group]
+
+
 def _filter(args) -> Filter:
-    return Filter(args.author, args.kind, args.tool, args.skill, args.match, args.since, args.until)
+    return Filter(_flat(args.author), _flat(args.kind), _flat(args.tool), args.skill, args.match, args.since,
+                  args.until)
 
 
 def cmd_show(args, roots: Roots, out: Out) -> int:
@@ -182,6 +202,103 @@ def cmd_show(args, roots: Roots, out: Out) -> int:
     return 0
 
 
+def _session_title(inv: Inventory, provider: str, sid: str) -> str:
+    if provider == "codex":
+        row = inv.db_rows.get(sid) or {}
+        from session_mining.resolve import clean_title
+        return clean_title(row.get("name") or row.get("title") or "")
+    if sid in inv.titles:
+        return inv.titles[sid]
+    for a in inv.paseo:
+        if a.session == sid:
+            return a.title
+    return ""
+
+
+def cmd_grep(args, roots: Roots, out: Out) -> int:
+    inv = Inventory(roots)
+    flt = _filter(args)
+    if args.pattern:
+        import re as _re
+        try:
+            flt.regex = _re.compile(args.pattern, _re.I)
+        except _re.error as e:
+            out.note("invalid pattern: %s" % e)
+            return 2
+    if not (args.pattern or args.skill or args.author or args.kind or args.tool):
+        out.note("give a pattern or at least one of --skill/--author/--kind/--tool")
+        return 2
+    exclude = {} if args.include_self else self_sessions(inv.paseo)
+    for sid in args.exclude_session or []:
+        exclude[sid] = "--exclude-session"
+    prose = not args.full and not (set(_flat(args.kind)) & {"tool_result", "thinking"})
+    q = Query(regex=args.pattern, flt=flt, prose=prose, providers=tuple(_flat(args.provider)) or ("claude", "codex"),
+              project=args.project, since=args.since, budget=args.budget, include_guardian=args.include_guardian,
+              prefilter=not args.no_prefilter)
+    res = grep(roots, q, inv.paseo, exclude, include_live=args.include_self)
+    sessions: Dict[tuple, list] = {}
+    for h in res.hits:
+        sessions.setdefault((h["provider"], h["session"]), []).append(h)
+    shown_sessions = 0
+    for (prov, sid), hits in sessions.items():
+        title = _session_title(inv, prov, sid)
+        files = sorted({h["file"] for h in hits})
+        head = "== %s %s  %d hit(s)  %s%s" % (prov, sid, len(hits), (hits[0].get("ts") or "")[:16],
+                                             "  " + json.dumps(clip(title, 70), ensure_ascii=False) if title else "")
+        if not out.line(head):
+            break
+        shown_sessions += 1
+        if args.sessions_only:
+            continue
+        if not out.line("   " + files[0] + ("  (+%d more file(s))" % (len(files) - 1) if len(files) > 1 else "")):
+            break
+        ordered = sorted(hits, key=lambda h: (h["file"], h["line"]))[: args.per_session]
+        multi = len({h["file"] for h in ordered}) > 1
+        render(_centered(ordered, flt.regex, args.width), out, args.width, show_file=multi, basis=args.basis)
+        if len(hits) > args.per_session:
+            out.line("   ... %d more hit(s) in this session (raise --per-session or use show)" % (len(hits) - args.per_session))
+    out.note("hits: %d in %d session(s); %d session(s) shown; %.1f s" % (
+        len(res.hits), len(sessions), shown_sessions, res.elapsed))
+    cov = "files: %d considered" % res.files_considered
+    if res.prefilter_kept is not None:
+        cov += ", %d kept by rg prefilter" % res.prefilter_kept
+    cov += ", %d parsed" % res.parsed
+    if res.unparsed:
+        cov += ", %d NOT PARSED (budget %.0f s spent; raise --budget or narrow with --since/--provider)" % (
+            res.unparsed, args.budget)
+    out.note(cov)
+    if res.prefilter_note:
+        out.note(res.prefilter_note)
+    extra = []
+    if res.stats.get("guardian_skipped"):
+        extra.append("%d guardian rollouts skipped (--include-guardian)" % res.stats["guardian_skipped"])
+    if res.dedup_dropped:
+        extra.append("%d copied Claude record(s) deduped" % res.dedup_dropped)
+    if res.project_dropped:
+        extra.append("%d hit(s) outside --project" % res.project_dropped)
+    if not prose:
+        extra.append("full mode (tool output and thinking included)")
+    else:
+        extra.append("prose mode (no tool output or thinking; --full to include)")
+    out.note("; ".join(extra))
+    if res.excluded:
+        out.note("excluded as the caller: %s" % ", ".join("%s (%s)" % kv for kv in sorted(res.excluded.items())))
+    if res.live_candidates:
+        out.note("several live Codex rollouts in this directory, none excluded; pass --exclude-session for "
+                 "your own: %s" % ", ".join(res.live_candidates))
+    return 0
+
+
+def _centered(hits, regex, width):
+    """Hit events with text recentred on the first match so the matching words are visible."""
+    for h in hits:
+        if regex is not None:
+            m = regex.search(h["text"])
+            if m and m.start() > width // 3:
+                h = dict(h, text="…" + h["text"][m.start() - width // 4:])
+        yield h
+
+
 def _cand_json(c) -> dict:
     return {"type": c.type, "id": c.id, "match": c.match, "title": c.title, "notes": c.notes,
             "files": [{"path": f.path, "size": f.size, "archived": f.archived, "segment": f.segment}
@@ -213,12 +330,26 @@ def main(argv=None) -> int:
     sh.add_argument("--basis", action="store_true", help="show why each event got its author")
     sh.add_argument("--prose", action="store_true", help="skip tool output (faster on huge files)")
     sh.add_argument("--subagents", action="store_true", help="include a Claude session's subagent files")
+    g = sub.add_parser("grep", parents=[common], help="search every transcript; hits grouped by session, newest first")
+    g.add_argument("pattern", nargs="?", help="regex over event text (case-insensitive); optional with --skill etc.")
+    _add_filters(g)
+    g.add_argument("--provider", action="append", type=_choices(("claude", "codex")), help="claude, codex")
+    g.add_argument("--project", help="substring of the Claude project dir or Codex cwd ('/' and '-' are equal)")
+    g.add_argument("--full", action="store_true", help="include tool output and thinking (slower)")
+    g.add_argument("--budget", type=float, default=8.0, help="seconds to spend parsing (default 8)")
+    g.add_argument("--per-session", type=int, default=3, help="hits shown per session (default 3)")
+    g.add_argument("--sessions-only", action="store_true", help="one line per matching session")
+    g.add_argument("--exclude-session", action="append", help="session id to leave out (repeatable)")
+    g.add_argument("--include-self", action="store_true", help="do not exclude the calling session tree")
+    g.add_argument("--include-guardian", action="store_true", help="include Codex guardian auto-review rollouts")
+    g.add_argument("--no-prefilter", action="store_true", help="parse every file instead of rg -l candidates")
+    g.add_argument("--basis", action="store_true", help="show why each hit got its author")
     args = p.parse_args(argv)
     roots = Roots.from_env(getattr(args, "claude_home", None), getattr(args, "codex_home", None),
                            getattr(args, "paseo_home", None))
     out = Out(getattr(args, "max_bytes", DEFAULT_MAX_BYTES))
     try:
-        return {"stores": cmd_stores, "resolve": cmd_resolve, "show": cmd_show}[args.cmd](args, roots, out)
+        return {"stores": cmd_stores, "resolve": cmd_resolve, "show": cmd_show, "grep": cmd_grep}[args.cmd](args, roots, out)
     except BrokenPipeError:
         return 0
     finally:
