@@ -132,8 +132,8 @@ This is a heuristic with a gap between the check and the tap, so prefer an app s
 exists. It sees only DOM rects: on a canvas, `elementFromPoint` returns the canvas while the
 camera moves inside it.
 
-On a canvas, wait for the app's settled signal first, then read the position from the app's own
-API and tap at once:
+On a canvas, wait for the app's settled signal first (cleared synchronously by the action, as in
+the first pattern), then read the position from the app's own API and tap at once:
 
 ```ts
 await expect(page.getByTestId("map")).toHaveAttribute("data-framed", "true");

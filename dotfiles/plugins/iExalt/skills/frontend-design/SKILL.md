@@ -122,7 +122,7 @@ touch context), reduced-motion and 200%-zoom passes on the first (key) state, a 
 control, and HTTP, console, and overflow problems. Install its browser once with
 `mise exec -- uv run <skill-dir>/scripts/browser_check.py --install-browser`; `--help` lists the
 options. Script the app-specific interactions separately, and write any that become automated
-tests by `iExalt:frontend-testing`: wait on state the app announces, never on time. Give transient
+tests following `iExalt:frontend-testing`: wait on state the app announces, never on time. Give transient
 states (posting, slow loads) a URL or fixture switch so they stay on screen long enough to capture.
 
 - **Widths:** desktop (about 1440px), tablet (about 820px), and phone (about 375px), plus any width
