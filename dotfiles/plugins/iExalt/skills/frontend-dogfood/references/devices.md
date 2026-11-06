@@ -66,7 +66,8 @@ tag type findings "rendered on Linux, intended face missing".
 **Drive the browser with [../scripts/dogfood.py](../scripts/dogfood.py).** It runs on the laptop
 and sends each command to the host in one ssh call, quoting its arguments for you, so JavaScript and
 selectors survive. Testers who wrote their own wrappers spent turns on shell quoting instead of
-testing. Run it with `uv run <skill-dir>/scripts/dogfood.py`; `--help` lists every command.
+testing. Run it with `uv run <skill-dir>/scripts/dogfood.py`; `--help` lists every command The host needs
+agent-browser, `uv` and a system `python3`.
 
 ```sh
 dogfood.py init <session> --host <host> --evidence <evidence-dir> --url-part <port-or-path> --open <url>

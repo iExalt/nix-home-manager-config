@@ -275,7 +275,8 @@ def run_steps(cfg, steps):
                   f'\nWS=$(ab get cdp-url)\nuv run -q "$D/touch_probe.py" {probe_args(cfg)}')
 
 
-# Runs on the host between reading the box and tapping: turns agent-browser's box into the tap step,
+# Runs on the host's system python3 (it starts faster than uv) between reading the box and tapping.
+# It turns agent-browser's box into the tap step,
 # so both happen in one ssh call and a moving target has less time to move in between.
 BOX_TO_STEP_PY = """import json, sys
 spec, box = json.load(open(sys.argv[1])), json.loads(sys.argv[2])
@@ -293,7 +294,7 @@ def cmd_tap(a):
     cfg = load(a.session)
     try:
         x, y = (float(v) for v in a.target.split(","))
-        tap, prelude = {"tap": [x, y]}, ""
+        tap, prelude = {"tap": [x, y]}, "WS=$(ab get cdp-url)\n"
     except ValueError:
         t = shlex.quote(a.target)
         # touch_probe waits for the element in the box to hold still and be on top, taps its
@@ -302,16 +303,16 @@ def cmd_tap(a):
         # get box reports viewport coordinates without scrolling, so scroll first, then read the
         # box until two reads agree so a target still moving or scrolling doesn't hand over a
         # stale box.
-        prelude = (f"ab scrollintoview {t} >/dev/null; prev=; for i in $(seq 20); do "
+        prelude = (f"WS=$(ab get cdp-url); ab scrollintoview {t} >/dev/null; prev=; for i in $(seq 20); do "
                    f"b=$(ab --json get box {t}); [ \"$b\" = \"$prev\" ] && break; prev=$b; done\n"
                    + heredoc('"$D/box_to_step.py"', BOX_TO_STEP_PY) +
                    '\npython3 "$D/box_to_step.py" "$D/steps.json" "$b" || exit 3\n')
     step = {"time_to_change": a.until, "after": tap, "timeout": a.timeout} if a.until else tap
     # A refused or missed tap exits 3 with an "error" line; report it rather than the raw output.
     out = remote(cfg, heredoc('"$D/steps.json"', json.dumps({"steps": [step]})) + "\n" + prelude +
-                 f'WS=$(ab get cdp-url)\nuv run -q "$D/touch_probe.py" {probe_args(cfg)}', check=False)
+                 f'uv run -q "$D/touch_probe.py" {probe_args(cfg)}', check=False)
     lines = [json.loads(l) for l in out.splitlines() if l.startswith("{")]
-    last = lines[-1] if lines else {"error": "touch_probe printed no result"}
+    last = lines[-1] if lines else {"error": "no result from the host script (see its stderr above)"}
     if "error" in last:
         sys.exit(f"{a.target}: {last['error']}")
     waited = f" after waiting {last['waited_ms']} ms for it to settle" if last.get("waited_ms") else ""
