@@ -270,38 +270,47 @@ def cmd_release(a):
     print("touch emulation and throttling off")
 
 
-def run_steps(cfg, steps, check=True):
+def run_steps(cfg, steps):
     return remote(cfg, heredoc('"$D/steps.json"', json.dumps(steps)) +
-                  f'\nWS=$(ab get cdp-url)\nuv run -q "$D/touch_probe.py" {probe_args(cfg)}', check=check)
+                  f'\nWS=$(ab get cdp-url)\nuv run -q "$D/touch_probe.py" {probe_args(cfg)}')
+
+
+# Runs on the host between reading the box and tapping: turns agent-browser's box into the tap step,
+# so both happen in one ssh call and a moving target has less time to move in between.
+BOX_TO_STEP_PY = """import json, sys
+spec, box = json.load(open(sys.argv[1])), json.loads(sys.argv[2])
+if not box.get("success"):
+    print(json.dumps({"error": f"no box: {box.get('error')}"}))
+    sys.exit(3)
+b = box["data"]
+tap = spec["steps"][0].get("after", spec["steps"][0])
+tap["tap"] = [b["x"] + b["width"] / 2, b["y"] + b["height"] / 2]
+tap["box"] = [b["x"], b["y"], b["width"], b["height"]]
+json.dump(spec, open(sys.argv[1], "w"))"""
 
 
 def cmd_tap(a):
     cfg = load(a.session)
     try:
         x, y = (float(v) for v in a.target.split(","))
-        tap = {"tap": [x, y]}
+        tap, prelude = {"tap": [x, y]}, ""
     except ValueError:
-        # get box reports viewport coordinates without scrolling, so bring the target into view first.
         t = shlex.quote(a.target)
-        # Read the box until two reads agree, so a target that is still moving or scrolling
-        # doesn't hand touch_probe a stale box.
-        out = remote(cfg, f"ab scrollintoview {t} >/dev/null; prev=; for i in $(seq 20); do "
-                          f"b=$(ab --json get box {t}); [ \"$b\" = \"$prev\" ] && break; prev=$b; done; "
-                          f"echo \"$b\"").strip().splitlines()
-        box = json.loads(out[-1])
-        if not box.get("success"):
-            sys.exit(f"no box for {a.target}: {box.get('error')}")
-        b = box["data"]
-        # touch_probe waits for the element in this box to hold still and be on top, taps its
+        # touch_probe waits for the element in the box to hold still and be on top, taps its
         # centre, and fails if the touch lands outside it, all in one CDP session.
-        tap = {"tap": [b["x"] + b["width"] / 2, b["y"] + b["height"] / 2],
-               "box": [b["x"], b["y"], b["width"], b["height"]]}
-        if not a.target.startswith("@"):
-            tap["selector"] = a.target
+        tap = {"tap": None, **({} if a.target.startswith("@") else {"selector": a.target})}
+        # get box reports viewport coordinates without scrolling, so scroll first, then read the
+        # box until two reads agree so a target still moving or scrolling doesn't hand over a
+        # stale box.
+        prelude = (f"ab scrollintoview {t} >/dev/null; prev=; for i in $(seq 20); do "
+                   f"b=$(ab --json get box {t}); [ \"$b\" = \"$prev\" ] && break; prev=$b; done\n"
+                   + heredoc('"$D/box_to_step.py"', BOX_TO_STEP_PY) +
+                   '\npython3 "$D/box_to_step.py" "$D/steps.json" "$b" || exit 3\n')
     step = {"time_to_change": a.until, "after": tap, "timeout": a.timeout} if a.until else tap
     # A refused or missed tap exits 3 with an "error" line; report it rather than the raw output.
-    lines = [json.loads(l) for l in run_steps(cfg, {"steps": [step]}, check=False).splitlines()
-             if l.startswith("{")]
+    out = remote(cfg, heredoc('"$D/steps.json"', json.dumps({"steps": [step]})) + "\n" + prelude +
+                 f'WS=$(ab get cdp-url)\nuv run -q "$D/touch_probe.py" {probe_args(cfg)}', check=False)
+    lines = [json.loads(l) for l in out.splitlines() if l.startswith("{")]
     last = lines[-1] if lines else {"error": "touch_probe printed no result"}
     if "error" in last:
         sys.exit(f"{a.target}: {last['error']}")
