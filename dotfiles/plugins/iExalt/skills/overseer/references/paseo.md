@@ -61,12 +61,15 @@ closed.
 - **Isolation:** give each worker a workspace with worktree isolation in the
   run project, branching off the remote main branch rather than the local
   `main`, named after the worker:
-  `paseo workspace create --isolation worktree --path <run checkout> --project <project-id> --base origin/main --title "Worker: <subtask>" --json`.
+  `paseo workspace create --isolation worktree --notifications off --path <run checkout> --project <project-id> --base origin/main --title "Worker: <subtask>" --json`.
   Paseo puts these worktrees under `~/.paseo/worktrees/`. Use the
   repository's `paseo.json` setup for ignored files when it provides them. A
   lone worker may use the run checkout itself, through a workspace created
-  with `--isolation local` and the same path and project. Never launch a
-  worker into your own workspace.
+  with `--isolation local --notifications off` and the same path and project.
+  Mute notifications for every worker workspace so the overseer handles
+  user-facing updates. Keep `--notify-on-finish` on worker launches and
+  messages so workers still wake the overseer. Never launch a worker into
+  your own workspace.
 - **Launch:** start each worker as a top-level thread in its workspace, with
   the brief as its initial prompt:
   `paseo agent run --no-wait --relationship detached --notify-on-finish --workspace <workspace-id> --title "Worker: <subtask>" --provider <provider> --mode <mode> --model <model> --thinking <effort> "<brief>"`.
