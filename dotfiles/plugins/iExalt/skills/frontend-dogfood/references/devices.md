@@ -127,8 +127,15 @@ session's colour scheme, viewport, and pixel ratio alone; dogfood.py drives it:
    emulation they hang on a mouse event or do nothing. Tap with `dogfood.py tap <session> @e12`
    (an @ref, a CSS selector, or `X,Y`); drag, pinch, and wheel with `dogfood.py steps <session>
    steps.json`.
-   `tap` scrolls an @ref or selector into view first, refuses a point outside the viewport, and
-   says what element the touch landed on; if that isn't the target, something covers it.
+   `tap` scrolls an @ref or selector into view first, then waits until the target has held still
+   for 150 ms and nothing covers it, taps its centre, and reports what the touch actually landed
+   on. It exits non-zero without tapping when the target keeps moving, stays covered, moved after
+   its box was read, or would be outside the viewport, and exits non-zero after tapping when the
+   touch landed outside the target. Treat either as a finding to check (a layout that moves under
+   the finger, an overlay), not as a tool error. A CSS selector identifies the target exactly; an
+   @ref is matched by its box, so a target that never stops moving can be refused. `X,Y` taps
+   aren't checked. The wait sees only element boxes, so motion drawn inside a canvas is invisible
+   to it.
    A tap fires the full sequence (`pointerdown:touch`, `touchstart`, `mousedown`, `click`).
 3. Run `dogfood.py release <session>` before switching back to a desktop size.
 
