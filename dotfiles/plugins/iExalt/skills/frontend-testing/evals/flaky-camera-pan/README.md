@@ -56,8 +56,8 @@ quiet. Three runs per arm is indicative only.
 | skill 3 | 0/30, 0/30 | same design | yes | yes, 4/12 before and 0/27 after, with the bound stated |
 
 Every arm removed the flake, the two dodging baselines included, so the difference is in how
-they fixed it and what they proved, not in the stress counts. With the skill, all three kept the product's behaviour and used the
-settled-signal design; without it, two of three changed the product to avoid the race. Two of
+they fixed it and what they proved, not in the stress counts. With the skill, all three kept the
+product's behaviour and used the settled-signal design; without it, two of three changed the product to avoid the race. Two of
 three skill arms measured the failure before fixing it, against none of the baseline arms. No arm
 forced the race with a held response; at a 30% failure rate, plain reruns reproduced it.
 
@@ -69,4 +69,5 @@ Limits:
 - The grader wasn't checked against a quiet-window variant before scoring. No arm relied on one
   without also removing the late pan.
 - The committed `grade.sh` is a path-portable rewrite of the script used for these results, with
-  the same checks; the rewrite's own full run is still to come.
+  the same checks. One run of it on baseline 1 matched the original grade: 0/30 and 0/30, with
+  the dodge line flagged.
