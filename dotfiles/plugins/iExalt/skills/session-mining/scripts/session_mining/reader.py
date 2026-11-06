@@ -8,26 +8,37 @@ from . import claude
 from .stores import PaseoAgent, SessionFile
 
 
-def paseo_launchers(agents: Iterable[PaseoAgent]) -> Dict[str, bool]:
-    """Provider session id -> True when another agent wrote its first prompt (a paseo.parent-agent-id
-    label, blank too: a top-level thread created by an agent, or an overseer label), False when the
-    user started it in Paseo. Sessions absent from the map have no Paseo record."""
-    out: Dict[str, bool] = {}
+def paseo_launchers(agents: Iterable[PaseoAgent]) -> Dict[str, str]:
+    """Provider session id -> who wrote its first prompt, from Paseo agent records:
+    "schedule" (a paseo.schedule-id label: an automation run), "agent" (a paseo.parent-agent-id label,
+    blank too, which marks a top-level thread created by an agent, or an overseer label) or "human"
+    (started by the user in Paseo). Sessions absent from the map have no Paseo record. When several
+    records point at one session, schedule beats agent beats human."""
+    rank = {"human": 0, "agent": 1, "schedule": 2}
+    out: Dict[str, str] = {}
     for a in agents:
-        if a.session:
-            out[a.session] = any(k == "paseo.parent-agent-id" or "overseer" in k.lower() or "overseer" in v.lower()
-                                 for k, v in a.labels.items())
+        if not a.session:
+            continue
+        if "paseo.schedule-id" in a.labels:
+            who = "schedule"
+        elif any(k == "paseo.parent-agent-id" or "overseer" in k.lower() or "overseer" in v.lower()
+                 for k, v in a.labels.items()):
+            who = "agent"
+        else:
+            who = "human"
+        if rank[who] >= rank[out.get(a.session, "human")]:
+            out[a.session] = who
     return out
 
 
-def file_events(f: SessionFile, prose: bool = False, launchers: Optional[Dict[str, bool]] = None,
+def file_events(f: SessionFile, prose: bool = False, launchers: Optional[Dict[str, str]] = None,
                 stats: Optional[Dict[str, int]] = None) -> Iterator[dict]:
     if f.provider == "claude":
         sid = f.parent if f.kind == "subagent" else f.session
         return claude.iter_events(f.path, session=f.session, in_subagent=f.kind == "subagent", prose=prose,
                                   launched=(launchers or {}).get(sid), stats=stats)
     from . import codex
-    return codex.iter_events(f.path, prose=prose, stats=stats)
+    return codex.iter_events(f.path, prose=prose, launched=(launchers or {}).get(f.session), stats=stats)
 
 
 def skill_matches(name: Optional[str], want: str) -> bool:

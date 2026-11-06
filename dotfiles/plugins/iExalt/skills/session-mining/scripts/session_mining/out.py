@@ -40,7 +40,8 @@ class Out:
             self.truncated += 1
             return False
         data = (text + "\n").encode("utf-8", "replace")
-        if self.used + len(data) > self.max_bytes:
+        # Keep room for the cap note and a typical footer so close() rarely has to drop shown lines.
+        if self.used + len(data) > self.max_bytes - min(500, self.max_bytes // 3):
             self.truncated += 1
             return False
         self.body.append(data)

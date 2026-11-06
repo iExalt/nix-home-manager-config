@@ -26,7 +26,7 @@ def write_jsonl(path, records):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as fh:
         for r in records:
-            fh.write((r if isinstance(r, str) else json.dumps(r)) + "\n")
+            fh.write((r if isinstance(r, str) else json.dumps(r, separators=(",", ":"))) + "\n")
 
 
 def make_roots(tmp=None):
@@ -34,9 +34,13 @@ def make_roots(tmp=None):
     tmp = tmp or tempfile.mkdtemp(prefix="sm-test-")
     claude, codex, paseo = (os.path.join(tmp, n) for n in ("claude", "codex", "paseo"))
     proj = os.path.join(claude, "projects", PROJ)
-    write_jsonl(os.path.join(proj, C1 + ".jsonl"), [{"type": "user", "sessionId": C1}])
+    write_jsonl(os.path.join(proj, C1 + ".jsonl"), [
+        {"type": "user", "uuid": "m%d" % i, "sessionId": C1, "timestamp": "2026-01-02T03:04:0%dZ" % i,
+         "message": {"role": "user", "content": "main prompt %d" % i}} for i in range(3)])
     write_jsonl(os.path.join(proj, C2 + ".jsonl"), [{"type": "user", "sessionId": C2}])
-    write_jsonl(os.path.join(proj, C1, "subagents", "agent-%s.jsonl" % AGENT), [{"type": "user"}])
+    write_jsonl(os.path.join(proj, C1, "subagents", "agent-%s.jsonl" % AGENT), [
+        {"type": "user", "uuid": "s%d" % i, "sessionId": C1, "timestamp": "2026-01-02T03:05:0%dZ" % i,
+         "message": {"role": "user", "content": "subagent brief %d" % i}} for i in range(3)])
     os.makedirs(os.path.join(proj, C1, "tool-results"), exist_ok=True)
     with open(os.path.join(proj, C1, "tool-results", "x.txt"), "w") as fh:
         fh.write(C2)

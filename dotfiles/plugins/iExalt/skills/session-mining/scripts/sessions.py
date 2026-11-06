@@ -109,6 +109,24 @@ def _add_filters(sp) -> None:
     sp.add_argument("--width", type=int, default=160, help="characters per event line")
 
 
+def _line_range(v: str):
+    try:
+        if ":" not in v:
+            n = int(v)
+            return (n, n)
+        a, b = v.split(":", 1)
+        return (int(a) if a else 1, int(b) if b else None)
+    except ValueError:
+        raise argparse.ArgumentTypeError("expected N, FROM:TO, FROM: or :TO, got %r" % v)
+
+
+def _positive(v: str) -> int:
+    n = int(v)
+    if n < 1:
+        raise argparse.ArgumentTypeError("must be at least 1")
+    return n
+
+
 def _filter(args) -> Filter:
     return Filter(args.author, args.kind, args.tool, args.skill, args.match, args.since, args.until)
 
@@ -133,26 +151,32 @@ def cmd_show(args, roots: Roots, out: Out) -> int:
     flt = _filter(args)
     launchers = paseo_launchers(inv.paseo)
     lo, hi = args.lines or (1, None)
-    shown = total = 0
     stats = {}
-    tail = []
-    for f in files:
-        evs = (e for e in file_events(f, prose=args.prose, launchers=launchers, stats=stats)
-               if e["line"] >= lo and (hi is None or e["line"] <= hi))
-        for e in evs:
-            if not flt(e):
-                continue
-            total += 1
-            if args.last:
-                tail.append(e)
-                tail = tail[-args.last:]
-            else:
-                shown += render([e], out, args.width, show_file=False)
+    count = [0]
+
+    def matching():
+        for f in files:
+            for e in file_events(f, prose=args.prose, launchers=launchers, stats=stats):
+                if e["line"] >= lo and (hi is None or e["line"] <= hi) and flt(e):
+                    count[0] += 1
+                    yield e
+
+    multi = len(files) > 1
     if args.last:
-        shown = render(tail, out, args.width, show_file=False)
-    out.note("%s %s: %d matching event(s), %d shown; files: %s" % (
-        c.type, c.id, total, shown, ", ".join("%s (%d B)" % (f.path, f.size) for f in files[:3])
-        + (" +%d more" % (len(files) - 3) if len(files) > 3 else "")))
+        tail = []
+        for e in matching():
+            tail.append(e)
+            del tail[:-args.last]
+        shown = render(tail, out, args.width, show_file=multi, basis=args.basis)
+    else:
+        gen = matching()
+        shown = render(gen, out, args.width, show_file=multi, basis=args.basis)
+        for _ in gen:                      # count the rest without rendering
+            pass
+    total = count[0]
+    out.note("%s %s: %d matching event(s), %d shown; %d file(s)%s" % (
+        c.type, c.id, total, shown, len(files),
+        "" if multi else ": " + files[0].path))
     if stats:
         out.note("parse stats: %s" % ", ".join("%s=%d" % kv for kv in sorted(stats.items())))
     return 0
@@ -169,7 +193,7 @@ def main(argv=None) -> int:
     # Global options are accepted before or after the subcommand (agents tend to put them last).
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--max-bytes", type=int, default=argparse.SUPPRESS,
-                        help="output cap in bytes, footer included (default %d)" % DEFAULT_MAX_BYTES)
+                        help="output cap in bytes, footer included (default %d, minimum 400)" % DEFAULT_MAX_BYTES)
     common.add_argument("--claude-home", default=argparse.SUPPRESS, help="default ~/.claude "
                         "(or $SESSION_MINING_CLAUDE_HOME)")
     common.add_argument("--codex-home", default=argparse.SUPPRESS, help="default $CODEX_HOME or ~/.codex")
@@ -184,9 +208,9 @@ def main(argv=None) -> int:
     sh = sub.add_parser("show", parents=[common], help="compact view of one session: one line per event with its file line")
     sh.add_argument("ref")
     _add_filters(sh)
-    sh.add_argument("--lines", type=lambda v: tuple(int(x) if x else None for x in v.split(":")),
-                    help="physical line range FROM:TO in the transcript file(s)")
-    sh.add_argument("--last", type=int, help="only the last N matching events")
+    sh.add_argument("--lines", type=_line_range, help="physical line range: N, FROM:TO, FROM: or :TO")
+    sh.add_argument("--last", type=_positive, help="only the last N matching events")
+    sh.add_argument("--basis", action="store_true", help="show why each event got its author")
     sh.add_argument("--prose", action="store_true", help="skip tool output (faster on huge files)")
     sh.add_argument("--subagents", action="store_true", help="include a Claude session's subagent files")
     args = p.parse_args(argv)

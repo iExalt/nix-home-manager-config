@@ -79,10 +79,11 @@ class ClaudeEvents(unittest.TestCase):
         recs = [u("l1", "brief from overseer", entrypoint="sdk-cli", promptSource="sdk"),
                 a("l2", [{"type": "text", "text": "ok"}]),
                 u("l3", "follow-up typed by me", entrypoint="sdk-cli", promptSource="sdk")]
-        self.assertEqual([e["author"] for e in self.events(recs, launched=True)], ["agent", "assistant", "human"])
-        self.assertEqual([e["author"] for e in self.events(recs, launched=False)], ["human", "assistant", "human"])
+        self.assertEqual([e["author"] for e in self.events(recs, launched="agent")], ["agent", "assistant", "human"])
+        self.assertEqual([e["author"] for e in self.events(recs, launched="human")], ["human", "assistant", "human"])
         self.assertEqual([e["basis"] for e in self.events(recs, launched=None)][0],
                          "sdk_first_prompt_without_paseo_record")
+        self.assertEqual([e["author"] for e in self.events(recs, launched="schedule")][0], "harness")
 
     def test_tool_calls_skills_and_decisions(self):
         recs = [

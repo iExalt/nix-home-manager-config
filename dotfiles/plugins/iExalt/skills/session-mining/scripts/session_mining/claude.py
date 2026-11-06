@@ -60,7 +60,7 @@ def slash_command(text: str) -> Optional[str]:
     return m.group(1) if m else None
 
 
-def classify_user_text(text: str, rec: dict, in_subagent: bool, first_prompt: bool, launched: Optional[bool]):
+def classify_user_text(text: str, rec: dict, in_subagent: bool, first_prompt: bool, launched: Optional[str]):
     """(author, basis). Ordered rules; the first match wins."""
     t = text.lstrip()
     o = rec.get("origin")
@@ -96,7 +96,9 @@ def classify_user_text(text: str, rec: dict, in_subagent: bool, first_prompt: bo
         # written by another agent (parent or overseer label), or sent by a script (no Paseo record).
         if launched is None:
             return "agent", "sdk_first_prompt_without_paseo_record"
-        if launched:
+        if launched == "schedule":
+            return "harness", "paseo_scheduled_first_prompt"
+        if launched == "agent":
             return "agent", "paseo_launched_first_prompt"
     return "human", "plain_text"
 
@@ -117,14 +119,15 @@ def _decision(name: str, text: str, tur, is_error: bool) -> Optional[str]:
 
 
 def iter_events(path: str, session: Optional[str] = None, in_subagent: Optional[bool] = None,
-                prose: bool = False, launched: Optional[bool] = False,
+                prose: bool = False, launched: Optional[str] = "human",
                 stats: Optional[Dict[str, int]] = None) -> Iterator[dict]:
     """Events of one Claude transcript file in file order.
 
-    prose=True skips tool output: lines over PROSE_SKIP_BYTES that carry a tool result are not parsed
-    and tool_result events are not emitted (user decisions in tool results still are).
-    launched describes who started the session, for its SDK first prompt: True = another agent (Paseo
-    parent or overseer label), False = the user in Paseo, None = no Paseo record (a script; agent).
+    prose=True keeps prompts, replies, tool calls and decisions: tool output and thinking are not
+    emitted, and lines over PROSE_SKIP_BYTES that carry a tool result are not even parsed (user
+    decisions in tool results are small and still parsed).
+    launched says who wrote an SDK session's first prompt, from reader.paseo_launchers(): "human",
+    "agent" or "schedule"; None means no Paseo record (a script, so an agent).
     """
     if in_subagent is None:
         in_subagent = os.sep + "subagents" + os.sep in path
@@ -174,7 +177,7 @@ def iter_events(path: str, session: Optional[str] = None, in_subagent: Optional[
                     bt = b.get("type")
                     if bt == "text" and b.get("text", "").strip():
                         yield ev(d, ln, "reply", "assistant", b["text"])
-                    elif bt == "thinking" and b.get("thinking", "").strip():
+                    elif bt == "thinking" and not prose and b.get("thinking", "").strip():
                         yield ev(d, ln, "thinking", "assistant", b["thinking"])
                     elif bt == "tool_use":
                         name, inp = b.get("name"), b.get("input")

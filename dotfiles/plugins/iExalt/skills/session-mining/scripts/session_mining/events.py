@@ -79,8 +79,9 @@ def _hhmm(ts: Optional[str]) -> str:
     return ts[5:16].replace("T", " ") if ts and len(ts) >= 16 else "--"
 
 
-def render(events: Iterable[dict], out: Out, width: int = 160, show_file: bool = True) -> int:
-    """One line per event: 'L<line> <MM-DD hh:mm> author/kind [tool|skill] text'. Returns count shown."""
+def render(events: Iterable[dict], out: Out, width: int = 160, show_file: bool = True, basis: bool = False) -> int:
+    """One line per event: 'L<line> <MM-DD hh:mm> author/kind [tool|skill] text', with an '== <file>'
+    header whenever the file changes (show_file). Stops at the output cap. Returns count shown."""
     n = 0
     cur = None
     for e in events:
@@ -89,8 +90,9 @@ def render(events: Iterable[dict], out: Out, width: int = 160, show_file: bool =
             if not out.line("== %s (%s %s)" % (cur, e["provider"], e["session"])):
                 break
         tag = e.get("skill") and "skill:%s" % e["skill"] or e.get("tool") or ""
-        head = "L%-6d %s %s/%s%s " % (e["line"], _hhmm(e.get("ts")), e["author"], e["kind"],
-                                      " [%s]" % tag if tag else "")
+        head = "L%-6d %s %s/%s%s%s " % (e["line"], _hhmm(e.get("ts")), e["author"], e["kind"],
+                                        " [%s]" % tag if tag else "",
+                                        " (%s)" % e.get("basis") if basis and e.get("basis") else "")
         if not out.line(head + clip(e.get("command") or e["text"], max(20, width - len(head)))):
             break
         n += 1

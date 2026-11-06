@@ -95,6 +95,15 @@ class StoresAndResolve(unittest.TestCase):
         self.assertIn(("codex-thread", fx.T2, "title"), self.ids("feed"))
         self.assertEqual(self.ids("nix/home"), [("codex-thread", fx.T2, "title")])
 
+    def test_paseo_launchers(self):
+        from session_mining.reader import paseo_launchers
+        from session_mining.stores import PaseoAgent
+        m = paseo_launchers(self.inv.paseo)
+        self.assertEqual(m[fx.C1], "agent")                       # blank parent label: agent-created thread
+        mk = lambda sess, labels: PaseoAgent("x", "claude", sess, "", "", "", labels)
+        m = paseo_launchers([mk("s", {}), mk("s", {"paseo.schedule-id": "1"}), mk("s", {}), mk("t", {})])
+        self.assertEqual(m, {"s": "schedule", "t": "human"})
+
     def test_path_resolves_to_owner(self):
         path = [f.path for f in claude_files(self.roots) if f.kind == "subagent"][0]
         self.assertEqual(self.ids(path), [("claude-subagent", fx.AGENT, "path")])
@@ -132,6 +141,22 @@ class StoresAndResolve(unittest.TestCase):
             self.assertEqual(r.returncode, 0, r.stderr)
             self.assertIn("output capped", r.stdout)
             self.assertLessEqual(len(r.stdout.encode()), 400)
+
+    def test_show_line_ranges_and_file_headers(self):
+        for rng, want in (("2", ["L2 "]), (":2", ["L1 ", "L2 "]), ("2:", ["L2 ", "L3 "]), ("1:1", ["L1 "])):
+            r = self.run_cli("show", fx.C1, "--lines", rng)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertEqual([l[:3] for l in r.stdout.splitlines() if l.startswith("L")], want, rng)
+        r = self.run_cli("show", fx.C1, "--lines", "x")
+        self.assertEqual(r.returncode, 2)
+        self.assertIn("--lines", r.stderr)
+        r = self.run_cli("show", fx.C1, "--subagents")
+        heads = [l for l in r.stdout.splitlines() if l.startswith("== ")]
+        self.assertEqual(len(heads), 2, r.stdout)                  # each file is labelled before its lines
+        self.assertIn("agent-" + fx.AGENT, heads[1])
+        r = self.run_cli("show", fx.C1, "--subagents", "--last", "2")
+        self.assertEqual(len([l for l in r.stdout.splitlines() if l.startswith("== ")]), 1)
+        self.assertIn("6 matching event(s), 2 shown", r.stdout)
 
     @unittest.skipUnless(os.path.exists("/usr/bin/python3"), "no system python")
     def test_cli_on_system_python(self):
