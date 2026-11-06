@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""session-mining CLI: search Claude Code and Codex session history without flooding context.
+"""mine-sessions CLI: search Claude Code and Codex session history without flooding context.
 
 Run as:  python3 -I <skill>/scripts/sessions.py <command> ...   (Python 3.9+, stdlib only)
 Every command caps its output at --max-bytes and ends with '# ' footer lines stating coverage.

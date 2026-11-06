@@ -184,6 +184,24 @@ subtasks or a passing subset of tests don't make a milestone complete.
 
 Beyond the global instructions' test-cost rules:
 
+Aim for these end-to-end wall-clock latencies. Repository budgets may be tighter.
+These are optimization targets, not permission to weaken checks or change gates.
+
+| Loop or gate | Target | Preferred |
+| --- | --- | --- |
+| Local development loops and checks | Under 60 seconds | Under 60 seconds |
+| Routine CI checks blocking every PR | Under 5 minutes | Under 3 minutes |
+| Deeper checks blocking releases | Under 15 minutes | Under 10 minutes |
+| Full release after a release-please PR is merged | Under 30 minutes | Under 15 minutes |
+
+For CI, count from the triggering event through all required work, including
+queueing, setup, dependencies and artifact delivery; report execution time
+separately when queueing dominates. For a local loop, count command start to
+usable feedback. Track cold and warm runs separately. When a loop exceeds its
+target or grows against its stable baseline, use `iExalt:slow-ci` to diagnose
+and reduce the cost. Fix bugs, repeated work and algorithms before adding
+parallelism. Changing required proofs or their gate still needs approval.
+
 - Carry the routine-check command, its wall-clock budget and the stable
   baseline, with its machine, cache and concurrency conditions, into every
   plan and brief where tests grow or change. If absent, establish them

@@ -21,7 +21,7 @@
     {"name": "email", "how": "mail CLI; commendations, forwards up the chain"},
     {"name": "meetings", "how": "meeting CLI; recordings and transcripts of talks and demos"},
     {"name": "docs", "how": "drive and wiki CLIs; slides, design docs, decision records"},
-    {"name": "sessions", "how": "session-mining skill; what the user built with agents"}
+    {"name": "sessions", "how": "mine-sessions skill; what the user built with agents"}
   ],
   "forms": {
     "self": {
