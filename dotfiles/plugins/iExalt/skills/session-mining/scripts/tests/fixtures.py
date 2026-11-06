@@ -22,6 +22,27 @@ P2 = "f2f2f2f2-0000-4000-8000-000000000002"
 PROJ = "-tmp-demo-project"
 
 
+class CliResult:
+    def __init__(self, returncode, stdout, stderr):
+        self.returncode, self.stdout, self.stderr = returncode, stdout, stderr
+
+
+def run_main(args):
+    """Run sessions.main() in-process (subprocesses cost ~0.4 s each on the system Python)."""
+    import contextlib
+    import io
+    import sys
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    import sessions
+    out, err = io.StringIO(), io.StringIO()
+    with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+        try:
+            code = sessions.main(list(args))
+        except SystemExit as e:
+            code = e.code
+    return CliResult(code, out.getvalue(), err.getvalue())
+
+
 def write_jsonl(path, records):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as fh:

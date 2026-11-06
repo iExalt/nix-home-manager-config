@@ -21,6 +21,7 @@ from .reader import Filter, file_events, paseo_launchers
 from .stores import PaseoAgent, Roots, SessionFile, claude_files, codex_files
 
 LIVE_SECONDS = 120
+SERIAL_JOBS = 4
 HIT_TEXT_CAP = 2000            # characters of event text carried back from a worker
 
 
@@ -51,6 +52,7 @@ class Result:
     stats: Dict[str, int] = field(default_factory=dict)
     excluded: Dict[str, str] = field(default_factory=dict)       # session -> reason
     live_candidates: List[str] = field(default_factory=list)
+    cache_used: Optional[int] = None
     elapsed: float = 0.0
 
 
@@ -165,10 +167,38 @@ def _scan(args):
     return f.path, hits, stats, first_ts, cwd
 
 
+def cache_hits(cache, flt: Filter, paths: Set[str]):
+    """(event, path, file first_ts, file cwd) for cached events of the given files that pass flt."""
+    sql = ("select f.path, f.provider, f.session, f.first_ts, f.cwd, e.line, e.ts, e.kind, e.author, e.skill, "
+           "e.tool, e.uuid, e.rec_session, e.basis, e.call_id, e.text from events e join files f on f.id = e.file_id")
+    where, args = [], []
+    if flt.authors:
+        where.append("e.author in (%s)" % ",".join("?" * len(flt.authors)))
+        args += sorted(flt.authors)
+    if flt.kinds:
+        where.append("e.kind in (%s)" % ",".join("?" * len(flt.kinds)))
+        args += sorted(flt.kinds)
+    if flt.skill:
+        where.append("e.skill is not null")
+    if where:
+        sql += " where " + " and ".join(where)
+    for (path, prov, sess, fts, cwd, line, ts, kind, author, skill, tool, uuid, rec, basis, cid,
+         text) in cache.con.execute(sql, args):
+        if path not in paths or (flt.regex is not None and not flt.regex.search(text or "")):
+            continue
+        e = {"provider": prov, "session": sess, "file": path, "line": line, "ts": ts, "kind": kind,
+             "author": author, "text": text or "", "tool": tool, "command": text if kind == "tool_call" else None,
+             "skill": skill, "uuid": uuid, "rec_session": rec, "basis": basis, "call_id": cid}
+        if flt(e):
+            yield e, path, fts, cwd
+
+
 # -- main ----------------------------------------------------------------------------------------
 
 def grep(roots: Roots, q: Query, agents: List[PaseoAgent], exclude: Dict[str, str],
-         include_live: bool = False, now: Optional[float] = None, cwd: Optional[str] = None) -> Result:
+         include_live: bool = False, now: Optional[float] = None, cwd: Optional[str] = None,
+         cache=None) -> Result:
+    """cache: a cache.Cache, used for prose queries; None reads every candidate file directly."""
     t0 = time.time()
     now = now or time.time()
     files: List[SessionFile] = []
@@ -176,6 +206,7 @@ def grep(roots: Roots, q: Query, agents: List[PaseoAgent], exclude: Dict[str, st
         files += list(claude_files(roots))
     if "codex" in q.providers:
         files += list(codex_files(roots))
+    all_files = list(files)
     res = Result(hits=[], excluded=dict(exclude))
     if q.since:
         cutoff = _iso_to_epoch(q.since)
@@ -197,21 +228,49 @@ def grep(roots: Roots, q: Query, agents: List[PaseoAgent], exclude: Dict[str, st
     files = [f for f in files if not excluded(f)]
     res.files_considered = len(files)
     by_path = {f.path: f for f in files}
-    if q.prefilter and (q.regex or q.flt.skill):
-        keep, note = prefilter([f.path for f in files], None if q.flt.skill else q.regex,
-                               q.flt.skill.split(":")[-1] if q.flt.skill else None)
-        res.prefilter_note = note
-        if keep is not None:
-            files = [f for f in files if f.path in keep]
-            res.prefilter_kept = len(files)
     files.sort(key=lambda f: -f.mtime)                         # recent first: deterministic and useful
     launchers = paseo_launchers(agents)
-    owners: Dict[str, Tuple] = {}
     raw_hits: List[Tuple[dict, str]] = []
     first_ts: Dict[str, Optional[str]] = {}
     cwds: Dict[str, Optional[str]] = {}
     deadline = t0 + q.budget
-    jobs = [(f, q.prose, launchers, q.flt, q.include_guardian) for f in files]
+    to_parse = files
+    if cache is not None and q.prose and not q.include_guardian:
+        # Index what changed (bounded), answer indexed files from the cache, parse the rest directly.
+        stale = cache.refresh(all_files, launchers, deadline=t0 + q.budget * 0.6, workers=q.workers)
+        stale_paths = {f.path for f in stale}
+        wanted = {f.path for f in files}
+        cached_paths = wanted - stale_paths
+        res.cache_used = len(cached_paths)
+        for h, path, fts, cwd_ in cache_hits(cache, q.flt, cached_paths):
+            raw_hits.append((h, path))
+            first_ts[path] = fts
+            cwds[path] = cwd_
+        to_parse = [f for f in files if f.path in stale_paths]
+    if to_parse and q.prefilter and (q.regex or q.flt.skill):
+        keep, note = prefilter([f.path for f in to_parse], None if q.flt.skill else q.regex,
+                               q.flt.skill.split(":")[-1] if q.flt.skill else None)
+        res.prefilter_note = note
+        if keep is not None:
+            to_parse = [f for f in to_parse if f.path in keep]
+            res.prefilter_kept = len(to_parse)
+    jobs = [(f, q.prose, launchers, q.flt, q.include_guardian) for f in to_parse]
+
+    def take(result):
+        path, hits, stats, fts, cwd_ = result
+        res.parsed += 1
+        first_ts[path] = fts
+        cwds[path] = cwd_
+        for k, v in stats.items():
+            res.stats[k] = res.stats.get(k, 0) + v
+        raw_hits.extend((h, path) for h in hits)
+
+    if len(jobs) <= SERIAL_JOBS:             # a pool costs more to start than a few small files take
+        for job in jobs:
+            if time.time() >= deadline:
+                break
+            take(_scan(job))
+        jobs = []
     ex = ProcessPoolExecutor(max_workers=q.workers)
     try:
         pending = set()
@@ -226,19 +285,13 @@ def grep(roots: Roots, q: Query, agents: List[PaseoAgent], exclude: Dict[str, st
                 break
             done, pending = wait(pending, timeout=left, return_when=FIRST_COMPLETED)
             for fut in done:
-                path, hits, stats, fts, cwd_ = fut.result()
-                res.parsed += 1
-                first_ts[path] = fts
-                cwds[path] = cwd_
-                for k, v in stats.items():
-                    res.stats[k] = res.stats.get(k, 0) + v
-                raw_hits.extend((h, path) for h in hits)
+                take(fut.result())
                 nxt = next(it, None)
                 if nxt is not None:
                     pending.add(ex.submit(_scan, nxt))
     finally:
         _stop(ex)
-    res.unparsed = len(files) - res.parsed
+    res.unparsed = len(to_parse) - res.parsed
 
     # Dedup copies of one Claude record (resumed or forked sessions) by uuid; keep the owner's copy.
     best: Dict[Tuple[str, str], Tuple[tuple, dict]] = {}

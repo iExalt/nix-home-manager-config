@@ -12,7 +12,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(HERE))
 sys.path.insert(0, HERE)
 
-from fixtures import write_jsonl  # noqa: E402
+from fixtures import run_main, write_jsonl  # noqa: E402
 from session_mining.reader import Filter  # noqa: E402
 from session_mining.search import Query, codex_live_candidates, grep, rg_pattern, self_sessions  # noqa: E402
 from session_mining.stores import PaseoAgent, Roots, codex_files  # noqa: E402
@@ -121,13 +121,11 @@ class Search(unittest.TestCase):
 
     def test_cli_grep_footer_and_cap(self):
         homes = ["--claude-home", self.roots.claude, "--codex-home", self.roots.codex, "--paseo-home", self.roots.paseo]
-        r = subprocess.run([sys.executable, "-I", CLI, "grep", "widget", "--max-bytes", "600", "--include-self"] + homes,
-                           capture_output=True, text=True, timeout=60)
+        r = run_main(["grep", "widget", "--max-bytes", "600", "--include-self", "--no-cache"] + homes)
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertLessEqual(len(r.stdout.encode()), 600)
         self.assertIn("# files:", r.stdout)
-        r = subprocess.run([sys.executable, "-I", CLI, "grep", "--author", "human,agent", "--sessions-only",
-                            "--include-self"] + homes, capture_output=True, text=True, timeout=60)
+        r = run_main(["grep", "--author", "human,agent", "--sessions-only", "--include-self", "--no-cache"] + homes)
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertEqual(r.stdout.count("== "), 4)
 

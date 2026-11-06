@@ -235,7 +235,11 @@ def cmd_grep(args, roots: Roots, out: Out) -> int:
     q = Query(regex=args.pattern, flt=flt, prose=prose, providers=tuple(_flat(args.provider)) or ("claude", "codex"),
               project=args.project, since=args.since, budget=args.budget, include_guardian=args.include_guardian,
               prefilter=not args.no_prefilter)
-    res = grep(roots, q, inv.paseo, exclude, include_live=args.include_self)
+    cache = None
+    if prose and not args.no_cache and not args.include_guardian:
+        from session_mining.cache import Cache
+        cache = Cache(args.cache)
+    res = grep(roots, q, inv.paseo, exclude, include_live=args.include_self, cache=cache)
     sessions: Dict[tuple, list] = {}
     for h in res.hits:
         sessions.setdefault((h["provider"], h["session"]), []).append(h)
@@ -260,9 +264,11 @@ def cmd_grep(args, roots: Roots, out: Out) -> int:
     out.note("hits: %d in %d session(s); %d session(s) shown; %.1f s" % (
         len(res.hits), len(sessions), shown_sessions, res.elapsed))
     cov = "files: %d considered" % res.files_considered
+    if res.cache_used is not None:
+        cov += ", %d answered from the cache" % res.cache_used
     if res.prefilter_kept is not None:
         cov += ", %d kept by rg prefilter" % res.prefilter_kept
-    cov += ", %d parsed" % res.parsed
+    cov += ", %d parsed directly" % res.parsed
     if res.unparsed:
         cov += ", %d NOT PARSED (budget %.0f s spent; raise --budget or narrow with --since/--provider)" % (
             res.unparsed, args.budget)
@@ -297,6 +303,196 @@ def _centered(hits, regex, width):
             if m and m.start() > width // 3:
                 h = dict(h, text="…" + h["text"][m.start() - width // 4:])
         yield h
+
+
+def _open_cache(args, inv: Inventory, roots: Roots, out: Out, budget: float):
+    """Open the cache and index changed files within the budget; notes how many stay unindexed."""
+    from session_mining.cache import Cache
+    cache = Cache(getattr(args, "cache", None))
+    files = list(claude_files(roots)) + list(codex_files(roots))
+    t = time.time()
+    left = cache.refresh(files, paseo_launchers(inv.paseo), deadline=time.time() + budget)
+    if left:
+        out.note("INCOMPLETE: %d changed file(s) not indexed within %.0f s; results miss them. Run `cache refresh` "
+                 "(cold build takes about 10-30 s) and repeat." % (len(left), budget))
+    elif time.time() - t > 1:
+        out.note("indexed changed files in %.1f s" % (time.time() - t))
+    return cache
+
+
+def _select_sessions(args, inv: Inventory, cache, out: Out):
+    """Sessions matching find/manifest arguments, newest first, each with its matching prompt if any."""
+    import re as _re
+    from session_mining.cache import session_rows, session_skills
+    providers = tuple(_flat(args.provider)) or ("claude", "codex")
+    rows = session_rows(cache, providers, args.since, args.until)
+    exclude = {} if args.include_self else self_sessions(inv.paseo)
+    for sid in args.exclude_session or []:
+        exclude[sid] = "--exclude-session"
+    rows = [r for r in rows if r["session"] not in exclude]
+    if args.project:
+        needle = args.project.lower().replace("/", "-").strip("-")
+        rows = [r for r in rows if needle in (r["project"] or r["cwd"] or "").lower().replace("/", "-")]
+    if args.skill:
+        from session_mining.reader import skill_matches
+        skills = session_skills(cache)
+        rows = [r for r in rows if any(skill_matches(x, args.skill) for x in skills.get((r["provider"], r["session"]), []))]
+    authors = _flat(args.text_author) or ["human"]
+    texts: Dict[int, list] = {}
+    q = ("select file_id, line, text from events where kind in ('prompt', 'decision') and author in (%s) "
+         "order by file_id, line" % ",".join("?" * len(authors)))
+    for fid, line, text in cache.con.execute(q, authors):
+        texts.setdefault(fid, []).append((line, text))
+    rx = _re.compile(args.query, _re.I) if args.query else None
+    out_rows = []
+    for r in rows:
+        prompts = [t for fid in r["file_ids"] for t in texts.get(fid, [])]
+        r["title"] = _session_title(inv, r["provider"], r["session"])
+        r["first"] = prompts[0][1] if prompts else ""
+        r["prompts"] = len(prompts)
+        r["match"] = None
+        if rx is not None:
+            if rx.search(r["title"] or ""):
+                r["match"] = "title"
+            else:
+                hit = next((t for t in prompts if rx.search(t[1])), None)
+                if hit is None:
+                    continue
+                r["match"] = hit[1]
+        out_rows.append(r)
+    out_rows.sort(key=lambda r: r["last_ts"] or "", reverse=True)
+    if exclude:
+        out.note("excluded as the caller: %s" % ", ".join(sorted(exclude)))
+    return out_rows, len(rows)
+
+
+def _find_args(sp) -> None:
+    sp.add_argument("query", nargs="?", help="regex over session titles and prompt text (case-insensitive)")
+    sp.add_argument("--text-author", action="append", type=_choices(AUTHORS),
+                    help="whose prompts the query searches (default human; e.g. human,agent)")
+    sp.add_argument("--skill", help="sessions that invoked this skill")
+    sp.add_argument("--provider", action="append", type=_choices(("claude", "codex")))
+    sp.add_argument("--project", help="substring of the Claude project dir or Codex cwd")
+    sp.add_argument("--since", help="sessions active at or after this UTC date/time")
+    sp.add_argument("--until", help="sessions started before this UTC date/time")
+    sp.add_argument("--exclude-session", action="append")
+    sp.add_argument("--include-self", action="store_true")
+    sp.add_argument("--budget", type=float, default=8.0, help="seconds for indexing changed files (default 8)")
+    sp.add_argument("--cache", help="cache file")
+    sp.add_argument("--width", type=int, default=150)
+
+
+def cmd_find(args, roots: Roots, out: Out) -> int:
+    inv = Inventory(roots)
+    cache = _open_cache(args, inv, roots, out, args.budget)
+    rows, total = _select_sessions(args, inv, cache, out)
+    for r in rows[: args.limit]:
+        head = "== %s %s  %s..%s  %d prompt(s)  %s" % (r["provider"], r["session"], (r["first_ts"] or "")[:16],
+                                                       (r["last_ts"] or "")[5:16], r["prompts"], human_size(r["bytes"]))
+        if r["title"]:
+            head += "  " + json.dumps(clip(r["title"], 60), ensure_ascii=False)
+        if not out.line(head):
+            break
+        if r["first"]:
+            out.line("   first: " + json.dumps(clip(r["first"], args.width - 12), ensure_ascii=False))
+        if r["match"] and r["match"] != "title" and r["match"] != r["first"]:
+            out.line("   match: " + json.dumps(clip(r["match"], args.width - 12), ensure_ascii=False))
+    out.note("sessions: %d matched of %d; %d listed (--limit %d)" % (len(rows), total, min(len(rows), args.limit),
+                                                                     args.limit))
+    out.note("use `show <id>` to read one, `manifest` to split many across agents")
+    return 0
+
+
+def cmd_manifest(args, roots: Roots, out: Out) -> int:
+    inv = Inventory(roots)
+    cache = _open_cache(args, inv, roots, out, args.budget)
+    rows, total = _select_sessions(args, inv, cache, out)
+    if not rows:
+        out.note("no sessions matched")
+        return 1
+    n = args.shards or max(1, min(12, -(-len(rows) // 15)))
+    bins = [[0, []] for _ in range(n)]
+    for r in sorted(rows, key=lambda r: -r["bytes"]):          # largest first into the lightest shard
+        b = min(bins, key=lambda b: b[0])
+        b[0] += r["bytes"]
+        b[1].append(r)
+    lines = ["shard\tprovider\tsession\tbytes\tfirst_ts\ttitle\tfiles"]
+    for i, (_, rs) in enumerate(bins, 1):
+        for r in sorted(rs, key=lambda r: r["first_ts"] or ""):
+            lines.append("\t".join([str(i), r["provider"], r["session"], str(r["bytes"]), r["first_ts"] or "",
+                                    clip(r["title"] or r["first"], 80).replace("\t", " "), ",".join(r["paths"])]))
+    if args.out:
+        with open(args.out, "w", encoding="utf-8") as fh:
+            fh.write("\n".join(lines) + "\n")
+    for i, (size, rs) in enumerate(bins, 1):
+        out.line("shard %d: %d session(s), %s" % (i, len(rs), human_size(size)))
+    if not args.out:
+        for l in lines:
+            if not out.line(l):
+                break
+    out.note("%d session(s) in %d shard(s)%s; hand each shard to one miner with references/miner-brief.md" % (
+        len(rows), n, "; manifest written to %s" % args.out if args.out else ""))
+    return 0
+
+
+def cmd_recall(args, roots: Roots, out: Out) -> int:
+    """State of one session for an agent recovering after compaction: what the human asked and decided,
+    agents it spawned and messaged, skills, compactions and its latest tool calls."""
+    import re as _re
+    ref = args.session or os.environ.get("CLAUDE_CODE_SESSION_ID")
+    if not ref:
+        out.note("no session: pass --session <id> (Codex and other harnesses do not expose their own id)")
+        return 2
+    inv = Inventory(roots)
+    cands = resolve(inv, ref)
+    if len(entity_keys(cands)) != 1:
+        out.note("%r matched %d sessions; pass a longer id" % (ref, len(entity_keys(cands))))
+        return 1
+    c = cands[0].links[0] if cands[0].links else cands[0]
+    evs = [e for f in c.files for e in file_events(f, launchers=paseo_launchers(inv.paseo))]
+    n = args.last
+    human = [e for e in evs if e["author"] == "human" and e["kind"] in ("prompt", "decision")]
+    spawn = [e for e in evs if e["kind"] == "tool_call" and (e.get("tool") or "") in (
+        "Agent", "Task", "SendMessage", "spawn_agent", "send_message", "send_input", "followup_task")
+        or (e["kind"] == "tool_call" and "create_agent" in (e.get("tool") or ""))]
+    ids = {}
+    for e in evs:
+        if e["kind"] == "tool_result":
+            m = _re.search(r"agentId: ([a-z0-9]+)", e["text"]) or _re.search(r'"agent_id"\s*:\s*"([^"]+)"', e["text"])
+            if m:
+                ids[e["line"]] = m.group(1)
+    sections = [("human prompts and decisions (last %d of %d)" % (min(n, len(human)), len(human)), human[-n:]),
+                ("agents spawned or messaged (last %d of %d)" % (min(n, len(spawn)), len(spawn)), spawn[-n:]),
+                ("skills invoked", [e for e in evs if e.get("skill") and e["author"] != "injected"][-n:]),
+                ("compactions", [e for e in evs if e["kind"] == "compaction"][-n:]),
+                ("latest tool calls", [e for e in evs if e["kind"] == "tool_call"][-n:])]
+    for title, items in sections:
+        if not out.line("## " + title):
+            break
+        render(items, out, args.width, show_file=len(c.files) > 1)
+    if ids:
+        out.line("## agent ids returned by launches")
+        out.line("   " + ", ".join("L%d %s" % kv for kv in sorted(ids.items())[-n:]))
+    out.note("%s %s: %d events read from %d file(s)" % (c.type, c.id, len(evs), len(c.files)))
+    return 0
+
+
+def cmd_cache(args, roots: Roots, out: Out) -> int:
+    from session_mining.cache import Cache
+    cache = Cache(args.cache)
+    if args.action == "purge":
+        cache.purge()
+        out.note("deleted %s" % cache.path)
+        return 0
+    if args.action == "refresh":
+        inv = Inventory(roots)
+        files = list(claude_files(roots)) + list(codex_files(roots))
+        t = time.time()
+        left = cache.refresh(files, paseo_launchers(inv.paseo), deadline=time.time() + args.budget if args.budget else None)
+        out.note("refreshed in %.1f s; %d file(s) still unindexed" % (time.time() - t, len(left)))
+    st = cache.status()
+    out.line("cache %s: %d files, %d events, %s" % (st["path"], st["files"], st["events"], human_size(st["bytes"])))
+    return 0
 
 
 def _cand_json(c) -> dict:
@@ -344,12 +540,30 @@ def main(argv=None) -> int:
     g.add_argument("--include-guardian", action="store_true", help="include Codex guardian auto-review rollouts")
     g.add_argument("--no-prefilter", action="store_true", help="parse every file instead of rg -l candidates")
     g.add_argument("--basis", action="store_true", help="show why each hit got its author")
+    g.add_argument("--no-cache", action="store_true", help="read transcripts directly instead of the prose cache")
+    g.add_argument("--cache", help="cache file (default $SESSION_MINING_CACHE or ~/.cache/session-mining/index.sqlite)")
+    fd = sub.add_parser("find", parents=[common], help="list sessions by title, prompt text, skill, project, date")
+    _find_args(fd)
+    fd.add_argument("--limit", type=int, default=30)
+    mf = sub.add_parser("manifest", parents=[common], help="split matching sessions into byte-balanced shards")
+    _find_args(mf)
+    mf.add_argument("--shards", type=_positive, help="number of shards (default: about 15 sessions each, max 12)")
+    mf.add_argument("--out", help="write the TSV manifest here")
+    rc = sub.add_parser("recall", parents=[common], help="recover a session's state after compaction (default: own)")
+    rc.add_argument("--session", help="session reference (default $CLAUDE_CODE_SESSION_ID)")
+    rc.add_argument("--last", type=_positive, default=8)
+    rc.add_argument("--width", type=int, default=150)
+    ca = sub.add_parser("cache", parents=[common], help="status, refresh or purge the prose cache")
+    ca.add_argument("action", choices=("status", "refresh", "purge"))
+    ca.add_argument("--budget", type=float, default=0, help="refresh time limit in seconds (default none)")
+    ca.add_argument("--cache", help="cache file")
     args = p.parse_args(argv)
     roots = Roots.from_env(getattr(args, "claude_home", None), getattr(args, "codex_home", None),
                            getattr(args, "paseo_home", None))
     out = Out(getattr(args, "max_bytes", DEFAULT_MAX_BYTES))
     try:
-        return {"stores": cmd_stores, "resolve": cmd_resolve, "show": cmd_show, "grep": cmd_grep}[args.cmd](args, roots, out)
+        return {"stores": cmd_stores, "resolve": cmd_resolve, "show": cmd_show, "grep": cmd_grep,
+                "find": cmd_find, "manifest": cmd_manifest, "recall": cmd_recall, "cache": cmd_cache}[args.cmd](args, roots, out)
     except BrokenPipeError:
         return 0
     finally:

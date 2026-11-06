@@ -128,12 +128,14 @@ class StoresAndResolve(unittest.TestCase):
         o.close()
         self.assertLessEqual(len(buf.getvalue().encode()), 500)
 
-    def run_cli(self, *args, python=sys.executable):
+    def run_cli(self, *args, python=None):
         homes = ["--claude-home", self.homes[0], "--codex-home", self.homes[1], "--paseo-home", self.homes[2]]
+        if python is None:
+            return fx.run_main(homes + list(args))
         return subprocess.run([python, "-I", CLI] + homes + list(args), capture_output=True, text=True, timeout=30)
 
     def test_cli_entry_under_isolated_mode(self):
-        r = self.run_cli("resolve", fx.T1[:13])
+        r = self.run_cli("resolve", fx.T1[:13], python=sys.executable)
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertIn("AMBIGUOUS: 2 candidates", r.stdout)
         for args in (("--max-bytes", "400", "stores"), ("stores", "--max-bytes", "400")):
