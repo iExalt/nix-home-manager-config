@@ -117,22 +117,20 @@ class CodexEvents(unittest.TestCase):
             ri({"type": "custom_tool_call", "name": "exec", "call_id": "c2", "input": script}),
             ri({"type": "custom_tool_call_output", "call_id": "c2", "output": "x" * 70000}),
             ri({"type": "reasoning", "summary": [{"type": "summary_text", "text": "thinking"}]}),
+            # The real order: call, its output, then a CommandExecution item repeating it.
             ri({"type": "function_call", "name": "exec_command", "call_id": "c3", "arguments": "{}"}),
+            ri({"type": "function_call_output", "call_id": "c3", "output": "dup"}),
             em({"type": "item_completed", "item": {"type": "CommandExecution", "command": ["zsh", "-lc", "ls"],
                                                     "aggregated_output": "dup", "exit_code": 0}}),
-            ri({"type": "function_call_output", "call_id": "c3", "output": "dup"}),
-            em({"type": "item_completed", "item": {"type": "CommandExecution", "command": ["zsh", "-lc", "pwd"],
-                                                    "aggregated_output": "/tmp", "exit_code": 0}}),
             {"timestamp": TS, "type": "event_msg", "payload": {"type": "token_count"}},
         ]
         full = self.events(recs)
         self.assertEqual([(e["kind"], e["tool"]) for e in full], [
             ("tool_call", "exec_command"), ("tool_result", "exec_command"), ("tool_call", "exec_command"),
             ("tool_result", "exec_command"), ("thinking", None), ("tool_call", "exec_command"),
-            ("tool_result", "exec_command"), ("tool_result", "exec_command")])    # one result per command
+            ("tool_result", "exec_command")])                    # one result per command
         self.assertEqual(full[0]["command"], "ls -la")
         self.assertIn("rg -l", full[2]["command"])         # invalid JSON escape tolerated
-        self.assertEqual(full[-1]["command"], "pwd")         # orphan CommandExecution kept
         prose = self.events(recs, prose=True)
         self.assertEqual([e["kind"] for e in prose], ["tool_call", "tool_call", "tool_call"])
 

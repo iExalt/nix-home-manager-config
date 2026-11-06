@@ -82,12 +82,43 @@ class Search(unittest.TestCase):
     def test_budget_reports_unparsed(self):
         res = self.run_grep(budget=0)
         self.assertEqual(res.parsed, 0)
-        self.assertEqual(res.unparsed, res.prefilter_kept)
+        self.assertEqual(res.prefilter_checked, 0)
+        self.assertEqual(res.unparsed, res.files_considered)
         self.assertGreater(res.unparsed, 0)
 
     def test_project_matches_codex_cwd_and_provider(self):
         res = self.run_grep(providers=("codex",), project="gamma")
         self.assertEqual(sorted(h["session"] for h in res.hits), [T1, T2])
+
+    def test_odd_record_is_reported_not_fatal(self):
+        odd = os.path.join(self.roots.claude, "projects", "-work-odd", "0c0c0c0c-0000-4000-8000-000000000003.jsonl")
+        write_jsonl(odd, [{"type": "user", "uuid": "o1", "message": "widget as a bare string"},
+                          {"type": "attachment", "uuid": "o2", "attachment": "widget"}])
+        res = self.run_grep(providers=("claude",))
+        self.assertIn("0c0c0c0c-0000-4000-8000-000000000003", [h["session"] for h in res.hits])
+        self.assertEqual(res.failures, [])
+        from session_mining import search
+        broken = search._scan((type("F", (), {"path": "/nope", "provider": "claude", "kind": "main",
+                                               "session": "x", "parent": None})(), True, {}, Filter(), False))
+        self.assertEqual(broken[1], [])
+        self.assertIn("/nope", broken[5])
+
+    def test_slow_rg_is_bounded_by_the_budget(self):
+        shim = os.path.join(self.tmp, "bin")
+        os.makedirs(shim)
+        with open(os.path.join(shim, "rg"), "w") as fh:
+            fh.write("#!/bin/sh\nsleep 5\n")
+        os.chmod(os.path.join(shim, "rg"), 0o755)
+        old = os.environ["PATH"]
+        os.environ["PATH"] = shim + os.pathsep + old
+        try:
+            t = time.time()
+            res = self.run_grep(budget=0.5)
+            self.assertLess(time.time() - t, 3)
+            self.assertEqual(res.prefilter_checked, 0)
+            self.assertEqual(res.unparsed, res.files_considered)
+        finally:
+            os.environ["PATH"] = old
 
     def test_self_exclusion(self):
         agents = [PaseoAgent("p-root", "claude", OWNER, "", "", "", {}),

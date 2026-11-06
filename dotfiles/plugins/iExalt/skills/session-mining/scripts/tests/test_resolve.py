@@ -53,7 +53,7 @@ class StoresAndResolve(unittest.TestCase):
             self.assertEqual((c.type, c.id, c.match), ("codex-thread", fx.T1, "exact"))
             self.assertEqual(len(c.files), 2)               # rollout + continuation segment
             self.assertEqual(c.title, "Deploy the gadget")  # envelope stripped
-            self.assertIn("1 spawned child thread(s)", c.notes)
+            self.assertTrue(any(n.startswith("1 spawned child thread(s): " + fx.T2) for n in c.notes))
 
     def test_shared_timestamp_prefix_is_ambiguous(self):
         got = resolve(self.inv, fx.T1[:13])
@@ -159,6 +159,15 @@ class StoresAndResolve(unittest.TestCase):
         r = self.run_cli("show", fx.C1, "--subagents", "--last", "2")
         self.assertEqual(len([l for l in r.stdout.splitlines() if l.startswith("== ")]), 1)
         self.assertIn("6 matching event(s), 2 shown", r.stdout)
+
+    def test_time_bounds(self):
+        import sessions
+        self.assertEqual(sessions._when("2026-11"), "2026-11-01T00:00:00")
+        self.assertEqual(sessions._when("2026-11-02T03:04Z"), "2026-11-02T03:04:00")
+        self.assertRegex(sessions._when("7d"), r"^\d{4}-\d\d-\d\dT")
+        for bad in ("yesterday", "2026-13", "2026-11-02T3"):
+            r = self.run_cli("grep", "x", "--since", bad)
+            self.assertEqual(r.returncode, 2, bad)
 
     @unittest.skipUnless(os.path.exists("/usr/bin/python3"), "no system python")
     def test_cli_on_system_python(self):

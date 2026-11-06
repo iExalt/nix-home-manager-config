@@ -32,6 +32,12 @@ lists every candidate and never picks one silently.
   started. With no Paseo record at all it counts as `agent`, because it was sent by a script.
 - `--basis` on `show` and `grep` prints the rule behind each author.
 
+## What transcripts do not contain
+
+- Codex messages between agents are often sealed: their payload shows as `[encrypted payload]`, and
+  `show` counts them in its footer. The sender's and receiver's own turns are still readable.
+- Claude rewinds and edits leave the abandoned turns in the file.
+
 ## Known misattributions
 
 - Scripted SDK prompts sent to a session with a Paseo record count as human.

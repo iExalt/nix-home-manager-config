@@ -53,6 +53,9 @@ class Result:
     excluded: Dict[str, str] = field(default_factory=dict)       # session -> reason
     live_candidates: List[str] = field(default_factory=list)
     cache_used: Optional[int] = None
+    prefilter_checked: Optional[int] = None
+    unparsed_prefilter: int = 0
+    failures: List[str] = field(default_factory=list)
     elapsed: float = 0.0
 
 
@@ -114,31 +117,50 @@ def rg_pattern(regex: str) -> str:
     return p
 
 
-def prefilter(paths: List[str], regex: Optional[str], literal: Optional[str]) -> Tuple[Optional[Set[str]], str]:
-    """Paths whose raw text may match, via rg -l. (None, reason) when rg is unavailable or rejects
-    the pattern: then every file is parsed."""
+def prefilter(paths: List[str], regex: Optional[str], literal: Optional[str], deadline: Optional[float] = None
+              ) -> Tuple[Optional[Set[str]], int, str]:
+    """Paths whose raw text may match, via rg -l over batches in the given (newest first) order, until
+    the deadline. Returns (kept paths or None when rg is unavailable or rejects the pattern, number of
+    paths checked, note). Paths not checked are neither kept nor ruled out."""
     rg = shutil.which("rg")
     if not rg:
-        return None, "rg not found; parsed every file"
+        return None, 0, "rg not found; parsed every file"
     if literal:
         args = [rg, "-l", "-i", "-F", "--no-messages", "-e", literal]
     elif regex:
         args = [rg, "-l", "-i", "--no-messages", "-e", rg_pattern(regex)]
     else:
-        return None, ""
+        return None, 0, ""
     keep: Set[str] = set()
-    for i in range(0, len(paths), 400):
-        r = subprocess.run(args + ["--"] + paths[i:i + 400], capture_output=True, text=True)
+    checked = 0
+    for i in range(0, len(paths), 200):
+        left = None if deadline is None else deadline - time.time()
+        if left is not None and left <= 0:
+            break
+        batch = paths[i:i + 200]
+        try:
+            r = subprocess.run(args + ["--"] + batch, capture_output=True, text=True, timeout=left)
+        except subprocess.TimeoutExpired:
+            break
         if r.returncode == 2 and not r.stdout:
-            return None, "rg rejected the pattern (%s); parsed every file" % (r.stderr.strip()[:120] or "error")
+            return None, 0, "rg rejected the pattern (%s); parsed every file" % (r.stderr.strip()[:120] or "error")
         keep.update(x for x in r.stdout.splitlines() if x)
-    return keep, ""
+        checked += len(batch)
+    return keep, checked, ""
 
 
 # -- worker --------------------------------------------------------------------------------------
 
 def _scan(args):
-    f, prose, launchers, flt, include_guardian = args
+    """Worker: hits of one file. Never raises: a file that cannot be read is reported, not fatal."""
+    try:
+        return _scan_file(*args)
+    except Exception as e:                              # noqa: BLE001 - one odd file must not end the search
+        f = args[0]
+        return f.path, [], {"failed": 1}, None, None, "%s: %s: %s" % (f.path, type(e).__name__, str(e)[:120])
+
+
+def _scan_file(f, prose, launchers, flt, include_guardian):
     stats: Dict[str, int] = {}
     hits = []
     first_ts = None
@@ -164,7 +186,7 @@ def _scan(args):
                 start = max(0, (m.start() if m else 0) - HIT_TEXT_CAP // 2)
                 e["text"] = e["text"][start:start + HIT_TEXT_CAP]
             hits.append(e)
-    return f.path, hits, stats, first_ts, cwd
+    return f.path, hits, stats, first_ts, cwd, None
 
 
 def cache_hits(cache, flt: Filter, paths: Set[str]):
@@ -248,16 +270,22 @@ def grep(roots: Roots, q: Query, agents: List[PaseoAgent], exclude: Dict[str, st
             cwds[path] = cwd_
         to_parse = [f for f in files if f.path in stale_paths]
     if to_parse and q.prefilter and (q.regex or q.flt.skill):
-        keep, note = prefilter([f.path for f in to_parse], None if q.flt.skill else q.regex,
-                               q.flt.skill.split(":")[-1] if q.flt.skill else None)
+        keep, checked, note = prefilter([f.path for f in to_parse], None if q.flt.skill else q.regex,
+                                        q.flt.skill.split(":")[-1] if q.flt.skill else None,
+                                        time.time() + max(0.0, deadline - time.time()) * 0.7)
         res.prefilter_note = note
         if keep is not None:
-            to_parse = [f for f in to_parse if f.path in keep]
+            res.prefilter_checked = checked
+            unchecked = len(to_parse) - checked
+            to_parse = [f for f in to_parse[:checked] if f.path in keep]
             res.prefilter_kept = len(to_parse)
+            res.unparsed_prefilter = unchecked
     jobs = [(f, q.prose, launchers, q.flt, q.include_guardian) for f in to_parse]
 
     def take(result):
-        path, hits, stats, fts, cwd_ = result
+        path, hits, stats, fts, cwd_, err = result
+        if err:
+            res.failures.append(err)
         res.parsed += 1
         first_ts[path] = fts
         cwds[path] = cwd_
@@ -285,13 +313,16 @@ def grep(roots: Roots, q: Query, agents: List[PaseoAgent], exclude: Dict[str, st
                 break
             done, pending = wait(pending, timeout=left, return_when=FIRST_COMPLETED)
             for fut in done:
-                take(fut.result())
+                try:
+                    take(fut.result())
+                except Exception as e:          # noqa: BLE001 - e.g. a worker killed by the OS
+                    res.failures.append("worker: %s: %s" % (type(e).__name__, str(e)[:120]))
                 nxt = next(it, None)
                 if nxt is not None:
                     pending.add(ex.submit(_scan, nxt))
     finally:
         _stop(ex)
-    res.unparsed = len(to_parse) - res.parsed
+    res.unparsed = len(to_parse) - res.parsed + res.unparsed_prefilter
 
     # Dedup copies of one Claude record (resumed or forked sessions) by uuid; keep the owner's copy.
     best: Dict[Tuple[str, str], Tuple[tuple, dict]] = {}
@@ -335,6 +366,8 @@ def grep(roots: Roots, q: Query, agents: List[PaseoAgent], exclude: Dict[str, st
 def _stop(ex: ProcessPoolExecutor) -> None:
     """Shut the pool down without waiting: on a spent budget, workers still parsing are killed so the
     command returns on time."""
+    # _processes is private; if it ever disappears, shutdown(wait=False) still returns and exit waits
+    # only for the files in flight.
     procs = list((getattr(ex, "_processes", None) or {}).values())
     ex.shutdown(wait=False, cancel_futures=True)
     for p in procs:

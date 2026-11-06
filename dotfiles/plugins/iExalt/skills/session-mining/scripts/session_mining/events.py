@@ -93,7 +93,14 @@ def render(events: Iterable[dict], out: Out, width: int = 160, show_file: bool =
         head = "L%-6d %s %s/%s%s%s " % (e["line"], _hhmm(e.get("ts")), e["author"], e["kind"],
                                         " [%s]" % tag if tag else "",
                                         " (%s)" % e.get("basis") if basis and e.get("basis") else "")
-        if not out.line(head + clip(e.get("command") or e["text"], max(20, width - len(head)))):
+        body = e.get("command") or e["text"]
+        line = head + clip(body, max(20, width - len(head)))
+        if len(line.encode()) + 1 > out.room():
+            # Too big for what is left: show as much as fits rather than dropping the event.
+            room = out.room() - len(head.encode()) - 20
+            if room >= 80:
+                line = head + clip(body, room // 4) + " [clipped]"   # // 4: worst-case UTF-8 width
+        if not out.line(line):
             break
         n += 1
     return n

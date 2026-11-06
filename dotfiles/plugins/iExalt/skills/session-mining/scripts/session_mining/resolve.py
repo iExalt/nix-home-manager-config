@@ -57,7 +57,7 @@ class Inventory:
         if self.db is not None:
             cols = set(db_columns(self.db, "threads"))
             want = [c for c in ("id", "rollout_path", "title", "name", "first_user_message", "archived",
-                                "source", "cwd", "agent_role", "agent_nickname") if c in cols]
+                                "source", "cwd", "agent_role", "agent_nickname", "agent_path") if c in cols]
             for r in self.db.execute("select %s from threads" % ", ".join(want)):
                 self.db_rows[r["id"]] = dict(r)
             try:
@@ -65,6 +65,28 @@ class Inventory:
                     self.spawn_children[r[0]].append(r[1])
             except Exception:
                 pass
+
+    def __del__(self):
+        if getattr(self, "db", None) is not None:
+            self.db.close()
+
+    def descendants(self, tid: str) -> List[str]:
+        """Codex threads spawned by tid, transitively, in spawn order."""
+        out, stack, seen = [], list(reversed(self.spawn_children.get(tid, []))), {tid}
+        while stack:
+            k = stack.pop()
+            if k in seen:
+                continue
+            seen.add(k)
+            out.append(k)
+            stack.extend(reversed(self.spawn_children.get(k, [])))
+        return out
+
+    def parent_of(self, tid: str) -> Optional[str]:
+        """The Codex thread that spawned tid, if any."""
+        if not hasattr(self, "_parents"):
+            self._parents = {k: p for p, kids in self.spawn_children.items() for k in kids}
+        return self._parents.get(tid)
 
     def counts(self) -> str:
         nc = sum(len(v) for v in self.claude.values()) + sum(len(v) for v in self.claude_sub.values())
@@ -93,6 +115,9 @@ class Inventory:
     def codex_thread(self, tid: str, match: str) -> Candidate:
         row = self.db_rows.get(tid) or {}
         title = clean_title(row.get("name") or row.get("title") or row.get("first_user_message") or "")
+        role = row.get("agent_nickname") or row.get("agent_role")
+        if role and role not in title:
+            title = ("%s: %s" % (role, title)) if title else role
         files = sorted(self.codex.get(tid, []), key=lambda f: (f.archived, f.segment or "", f.path))
         c = Candidate("codex-thread", tid, match, title, files)
         if not files and row:
@@ -106,9 +131,13 @@ class Inventory:
         segs = [f for f in files if f.segment]
         if segs:
             c.notes.append("%d continuation segment(s)" % len(segs))
+        parent = self.parent_of(tid)
+        if parent:
+            c.notes.append("sub-agent thread spawned by %s" % parent)
         kids = self.spawn_children.get(tid)
         if kids:
-            c.notes.append("%d spawned child thread(s)" % len(kids))
+            c.notes.append("%d spawned child thread(s): %s%s (show --subagents includes them)" % (
+                len(kids), ", ".join(kids[:5]), " …" if len(kids) > 5 else ""))
         return c
 
     def paseo_agent(self, a, match: str) -> Candidate:
@@ -190,9 +219,9 @@ def resolve(inv: Inventory, ref: str, limit: int = 50) -> List[Candidate]:
     idref = low[6:] if low.startswith("agent-") else low
     if HEXISH_RE.match(idref):
         out = _id_search(inv, idref, limit)
-    # Words such as "added" or "feed" and date fragments look like hex: unless the reference is a
-    # whole uuid, titles are searched too and those matches are labelled "title".
-    if not FULL_UUID_RE.match(idref):
+    # Words such as "added" or "feed" and date fragments look like hex, so titles are searched too
+    # (labelled "title"), unless the ref is a whole uuid or an id of 8+ characters that matched.
+    if not FULL_UUID_RE.match(idref) and not (out and len(idref) >= 8):
         have = {(c.type, c.id) for c in out}
         out += [c for c in _title_search(inv, low, limit) if (c.type, c.id) not in have]
     # A Paseo agent and the provider session it links to are one entity: keep the agent (it carries

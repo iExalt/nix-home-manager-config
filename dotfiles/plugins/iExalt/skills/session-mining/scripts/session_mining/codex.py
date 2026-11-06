@@ -50,7 +50,7 @@ def _ctext(content) -> str:
         if t in ("input_text", "output_text", "text", "Text"):
             out.append(c.get("text", ""))
         elif t == "encrypted_content":
-            out.append("[encrypted payload]")
+            out.append("[encrypted payload]")         # sealed by Codex: the text is not in the file
         elif t in ("input_image", "local_image", "image"):
             out.append("[image]")
     return "\n".join(out)
@@ -147,7 +147,6 @@ def iter_events(path: str, prose: bool = False, launched: Optional[str] = None,
     twins, user_keys = _twins(path)
     user_inputs = 0
     calls: Dict[str, str] = {}
-    open_calls = set()
     metas = 0
     inheriting = False
 
@@ -157,9 +156,10 @@ def iter_events(path: str, prose: bool = False, launched: Optional[str] = None,
     with open(path, "rb") as fh:
         for ln, raw in enumerate(fh, 1):
             head = raw[:300]
-            if prose and (any(t in head for t in PROSE_SKIP_TYPES) or
-                          (b'"item_completed"' in head and b'"UserMessage"' not in head)):
+            if prose and any(t in head for t in PROSE_SKIP_TYPES):
                 continue
+            if b'"item_completed"' in head and b'"UserMessage"' not in head:
+                continue                           # only UserMessage items are used (see below)
             if any(t in head for t in NEVER_TYPES):
                 continue
             try:
@@ -170,8 +170,10 @@ def iter_events(path: str, prose: bool = False, launched: Optional[str] = None,
             if not isinstance(d, dict):
                 continue
             t = d.get("type")
-            p = d.get("payload") or {}
-            pt = p.get("type") if isinstance(p, dict) else None
+            p = d.get("payload")
+            if not isinstance(p, dict):
+                continue
+            pt = p.get("type")
             if t == "session_meta":
                 metas += 1
                 if metas == 2:
@@ -205,12 +207,8 @@ def iter_events(path: str, prose: bool = False, launched: Optional[str] = None,
                         else:
                             yield ev(d, ln, "prompt", "human", text, uuid=it.get("id"),
                                      basis="user_message_without_response_item")
-                    elif k == "CommandExecution" and not prose and not open_calls:
-                        # Inside an open exec/function call its output arrives as that call's result;
-                        # emit CommandExecution only when no call is open (an orphan command).
-                        yield ev(d, ln, "tool_result", "tool", it.get("aggregated_output") or "",
-                                 tool="exec_command", command=_cmd_of(it.get("command")),
-                                 is_error=it.get("status") == "failed" or bool(it.get("exit_code")))
+                    # CommandExecution repeats the output its exec call already returned in
+                    # function_call_output (which follows the call, before this item), so it is not emitted.
                 continue
             if t != "response_item":
                 continue
@@ -231,8 +229,10 @@ def iter_events(path: str, prose: bool = False, launched: Optional[str] = None,
                                       launched):
                     yield e
             elif pt == "agent_message":
-                yield ev(d, ln, "prompt", "agent", _ctext(p.get("content")), uuid=p.get("id"),
-                         basis="inter_agent")
+                text = _ctext(p.get("content"))
+                if "[encrypted payload]" in text:
+                    st["encrypted"] = st.get("encrypted", 0) + 1
+                yield ev(d, ln, "prompt", "agent", text, uuid=p.get("id"), basis="inter_agent")
             elif pt == "reasoning":
                 text = (_items_text(p.get("summary")) + "\n" + _items_text(p.get("content"))).strip()
                 if text:
@@ -240,7 +240,6 @@ def iter_events(path: str, prose: bool = False, launched: Optional[str] = None,
             elif pt in ("function_call", "custom_tool_call"):
                 name = p.get("name")
                 calls[p.get("call_id")] = name
-                open_calls.add(p.get("call_id"))
                 if pt == "function_call":
                     try:
                         args = json.loads(p.get("arguments") or "{}")
@@ -258,7 +257,6 @@ def iter_events(path: str, prose: bool = False, launched: Optional[str] = None,
                     yield ev(d, ln, "tool_call", "assistant", script, tool=tool,
                              command="\n".join(c for c in cmds if isinstance(c, str)) or None, uuid=p.get("id"))
             elif pt in ("function_call_output", "custom_tool_call_output"):
-                open_calls.discard(p.get("call_id"))
                 if prose:
                     continue
                 out = p.get("output")

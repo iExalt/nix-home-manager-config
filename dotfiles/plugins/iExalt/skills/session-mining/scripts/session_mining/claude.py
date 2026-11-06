@@ -167,8 +167,8 @@ def iter_events(path: str, session: Optional[str] = None, in_subagent: Optional[
                 seen.add(u)
             if t == "assistant":
                 seen_assistant = True
-                msg = d.get("message") or {}
-                content = msg.get("content")
+                msg = d.get("message")
+                content = msg.get("content") if isinstance(msg, dict) else msg
                 if isinstance(content, str):
                     content = [{"type": "text", "text": content}]
                 for b in content or []:
@@ -187,7 +187,8 @@ def iter_events(path: str, session: Optional[str] = None, in_subagent: Optional[
                         yield ev(d, ln, "tool_call", "assistant", input_summary(inp), tool=name, command=cmd,
                                  skill=skill, call_id=b.get("id"))
             elif t == "user":
-                content = (d.get("message") or {}).get("content")
+                msg = d.get("message")
+                content = msg.get("content") if isinstance(msg, dict) else msg
                 blocks = content if isinstance(content, list) else None
                 results = [b for b in blocks or [] if isinstance(b, dict) and b.get("type") == "tool_result"]
                 if results:
@@ -210,7 +211,9 @@ def iter_events(path: str, session: Optional[str] = None, in_subagent: Optional[
                 skill = cmd if cmd and cmd not in BUILTIN_SLASH else None
                 yield ev(d, ln, "prompt", author, text, basis=basis, skill=skill)
             elif t == "attachment":
-                a = d.get("attachment") or {}
+                a = d.get("attachment")
+                if not isinstance(a, dict):
+                    continue
                 at = a.get("type")
                 if at in SKIP_ATTACHMENTS:
                     continue

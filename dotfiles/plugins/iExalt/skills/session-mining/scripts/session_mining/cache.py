@@ -62,6 +62,12 @@ class Cache:
             self.con.execute("insert or replace into meta values ('version', ?)", (str(VERSION),))
             self.con.commit()
 
+    def __del__(self):
+        try:
+            self.con.close()
+        except Exception:                                # noqa: BLE001 - already closed or never opened
+            pass
+
     def purge(self) -> None:
         self.con.close()
         for suffix in ("", "-wal", "-shm"):
@@ -153,8 +159,15 @@ class Cache:
 
 
 def _extract(args):
-    """Worker: prose events of one file as cache rows, plus file metadata."""
-    f, launchers = args
+    """Worker: prose events of one file as cache rows, plus file metadata. A file that cannot be read
+    is stored with no rows (and retried when it changes) rather than failing the refresh."""
+    try:
+        return _extract_file(*args)
+    except Exception:                                    # noqa: BLE001
+        return [], None, None, None, False
+
+
+def _extract_file(f, launchers):
     stats: Dict[str, int] = {}
     rows = []
     first_ts = last_ts = None

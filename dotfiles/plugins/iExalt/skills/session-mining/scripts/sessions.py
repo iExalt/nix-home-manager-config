@@ -109,9 +109,27 @@ def _add_filters(sp) -> None:
                     help="tool name, repeatable or comma-separated")
     sp.add_argument("--skill", help="only events invoking this skill (slash command, Skill call, Codex marker)")
     sp.add_argument("--match", help="regex over event text (case-insensitive)")
-    sp.add_argument("--since", help="ISO date/time lower bound (UTC)")
-    sp.add_argument("--until", help="ISO date/time upper bound (UTC, exclusive)")
+    sp.add_argument("--since", type=_when, help="UTC lower bound: YYYY-MM[-DD[THH:MM[:SS]]] or 7d/24h/2w ago")
+    sp.add_argument("--until", type=_when, help="UTC upper bound (exclusive), same forms")
     sp.add_argument("--width", type=int, default=160, help="characters per event line")
+
+
+def _when(v: str) -> str:
+    """A UTC bound: YYYY-MM, YYYY-MM-DD, YYYY-MM-DDTHH:MM[:SS][Z], or relative Nh / Nd / Nw ago."""
+    import re as _re
+    v = v.strip()
+    m = _re.fullmatch(r"(\d+)([hdw])", v)
+    if m:
+        secs = int(m.group(1)) * {"h": 3600, "d": 86400, "w": 604800}[m.group(2)]
+        return time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime(time.time() - secs))
+    for fmt, n in (("%Y-%m-%dT%H:%M:%S", 19), ("%Y-%m-%dT%H:%M", 16), ("%Y-%m-%d", 10), ("%Y-%m", 7)):
+        try:
+            t = time.strptime(v.rstrip("Z")[:n], fmt)
+        except ValueError:
+            continue
+        if len(v.rstrip("Z")) == n:
+            return time.strftime("%Y-%m-%dT%H:%M:%S", t)
+    raise argparse.ArgumentTypeError("expected YYYY-MM, YYYY-MM-DD, YYYY-MM-DDTHH:MM[:SS] (UTC) or Nh/Nd/Nw, got %r" % v)
 
 
 def _line_range(v: str):
@@ -165,6 +183,9 @@ def cmd_show(args, roots: Roots, out: Out) -> int:
     if args.subagents and c.type == "claude-session":
         files += sorted((f for fs in inv.claude_sub.values() for f in fs if f.parent == c.id),
                         key=lambda f: f.mtime)
+    elif args.subagents and c.type == "codex-thread":
+        for kid in inv.descendants(c.id):                  # spawned agents, via the Codex state db
+            files += sorted(inv.codex.get(kid, []), key=lambda f: (f.archived, f.segment or "", f.path))
     if not files:
         out.note("no transcript file for %s %s" % (c.type, c.id))
         return 1
@@ -194,9 +215,13 @@ def cmd_show(args, roots: Roots, out: Out) -> int:
         for _ in gen:                      # count the rest without rendering
             pass
     total = count[0]
-    out.note("%s %s: %d matching event(s), %d shown; %d file(s)%s" % (
+    out.note("%s %s: %d matching event(s), %d shown; %d file(s): %s" % (
         c.type, c.id, total, shown, len(files),
-        "" if multi else ": " + files[0].path))
+        ", ".join(f.path for f in files[:4]) + (" +%d more" % (len(files) - 4) if len(files) > 4 else "")))
+    if multi:
+        out.note("line numbers belong to the file named in the nearest '==' header above them")
+    if stats.get("encrypted"):
+        out.note("%d agent-to-agent payload(s) are encrypted in the transcript and cannot be read" % stats["encrypted"])
     if stats:
         out.note("parse stats: %s" % ", ".join("%s=%d" % kv for kv in sorted(stats.items())))
     return 0
@@ -206,7 +231,9 @@ def _session_title(inv: Inventory, provider: str, sid: str) -> str:
     if provider == "codex":
         row = inv.db_rows.get(sid) or {}
         from session_mining.resolve import clean_title
-        return clean_title(row.get("name") or row.get("title") or "")
+        title = clean_title(row.get("name") or row.get("title") or "")
+        role = row.get("agent_path") or row.get("agent_nickname") or row.get("agent_role")
+        return ("%s: %s" % (role, title) if title else role) if role else title
     if sid in inv.titles:
         return inv.titles[sid]
     for a in inv.paseo:
@@ -239,13 +266,22 @@ def cmd_grep(args, roots: Roots, out: Out) -> int:
     if prose and not args.no_cache and not args.include_guardian:
         from session_mining.cache import Cache
         cache = Cache(args.cache)
-    res = grep(roots, q, inv.paseo, exclude, include_live=args.include_self, cache=cache)
+    try:
+        res = grep(roots, q, inv.paseo, exclude, include_live=args.include_self, cache=cache)
+    finally:
+        if cache is not None:
+            cache.con.close()
     sessions: Dict[tuple, list] = {}
     for h in res.hits:
         sessions.setdefault((h["provider"], h["session"]), []).append(h)
     shown_sessions = 0
     for (prov, sid), hits in sessions.items():
         title = _session_title(inv, prov, sid)
+        sub = inv.claude_sub.get(sid) if prov == "claude" else None
+        if sub:
+            title = ("subagent of %s" % sub[0].parent) + (": " + title if title else "")
+        elif prov == "codex" and inv.parent_of(sid):
+            title = ("sub-agent of %s" % inv.parent_of(sid)) + (": " + title if title else "")
         files = sorted({h["file"] for h in hits})
         head = "== %s %s  %d hit(s)  %s%s" % (prov, sid, len(hits), (hits[0].get("ts") or "")[:16],
                                              "  " + json.dumps(clip(title, 70), ensure_ascii=False) if title else "")
@@ -270,9 +306,13 @@ def cmd_grep(args, roots: Roots, out: Out) -> int:
         cov += ", %d kept by rg prefilter" % res.prefilter_kept
     cov += ", %d parsed directly" % res.parsed
     if res.unparsed:
-        cov += ", %d NOT PARSED (budget %.0f s spent; raise --budget or narrow with --since/--provider)" % (
-            res.unparsed, args.budget)
+        cov += ", %d NOT PARSED (budget %.0f s spent%s; raise --budget, narrow with --since/--provider, or run " \
+               "`cache refresh`); hits may be attributed to a resumed copy" % (
+                   res.unparsed, args.budget, ", %d not even prefiltered" % res.unparsed_prefilter
+                   if res.unparsed_prefilter else "")
     out.note(cov)
+    if res.failures:
+        out.note("FAILED to read %d file(s): %s" % (len(res.failures), "; ".join(res.failures[:3])))
     if res.prefilter_note:
         out.note(res.prefilter_note)
     extra = []
@@ -339,16 +379,18 @@ def _select_sessions(args, inv: Inventory, cache, out: Out):
         rows = [r for r in rows if any(skill_matches(x, args.skill) for x in skills.get((r["provider"], r["session"]), []))]
     authors = _flat(args.text_author) or ["human"]
     texts: Dict[int, list] = {}
-    q = ("select file_id, line, text from events where kind in ('prompt', 'decision') and author in (%s) "
+    q = ("select file_id, line, text, kind from events where kind in ('prompt', 'decision') and author in (%s) "
          "order by file_id, line" % ",".join("?" * len(authors)))
-    for fid, line, text in cache.con.execute(q, authors):
-        texts.setdefault(fid, []).append((line, text))
+    for fid, line, text, kind in cache.con.execute(q, authors):
+        texts.setdefault(fid, []).append((line, text, kind))
     rx = _re.compile(args.query, _re.I) if args.query else None
     out_rows = []
     for r in rows:
         prompts = [t for fid in r["file_ids"] for t in texts.get(fid, [])]
         r["title"] = _session_title(inv, r["provider"], r["session"])
-        r["first"] = prompts[0][1] if prompts else ""
+        typed = [t for t in prompts if t[2] == "prompt"]
+        r["first"] = (typed or prompts)[0][1] if prompts else ""
+        r["parent"] = inv.parent_of(r["session"]) if r["provider"] == "codex" else None
         r["prompts"] = len(prompts)
         r["match"] = None
         if rx is not None:
@@ -373,8 +415,8 @@ def _find_args(sp) -> None:
     sp.add_argument("--skill", help="sessions that invoked this skill")
     sp.add_argument("--provider", action="append", type=_choices(("claude", "codex")))
     sp.add_argument("--project", help="substring of the Claude project dir or Codex cwd")
-    sp.add_argument("--since", help="sessions active at or after this UTC date/time")
-    sp.add_argument("--until", help="sessions started before this UTC date/time")
+    sp.add_argument("--since", type=_when, help="sessions active at or after this UTC time (YYYY-MM[-DD..] or 7d)")
+    sp.add_argument("--until", type=_when, help="sessions started before this UTC time, same forms")
     sp.add_argument("--exclude-session", action="append")
     sp.add_argument("--include-self", action="store_true")
     sp.add_argument("--budget", type=float, default=8.0, help="seconds for indexing changed files (default 8)")
@@ -391,6 +433,8 @@ def cmd_find(args, roots: Roots, out: Out) -> int:
                                                        (r["last_ts"] or "")[5:16], r["prompts"], human_size(r["bytes"]))
         if r["title"]:
             head += "  " + json.dumps(clip(r["title"], 60), ensure_ascii=False)
+        if r.get("parent"):
+            head += "  (sub-agent of %s)" % r["parent"]
         if not out.line(head):
             break
         if r["first"]:
@@ -525,14 +569,16 @@ def main(argv=None) -> int:
     sh.add_argument("--last", type=_positive, help="only the last N matching events")
     sh.add_argument("--basis", action="store_true", help="show why each event got its author")
     sh.add_argument("--prose", action="store_true", help="skip tool output (faster on huge files)")
-    sh.add_argument("--subagents", action="store_true", help="include a Claude session's subagent files")
+    sh.add_argument("--subagents", action="store_true",
+                    help="include spawned agents: Claude subagent files, or Codex child threads (transitively)")
     g = sub.add_parser("grep", parents=[common], help="search every transcript; hits grouped by session, newest first")
     g.add_argument("pattern", nargs="?", help="regex over event text (case-insensitive); optional with --skill etc.")
     _add_filters(g)
     g.add_argument("--provider", action="append", type=_choices(("claude", "codex")), help="claude, codex")
     g.add_argument("--project", help="substring of the Claude project dir or Codex cwd ('/' and '-' are equal)")
     g.add_argument("--full", action="store_true", help="include tool output and thinking (slower)")
-    g.add_argument("--budget", type=float, default=8.0, help="seconds to spend parsing (default 8)")
+    g.add_argument("--budget", type=float, default=8.0,
+                   help="seconds for indexing, prefiltering and parsing (default 8); wall time adds ~0.6 s startup")
     g.add_argument("--per-session", type=int, default=3, help="hits shown per session (default 3)")
     g.add_argument("--sessions-only", action="store_true", help="one line per matching session")
     g.add_argument("--exclude-session", action="append", help="session id to leave out (repeatable)")

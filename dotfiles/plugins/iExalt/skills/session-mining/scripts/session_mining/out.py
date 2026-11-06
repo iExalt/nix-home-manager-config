@@ -35,7 +35,7 @@ class Out:
         self.footer: List[str] = []
 
     def line(self, text: str = "") -> bool:
-        """Buffer one line; returns False once the body alone exceeds the cap (callers may stop early)."""
+        """Buffer one line; returns False if it does not fit (callers may retry shorter or stop)."""
         if self.truncated:
             self.truncated += 1
             return False
@@ -47,6 +47,12 @@ class Out:
         self.body.append(data)
         self.used += len(data)
         return True
+
+    def room(self) -> int:
+        """Body bytes still available before the cap."""
+        if self.truncated:
+            return 0
+        return max(0, self.max_bytes - min(500, self.max_bytes // 3) - self.used)
 
     def note(self, text: str) -> None:
         self.footer.append(text)
