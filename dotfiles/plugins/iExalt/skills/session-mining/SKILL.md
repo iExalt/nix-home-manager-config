@@ -55,7 +55,7 @@ stating coverage. Read the footer before drawing a conclusion: it says what was 
    more, run `manifest --out <file>` and give each shard to one miner subagent with
    [references/miner-brief.md](references/miner-brief.md). Do not let each miner rediscover stores or
    write its own extractor.
-5. **Verify before reporting.** Single-pass miners have been 15–35% precise on judgment questions.
+5. **Verify before reporting.** Single-pass miners have been 15 to 35% precise on judgment questions.
    For findings from miners, re-read each at its `file:line` with `show <ref> --lines N --width 5000`
    (or have a second agent do it) before it reaches the user. For your own reading, check each claim
    against the full event, not the clipped line you first saw.
@@ -75,9 +75,10 @@ no session id in its environment: pass `recall --session <id>`.
 ## Budgets and the cache
 
 Commands that read many files stop at `--budget` seconds (default 8, under Codex's 10 s command
-yield) and report files left unread. The prose cache lives in `~/.cache/session-mining/` (user-only;
-it copies transcript text, secrets included; about 0.6 GB for 14 GB of transcripts). A cold build takes 10–30 s: run `cache refresh` once in
-the background before a large job; later commands only index changed files. `cache purge` deletes it.
+yield) and report files left unread. The prose cache lives in `~/.cache/session-mining/`. It is
+user-only because it copies transcript text, secrets included, and takes about 0.6 GB for 14 GB of
+transcripts. A cold build takes 10 to 30 s, so run `cache refresh` once in the background before a
+large job; later commands index only changed files. `cache purge` deletes it.
 
 ## Limits
 
