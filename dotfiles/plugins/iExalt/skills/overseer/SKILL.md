@@ -52,11 +52,15 @@ releases follow `working-conventions` › Authority; the user's own checkouts
 and machines, including a dirty working tree on a remote host, follow
 `working-conventions` › Workspace and cleanup.
 
-Organize workers as you see fit. One worker per thread is the default; you
-might instead give a final check its own fresh worker, or relaunch a thread
-in a new worker after a crash. Never let two workers run the same thread at
-once. Your context is for coordinating the run, so never implement anything
-yourself, including small fixes outside every thread, and never have a native
+Break down and schedule work to minimize wall-clock time through verified
+integration. Split independent work into parallel threads wherever that
+saves time, accounting for coordination, review and integration costs.
+Prioritize work that unblocks other threads, and keep coupled changes
+together. Respect dependency, approval, resource and spending limits.
+Give each thread one worker; a final check may have its own fresh worker,
+and a crashed worker may be replaced. Never let two workers run the same
+thread at once. Your context is for coordinating the run, so never implement
+anything yourself, including small fixes outside every thread, and never have a native
 subagent, such as one from Claude Code's Agent tool or a Codex spawned agent,
 implement anything for you: you would brief, wait on and check its work in
 your own session, and it dies with your session. Give such work to a worker
