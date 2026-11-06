@@ -12,7 +12,7 @@ let
     "claude@latest"
     "rg@latest"
     "fd@latest"
-    "python@latest"
+    "python[postinstall=python -m pip install PyYAML]@latest"
     "uv@latest"
     "rust[profile=minimal,components=clippy,rustfmt]@latest"
     "dust@latest"
@@ -221,5 +221,8 @@ in
       --remove aqua:codex \
       --remove aqua:openai/codex \
       ${miseToolArgs}
+
+    # Post-install hooks only run for new interpreters; cover existing ones too.
+    run ${pkgs.mise}/bin/mise exec python@latest -- python -m pip install PyYAML
   '';
 }
