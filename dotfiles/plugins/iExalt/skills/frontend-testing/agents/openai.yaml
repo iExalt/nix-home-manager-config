@@ -1,0 +1,4 @@
+interface:
+  display_name: "Frontend Testing"
+  short_description: "Write, fix and prove UI tests that don't flake"
+  default_prompt: "Use $iExalt:frontend-testing to find the root cause of this flaky UI test, fix it without sleeps or retries, and prove the fix with before-and-after counts."

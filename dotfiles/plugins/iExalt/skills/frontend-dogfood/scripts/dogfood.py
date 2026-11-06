@@ -270,45 +270,46 @@ def cmd_release(a):
     print("touch emulation and throttling off")
 
 
-def run_steps(cfg, steps):
+def run_steps(cfg, steps, check=True):
     return remote(cfg, heredoc('"$D/steps.json"', json.dumps(steps)) +
-                  f'\nWS=$(ab get cdp-url)\nuv run -q "$D/touch_probe.py" {probe_args(cfg)}')
-
-
-# What a tap at (x, y) would land on, so a tap that hits an overlay or misses is visible.
-HIT_JS = """(([x, y]) => {
-    const e = document.elementFromPoint(x, y);
-    if (!e) return "nothing";
-    const label = (e.getAttribute("aria-label") || e.innerText || e.value || "").trim().slice(0, 40);
-    return e.tagName.toLowerCase() + (e.id ? "#" + e.id : "") + (label ? ` "${label}"` : "");
-})(%s)"""
+                  f'\nWS=$(ab get cdp-url)\nuv run -q "$D/touch_probe.py" {probe_args(cfg)}', check=check)
 
 
 def cmd_tap(a):
     cfg = load(a.session)
     try:
         x, y = (float(v) for v in a.target.split(","))
+        tap = {"tap": [x, y]}
     except ValueError:
         # get box reports viewport coordinates without scrolling, so bring the target into view first.
         t = shlex.quote(a.target)
-        out = remote(cfg, f"ab scrollintoview {t} >/dev/null; ab --json get box {t}").strip().splitlines()
+        # Read the box until two reads agree, so a target that is still moving or scrolling
+        # doesn't hand touch_probe a stale box.
+        out = remote(cfg, f"ab scrollintoview {t} >/dev/null; prev=; for i in $(seq 20); do "
+                          f"b=$(ab --json get box {t}); [ \"$b\" = \"$prev\" ] && break; prev=$b; done; "
+                          f"echo \"$b\"").strip().splitlines()
         box = json.loads(out[-1])
         if not box.get("success"):
             sys.exit(f"no box for {a.target}: {box.get('error')}")
         b = box["data"]
-        x, y = b["x"] + b["width"] / 2, b["y"] + b["height"] / 2
-    tap = {"tap": [round(x), round(y)]}
+        # touch_probe waits for the element in this box to hold still and be on top, taps its
+        # centre, and fails if the touch lands outside it, all in one CDP session.
+        tap = {"tap": [b["x"] + b["width"] / 2, b["y"] + b["height"] / 2],
+               "box": [b["x"], b["y"], b["width"], b["height"]]}
+        if not a.target.startswith("@"):
+            tap["selector"] = a.target
     step = {"time_to_change": a.until, "after": tap, "timeout": a.timeout} if a.until else tap
-    check = {"eval": "[innerWidth, innerHeight]"}
-    hit = {"eval": HIT_JS % json.dumps(tap["tap"])}
-    lines = [json.loads(l) for l in run_steps(cfg, {"steps": [check, hit]}).splitlines() if l.startswith("{")]
-    (w, h), landed = lines[0]["result"], lines[1]["result"]
-    if not (0 <= x < w and 0 <= y < h):
-        sys.exit(f"not tapped: {a.target} centre {tap['tap']} is outside the {w}x{h} viewport")
-    last = json.loads(run_steps(cfg, {"steps": [step]}).strip().splitlines()[-1])
+    # A refused or missed tap exits 3 with an "error" line; report it rather than the raw output.
+    lines = [json.loads(l) for l in run_steps(cfg, {"steps": [step]}, check=False).splitlines()
+             if l.startswith("{")]
+    last = lines[-1] if lines else {"error": "touch_probe printed no result"}
+    if "error" in last:
+        sys.exit(f"{a.target}: {last['error']}")
+    waited = f" after waiting {last['waited_ms']} ms for it to settle" if last.get("waited_ms") else ""
     ms = last.get("ms")
-    took = f"; change after {ms:.0f} ms" if ms is not None else f"; no change within {a.timeout} ms"
-    print(f"tapped {a.target} at {tap['tap'][0]},{tap['tap'][1]}, landing on {landed}" + (took if a.until else ""))
+    took = f"; change after {ms:.0f} ms" if ms is not None else f"; no change within {a.timeout} ms (unknown: check the predicate)"
+    x, y = last["tapped"]
+    print(f"tapped {a.target} at {x},{y}{waited}, landing on {last['landed']}" + (took if a.until else ""))
 
 
 def cmd_steps(a):
