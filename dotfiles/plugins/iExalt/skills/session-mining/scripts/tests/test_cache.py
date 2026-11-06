@@ -58,7 +58,7 @@ class CacheTests(unittest.TestCase):
     def test_incremental_refresh_and_caps(self):
         self.assertEqual(self.cache.refresh(self.files(), {}), [])
         rows = dict(self.cache.con.execute("select kind || '/' || author, length(text) from events"))
-        self.assertEqual(rows["tool_call/assistant"], 1000)          # tool-call text capped
+        self.assertGreater(rows["tool_call/assistant"], 3000)        # commands kept whole
         self.assertEqual(rows["prompt/injected"], 300)               # injected text kept only as a stub
         self.assertEqual(self.cache.stale(self.files()), ([], []))
         write_jsonl(self.owner, [cu("r1", OWNER, "find the flaky widget test", "2026-01-01T00:00:00Z"),
@@ -96,6 +96,46 @@ class CacheTests(unittest.TestCase):
         self.assertEqual(len(self.cache.refresh(self.files(), {}, deadline=0)), 1)
         res = self.hits("widget")
         self.assertEqual(len(res.hits), 1)
+
+    def test_text_past_the_cap_is_read_directly(self):
+        from session_mining import cache as cache_mod
+        write_jsonl(self.owner, [{"type": "assistant", "uuid": "big", "sessionId": OWNER,
+                                  "timestamp": "2026-01-01T00:00:00Z",
+                                  "message": {"content": [{"type": "text",
+                                                           "text": "x " * cache_mod.CAP + "needle at the end"}]}}])
+        self.cache.refresh(self.files(), {})
+        self.assertEqual(self.cache.con.execute("select sum(truncated) from events").fetchone()[0], 1)
+        res = self.hits("needle")
+        self.assertEqual(len(res.hits), 1)
+        self.assertEqual(res.cache_truncated, 1)
+        self.assertEqual(res.parsed, 1)
+
+    def test_concurrent_refreshes_do_not_collide(self):
+        other = Cache(self.cache.path)
+        from session_mining.cache import _Lock
+        held = _Lock(self.cache.path + ".lock")
+        self.assertTrue(held.acquire(None))
+        self.assertEqual(len(other.refresh(self.files(), {}, deadline=__import__("time").time() + 0.3)), 1)
+        held.release()                                              # waited, gave up, reported stale
+        self.assertEqual(other.refresh(self.files(), {}), [])
+        self.assertEqual(self.cache.refresh(self.files(), {}), [])  # the second writer sees the first's rows
+        self.assertEqual(self.cache.status()["files"], 1)
+        other.con.close()
+
+    def test_older_cache_shape_is_rebuilt(self):
+        import sqlite3
+        path = os.path.join(self.tmp, "old", "index.sqlite")
+        os.makedirs(os.path.dirname(path))
+        con = sqlite3.connect(path)
+        con.executescript("create table meta (key text primary key, value text); insert into meta values "
+                          "('version', '1'); create table files (id integer primary key, path text unique); "
+                          "create table events (file_id integer, text text);")
+        con.commit()
+        con.close()
+        c = Cache(path)
+        self.assertEqual(c.refresh(self.files(), {}), [])
+        self.assertGreater(c.status()["events"], 0)
+        c.con.close()
 
     def test_session_rows(self):
         self.cache.refresh(self.files(), {})

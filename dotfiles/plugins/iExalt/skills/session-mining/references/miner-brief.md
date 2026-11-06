@@ -15,10 +15,11 @@ files: return your findings as text in your final reply.
 **Your sessions:** shard [N] of `[manifest path]` (rows where the first column is [N]). Read only
 those sessions.
 
-**Tools:** `S="python3 -I [skill dir]/scripts/sessions.py"`. Use `$S show <session> [filters]` to
-read a session, with `--author human`, `--kind`, `--match <regex>`, `--lines A:B` and `--last N` to
-narrow it. Do not `cat`, `head`, `jq` or `rg` the JSONL files themselves: a single line can be
-megabytes.
+**Tools:** define `sm() { python3 -I "[skill dir]/scripts/sessions.py" "$@"; }` (works in zsh and
+bash). Use `sm show <session> [filters]` to read a session, with `--author human`, `--kind`,
+`--match <regex>`, `--lines A:B`, `--last N` and `--subagents` to narrow or widen it, and
+`--width 5000` to quote a whole event. Do not `cat`, `head`, `jq` or `rg` the JSONL files
+themselves: a single line can be megabytes.
 
 **Scratch:** if you need files, use `[scratch dir]/shard-[N]/` only.
 

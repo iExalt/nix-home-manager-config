@@ -53,6 +53,7 @@ class Result:
     excluded: Dict[str, str] = field(default_factory=dict)       # session -> reason
     live_candidates: List[str] = field(default_factory=list)
     cache_used: Optional[int] = None
+    cache_truncated: int = 0
     prefilter_checked: Optional[int] = None
     unparsed_prefilter: int = 0
     failures: List[str] = field(default_factory=list)
@@ -117,8 +118,15 @@ def rg_pattern(regex: str) -> str:
     return p
 
 
-def prefilter(paths: List[str], regex: Optional[str], literal: Optional[str], deadline: Optional[float] = None
-              ) -> Tuple[Optional[Set[str]], int, str]:
+# Raw markers of records the readers turn into decision events, whose text ("answered: …", "plan
+# approved", "interrupted the turn") is synthesized and so cannot be prefiltered by the pattern.
+DECISION_MARKERS = ('"answers":', "User has approved", "doesn't want to proceed", "User rejected tool use",
+                    "Dismissed by user", '"turn_aborted"', "send_user_message_question_reply",
+                    "Answers to your questions", '"verified_answer"')
+
+
+def prefilter(paths: List[str], regex: Optional[str], literal: Optional[str], deadline: Optional[float] = None,
+              decisions: bool = False) -> Tuple[Optional[Set[str]], int, str]:
     """Paths whose raw text may match, via rg -l over batches in the given (newest first) order, until
     the deadline. Returns (kept paths or None when rg is unavailable or rejects the pattern, number of
     paths checked, note). Paths not checked are neither kept nor ruled out."""
@@ -129,6 +137,9 @@ def prefilter(paths: List[str], regex: Optional[str], literal: Optional[str], de
         args = [rg, "-l", "-i", "-F", "--no-messages", "-e", literal]
     elif regex:
         args = [rg, "-l", "-i", "--no-messages", "-e", rg_pattern(regex)]
+        if decisions:
+            for m in DECISION_MARKERS:
+                args += ["-e", re.escape(m)]
     else:
         return None, 0, ""
     keep: Set[str] = set()
@@ -190,9 +201,12 @@ def _scan_file(f, prose, launchers, flt, include_guardian):
 
 
 def cache_hits(cache, flt: Filter, paths: Set[str]):
-    """(event, path, file first_ts, file cwd) for cached events of the given files that pass flt."""
+    """Yields (event, path, file first_ts, file cwd) for cached events of the given files that pass
+    flt, then a final (None, truncated_paths, None, None): files with a row cut at the cache cap that
+    passes every filter but the regex, which the caller must read directly."""
     sql = ("select f.path, f.provider, f.session, f.first_ts, f.cwd, e.line, e.ts, e.kind, e.author, e.skill, "
-           "e.tool, e.uuid, e.rec_session, e.basis, e.call_id, e.text from events e join files f on f.id = e.file_id")
+           "e.tool, e.uuid, e.rec_session, e.basis, e.call_id, e.command, e.truncated, e.text "
+           "from events e join files f on f.id = e.file_id")
     where, args = [], []
     if flt.authors:
         where.append("e.author in (%s)" % ",".join("?" * len(flt.authors)))
@@ -204,15 +218,24 @@ def cache_hits(cache, flt: Filter, paths: Set[str]):
         where.append("e.skill is not null")
     if where:
         sql += " where " + " and ".join(where)
-    for (path, prov, sess, fts, cwd, line, ts, kind, author, skill, tool, uuid, rec, basis, cid,
+    truncated: Set[str] = set()
+    for (path, prov, sess, fts, cwd, line, ts, kind, author, skill, tool, uuid, rec, basis, cid, cmd, cut,
          text) in cache.con.execute(sql, args):
-        if path not in paths or (flt.regex is not None and not flt.regex.search(text or "")):
+        if path not in paths:
+            continue
+        if cut and flt.regex is not None and not flt.regex.search(text or ""):
+            if Filter(flt.authors, flt.kinds, flt.tools, flt.skill, None, flt.since, flt.until)(
+                    {"author": author, "kind": kind, "tool": tool, "skill": skill, "ts": ts, "text": ""}):
+                truncated.add(path)
+            continue
+        if flt.regex is not None and not flt.regex.search(text or ""):
             continue
         e = {"provider": prov, "session": sess, "file": path, "line": line, "ts": ts, "kind": kind,
-             "author": author, "text": text or "", "tool": tool, "command": text if kind == "tool_call" else None,
-             "skill": skill, "uuid": uuid, "rec_session": rec, "basis": basis, "call_id": cid}
+             "author": author, "text": text or "", "tool": tool, "command": cmd, "skill": skill, "uuid": uuid,
+             "rec_session": rec, "basis": basis, "call_id": cid}
         if flt(e):
             yield e, path, fts, cwd
+    yield None, truncated, None, None
 
 
 # -- main ----------------------------------------------------------------------------------------
@@ -263,16 +286,23 @@ def grep(roots: Roots, q: Query, agents: List[PaseoAgent], exclude: Dict[str, st
         stale_paths = {f.path for f in stale}
         wanted = {f.path for f in files}
         cached_paths = wanted - stale_paths
-        res.cache_used = len(cached_paths)
+        cached = []
         for h, path, fts, cwd_ in cache_hits(cache, q.flt, cached_paths):
-            raw_hits.append((h, path))
+            if h is None:
+                res.cache_truncated = len(path)
+                stale_paths |= path                # text past the cache cap: read these files directly
+                continue
+            cached.append((h, path))
             first_ts[path] = fts
             cwds[path] = cwd_
+        raw_hits.extend((h, p) for h, p in cached if p not in stale_paths)
+        res.cache_used = len(cached_paths - stale_paths)
         to_parse = [f for f in files if f.path in stale_paths]
     if to_parse and q.prefilter and (q.regex or q.flt.skill):
         keep, checked, note = prefilter([f.path for f in to_parse], None if q.flt.skill else q.regex,
                                         q.flt.skill.split(":")[-1] if q.flt.skill else None,
-                                        time.time() + max(0.0, deadline - time.time()) * 0.7)
+                                        time.time() + max(0.0, deadline - time.time()) * 0.7,
+                                        decisions=not q.flt.kinds or "decision" in q.flt.kinds)
         res.prefilter_note = note
         if keep is not None:
             res.prefilter_checked = checked

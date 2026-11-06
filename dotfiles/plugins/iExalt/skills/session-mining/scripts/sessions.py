@@ -302,6 +302,8 @@ def cmd_grep(args, roots: Roots, out: Out) -> int:
     cov = "files: %d considered" % res.files_considered
     if res.cache_used is not None:
         cov += ", %d answered from the cache" % res.cache_used
+        if res.cache_truncated:
+            cov += " (%d with text past the cache cap read directly)" % res.cache_truncated
     if res.prefilter_kept is not None:
         cov += ", %d kept by rg prefilter" % res.prefilter_kept
     cov += ", %d parsed directly" % res.parsed
@@ -428,6 +430,8 @@ def cmd_find(args, roots: Roots, out: Out) -> int:
     inv = Inventory(roots)
     cache = _open_cache(args, inv, roots, out, args.budget)
     rows, total = _select_sessions(args, inv, cache, out)
+    import re as _re
+    rx = _re.compile(args.query, _re.I) if args.query else None
     for r in rows[: args.limit]:
         head = "== %s %s  %s..%s  %d prompt(s)  %s" % (r["provider"], r["session"], (r["first_ts"] or "")[:16],
                                                        (r["last_ts"] or "")[5:16], r["prompts"], human_size(r["bytes"]))
@@ -440,7 +444,9 @@ def cmd_find(args, roots: Roots, out: Out) -> int:
         if r["first"]:
             out.line("   first: " + json.dumps(clip(r["first"], args.width - 12), ensure_ascii=False))
         if r["match"] and r["match"] != "title" and r["match"] != r["first"]:
-            out.line("   match: " + json.dumps(clip(r["match"], args.width - 12), ensure_ascii=False))
+            m = rx.search(r["match"]) if rx is not None else None
+            text = r["match"] if not m or m.start() < 40 else "…" + r["match"][m.start() - 30:]
+            out.line("   match: " + json.dumps(clip(text, args.width - 12), ensure_ascii=False))
     out.note("sessions: %d matched of %d; %d listed (--limit %d)" % (len(rows), total, min(len(rows), args.limit),
                                                                      args.limit))
     out.note("use `show <id>` to read one, `manifest` to split many across agents")
@@ -535,7 +541,8 @@ def cmd_cache(args, roots: Roots, out: Out) -> int:
         left = cache.refresh(files, paseo_launchers(inv.paseo), deadline=time.time() + args.budget if args.budget else None)
         out.note("refreshed in %.1f s; %d file(s) still unindexed" % (time.time() - t, len(left)))
     st = cache.status()
-    out.line("cache %s: %d files, %d events, %s" % (st["path"], st["files"], st["events"], human_size(st["bytes"])))
+    out.line("cache %s: %d files, %d events, %s%s" % (st["path"], st["files"], st["events"], human_size(st["bytes"]),
+                                                    ", %d file(s) failed to parse" % st["failed"] if st["failed"] else ""))
     return 0
 
 
@@ -587,7 +594,7 @@ def main(argv=None) -> int:
     g.add_argument("--no-prefilter", action="store_true", help="parse every file instead of rg -l candidates")
     g.add_argument("--basis", action="store_true", help="show why each hit got its author")
     g.add_argument("--no-cache", action="store_true", help="read transcripts directly instead of the prose cache")
-    g.add_argument("--cache", help="cache file (default $SESSION_MINING_CACHE or ~/.cache/session-mining/index.sqlite)")
+    g.add_argument("--cache", help="cache file (default index.sqlite in $SESSION_MINING_CACHE or ~/.cache/session-mining)")
     fd = sub.add_parser("find", parents=[common], help="list sessions by title, prompt text, skill, project, date")
     _find_args(fd)
     fd.add_argument("--limit", type=int, default=30)

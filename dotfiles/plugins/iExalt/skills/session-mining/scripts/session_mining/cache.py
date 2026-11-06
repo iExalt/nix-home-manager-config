@@ -19,9 +19,11 @@ from typing import Dict, Iterable, List, Optional, Tuple
 from .reader import file_events
 from .stores import Roots, SessionFile, claude_files, codex_files
 
-VERSION = 1     # bump when readers or the stored shape change: the cache rebuilds
-CAPS = {"tool_call": 1000, "injected": 300, "human": 20000}
-DEFAULT_CAP = 8000
+VERSION = 4     # bump when readers or the stored shape change: the cache rebuilds
+# Injected text (skill bodies, AGENTS.md) is kept only as a stub: it repeats in every session. Other
+# text is kept whole up to CAP; rows cut there are flagged, and grep reads those files directly.
+INJECTED_CAP = 300
+CAP = 32000
 
 
 def default_path() -> str:
@@ -35,15 +37,38 @@ create table if not exists meta (key text primary key, value text);
 create table if not exists files (
     id integer primary key, path text unique, provider text, kind text, session text, parent text,
     project text, cwd text, size integer, mtime real, first_ts text, last_ts text, guardian integer,
-    events integer);
+    events integer, failed integer);
 create table if not exists events (
     file_id integer, line integer, ts text, kind text, author text, skill text, tool text, uuid text,
-    rec_session text, basis text, call_id text, text text);
+    rec_session text, basis text, call_id text, command text, truncated integer, text text);
 create index if not exists events_file on events(file_id);
 create index if not exists events_author on events(author, kind);
 create index if not exists events_skill on events(skill) where skill is not null;
 create index if not exists files_session on files(session);
+create index if not exists events_truncated on events(file_id) where truncated = 1;
 """
+
+
+class _Lock:
+    def __init__(self, path: str):
+        self.fh = os.fdopen(os.open(path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600), "a")
+
+    def acquire(self, deadline: Optional[float]) -> bool:
+        import fcntl
+        while True:
+            try:
+                fcntl.flock(self.fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                return True
+            except OSError:
+                if deadline is not None and time.time() >= deadline:
+                    self.fh.close()
+                    return False
+                time.sleep(0.1)
+
+    def release(self) -> None:
+        import fcntl
+        fcntl.flock(self.fh, fcntl.LOCK_UN)
+        self.fh.close()
 
 
 class Cache:
@@ -51,16 +76,26 @@ class Cache:
         self.path = path or default_path()
         d = os.path.dirname(self.path)
         os.makedirs(d, mode=0o700, exist_ok=True)
-        self.con = sqlite3.connect(self.path, timeout=30)
+        old_mask = os.umask(0o077)                      # the cache copies transcript text
+        try:
+            self.con = sqlite3.connect(self.path, timeout=30)
+            self.con.execute("pragma journal_mode=wal")
+        finally:
+            os.umask(old_mask)
         os.chmod(self.path, 0o600)
-        self.con.execute("pragma journal_mode=wal")
         self.con.execute("pragma synchronous=normal")
-        self.con.executescript(SCHEMA)
+        self.con.execute("create table if not exists meta (key text primary key, value text)")
         v = self.con.execute("select value from meta where key='version'").fetchone()
         if v is None or int(v[0]) != VERSION:
-            self.con.executescript("delete from events; delete from files;")
+            # Another shape (older or newer): rebuild from scratch rather than migrate. Dropping
+            # tables would keep the file at its old size, so empty it and reclaim the space.
+            self.con.executescript("drop table if exists events; drop table if exists files;")
+            self.con.execute("vacuum")
+            self.con.executescript(SCHEMA)
             self.con.execute("insert or replace into meta values ('version', ?)", (str(VERSION),))
             self.con.commit()
+        else:
+            self.con.executescript(SCHEMA)
 
     def __del__(self):
         try:
@@ -89,10 +124,25 @@ class Cache:
                 workers: Optional[int] = None) -> List[SessionFile]:
         """Index stale files newest first until the deadline; returns the files still stale."""
         stale, gone = self.stale(files)
-        if gone:
-            self._delete(gone)
-        if not stale:
+        if not stale and not gone:
             return []
+        # One writer at a time: concurrent miners wait for the lock (up to the deadline), then see
+        # what the other process indexed.
+        lock = _Lock(self.path + ".lock")
+        if not lock.acquire(deadline):
+            return stale
+        try:
+            stale, gone = self.stale(files)
+            if gone:
+                self._delete(gone)
+                self.con.commit()
+            if not stale:
+                return []
+            return self._refresh(stale, launchers, deadline, workers)
+        finally:
+            lock.release()
+
+    def _refresh(self, stale, launchers, deadline, workers):
         stale.sort(key=lambda f: -f.mtime)
         done_paths = set()
         if len(stale) <= 4:
@@ -139,23 +189,24 @@ class Cache:
             self.con.execute("delete from files where id in (%s)" % q, chunk)
 
     def _store(self, f: SessionFile, extracted) -> None:
-        rows, first_ts, last_ts, cwd, guardian = extracted
+        rows, first_ts, last_ts, cwd, guardian, failed = extracted
         old = self.con.execute("select id from files where path=?", (f.path,)).fetchone()
         if old:
             self._delete([old[0]])
         cur = self.con.execute(
             "insert into files (path, provider, kind, session, parent, project, cwd, size, mtime, first_ts, "
-            "last_ts, guardian, events) values (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            "last_ts, guardian, events, failed) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (f.path, f.provider, f.kind, f.session, f.parent, f.project, cwd, f.size, f.mtime, first_ts, last_ts,
-             int(guardian), len(rows)))
+             int(guardian), len(rows), int(failed)))
         fid = cur.lastrowid
-        self.con.executemany("insert into events values (%s)" % ",".join("?" * 12), [(fid,) + r for r in rows])
+        self.con.executemany("insert into events values (%s)" % ",".join("?" * 14), [(fid,) + r for r in rows])
 
     # -- reads -----------------------------------------------------------------------------------
     def status(self) -> dict:
-        n_files, n_events = self.con.execute("select count(*), coalesce(sum(events),0) from files").fetchone()
+        n_files, n_events, n_failed = self.con.execute(
+            "select count(*), coalesce(sum(events),0), coalesce(sum(failed),0) from files").fetchone()
         size = sum(os.path.getsize(self.path + s) for s in ("", "-wal") if os.path.exists(self.path + s))
-        return {"path": self.path, "files": n_files, "events": n_events, "bytes": size}
+        return {"path": self.path, "files": n_files, "events": n_events, "failed": n_failed, "bytes": size}
 
 
 def _extract(args):
@@ -163,8 +214,8 @@ def _extract(args):
     is stored with no rows (and retried when it changes) rather than failing the refresh."""
     try:
         return _extract_file(*args)
-    except Exception:                                    # noqa: BLE001
-        return [], None, None, None, False
+    except Exception:                                    # noqa: BLE001 - counted via files.failed
+        return [], None, None, None, False, True
 
 
 def _extract_file(f, launchers):
@@ -184,11 +235,15 @@ def _extract_file(f, launchers):
         if ts:
             first_ts = first_ts or ts
             last_ts = ts
-        text = (e.get("command") or e["text"]) if e["kind"] == "tool_call" else e["text"]
-        cap = CAPS.get(e["kind"]) or CAPS.get(e["author"]) or DEFAULT_CAP
+        text = e["text"] or ""
+        cap = INJECTED_CAP if e["author"] == "injected" else CAP
+        cut = int(len(text) > cap and e["author"] != "injected")
+        cmd = e.get("command")
+        if cmd and cmd in text[:cap]:
+            cmd = None                                  # already in the text (Bash input, exec script)
         rows.append((e["line"], ts, e["kind"], e["author"], e.get("skill"), e.get("tool"), e.get("uuid"),
-                     e.get("rec_session"), e.get("basis"), e.get("call_id"), (text or "")[:cap]))
-    return rows, first_ts, last_ts, cwd, bool(stats.get("guardian_skipped"))
+                     e.get("rec_session"), e.get("basis"), e.get("call_id"), cmd, cut, text[:cap]))
+    return rows, first_ts, last_ts, cwd, bool(stats.get("guardian_skipped")), False
 
 
 def session_rows(cache: "Cache", providers=("claude", "codex"), since: Optional[str] = None,

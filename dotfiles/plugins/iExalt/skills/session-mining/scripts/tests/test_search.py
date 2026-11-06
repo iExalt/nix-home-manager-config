@@ -79,6 +79,17 @@ class Search(unittest.TestCase):
             self.assertEqual(res.prefilter_kept, 1, pat)
             self.assertEqual([h["session"] for h in res.hits], [FORK], pat)
 
+    def test_prefilter_keeps_files_with_decisions(self):
+        path = os.path.join(self.roots.claude, "projects", "-work-alpha", OWNER + ".jsonl")
+        write_jsonl(path, [
+            {"type": "assistant", "uuid": "q1", "sessionId": OWNER, "timestamp": "2026-01-01T00:00:00Z",
+             "message": {"content": [{"type": "tool_use", "id": "ask", "name": "AskUserQuestion", "input": {}}]}},
+            {"type": "user", "uuid": "q2", "sessionId": OWNER, "timestamp": "2026-01-01T00:00:01Z",
+             "toolUseResult": {"answers": {"Which?": "B"}},
+             "message": {"content": [{"type": "tool_result", "tool_use_id": "ask", "content": "ok"}]}}])
+        res = self.run_grep(regex="answered", providers=("claude",))      # the text is synthesized
+        self.assertEqual([h["kind"] for h in res.hits], ["decision"])
+
     def test_budget_reports_unparsed(self):
         res = self.run_grep(budget=0)
         self.assertEqual(res.parsed, 0)

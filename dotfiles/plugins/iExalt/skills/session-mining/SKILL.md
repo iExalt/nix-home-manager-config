@@ -76,7 +76,7 @@ no session id in its environment: pass `recall --session <id>`.
 
 Commands that read many files stop at `--budget` seconds (default 8, under Codex's 10 s command
 yield) and report files left unread. The prose cache lives in `~/.cache/session-mining/` (user-only;
-it copies transcript text, secrets included). A cold build takes 10–30 s: run `cache refresh` once in
+it copies transcript text, secrets included; about 0.6 GB for 14 GB of transcripts). A cold build takes 10–30 s: run `cache refresh` once in
 the background before a large job; later commands only index changed files. `cache purge` deletes it.
 
 ## Limits

@@ -8,9 +8,13 @@ from typing import List, Optional
 DEFAULT_MAX_BYTES = 8000
 
 
+_CONTROL = {i: " " for i in range(32)}
+_CONTROL[127] = " "
+
+
 def clip(text: str, n: int) -> str:
-    """One-line preview: whitespace collapsed, cut to n characters with an ellipsis."""
-    t = " ".join((text or "").split())
+    """One-line preview: control characters and whitespace collapsed, cut to n characters."""
+    t = " ".join((text or "").translate(_CONTROL).split())
     return t if len(t) <= n else t[: max(0, n - 1)] + "…"
 
 
