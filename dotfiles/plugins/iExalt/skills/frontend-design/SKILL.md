@@ -121,8 +121,9 @@ screenshots of named states at each width (1440, 820, and 375 by default; widths
 touch context), reduced-motion and 200%-zoom passes on the first (key) state, a Tab walk to a target
 control, and HTTP, console, and overflow problems. Install its browser once with
 `mise exec -- uv run <skill-dir>/scripts/browser_check.py --install-browser`; `--help` lists the
-options. Script the app-specific interactions separately. Give transient states (posting, slow
-loads) a URL or fixture switch so they stay on screen long enough to capture.
+options. Script the app-specific interactions separately, and write any that become automated
+tests following `iExalt:frontend-testing`: wait on state the app announces, never on time. Give transient
+states (posting, slow loads) a URL or fixture switch so they stay on screen long enough to capture.
 
 - **Widths:** desktop (about 1440px), tablet (about 820px), and phone (about 375px), plus any width
   where the layout changes. Check 200% zoom on key screens.

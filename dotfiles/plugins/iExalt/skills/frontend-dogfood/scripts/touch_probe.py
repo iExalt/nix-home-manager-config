@@ -25,7 +25,12 @@ Leave those out while a hold is running: Chrome clears emulation when the
 client that set it detaches, so a steps run that sets touch would switch the
 hold's touch emulation off on exit. Taps still land without them. Set them only
 for a standalone run with no hold. Each step is one of
-  {"tap": [x, y]}
+  {"tap": [x, y]}                                    reports what the touch landed on
+  {"tap": [x, y], "box": [x, y, w, h], "selector": css, "quiet": 150, "settle_timeout": 2000}
+      waits until the element (the one `selector` matches, else the one filling the box that
+      agent-browser's `get box` reported) has
+      held still for `quiet` ms and is on top, taps its centre, and fails if the touch landed
+      outside it. It sees only DOM rects: motion drawn inside a canvas is invisible to it.
   {"drag": [x1, y1, x2, y2], "ms": 300}             one finger, 16 ms per move
   {"pinch": [cx, cy, start_gap, end_gap], "ms": 300}  two fingers, horizontal
   {"wheel": [x, y, delta_y], "ctrl": false}          ctrl=true stands in for trackpad pinch
@@ -34,7 +39,8 @@ for a standalone run with no hold. Each step is one of
   {"screenshot": "/path.png"}                        CSS-pixel size; use agent-browser's
                                                      screenshot for full resolution
   {"time_to_change": "js predicate", "after": <tap|drag|wheel step>, "timeout": 3000}
-Coordinates are CSS pixels in the viewport. Each step prints one JSON line.
+Coordinates are CSS pixels in the viewport. Each step prints one JSON line. A tap that is
+refused or misses prints a line with "error" and exits with status 3.
 """
 import argparse
 import base64
@@ -109,11 +115,132 @@ def glide(cdp, starts, ends, ms):
     touch(cdp, "touchEnd", [])
 
 
+class TapError(Exception):
+    """A tap that was refused before touching, or that landed outside its target."""
+
+
+# Scripts below run as single expressions, never top-level declarations: every evaluation shares
+# one realm, so a second `const` of the same name would throw.
+DESCRIBE_JS = """(e => {
+    if (!e) return "nothing";
+    const label = (e.getAttribute?.("aria-label") || e.innerText || e.value || "").trim().slice(0, 40);
+    return e.tagName.toLowerCase() + (e.id ? "#" + e.id : "") + (label ? ` "${label}"` : "");
+})"""
+
+# Find the element that fills the box agent-browser reported, then wait, frame by frame, until it
+# has held still for `quiet` ms and nothing covers its centre. Falls back to timers when the tab
+# is hidden and animation frames stop.
+SETTLE_JS = """((describe, watchLanding, [bx, by, bw, bh], selector, quiet, timeout) => new Promise(resolve => {
+    const near = (r) => Math.abs(r.x - bx) <= 1 && Math.abs(r.y - by) <= 1 &&
+                        Math.abs(r.width - bw) <= 1 && Math.abs(r.height - bh) <= 1;
+    const CONTROL = "a[href], button, input, select, textarea, summary, label, [role], [tabindex]";
+    const same = (r) => Math.abs(r.width - bw) <= 1 && Math.abs(r.height - bh) <= 1;
+    const stack = document.elementsFromPoint(bx + bw / 2, by + bh / 2);
+    // The element that fills the box; if it has moved since the box was read, the topmost
+    // element of the same size under the box's centre.
+    const find = () => {
+        // A CSS selector names the element exactly; @refs and other locators only have the box.
+        if (selector) {
+            try { const q = document.querySelectorAll(selector); if (q.length === 1) return q[0]; }
+            catch (_) { selector = null; }
+        }
+        const here = document.elementsFromPoint(bx + bw / 2, by + bh / 2);
+        // Prefer a control over a same-size layer above it, such as a transparent scrim.
+        const pick = (test) => {
+            const fits = here.filter(e => test(e.getBoundingClientRect()));
+            return fits.find(e => e.matches(CONTROL)) || fits[0];
+        };
+        return pick(near) || pick(same);
+    };
+    let el = find();
+    if (!el) {
+        const top = stack[0], r = top && top.getBoundingClientRect();
+        return resolve({error: `no element fills the box [${[bx, by, bw, bh].map(Math.round)}]` +
+            (r ? `; topmost is ${describe(top)} at [${[r.x, r.y, r.width, r.height].map(Math.round)}]` : "") +
+            "; it moved or was re-rendered after its box was read, so try again"});
+    }
+    const start = performance.now();
+    let last = "", since = start;
+    const tick = () => {
+        const now = performance.now();
+        if (!el.isConnected) {
+            // A re-render replaced the node; follow its replacement if one fills the same box.
+            const next = find();
+            if (!next) return resolve({error: `${describe(el)} was removed before the tap`});
+            el = next;
+        }
+        const r = el.getBoundingClientRect();
+        const key = [r.x, r.y, r.width, r.height].join();
+        if (key !== last) { last = key; since = now; }
+        const x = r.x + r.width / 2, y = r.y + r.height / 2;
+        const hit = document.elementFromPoint(x, y);
+        if (now - since >= quiet && hit && el.contains(hit)) {
+            if (!(x >= 0 && y >= 0 && x < innerWidth && y < innerHeight))
+                return resolve({error: `${describe(el)} is outside the ${innerWidth}x${innerHeight} viewport`});
+            window.__tapTarget = el;
+            window.__tapRect = [r.x, r.y, r.width, r.height];
+            watchLanding();  // in the same evaluation, so nothing runs between settling and arming
+            return resolve({x, y, waited_ms: Math.round(now - start)});
+        }
+        if (now - start > timeout) return resolve({error: `${describe(el)} ` + (now - since < quiet
+            ? `was still moving after ${timeout} ms` : `stayed covered by ${describe(hit)}`)});
+        if (document.hidden) setTimeout(tick, 16); else requestAnimationFrame(tick);
+    };
+    tick();
+}))(""" + DESCRIBE_JS.replace("%", "%%") + """, () => LANDING_JS, %s, %s, %s, %s)"""
+
+# Record what the touch actually landed on, at the moment it landed.
+LANDING_JS = """(describe => {
+    const target = window.__tapTarget || null, box = window.__tapRect;
+    window.__landed = null;
+    // A re-render can swap the node between settling and the touch; a replacement in the same
+    // place counts as the target.
+    const replaced = (e) => {
+        const r = e.getBoundingClientRect();
+        return !target.isConnected && [r.x, r.y, r.width, r.height].every((v, i) => Math.abs(v - box[i]) <= 1);
+    };
+    const record = e => {
+        if (window.__landed === null) window.__landed = {on: describe(e.target),
+            inside: target ? target.contains(e.target) || replaced(e.target) : null};
+    };
+    for (const type of ["touchstart", "pointerdown"])
+        addEventListener(type, record, {capture: true, once: true, passive: true});
+    return true;
+})(""" + DESCRIBE_JS + ")"
+
+
+# Settling arms the landing record itself (see SETTLE_JS).
+SETTLE_JS = SETTLE_JS.replace("LANDING_JS", LANDING_JS.replace("%", "%%"))
+
+
+def run_tap(cdp, step):
+    x, y = step["tap"]
+    cdp.evaluate("window.__tapTarget = null, window.__tapRect = null")
+    info = {}
+    if "box" in step:
+        settled = cdp.evaluate(SETTLE_JS % (json.dumps(step["box"]), json.dumps(step.get("selector")),
+                                            step.get("quiet", 150), step.get("settle_timeout", 2000)))
+        if "error" in settled:
+            raise TapError("not tapped: " + settled["error"])
+        x, y, info["waited_ms"] = settled["x"], settled["y"], settled["waited_ms"]
+    else:
+        w, h = cdp.evaluate("[innerWidth, innerHeight]")
+        if not (0 <= x < w and 0 <= y < h):
+            raise TapError(f"not tapped: {round(x)},{round(y)} is outside the {w}x{h} viewport")
+        cdp.evaluate(LANDING_JS)
+    touch(cdp, "touchStart", [(x, y)])
+    touch(cdp, "touchEnd", [])
+    landed = cdp.evaluate("window.__landed") or {"on": "nothing (no touchstart or pointerdown fired)",
+                                                  "inside": False if "box" in step else None}
+    info.update(tapped=[round(x), round(y)], landed=landed["on"])
+    if landed["inside"] is False:
+        raise TapError(f"tapped but missed: the touch at {round(x)},{round(y)} landed on {landed['on']}")
+    return info
+
+
 def run_gesture(cdp, step):
     if "tap" in step:
-        x, y = step["tap"]
-        touch(cdp, "touchStart", [(x, y)])
-        touch(cdp, "touchEnd", [])
+        return run_tap(cdp, step)
     elif "drag" in step:
         x1, y1, x2, y2 = step["drag"]
         glide(cdp, [(x1, y1)], [(x2, y2)], step.get("ms", 300))
@@ -128,6 +255,7 @@ def run_gesture(cdp, step):
                                               "modifiers": 2 if step.get("ctrl") else 0})
     else:
         raise ValueError(f"not a gesture: {step}")
+    return {}
 
 
 def emulate(cdp, touch_on, cpu):
@@ -165,14 +293,15 @@ def run_step(cdp, step):
         with open(step["screenshot"], "wb") as fh:
             fh.write(base64.b64decode(data))
     elif "time_to_change" in step:
+        # The clock starts at the touch event's timestamp, so a tap's settle wait isn't counted.
         cdp.evaluate(TIMER_JS % json.dumps(step["time_to_change"]))
-        run_gesture(cdp, step["after"])
+        out.update(run_gesture(cdp, step["after"]))
         deadline = time.time() + step.get("timeout", 3000) / 1000
         while time.time() < deadline and cdp.evaluate("window.__probe.dt") is None:
             time.sleep(0.01)
         out["ms"] = cdp.evaluate("window.__probe.dt")
     else:
-        run_gesture(cdp, step)
+        out.update(run_gesture(cdp, step))
     return out
 
 
@@ -198,7 +327,11 @@ def main():
                 spec = json.load(fh)
         emulate(cdp, spec.get("touch", False), spec.get("cpu", 1))
         for step in spec["steps"]:
-            print(json.dumps(run_step(cdp, step)), flush=True)
+            try:
+                print(json.dumps(run_step(cdp, step)), flush=True)
+            except TapError as e:
+                print(json.dumps({"step": step, "error": str(e)}), flush=True)
+                sys.exit(3)
 
 
 if __name__ == "__main__":
