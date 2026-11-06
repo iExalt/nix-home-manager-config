@@ -111,7 +111,7 @@ can be worthwhile goals themselves. The decision to surface is whether that
 framework programme now takes priority over the first result that unblocks the
 application. An increasing estimate helps, but so does saying what gets delayed.
 
-### childhood-redux and DirPlayer
+### A game recreation and DirPlayer
 
 The initial native-player proposal included an early vertical slice. Adding
 global-state removal led to a substantial session-ownership programme before
