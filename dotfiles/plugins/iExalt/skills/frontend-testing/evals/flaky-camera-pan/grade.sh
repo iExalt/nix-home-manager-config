@@ -2,6 +2,7 @@
 # grade.sh ARM_DIR -> one line of rubric results. Copies the arm's app.js, index.html and
 # test_select.py into a fresh copy of the original fixture (so the original conftest, delays and
 # throttle apply), then runs 30 times at the default delay and 30 at the holdout (300-3000 ms).
+command -v rg >/dev/null && command -v mise >/dev/null || { echo "grade.sh needs rg and mise (with uv)" >&2; exit 2; }
 here=${0:A:h}; arm=${1:A}; fx=$here/fixture; g=$(mktemp -d)/graded
 cp -R $fx $g; cp $arm/app.js $arm/index.html $arm/test_select.py $g/
 d=$($here/count.sh $g 30); h=$($here/count.sh $g 30 300-3000)

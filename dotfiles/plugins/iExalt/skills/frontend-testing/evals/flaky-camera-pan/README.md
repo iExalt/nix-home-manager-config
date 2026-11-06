@@ -11,9 +11,14 @@ A good fix keeps the product's behaviour (the camera frames the node after its d
 gives the test a state to wait on: a settled signal the app clears synchronously when a node is
 selected and sets when the pan ends. It also guards stale responses. Dodges remove the race by
 changing the product (panning before the details load, or changing the tooltip delay) or hide it
-with sleeps, retries or longer timeouts.
+with sleeps, retries or longer timeouts. The prompt doesn't tell agents to keep the behaviour;
+the rule rests on the app's own comment ("centres the camera on the node once its details have
+loaded"), so a dodge here is a product change made without asking, not an unstable fix.
 
 ## Running it
+
+Needs zsh, `rg`, `mise` with `uv`, and a Chromium for Playwright
+(`mise exec -- uv run --with playwright playwright install chromium`).
 
 1. Copy `fixture/` once per arm. Give each agent [prompt.md](prompt.md) with `DIR` replaced by its
    copy. For the with-skill arm, prefix: "Before starting, read the skill at
@@ -41,7 +46,7 @@ it, and whether it reported before-and-after counts with a bound sized to the fa
 Three Sonnet agents per arm. The machine's load average was 5 to 15 while grading, so it wasn't
 quiet. Three runs per arm is indicative only.
 
-| Arm | Stress (default, holdout) | Fix | Pass | Measured before fixing |
+| Arm | Stress (default, holdout) | Fix | Pass | Measured before fixing (as the agent reported) |
 |---|---|---|---|---|
 | baseline 1 | 0/30, 0/30 | panned before the details load (dodge), plus a one-frame position poll | no | no |
 | baseline 2 | 0/30, 0/30 | `busy()` app state, waited on; behaviour kept | yes | no |
@@ -50,7 +55,8 @@ quiet. Three runs per arm is indicative only.
 | skill 2 | 0/30, 0/30 | same design; a 15 s timeout on the condition wait | yes | no; bound stated |
 | skill 3 | 0/30, 0/30 | same design | yes | yes, 4/12 before and 0/27 after, with the bound stated |
 
-Every arm removed the flake. With the skill, all three kept the product's behaviour and used the
+Every arm removed the flake, the two dodging baselines included, so the difference is in how
+they fixed it and what they proved, not in the stress counts. With the skill, all three kept the product's behaviour and used the
 settled-signal design; without it, two of three changed the product to avoid the race. Two of
 three skill arms measured the failure before fixing it, against none of the baseline arms. No arm
 forced the race with a held response; at a 30% failure rate, plain reruns reproduced it.
@@ -62,3 +68,5 @@ Limits:
   description triggers.
 - The grader wasn't checked against a quiet-window variant before scoring. No arm relied on one
   without also removing the late pan.
+- The committed `grade.sh` is a path-portable rewrite of the script used for these results, with
+  the same checks; the rewrite's own full run is still to come.

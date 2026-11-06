@@ -42,8 +42,10 @@ exposed, so treat a flake as a defect report, not noise.
 - Never use `force: true`, `dispatchEvent`, or coordinate clicks and taps to get past an
   actionability error; the error is the finding. When a coordinate tap is unavoidable (canvas,
   native views), first check that the target is stable and is what `elementFromPoint` or a fresh
-  UI dump reports at that point. On a canvas that check sees only the canvas, so poll the app's
-  own position API or wait for its settled signal instead.
+  UI dump reports at that point. On a canvas that check sees only the canvas, so wait for the
+  app's settled signal, then read the position from the app's API and tap at once. Polling
+  positions until they match is only a quiet-window heuristic: it passes before a late move
+  starts.
 - Take a fresh snapshot or UI dump after every navigation, reload or re-render; element refs
   from an earlier snapshot go stale.
 - Make the inputs deterministic: fixed ids and seeds wherever order or geometry depends on them,
