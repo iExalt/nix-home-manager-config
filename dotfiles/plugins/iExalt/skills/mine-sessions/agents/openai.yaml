@@ -1,0 +1,4 @@
+interface:
+  display_name: "Mine Sessions"
+  short_description: "Search and read past Claude Code and Codex sessions without flooding context"
+  default_prompt: "Use $iExalt:mine-sessions to find the past sessions where I asked for this, read the relevant parts, and report what you found with file:line citations and coverage."

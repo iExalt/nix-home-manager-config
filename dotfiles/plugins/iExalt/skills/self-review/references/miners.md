@@ -43,7 +43,7 @@ notes, then the `how` line from the config.
 - **meetings**: talks and demos the subject gave: title, date, audience size if listed, and the
   transcript timestamp range of the segment. Record praise said in the meeting with its timestamp.
 - **docs**: slides, design docs, decision records and runbooks the subject wrote, with dates.
-- **sessions**: use the session-mining skill; record shipped outcomes, not process.
+- **sessions**: use the mine-sessions skill; record shipped outcomes, not process.
 
 ## Peer mode
 

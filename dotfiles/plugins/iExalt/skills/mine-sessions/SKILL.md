@@ -1,9 +1,9 @@
 ---
-name: session-mining
+name: mine-sessions
 description: "Search, mine, read or audit past Claude Code and Codex session history: find sessions where the user asked for something, used a skill or hit a problem; read a session from a uuid, codex://threads link, Paseo id or title; split many sessions across miner subagents; and recover your own session's state after compaction. Use whenever a task says past/previous/other sessions, transcripts, threads, chat history, \"search history\", \"mine\", or names a session to read."
 ---
 
-# Session Mining
+# Mine sessions
 
 Past sessions are 10+ GB of JSONL in several formats. Raw `rg`, `jq`, `head` and `sed` on them flood
 context (one line can be megabytes), confuse injected text with what the user typed, and miss
