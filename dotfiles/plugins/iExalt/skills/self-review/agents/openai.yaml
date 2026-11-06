@@ -1,0 +1,4 @@
+interface:
+  display_name: "Self Review"
+  short_description: "Write evidence-backed self and peer reviews, and keep a brag log"
+  default_prompt: "Use $iExalt:self-review to mine my work for this review period, ask me what the evidence misses, and draft my review with every claim linked."
