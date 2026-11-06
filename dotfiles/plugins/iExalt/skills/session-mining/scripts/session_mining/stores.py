@@ -10,6 +10,7 @@ import json
 import os
 import re
 import sqlite3
+import urllib.parse
 from dataclasses import dataclass, field
 from typing import Dict, Iterator, List, Optional
 
@@ -130,7 +131,8 @@ def codex_db(roots: Roots) -> Optional[sqlite3.Connection]:
         return None
     for mode in ("ro", None):
         try:
-            uri = "file:%s?mode=ro" % path if mode else "file:%s?immutable=1" % path
+            base = "file:" + urllib.parse.quote(os.path.abspath(path))
+            uri = base + ("?mode=ro" if mode else "?immutable=1")
             con = sqlite3.connect(uri, uri=True, timeout=2)
             con.row_factory = sqlite3.Row
             con.execute("select 1 from threads limit 1")

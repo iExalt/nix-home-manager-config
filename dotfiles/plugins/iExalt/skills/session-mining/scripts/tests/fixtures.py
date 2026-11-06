@@ -67,7 +67,7 @@ def make_roots(tmp=None):
     rows = [
         (T1, f1, '<paseo-system version="1" kind="agent-message">Deploy the gadget</paseo-system>', None,
          "", 0, "vscode", "/tmp/demo"),
-        (T2, f2, "Gadget teardown", None, "", 0, "cli", "/tmp/demo"),
+        (T2, f2, "Gadget teardown: feed added to nix/home config", None, "", 0, "cli", "/tmp/demo"),
         (T_GUARD, fg, "Guardian review gadget", None, "", 0, '{"subagent":{"other":"guardian"}}', "/tmp/demo"),
         (T_ARCH, fa, "Old archived thread", None, "", 1, "cli", "/tmp/demo"),
         ("01a0ffff-0000-7000-8000-000000000000", "/nowhere/rollout.jsonl", "Lost thread", None, "", 0, "cli", "/"),

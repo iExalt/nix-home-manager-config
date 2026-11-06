@@ -90,6 +90,11 @@ class StoresAndResolve(unittest.TestCase):
         self.assertNotIn(fx.T_GUARD, [g[1] for g in got])
         self.assertEqual(self.ids("widget pipeline"), [("claude-session", fx.C2, "title")])
 
+    def test_hex_looking_words_and_slashes_search_titles(self):
+        self.assertIn(("codex-thread", fx.T2, "title"), self.ids("added"))
+        self.assertIn(("codex-thread", fx.T2, "title"), self.ids("feed"))
+        self.assertEqual(self.ids("nix/home"), [("codex-thread", fx.T2, "title")])
+
     def test_path_resolves_to_owner(self):
         path = [f.path for f in claude_files(self.roots) if f.kind == "subagent"][0]
         self.assertEqual(self.ids(path), [("claude-subagent", fx.AGENT, "path")])
@@ -101,9 +106,18 @@ class StoresAndResolve(unittest.TestCase):
             o.line("x" * 50)
         o.note("coverage line")
         o.close()
-        body, _, tail = buf.getvalue().partition("[output capped")
-        self.assertLessEqual(len(body.encode()), 300)
-        self.assertIn("# coverage line", tail)
+        text = buf.getvalue()
+        self.assertLessEqual(len(text.encode()), 400)       # 400 is the floor
+        self.assertIn("[output capped", text)
+        self.assertTrue(text.endswith("# coverage line\n"))
+        buf = io.StringIO()
+        o = Out(500, buf)
+        for i in range(20):
+            o.line("y" * 30)
+        for i in range(10):
+            o.note("footer %d " % i + "z" * 60)              # footer-heavy: body yields, total holds
+        o.close()
+        self.assertLessEqual(len(buf.getvalue().encode()), 500)
 
     def run_cli(self, *args, python=sys.executable):
         homes = ["--claude-home", self.homes[0], "--codex-home", self.homes[1], "--paseo-home", self.homes[2]]
@@ -113,9 +127,11 @@ class StoresAndResolve(unittest.TestCase):
         r = self.run_cli("resolve", fx.T1[:13])
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertIn("AMBIGUOUS: 2 candidates", r.stdout)
-        r = self.run_cli("--max-bytes", "200", "stores")
-        self.assertEqual(r.returncode, 0, r.stderr)
-        self.assertIn("output capped", r.stdout)
+        for args in (("--max-bytes", "400", "stores"), ("stores", "--max-bytes", "400")):
+            r = self.run_cli(*args)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertIn("output capped", r.stdout)
+            self.assertLessEqual(len(r.stdout.encode()), 400)
 
     @unittest.skipUnless(os.path.exists("/usr/bin/python3"), "no system python")
     def test_cli_on_system_python(self):

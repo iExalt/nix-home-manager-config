@@ -23,31 +23,60 @@ def human_size(n: int) -> str:
 
 
 class Out:
+    """Buffers the body, then writes body + cap note + footer within max_bytes in total.
+    Footer lines (coverage) are kept in preference to body lines; each is clipped to 400 bytes."""
+
     def __init__(self, max_bytes: int = DEFAULT_MAX_BYTES, stream=None):
-        self.max_bytes = max(200, int(max_bytes))
+        self.max_bytes = max(400, int(max_bytes))
         self.stream = stream or sys.stdout
+        self.body: List[bytes] = []
         self.used = 0
-        self.truncated = 0          # lines dropped after the cap
+        self.truncated = 0          # body lines dropped
         self.footer: List[str] = []
 
     def line(self, text: str = "") -> bool:
-        """Write one line; returns False once the cap is reached (callers may stop early)."""
-        data = text + "\n"
-        size = len(data.encode("utf-8", "replace"))
-        if self.truncated or self.used + size > self.max_bytes:
+        """Buffer one line; returns False once the body alone exceeds the cap (callers may stop early)."""
+        if self.truncated:
             self.truncated += 1
             return False
-        self.stream.write(data)
-        self.used += size
+        data = (text + "\n").encode("utf-8", "replace")
+        if self.used + len(data) > self.max_bytes:
+            self.truncated += 1
+            return False
+        self.body.append(data)
+        self.used += len(data)
         return True
 
     def note(self, text: str) -> None:
         self.footer.append(text)
 
     def close(self, extra: Optional[str] = None) -> None:
-        if self.truncated:
-            self.stream.write("[output capped at %d bytes; %d more line(s) not shown; narrow the query or "
-                              "raise --max-bytes]\n" % (self.max_bytes, self.truncated))
-        for f in self.footer + ([extra] if extra else []):
-            self.stream.write("# " + f + "\n")
-        self.stream.flush()
+        foot = b"".join(_clip_bytes("# " + f, 400) for f in self.footer + ([extra] if extra else []))
+        foot = foot[: self.max_bytes // 2]
+        body = list(self.body)
+        def cap_note(n):
+            return ("[output capped at %d bytes; %d more line(s) not shown; narrow the query or raise "
+                    "--max-bytes]\n" % (self.max_bytes, n)).encode()
+        room = self.max_bytes - len(foot)
+        dropped = self.truncated
+        size = sum(map(len, body))
+        while body and size + (len(cap_note(dropped)) if dropped else 0) > room:
+            size -= len(body.pop())
+            dropped += 1
+        out = b"".join(body) + (cap_note(dropped) if dropped else b"") + foot
+        self.truncated = dropped
+        w = getattr(self.stream, "buffer", None)
+        if w is not None:
+            self.stream.flush()
+            w.write(out)
+            w.flush()
+        else:
+            self.stream.write(out.decode("utf-8", "replace"))
+            self.stream.flush()
+
+
+def _clip_bytes(text: str, n: int) -> bytes:
+    b = text.encode("utf-8", "replace")
+    if len(b) > n - 1:
+        b = b[: n - 4].decode("utf-8", "ignore").encode() + "…".encode()
+    return b + b"\n"

@@ -15,6 +15,8 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from session_mining.out import DEFAULT_MAX_BYTES, Out, clip, human_size  # noqa: E402
+from session_mining.events import AUTHORS, KINDS, render  # noqa: E402
+from session_mining.reader import Filter, file_events, paseo_launchers  # noqa: E402
 from session_mining.resolve import Inventory, entity_keys, resolve  # noqa: E402
 from session_mining.stores import (Roots, claude_files, codex_db, codex_db_path, codex_files,  # noqa: E402
                                    paseo_agents)
@@ -96,6 +98,66 @@ def cmd_resolve(args, roots: Roots, out: Out) -> int:
     return 0 if cands else 1
 
 
+def _add_filters(sp) -> None:
+    sp.add_argument("--author", action="append", choices=AUTHORS, help="repeatable")
+    sp.add_argument("--kind", action="append", choices=KINDS, help="repeatable")
+    sp.add_argument("--tool", action="append", help="tool name, repeatable")
+    sp.add_argument("--skill", help="only events invoking this skill (slash command, Skill call, Codex marker)")
+    sp.add_argument("--match", help="regex over event text (case-insensitive)")
+    sp.add_argument("--since", help="ISO date/time lower bound (UTC)")
+    sp.add_argument("--until", help="ISO date/time upper bound (UTC, exclusive)")
+    sp.add_argument("--width", type=int, default=160, help="characters per event line")
+
+
+def _filter(args) -> Filter:
+    return Filter(args.author, args.kind, args.tool, args.skill, args.match, args.since, args.until)
+
+
+def cmd_show(args, roots: Roots, out: Out) -> int:
+    inv = Inventory(roots)
+    cands = resolve(inv, args.ref)
+    if len(entity_keys(cands)) != 1:
+        for c in cands[:20]:
+            _cand_lines(out, c)
+        out.note("show needs exactly one session; %d matched %r. Use resolve to pick one."
+                 % (len(entity_keys(cands)), args.ref))
+        return 1
+    c = cands[0].links[0] if cands[0].links else cands[0]
+    files = list(c.files)
+    if args.subagents and c.type == "claude-session":
+        files += sorted((f for fs in inv.claude_sub.values() for f in fs if f.parent == c.id),
+                        key=lambda f: f.mtime)
+    if not files:
+        out.note("no transcript file for %s %s" % (c.type, c.id))
+        return 1
+    flt = _filter(args)
+    launchers = paseo_launchers(inv.paseo)
+    lo, hi = args.lines or (1, None)
+    shown = total = 0
+    stats = {}
+    tail = []
+    for f in files:
+        evs = (e for e in file_events(f, prose=args.prose, launchers=launchers, stats=stats)
+               if e["line"] >= lo and (hi is None or e["line"] <= hi))
+        for e in evs:
+            if not flt(e):
+                continue
+            total += 1
+            if args.last:
+                tail.append(e)
+                tail = tail[-args.last:]
+            else:
+                shown += render([e], out, args.width, show_file=False)
+    if args.last:
+        shown = render(tail, out, args.width, show_file=False)
+    out.note("%s %s: %d matching event(s), %d shown; files: %s" % (
+        c.type, c.id, total, shown, ", ".join("%s (%d B)" % (f.path, f.size) for f in files[:3])
+        + (" +%d more" % (len(files) - 3) if len(files) > 3 else "")))
+    if stats:
+        out.note("parse stats: %s" % ", ".join("%s=%d" % kv for kv in sorted(stats.items())))
+    return 0
+
+
 def _cand_json(c) -> dict:
     return {"type": c.type, "id": c.id, "match": c.match, "title": c.title, "notes": c.notes,
             "files": [{"path": f.path, "size": f.size, "archived": f.archived, "segment": f.segment}
@@ -104,22 +166,35 @@ def _cand_json(c) -> dict:
 
 
 def main(argv=None) -> int:
-    p = argparse.ArgumentParser(prog="sessions.py", description=__doc__.split("\n")[0])
-    p.add_argument("--max-bytes", type=int, default=DEFAULT_MAX_BYTES, help="output cap (default %(default)s)")
-    p.add_argument("--claude-home", help="default ~/.claude (or $SESSION_MINING_CLAUDE_HOME)")
-    p.add_argument("--codex-home", help="default $CODEX_HOME or ~/.codex")
-    p.add_argument("--paseo-home", help="default $PASEO_HOME or ~/.paseo")
+    # Global options are accepted before or after the subcommand (agents tend to put them last).
+    common = argparse.ArgumentParser(add_help=False)
+    common.add_argument("--max-bytes", type=int, default=argparse.SUPPRESS,
+                        help="output cap in bytes, footer included (default %d)" % DEFAULT_MAX_BYTES)
+    common.add_argument("--claude-home", default=argparse.SUPPRESS, help="default ~/.claude "
+                        "(or $SESSION_MINING_CLAUDE_HOME)")
+    common.add_argument("--codex-home", default=argparse.SUPPRESS, help="default $CODEX_HOME or ~/.codex")
+    common.add_argument("--paseo-home", default=argparse.SUPPRESS, help="default $PASEO_HOME or ~/.paseo")
+    p = argparse.ArgumentParser(prog="sessions.py", description=__doc__.split("\n")[0], parents=[common])
     sub = p.add_subparsers(dest="cmd", required=True)
-    sub.add_parser("stores", help="list transcript stores with counts, sizes and date ranges")
-    r = sub.add_parser("resolve", help="map an id, id prefix/suffix, codex:// link, Paseo id, path or title "
+    sub.add_parser("stores", parents=[common], help="list transcript stores with counts, sizes and date ranges")
+    r = sub.add_parser("resolve", parents=[common], help="map an id, id prefix/suffix, codex:// link, Paseo id, path or title "
                                        "fragment to sessions and files")
     r.add_argument("ref")
     r.add_argument("--json", action="store_true")
+    sh = sub.add_parser("show", parents=[common], help="compact view of one session: one line per event with its file line")
+    sh.add_argument("ref")
+    _add_filters(sh)
+    sh.add_argument("--lines", type=lambda v: tuple(int(x) if x else None for x in v.split(":")),
+                    help="physical line range FROM:TO in the transcript file(s)")
+    sh.add_argument("--last", type=int, help="only the last N matching events")
+    sh.add_argument("--prose", action="store_true", help="skip tool output (faster on huge files)")
+    sh.add_argument("--subagents", action="store_true", help="include a Claude session's subagent files")
     args = p.parse_args(argv)
-    roots = Roots.from_env(args.claude_home, args.codex_home, args.paseo_home)
-    out = Out(args.max_bytes)
+    roots = Roots.from_env(getattr(args, "claude_home", None), getattr(args, "codex_home", None),
+                           getattr(args, "paseo_home", None))
+    out = Out(getattr(args, "max_bytes", DEFAULT_MAX_BYTES))
     try:
-        return {"stores": cmd_stores, "resolve": cmd_resolve}[args.cmd](args, roots, out)
+        return {"stores": cmd_stores, "resolve": cmd_resolve, "show": cmd_show}[args.cmd](args, roots, out)
     except BrokenPipeError:
         return 0
     finally:

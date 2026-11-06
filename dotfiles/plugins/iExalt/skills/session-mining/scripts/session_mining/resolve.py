@@ -164,10 +164,17 @@ def normalize_ref(ref: str) -> str:
     return r
 
 
+FULL_UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+
+
+def looks_like_path(r: str) -> bool:
+    return r.startswith(("/", "~", "./", "../")) or r.endswith(".jsonl")
+
+
 def resolve(inv: Inventory, ref: str, limit: int = 50) -> List[Candidate]:
     r = normalize_ref(ref)
     # A transcript path: report the session it belongs to.
-    if os.path.sep in r or r.endswith(".jsonl"):
+    if looks_like_path(r):
         p = os.path.realpath(os.path.expanduser(r))
         for fs in list(inv.claude.values()) + list(inv.claude_sub.values()) + list(inv.codex.values()):
             for f in fs:
@@ -179,45 +186,52 @@ def resolve(inv: Inventory, ref: str, limit: int = 50) -> List[Candidate]:
                     return [inv.claude_session(f.session, "path")]
         return []
     low = r.lower()
-    if low.startswith("agent-"):
-        low = low[6:]
     out: List[Candidate] = []
-    if HEXISH_RE.match(low):
-        for sid in inv.claude:
-            m = _id_match(sid, low)
-            if m:
-                out.append(inv.claude_session(sid, m))
-        for aid in inv.claude_sub:
-            m = _id_match(aid, low)
-            if m:
-                out.append(inv.claude_subagent(aid, m))
-        tids = set(inv.codex) | set(inv.db_rows)
-        for tid in tids:
-            m = _id_match(tid, low)
-            if m:
-                out.append(inv.codex_thread(tid, m))
-        for seg, tid in inv.codex_segment.items():
-            m = _id_match(seg, low)
-            if m and tid not in {c.id for c in out}:
-                out.append(inv.codex_thread(tid, m + " (segment id)"))
-        for a in inv.paseo:
-            m = _id_match(a.id.lower(), low)
-            if m:
-                out.append(inv.paseo_agent(a, m))
-        # Paseo records that point at a provider session we matched explain where that session came from.
-        if len(out) <= limit:
-            ids = {c.id for c in out}
-            for a in inv.paseo:
-                if a.session in ids and a.id not in ids:
-                    out.append(inv.paseo_agent(a, "provider-session"))
-    else:
-        out = _title_search(inv, low, limit)
+    idref = low[6:] if low.startswith("agent-") else low
+    if HEXISH_RE.match(idref):
+        out = _id_search(inv, idref, limit)
+    # Words such as "added" or "feed" and date fragments look like hex: unless the reference is a
+    # whole uuid, titles are searched too and those matches are labelled "title".
+    if not FULL_UUID_RE.match(idref):
+        have = {(c.type, c.id) for c in out}
+        out += [c for c in _title_search(inv, low, limit) if (c.type, c.id) not in have]
     # A Paseo agent and the provider session it links to are one entity: keep the agent (it carries
     # the Paseo title and nests the session) and drop the duplicate standalone session candidate.
     linked = {(l.type, l.id) for c in out for l in c.links}
     out = [c for c in out if c.type == "paseo-agent" or (c.type, c.id) not in linked]
     rank = {"exact": 0, "path": 0, "prefix": 1, "suffix": 2, "provider-session": 3, "title": 4}
     out.sort(key=lambda c: (rank.get(c.match.split(" ")[0], 5), c.type, c.id))
+    return out
+
+
+def _id_search(inv: Inventory, low: str, limit: int) -> List[Candidate]:
+    out: List[Candidate] = []
+    for sid in inv.claude:
+        m = _id_match(sid, low)
+        if m:
+            out.append(inv.claude_session(sid, m))
+    for aid in inv.claude_sub:
+        m = _id_match(aid, low)
+        if m:
+            out.append(inv.claude_subagent(aid, m))
+    for tid in set(inv.codex) | set(inv.db_rows):
+        m = _id_match(tid, low)
+        if m:
+            out.append(inv.codex_thread(tid, m))
+    for seg, tid in inv.codex_segment.items():
+        m = _id_match(seg, low)
+        if m and tid not in {c.id for c in out}:
+            out.append(inv.codex_thread(tid, m + " (segment id)"))
+    for a in inv.paseo:
+        m = _id_match(a.id.lower(), low)
+        if m:
+            out.append(inv.paseo_agent(a, m))
+    # Paseo records that point at a provider session we matched explain where that session came from.
+    if len(out) <= limit:
+        ids = {c.id for c in out}
+        for a in inv.paseo:
+            if a.session in ids and a.id not in ids:
+                out.append(inv.paseo_agent(a, "provider-session"))
     return out
 
 
