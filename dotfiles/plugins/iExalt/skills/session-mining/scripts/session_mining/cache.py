@@ -120,6 +120,8 @@ class Cache:
             finally:
                 _stop(ex)
         self.con.commit()
+        if len(done_paths) > 100:
+            self.con.execute("pragma wal_checkpoint(TRUNCATE)")      # don't leave a WAL as big as the cache
         return [f for f in stale if f.path not in done_paths]
 
     def _delete(self, ids: Iterable[int]) -> None:
