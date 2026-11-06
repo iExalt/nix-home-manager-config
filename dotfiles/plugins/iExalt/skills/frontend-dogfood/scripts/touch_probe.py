@@ -130,9 +130,10 @@ DESCRIBE_JS = """(e => {
 # Find the element that fills the box agent-browser reported, then wait, frame by frame, until it
 # has held still for `quiet` ms and nothing covers its centre. Falls back to timers when the tab
 # is hidden and animation frames stop.
-SETTLE_JS = """((describe, [bx, by, bw, bh], selector, quiet, timeout) => new Promise(resolve => {
+SETTLE_JS = """((describe, watchLanding, [bx, by, bw, bh], selector, quiet, timeout) => new Promise(resolve => {
     const near = (r) => Math.abs(r.x - bx) <= 1 && Math.abs(r.y - by) <= 1 &&
                         Math.abs(r.width - bw) <= 1 && Math.abs(r.height - bh) <= 1;
+    const CONTROL = "a[href], button, input, select, textarea, summary, label, [role], [tabindex]";
     const same = (r) => Math.abs(r.width - bw) <= 1 && Math.abs(r.height - bh) <= 1;
     const stack = document.elementsFromPoint(bx + bw / 2, by + bh / 2);
     // The element that fills the box; if it has moved since the box was read, the topmost
@@ -144,8 +145,12 @@ SETTLE_JS = """((describe, [bx, by, bw, bh], selector, quiet, timeout) => new Pr
             catch (_) { selector = null; }
         }
         const here = document.elementsFromPoint(bx + bw / 2, by + bh / 2);
-        return here.find(e => near(e.getBoundingClientRect())) ||
-               here.find(e => same(e.getBoundingClientRect()));
+        // Prefer a control over a same-size layer above it, such as a transparent scrim.
+        const pick = (test) => {
+            const fits = here.filter(e => test(e.getBoundingClientRect()));
+            return fits.find(e => e.matches(CONTROL)) || fits[0];
+        };
+        return pick(near) || pick(same);
     };
     let el = find();
     if (!el) {
@@ -170,8 +175,11 @@ SETTLE_JS = """((describe, [bx, by, bw, bh], selector, quiet, timeout) => new Pr
         const x = r.x + r.width / 2, y = r.y + r.height / 2;
         const hit = document.elementFromPoint(x, y);
         if (now - since >= quiet && hit && el.contains(hit)) {
+            if (!(x >= 0 && y >= 0 && x < innerWidth && y < innerHeight))
+                return resolve({error: `${describe(el)} is outside the ${innerWidth}x${innerHeight} viewport`});
             window.__tapTarget = el;
             window.__tapRect = [r.x, r.y, r.width, r.height];
+            watchLanding();  // in the same evaluation, so nothing runs between settling and arming
             return resolve({x, y, waited_ms: Math.round(now - start)});
         }
         if (now - start > timeout) return resolve({error: `${describe(el)} ` + (now - since < quiet
@@ -179,7 +187,7 @@ SETTLE_JS = """((describe, [bx, by, bw, bh], selector, quiet, timeout) => new Pr
         if (document.hidden) setTimeout(tick, 16); else requestAnimationFrame(tick);
     };
     tick();
-}))(""" + DESCRIBE_JS.replace("%", "%%") + """, %s, %s, %s, %s)"""
+}))(""" + DESCRIBE_JS.replace("%", "%%") + """, () => LANDING_JS, %s, %s, %s, %s)"""
 
 # Record what the touch actually landed on, at the moment it landed.
 LANDING_JS = """(describe => {
@@ -201,6 +209,10 @@ LANDING_JS = """(describe => {
 })(""" + DESCRIBE_JS + ")"
 
 
+# Settling arms the landing record itself (see SETTLE_JS).
+SETTLE_JS = SETTLE_JS.replace("LANDING_JS", LANDING_JS.replace("%", "%%"))
+
+
 def run_tap(cdp, step):
     x, y = step["tap"]
     cdp.evaluate("window.__tapTarget = null, window.__tapRect = null")
@@ -211,10 +223,11 @@ def run_tap(cdp, step):
         if "error" in settled:
             raise TapError("not tapped: " + settled["error"])
         x, y, info["waited_ms"] = settled["x"], settled["y"], settled["waited_ms"]
-    w, h = cdp.evaluate("[innerWidth, innerHeight]")
-    if not (0 <= x < w and 0 <= y < h):
-        raise TapError(f"not tapped: {round(x)},{round(y)} is outside the {w}x{h} viewport")
-    cdp.evaluate(LANDING_JS)
+    else:
+        w, h = cdp.evaluate("[innerWidth, innerHeight]")
+        if not (0 <= x < w and 0 <= y < h):
+            raise TapError(f"not tapped: {round(x)},{round(y)} is outside the {w}x{h} viewport")
+        cdp.evaluate(LANDING_JS)
     touch(cdp, "touchStart", [(x, y)])
     touch(cdp, "touchEnd", [])
     landed = cdp.evaluate("window.__landed") or {"on": "nothing (no touchstart or pointerdown fired)",

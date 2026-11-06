@@ -133,9 +133,12 @@ session's colour scheme, viewport, and pixel ratio alone; dogfood.py drives it:
    its box was read, or would be outside the viewport, and exits non-zero after tapping when the
    touch landed outside the target. Treat either as a finding to check (a layout that moves under
    the finger, an overlay), not as a tool error. A CSS selector identifies the target exactly; an
-   @ref is matched by its box, so a target that never stops moving can be refused. `X,Y` taps
-   aren't checked. The wait sees only element boxes, so motion drawn inside a canvas is invisible
-   to it.
+   @ref is matched by its box (preferring a control over a same-size layer above it), so a
+   target that never stops moving can be refused. `X,Y` taps aren't checked. The wait sees only
+   element boxes, so motion drawn inside a canvas is invisible to it, and a quiet 150 ms can't
+   foresee motion that starts later; for tests, the app's own settled signal is the fix
+   (`iExalt:frontend-testing`). The wait adds at least 150 ms per tap, which `--until` timings
+   exclude because they start at the touch event.
    A tap fires the full sequence (`pointerdown:touch`, `touchstart`, `mousedown`, `click`).
 3. Run `dogfood.py release <session>` before switching back to a desktop size.
 
