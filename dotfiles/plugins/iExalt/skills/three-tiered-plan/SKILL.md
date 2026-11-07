@@ -191,6 +191,17 @@ For implementation campaigns, include a testing strategy that follows
 `working-conventions` › Test cost, and attach expensive evidence checks to
 explicit gates.
 
+Every step ends in a deliverable: a mergeable change, a published artifact or
+a written decision. When a step's goal is a measured improvement, such as
+faster CI or a frame-time target, grill the user for its measurement method
+(concretely, such as "1 cold run and 3 warm runs, median and range") and a
+kill criterion (such as "no gain after two candidates or N active hours:
+revert and report"), and record both in the step. Its Proof is the change
+merged with the number measured by that method; a missed target is a result
+to report, not a reason to keep the step open. Give the measurement its own
+step with a time cap rather than leaving the method to be invented and
+validated during the run.
+
 Write it from [assets/roadmap-template.md](assets/roadmap-template.md), whose
 "How to read it" defines steps, **Needs**, **Proof**, **Ticks** and the tick
 rule:
@@ -281,7 +292,9 @@ shares, with the reason for each dependency:
 - **after** thread N: it needs that thread's outcome, which the entry names;
 - **not alongside** thread N: both use a live resource, a quota, a credential's
   validity window, the user's attention, or files both edit heavily, so they
-  can run in either order but not at once;
+  can run in either order but not at once. A thread of another campaign that
+  uses the same repository, tracker or compute host counts too: one overseer
+  runs per repository and shared host;
 - **not before** a date or external event, such as a lease ending.
 
 Write "none: runs in parallel with any thread" when nothing applies. Check the
