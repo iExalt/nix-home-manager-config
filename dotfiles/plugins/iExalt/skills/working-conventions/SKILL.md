@@ -15,6 +15,10 @@ instead.
 A bare skill name here, such as `keep-me-in-the-loop`, means
 `iExalt:keep-me-in-the-loop`; invoke it by the namespaced name.
 
+Before Glean CLI searches or document retrieval, Slack CLI searches, or Linear relation changes, read
+[references/cli-contracts.md](references/cli-contracts.md). It carries user-owned
+corrections to externally managed CLI skills; don't patch their installed copies.
+
 ## Authority
 
 - Approval covers what it names: its scope, its checks and its stated
@@ -263,6 +267,12 @@ one-line prefix or `overseer`'s roll call.
 - Use native subagents and native messaging. Delivery is not acknowledgement:
   get the acknowledgement before acting on anything that depends on it. Don't
   interrupt a running session for routine messages.
+- Before handing work to a native Codex subagent, check its current state with
+  `collaboration.list_agents`. Use `collaboration.followup_task` to resume a
+  completed agent; use `collaboration.send_message` for an agent still running.
+  If it completes before acknowledging the message, resume it with the pending
+  task. These are native subagent tools; Paseo workers follow the overseer's
+  Paseo CLI instructions.
 - When a required capability is missing (subagents, routing, a native
   reviewer, a message channel), report it and continue only independent
   read-only preparation. Never fake delegation or silently take the work over.

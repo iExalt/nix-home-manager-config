@@ -100,6 +100,23 @@ Clone an authorized project revision and record its commit/tree. Prefer anonymou
 source. Transfer only an explicit source allowlist when a patch is needed, checking its hash and
 resulting revision; exclude private plans, credentials, ignored artifacts and dependency directories.
 Give workers their own source directories and writable caches. Keep the validated baseline clean.
+Install locked dependencies into each worker's own writable tree, reusing the package manager's
+warm store; symlinking another checkout's mutable `node_modules` does not isolate a worker.
+Preserve project workspace links through its normal install command.
+
+Check the tools and configuration the assigned work uses, beyond the compiler:
+
+- If the project uses a tracker, put its supported CLI on PATH and verify the checkout resolves to
+  the intended tracker with a read-only query. Supply only the authorized mapping; an installed
+  binary with `no-tracker` is not ready for tracked work.
+- For browser QA, verify the browser configuration, helper dependencies and current application
+  build. Use the supported runner for one representative case, including its result artifact,
+  before handing off a batch. A cached binary must match the recorded source revision.
+- If committing or publishing is assigned, inspect repository rules, required signing and the
+  bootstrap credential's capabilities before the first commit. Verify required signing works in a
+  disposable local repository. A read-only bootstrap token does not grant push access. Arrange an
+  authorized publication route without copying private keys or trying stronger credentials after
+  denial; build/test readiness can be handed off with publication explicitly unproven.
 
 Prove each capability separately:
 
@@ -112,8 +129,11 @@ Prove each capability separately:
   user. Remote build readiness does not imply a logged-in agent or running orchestration daemon.
 
 Track long jobs by their own PID and exit marker, including failures, with a deadline. Stop only owned
-processes. Assign heavy work per validated host; keep cold and warm timings separate and establish new
-baselines before making speedup claims.
+processes. Before a long batch, inspect current CPU count/load, memory/swap and other assigned heavy
+jobs. Defer or use already authorized quiet capacity when contention would invalidate results; do not
+provision extra capacity implicitly. Assign heavy work per validated host; keep cold and warm timings
+separate and establish new baselines before making speedup claims. Timings on different hosts do not
+by themselves prove a code speedup.
 
 ## Handoff and lifecycle
 
@@ -121,6 +141,13 @@ Return the station alias/ID, source revision, installed environment and cache pa
 remaining checks, hourly cost, elapsed setup time, and cleanup owner/policy. State whether a real
 shutdown timer exists. Report partial readiness precisely so a worker can use an accepted capability
 without assuming every tool or suite passed.
+
+Retain one private invocation wrapper or environment configuration for task-owned runtime resources.
+Use it for creation, workload commands and teardown, including scoped config paths, endpoints and
+credentials; cleanup must not fall back to the user's defaults. Record the resource IDs it owns and
+capture the relevant default configuration's checksum/state before setup and after teardown. Without
+a baseline, leave preservation unproven. This does not authorize cluster provisioning or changes
+outside the station's agreed scope.
 
 At authorized cleanup, retain source/evidence first, recheck target and protected IDs in live inventory,
 delete only the authorized immutable ID, and poll until it is absent while protected IDs remain.

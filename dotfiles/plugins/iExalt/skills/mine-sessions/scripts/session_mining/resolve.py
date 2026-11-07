@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import os
 import re
+import sqlite3
 from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
@@ -50,7 +51,7 @@ class Inventory:
             if f.segment:
                 self.codex_segment[f.segment] = f.session
         self.titles = dict(claude_titles(roots))
-        self.paseo = list(paseo_agents(roots))
+        self.paseo = []
         self.db = codex_db(roots)
         self.db_rows: Dict[str, dict] = {}
         self.spawn_children: Dict[str, List[str]] = defaultdict(list)
@@ -60,10 +61,18 @@ class Inventory:
                                 "source", "cwd", "agent_role", "agent_nickname", "agent_path") if c in cols]
             for r in self.db.execute("select %s from threads" % ", ".join(want)):
                 self.db_rows[r["id"]] = dict(r)
+        self.refresh_lineage()
+
+    def refresh_lineage(self) -> None:
+        """Relationships can change while a command indexes new transcripts."""
+        self.paseo = list(paseo_agents(self.roots))
+        self.spawn_children.clear()
+        self.__dict__.pop("_parents", None)
+        if self.db is not None:
             try:
                 for r in self.db.execute("select parent_thread_id, child_thread_id from thread_spawn_edges"):
                     self.spawn_children[r[0]].append(r[1])
-            except Exception:
+            except sqlite3.Error:
                 pass
 
     def __del__(self):

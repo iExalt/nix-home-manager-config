@@ -62,6 +62,13 @@ checked, and why you think it works.
 
 Follow qa-conduct and [references/devices.md](references/devices.md):
 
+- Give the QA copy its own writable dependencies and caches. Install from the lockfile with the
+  project's normal command, reusing its warm package store; never link another checkout's mutable
+  `node_modules`. Retain project workspace links through the supported install.
+- Keep isolation in one private wrapper or environment configuration used by setup, the server,
+  probes and teardown. Include the task's home/config/data paths and runtime endpoints, including
+  `KUBECONFIG` when used. A delete command with the default environment can mutate the user's real
+  configuration even when creation was isolated. Record owned resource IDs for cleanup.
 - Serve a production build of the app (a dev or debug build makes every timing look slow) from a
   throwaway copy of real data on its own port, and record the PID. A copy still talks to the
   outside world unless you cut it off: remove or blank git remotes and sync targets, turn sync off,
@@ -81,6 +88,11 @@ Follow qa-conduct and [references/devices.md](references/devices.md):
 - Make sure agent-browser is installed on the test host (devices.md) and that the app is reachable
   from it. Open each tester's browser session with `scripts/dogfood.py init --open` (devices.md ›
   Drive the browser), so testers start testing instead of writing their own ssh wrappers.
+- Before a batch, check host CPU/load and memory/swap, then run one representative journey and
+  capture a screenshot through the supported helpers. Verify its result artifact and inspect the
+  image. Resolve missing configuration, helper dependencies or a stale app build as setup defects;
+  do not classify those failures as product findings. Use `uv run` for dogfood.py so its declared
+  Pillow dependency is supplied. Keep timing comparisons on matched, quiet host conditions.
 - Create the local evidence directory, `<project>/design/dogfood/<YYYY-MM-DD>-<slug>/`, and keep it
   out of git (`.git/info/exclude`) unless the project commits its screenshots. Everything the tester
   cites must be a local path there, so you can show it in chat.

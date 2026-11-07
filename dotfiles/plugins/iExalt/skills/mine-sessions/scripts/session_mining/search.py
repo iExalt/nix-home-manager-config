@@ -18,6 +18,7 @@ from typing import Dict, List, Optional, Set, Tuple
 
 from . import claude
 from .reader import Filter, file_events, paseo_launchers
+from .resolve import Inventory
 from .stores import PaseoAgent, Roots, SessionFile, claude_files, codex_files
 
 LIVE_SECONDS = 120
@@ -106,6 +107,48 @@ def codex_live_candidates(files: List[SessionFile], cwd: str, now: float) -> Lis
         if os.path.realpath(meta.get("cwd") or "") == os.path.realpath(cwd):
             out.append(f)
     return out
+
+
+def caller_exclusions(inv: Inventory, files: List[SessionFile], exclude: Dict[str, str],
+                      include_self: bool = False, cwd: Optional[str] = None,
+                      now: Optional[float] = None) -> Tuple[Dict[str, str], List[str]]:
+    """Expand caller/explicit exclusions across provider and Paseo relationships at selection time."""
+    inv.refresh_lineage()
+    out = {} if include_self else self_sessions(inv.paseo)
+    out.update(exclude)
+    live_candidates = []
+    if not out and not include_self:
+        live = codex_live_candidates(files, cwd or os.getcwd(), now or time.time())
+        if len(live) == 1:
+            out[live[0].session] = "caller (only live Codex rollout in this directory)"
+        elif len(live) > 1:
+            live_candidates = sorted({f.session for f in live})
+
+    # Agent nodes preserve ancestry through Paseo launchers that have no provider session yet.
+    children = {}
+    for f in files:
+        if f.parent:
+            children.setdefault(("session", f.parent), []).append(("session", f.session))
+    for a in inv.paseo:
+        node = ("agent", a.id)
+        if a.session:
+            children.setdefault(("session", a.session), []).append(node)
+            children.setdefault(node, []).append(("session", a.session))
+        parent = a.labels.get("paseo.parent-agent-id")
+        if parent:
+            children.setdefault(("agent", parent), []).append(node)
+    stack = [("session", sid) for sid in out]
+    seen = set()
+    while stack:
+        node = stack.pop()
+        if node in seen:
+            continue
+        seen.add(node)
+        if node[0] == "session":
+            out.setdefault(node[1], "launched by excluded session")
+            stack.extend(("session", sid) for sid in inv.spawn_children.get(node[1], []))
+        stack.extend(children.get(node, []))
+    return out, live_candidates
 
 
 # -- prefilter -----------------------------------------------------------------------------------
@@ -242,35 +285,22 @@ def cache_hits(cache, flt: Filter, paths: Set[str]):
 
 def grep(roots: Roots, q: Query, agents: List[PaseoAgent], exclude: Dict[str, str],
          include_live: bool = False, now: Optional[float] = None, cwd: Optional[str] = None,
-         cache=None) -> Result:
+         cache=None, inventory: Optional[Inventory] = None) -> Result:
     """cache: a cache.Cache, used for prose queries; None reads every candidate file directly."""
     t0 = time.time()
     now = now or time.time()
-    files: List[SessionFile] = []
-    if "claude" in q.providers:
-        files += list(claude_files(roots))
-    if "codex" in q.providers:
-        files += list(codex_files(roots))
+    lineage_files = list(claude_files(roots)) + list(codex_files(roots))
+    files = [f for f in lineage_files if f.provider in q.providers]
     all_files = list(files)
-    res = Result(hits=[], excluded=dict(exclude))
+    inv = inventory or Inventory(roots)
+    excluded, live_candidates = caller_exclusions(inv, lineage_files, exclude, include_live, cwd, now)
+    res = Result(hits=[], excluded=excluded, live_candidates=live_candidates)
     if q.since:
         cutoff = _iso_to_epoch(q.since)
         if cutoff is not None:
             files = [f for f in files if f.mtime >= cutoff]       # a file is never older than its events
 
-    # Codex without Paseo has no session id in its environment: exclude the one live rollout in the
-    # caller's directory; with several, exclude none and list them.
-    if not exclude and not include_live:
-        live = codex_live_candidates(files, cwd or os.getcwd(), now)
-        if len(live) == 1:
-            res.excluded[live[0].session] = "caller (only live Codex rollout in this directory)"
-        elif len(live) > 1:
-            res.live_candidates = sorted({f.session for f in live})
-
-    def excluded(f: SessionFile) -> bool:
-        return f.session in res.excluded or (f.parent is not None and f.parent in res.excluded)
-
-    files = [f for f in files if not excluded(f)]
+    files = [f for f in files if f.session not in res.excluded]
     res.files_considered = len(files)
     by_path = {f.path: f for f in files}
     files.sort(key=lambda f: -f.mtime)                         # recent first: deterministic and useful
