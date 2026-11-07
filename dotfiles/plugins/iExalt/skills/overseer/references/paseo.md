@@ -135,12 +135,15 @@ and every worker launch.
   check the other workers with `paseo agent ls --json` or
   `paseo agent status <agent-id> --json`, and look into one that is idle
   without having reported or is stuck in `paseo permit ls`. In case nothing
-  wakes you, keep one hourly heartbeat while workers run:
+  wakes you, keep one hourly heartbeat until the agreed scope is complete,
+  including while every remaining item waits on the user:
   `paseo heartbeat create --json --cron "0 * * * *" --name overseer-watch --replace "<prompt>"`.
   Its prompt says to check the workers and pending permissions, act on what
-  changed, and otherwise end the turn with no text. Record the ID it returns
-  in your checklist, and delete it with
-  `paseo heartbeat delete <heartbeat-id>` when they finish. At decision
+  changed, start any ready work as the skill's "Keep work moving" describes,
+  and end the turn with no text only when nothing changed and no work that
+  could run is idle. Record the ID it returns in your checklist, and delete
+  it with `paseo heartbeat delete <heartbeat-id>` when the agreed scope is
+  complete or the user stops the run. At decision
   points, read `paseo agent activity <agent-id>`.
 
 ## Clean up the run project

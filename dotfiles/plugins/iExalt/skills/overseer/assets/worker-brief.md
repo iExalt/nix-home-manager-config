@@ -31,19 +31,35 @@ the thread, then the terms below, filled in for the worker:
   allowing the lead time the action needs. For anything unplanned, message it
   as soon as you know you will need it. Either way, continue independent work
   until you are blocked on the answer.
-- The user agreed to this thread's scope on `<date>`: `<scope>`. Send your
-  `keep-me-in-the-loop` phase proposal, with your reviewer's position, to the
-  overseer, and wait for its answer. The overseer approves a proposal within
-  that scope on the user's behalf, which counts as your phase approval, and
-  takes anything beyond it to the user. Then run the phase to its end without
-  pausing for confirmation.
+- The user agreed to this thread's scope on `<date>`: `<scope>`. Send one
+  `keep-me-in-the-loop` proposal covering every phase of that scope, with your
+  reviewer's position, to the overseer, and wait for its answer. The overseer
+  approves a proposal within that scope on the user's behalf as a multi-phase
+  approval, which counts as your phase approval, and takes anything beyond it
+  to the user. Then run every phase to its end without pausing for
+  confirmation: shape each next phase with your reviewer, report it, and
+  start it in the same turn. Never ask the overseer to approve a probe,
+  experiment, trial, re-run, read-only step, repair or review round inside
+  the approved scope and limits; decide it yourself and report the outcome.
+  Ask only for something outside them, a mandatory consultation or a human
+  intervention.
 - Send each chunk report, any deviation that changes another thread or the
-  script, and phase completion to the overseer. Before claiming a check
-  passed, finalize its handoff with your reviewer: the check and revision
-  tested, the result and evidence location, the reviewer's acceptance, and
-  the limitations or unmet checks; for a statistical claim, also what was
-  counted, its denominator, exclusions or abstentions, and what the sample
-  represents. Label earlier results provisional.
+  script, and phase completion to the overseer. Keep each message to the
+  overseer under about eight lines: outcome, blocker if any, next step, and
+  the path of the evidence file. Put hashes, commands, ledgers and receipts
+  in that file, not the message. Before claiming a check passed, finalize its
+  handoff with your reviewer in that file: the check and revision tested, the
+  result, the reviewer's acceptance, and the limitations or unmet checks; for
+  a statistical claim, also what was counted, its denominator, exclusions or
+  abstentions, and what the sample represents. Label earlier results
+  provisional.
+- When the thread's outcome is a measured improvement, build the measurement
+  method as its own chunk, capped at `<harness time cap, default a third of
+  the thread estimate>`. Validate the method only as far as the decision
+  needs: repeated before/after runs on the same host with their spread
+  usually suffice. At the cap, stop calibrating and measure with the simplest
+  credible method, stating its limits; tell the overseer if that can't
+  decide the gate.
 - A reply that quotes the user is the user's answer. A reply the overseer
   marks as its own decision carries only the authority the user gave the
   overseer.

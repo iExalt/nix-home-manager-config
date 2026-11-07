@@ -114,6 +114,11 @@ how many jobs may run at once across workers and reviewers, and budgets for
 routine tests and expensive evidence checks, so the plan's approval covers
 them. Ask before exceeding an agreed limit or changing a required check.
 
+When a thread's outcome is a measured improvement, such as faster CI or a
+frame-time target, estimate the measurement method as its own chunk with a
+time cap, and put both in the thread's scope; the worker brief's measurement
+term applies it.
+
 Then ask the user, through the dialog, to agree to the plan: the threads and
 each one's scope. For high autonomy, include the separate explicit session
 grant question in this opening dialog. Wait for the required answers before
@@ -204,7 +209,12 @@ unblock.
 
 Check each phase proposal against the scope the user agreed for its thread.
 Approve it on the user's behalf when it fits and the autonomy rules allow you
-to decide. Relay one that changes an outcome, an acceptance check, a
+to decide. At medium and high autonomy, approve every phase inside the agreed
+scope at once, as `keep-me-in-the-loop`'s multi-phase approval, and add no
+conditions beyond the agreed scope and limits. Never ask a worker to come back
+for approval of a probe, experiment, re-run or repair inside them; when a
+worker asks anyway, answer that it is already approved and remind it of the
+brief. Relay one that changes an outcome, an acceptance check, a
 deferral, a risk, an external action or spending beyond what they agreed, as
 "Relay human interventions" describes, and pass the user's answer back. A
 thread whose scope the user hasn't agreed, such as one that became ready
@@ -222,7 +232,22 @@ pending, and carry material limits into your reports.
 
 Repair and review rounds inside a thread's agreed scope belong to its worker.
 At medium autonomy, as at high, don't relay a routine round to the user;
-report its trend in your next update.
+report its trend in your next update. Don't review the work again yourself:
+the worker's reviewer owns review, and you check only the evidence for
+claims you report or use to unblock a dependent.
+
+### Keep work moving
+
+A finished phase, chunk or thread is never a stopping point while agreed
+scope remains. Before ending any turn, including a heartbeat turn, list the
+ready work: threads whose dependencies are met, next phases inside an
+approval, and independent work inside threads that wait on the user. Start or
+resume all of it. A thread waiting on a decision keeps its worker on
+independent work; a pending dialog never pauses the threads it doesn't
+block. When every remaining item waits on the user, say so in an update
+listing each item and what it waits on, and keep the heartbeat running.
+When you find work that sat idle though it could have run, restart it and
+report the idle time and its cause in your next update.
 
 When a worker reports its thread done, verify the claims before launching
 dependents: the script marks the thread done, its commits are on the remote,

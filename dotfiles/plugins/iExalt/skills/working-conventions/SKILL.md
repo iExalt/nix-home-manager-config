@@ -131,6 +131,11 @@ item or thread. A rule nobody asked them about is Proposed, not theirs.
   Repeated failure. A finding that undermines an earlier choice of the
   user's, including its altitude or the effort, risk or simplicity estimate
   behind it, goes to the user before the next round.
+- Cap review at three rounds per increment. If the third round still has a
+  material finding, don't start a fourth: have the design reassessed as
+  Repeated failure describes, or escalate with the ledger. Review each change
+  once, by its reviewer; a coordinating agent above it checks evidence
+  rather than reviewing again.
 - "Reviewed" and "accepted" name the revision the reviewer saw. Commits after
   it are "not re-reviewed" until the reviewer sees them, including a fix for
   the reviewer's own finding. Check the reviewer's last verdict against the
