@@ -168,3 +168,21 @@ remove and anything unpushed it would keep.
   Paseo then drops your agent from every list.
 - **Keep:** leave it all, and tell the user the project ID and the commands
   that would remove it later.
+
+## Halt a run
+
+When the user asks to stop a run, or any session must halt one from outside,
+`paseo agent stop` is not enough: each stopped worker's completion
+notification wakes its overseer, which can resume the workers. Instead:
+
+1. Archive the overseer first with `paseo agent archive --force <id>`, so no
+   notification can wake it. Archiving also completes its heartbeats.
+2. Then archive every worker, reviewer and question session of the run.
+3. After about 30 seconds, check `paseo agent ls --json` again and re-archive
+   any agent of the run that is live.
+4. Confirm each heartbeat under `~/.paseo/schedules/` that targets the run's
+   agents shows `completed`. Check for in-flight CI runs and remote jobs the
+   run started, and report them.
+
+Archiving keeps transcripts, workspaces, worktrees and branches, so the user
+can still review or revert the work. Run cleanup stays a separate decision.
