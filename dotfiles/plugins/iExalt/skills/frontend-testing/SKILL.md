@@ -14,6 +14,14 @@ exposed, so treat a flake as a defect report, not noise.
 [references/pitfalls.md](references/pitfalls.md) catalogs the failures behind these rules;
 [references/patterns.md](references/patterns.md) has code for each technique.
 
+## Use the project's test harness
+
+Inspect the supported runner and shared fixtures/helpers before writing a probe. Run a selected case
+through that entrypoint so its environment, data bootstrap and result reporting stay intact; confirm
+the case ran and wrote its expected artifact before an expensive batch. A journey whose reporting
+failed is incomplete. Keep isolated checkouts' writable dependencies private, installed from the
+lockfile using the warm package store, rather than linked to another checkout's mutable tree.
+
 ## Make the app announce when it has settled
 
 - Wait on a condition the app sets, never on time. Where a test needs to know an async
@@ -31,6 +39,10 @@ exposed, so treat a flake as a defect report, not noise.
   the action passes immediately and proves nothing.
 - A quiet-window wait (no movement for N ms) is a heuristic. Use one only when the app can't
   expose a signal, label it as a heuristic in the code, and record its margin.
+- Put readiness waits in the shared interaction helper when journeys use it. A renderer can insert
+  a hidden child before revealing it: wait for target visibility and the app-owned settled signal
+  before centering or scrolling, then wait again after that action before reading coordinates and
+  tapping. Existence alone cannot establish clickability. Reuse the app's actual readiness API.
 
 ## Write tests that can't pass by accident
 
