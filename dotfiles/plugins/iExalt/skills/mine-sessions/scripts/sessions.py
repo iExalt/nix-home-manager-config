@@ -19,7 +19,7 @@ from session_mining.out import DEFAULT_MAX_BYTES, Out, clip, human_size  # noqa:
 from session_mining.events import AUTHORS, KINDS, render  # noqa: E402
 from session_mining.reader import Filter, file_events, paseo_launchers  # noqa: E402
 from session_mining.resolve import Inventory, entity_keys, resolve  # noqa: E402
-from session_mining.search import Query, grep, self_sessions  # noqa: E402
+from session_mining.search import Query, caller_exclusions, grep  # noqa: E402
 from session_mining.stores import (Roots, claude_files, codex_db, codex_db_path, codex_files,  # noqa: E402
                                    paseo_agents)
 
@@ -255,7 +255,7 @@ def cmd_grep(args, roots: Roots, out: Out) -> int:
     if not (args.pattern or args.skill or args.author or args.kind or args.tool):
         out.note("give a pattern or at least one of --skill/--author/--kind/--tool")
         return 2
-    exclude = {} if args.include_self else self_sessions(inv.paseo)
+    exclude = {}
     for sid in args.exclude_session or []:
         exclude[sid] = "--exclude-session"
     prose = not args.full and not (set(_flat(args.kind)) & {"tool_result", "thinking"})
@@ -267,7 +267,7 @@ def cmd_grep(args, roots: Roots, out: Out) -> int:
         from session_mining.cache import Cache
         cache = Cache(args.cache)
     try:
-        res = grep(roots, q, inv.paseo, exclude, include_live=args.include_self, cache=cache)
+        res = grep(roots, q, inv.paseo, exclude, include_live=args.include_self, cache=cache, inventory=inv)
     finally:
         if cache is not None:
             cache.con.close()
@@ -368,9 +368,11 @@ def _select_sessions(args, inv: Inventory, cache, out: Out):
     from session_mining.cache import session_rows, session_skills
     providers = tuple(_flat(args.provider)) or ("claude", "codex")
     rows = session_rows(cache, providers, args.since, args.until)
-    exclude = {} if args.include_self else self_sessions(inv.paseo)
+    exclude = {}
     for sid in args.exclude_session or []:
         exclude[sid] = "--exclude-session"
+    files = list(claude_files(inv.roots)) + list(codex_files(inv.roots))
+    exclude, live_candidates = caller_exclusions(inv, files, exclude, args.include_self)
     rows = [r for r in rows if r["session"] not in exclude]
     if args.project:
         needle = args.project.lower().replace("/", "-").strip("-")
@@ -407,6 +409,9 @@ def _select_sessions(args, inv: Inventory, cache, out: Out):
     out_rows.sort(key=lambda r: r["last_ts"] or "", reverse=True)
     if exclude:
         out.note("excluded as the caller: %s" % ", ".join(sorted(exclude)))
+    if live_candidates:
+        out.note("several live Codex rollouts in this directory, none excluded; pass --exclude-session for "
+                 "yours: %s" % ", ".join(live_candidates))
     return out_rows, len(rows)
 
 

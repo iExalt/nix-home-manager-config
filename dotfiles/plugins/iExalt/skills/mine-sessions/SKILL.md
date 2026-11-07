@@ -67,6 +67,9 @@ stating coverage. Read the footer before drawing a conclusion: it says what was 
 
 The caller's session tree is excluded from `grep`, `find` and `manifest` by default (via
 `CLAUDE_CODE_SESSION_ID`, Paseo labels, or the single live Codex rollout in the working directory).
+Each command refreshes ancestry and excludes descendants across native and Paseo launches,
+including sessions created after a cache build. `--include-self` disables automatic exclusion;
+`--exclude-session <id>` still excludes that session and its descendants.
 The footer names what was excluded; if it lists several live Codex rollouts, pass
 `--exclude-session <id>` for yours. After compaction, run `recall` for the user's latest prompts and
 decisions, the agents you spawned and messaged, skills invoked and your latest tool calls. Codex has
