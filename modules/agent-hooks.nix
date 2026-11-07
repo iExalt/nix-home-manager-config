@@ -4,16 +4,21 @@ let
   # feat(hooks): one guard script serves Claude Code and Codex; both pass the shell command as
   # tool_input.command on PreToolUse. A pinned Python keeps the per-call cost near 15 ms.
   guard = "${pkgs.python3}/bin/python3 -I -S ${../dotfiles/hooks/process-probe-guard.py}";
+  guardPython = pkgs.python3.withPackages (p: [ p.bashlex ]);
+  miseGuard = "AGENT_MISE_BIN=${pkgs.mise}/bin/mise ${guardPython}/bin/python3 -I ${../dotfiles/hooks/mise-tool-guard.py}";
   entry = matcher: {
     inherit matcher;
-    hooks = [{ type = "command"; command = guard; timeout = 10; }];
+    hooks = [
+      { type = "command"; command = guard; timeout = 10; }
+      { type = "command"; command = miseGuard; timeout = 10; }
+    ];
   };
   claudeHooks = pkgs.writeText "claude-hooks.json" (builtins.toJSON { PreToolUse = [ (entry "^(Bash|Monitor)$") ]; });
   settings = "${config.home.homeDirectory}/.claude/settings.json";
 in
 {
-  # Codex reads ~/.codex/hooks.json. It runs a hook only after /hooks marks the current file
-  # trusted, so every change here needs one review in Codex.
+  # Codex reads ~/.codex/hooks.json. New or changed hooks need trust through /hooks;
+  # existing sessions can retain their earlier hook definitions until restarted.
   home.file.".codex/hooks.json".text = builtins.toJSON {
     hooks.PreToolUse = [ (entry "^(Bash|exec_command|shell|local_shell)$") ];
   };
@@ -27,14 +32,14 @@ in
       merged="$(mktemp "${settings}.XXXXXX")"
       if ${pkgs.jq}/bin/jq --slurpfile ours ${claudeHooks} '
           .hooks.PreToolUse = ([(.hooks.PreToolUse // [])[]
-            | select(([.hooks[]?.command] | any(test("process-probe-guard"))) | not)]
+            | select(([.hooks[]?.command] | any(test("process-probe-guard|mise-tool-guard"))) | not)]
             + $ours[0].PreToolUse)
         ' "${settings}" > "$merged"; then
         chmod 600 "$merged"
         mv "$merged" "${settings}"
       else
         rm -f "$merged"
-        warnEcho "Could not add the process-probe guard to ${settings}."
+        warnEcho "Could not add the agent guards to ${settings}."
       fi
     }
     run mergeClaudeHooks

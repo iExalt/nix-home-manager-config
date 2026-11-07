@@ -1,6 +1,7 @@
 ## Tools and shell
 
 * Use mise to manage and run CLI tools wherever possible.
+* For Mise-managed tools, use the project's selected version or declared environment. Avoid absolute system-runtime paths and PATH overrides that bypass it. Noninteractive zsh refreshes Mise on startup and directory changes; nested shells, SSH and containers need their own environment setup or explicit Mise execution. Validate skills with `validate-agent-skill <skill-directory>` (optional second argument: validator script), which checks the selected Python and PyYAML without installing unrelated tools.
 * In the shell, prefer modern Rust CLIs to legacy ones: `rg` over `grep -r`, `fd` over `find`, `sd` over `sed` substitutions, `ast-grep` for structural code search and rewrites, `dust` over `du`, and `hyperfine` over `time` loops. Run any that aren't installed with `mise exec <tool>@latest -- <tool>`. For exhaustive sweeps, `rg -uuu` also searches hidden, ignored and binary files.
 * Run tools that require internet access or elevated permissions outside the sandbox.
 * Write commands for zsh: keep argument lists in arrays expanded as `"${args[@]}"`, quote literal patterns and URLs containing `*`, `?` or brackets, handle unmatched globs explicitly, and avoid special variables such as `path` and `status`.

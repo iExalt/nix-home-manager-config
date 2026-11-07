@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Select only the validator's runtime; don't install every tool configured by the project.
+set -euo pipefail
+
+if [[ $# -lt 1 || $# -gt 2 ]]; then
+  echo 'Usage: validate-agent-skill SKILL_DIRECTORY [VALIDATOR_SCRIPT]' >&2
+  exit 2
+fi
+validator="${2:-${CODEX_HOME:-$HOME/.codex}/skills/.system/skill-creator/scripts/quick_validate.py}"
+if [[ ! -f "$validator" ]]; then
+  echo "Validator not found: $validator; pass its path as the second argument." >&2
+  exit 2
+fi
+if ! python_bin="$(mise which python)"; then
+  echo 'Install the configured Python with: mise install python (or select Python with mise use python@latest first).' >&2
+  exit 2
+fi
+if ! "$python_bin" -c 'import yaml' 2>/dev/null; then
+  echo "PyYAML is missing from $python_bin. Install it for this interpreter before validating." >&2
+  exit 2
+fi
+exec "$python_bin" "$validator" "$1"

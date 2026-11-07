@@ -157,6 +157,43 @@ to avoid compiling Rust locally (static musl builds on Linux). To upgrade,
 update the version and all three archive hashes from the release's
 `SHASUMS256.txt`, then run `./reload.sh`.
 
+### Agent tooling
+
+Noninteractive zsh activates Mise at startup and refreshes its environment after
+directory changes. This selects project tool versions and declared Python virtual
+environments even when the shell has no prompt. Login shells refresh after system
+PATH initialization. Other processes have Mise shims as a fallback; nested shells,
+remote sessions and containers still need their own setup or explicit Mise execution.
+
+The `mise-tool-guard` PreToolUse hook checks explicit executable paths and literal
+inline PATH overrides against `mise bin-paths --json` in the command's directory.
+This covers active tools and companion executables without a maintained tool list.
+It permits declared virtualenv executables, project `node_modules/.bin` executables
+and pinned Nix-store bootstrap tools. When a selected version is missing, aliases
+from another installed version remain protected, but that version is not authorized
+as a fallback. Missing metadata produces a visible warning instead of claiming a check.
+
+The guard handles simple commands, literal directory changes, and `;`/`&&` sequences.
+Shell syntax is parsed with bashlex, pinned through the Nix dependency lock; unsupported
+syntax is left alone. The hook runs under an isolated Nix Python with that dependency.
+Bare commands use shell activation; the hook does not infer their PATH from its own
+environment. Dynamic shell expressions, pipelines, shell control flow, nested scripts
+and remote commands are outside this narrow check. It never
+executes the submitted command to inspect it. This is a workflow safeguard, not a sandbox.
+
+Apply changes with `./reload.sh`, then start fresh agent sessions: existing sessions
+and their subagents can retain earlier hook definitions. Codex requires trusting new
+or changed hooks with `/hooks`; until that step and a live check pass, its guard is
+not verified active. Code-mode shell calls are checked when dispatched through the
+harness's shell tool, just like direct shell calls.
+Test both harnesses with a harmless unmanaged Python version command and a managed
+equivalent. A direct invocation of the guard tests its logic, not harness activation.
+
+Validate an edited skill with `validate-agent-skill <skill-directory>`. This selects
+the configured Mise base Python, checks PyYAML, and runs the installed skill-creator
+validator. Pass a validator path as the second argument if needed. The command does
+not install missing dependencies or unrelated project tools.
+
 ### iExalt skills
 
 The skills under `dotfiles/plugins/iExalt/skills/` ship as one plugin named
