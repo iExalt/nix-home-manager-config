@@ -15,7 +15,7 @@ instead.
 A bare skill name here, such as `keep-me-in-the-loop`, means
 `iExalt:keep-me-in-the-loop`; invoke it by the namespaced name.
 
-Before Glean or Slack CLI searches or Linear relation changes, read
+Before Glean CLI searches or document retrieval, Slack CLI searches, or Linear relation changes, read
 [references/cli-contracts.md](references/cli-contracts.md). It carries user-owned
 corrections to externally managed CLI skills; don't patch their installed copies.
 

@@ -7,7 +7,7 @@
 * Keep shell quoting simple; use a script with an explicit interpreter when embedding code or nesting SSH commands.
 * Check availability and supported flags before using platform-specific utilities, such as GNU-only flags with macOS's BSD tools.
 * Check command output and intended results; a successful final command can hide earlier failures.
-* Before using Glean or Slack CLI searches, or changing Linear issue relations, read `iExalt:working-conventions`'s `references/cli-contracts.md` for maintained corrections to the installed CLI skills.
+* Before Glean CLI searches or document retrieval, Slack CLI searches, or Linear issue relation changes, read `iExalt:working-conventions`'s `references/cli-contracts.md` for maintained corrections to the installed CLI skills.
 
 ## Waiting on processes and agents
 
