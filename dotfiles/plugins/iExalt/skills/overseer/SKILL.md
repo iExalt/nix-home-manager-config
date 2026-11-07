@@ -88,6 +88,14 @@ instructions. Check the live state: Git and the remote, running sessions and
 worktrees, and resources that are up. A thread marked active may be stale, or
 another session may be running it; never launch a duplicate.
 
+Run one overseer per repository and per shared compute host. Before
+launching, list the live overseers (in Paseo, `paseo agent ls --json` and
+their titles and working directories). When another overseer already runs
+threads in the same repository, tracker or compute host, don't run alongside
+it: propose queuing your threads behind it, merging the campaigns under one
+overseer, or provisioning a dedicated host, and let the user choose in the
+opening dialog.
+
 Oversee the threads the user named. When they named none, propose the ready
 threads, those whose dependencies are met, in the opening message. For each
 thread, note its prompt, Depends on entry, Human entry, live resources and
@@ -114,16 +122,40 @@ how many jobs may run at once across workers and reviewers, and budgets for
 routine tests and expensive evidence checks, so the plan's approval covers
 them. Ask before exceeding an agreed limit or changing a required check.
 
-When a thread's outcome is a measured improvement, such as faster CI or a
-frame-time target, estimate the measurement method as its own chunk with a
-time cap, and put both in the thread's scope; the worker brief's measurement
-term applies it.
+Give each thread an active-time estimate and the campaign a total, both
+recorded in the script, so the stop-loss in "Keep work moving" has a baseline.
+
+Every thread ends in a deliverable: a merged change, a published artifact or
+a written decision. When a thread's outcome is a measured improvement, such as
+faster CI or a frame-time target, settle three things in the opening dialog:
+- **Method:** how it is measured, concretely, such as "1 cold run and 3 warm
+  runs on the same runner, median and range". Workers use it as agreed and
+  build no further validation.
+- **Kill criterion:** when to stop, such as "no measurable gain after two
+  candidates or N active hours: revert unmerged candidates and report".
+- **Done check:** the mergeable change, with the measured number reported. A
+  missed target closes the thread with the number and a recommendation; it
+  never keeps the thread open.
+Estimate the measurement as its own chunk with a time cap; the worker brief's
+measurement term applies it.
+
+### Clear the run before the user leaves
+
+Before launching, list every decision the run is likely to reach while the
+user is away: each thread's Human entries, open plan items, hosted runs, pushes
+and draft PRs, credential and spending approvals, deferral of a missed proof,
+and the measurement method and kill criterion above. Ask in the opening
+dialog how long the user will be away, and settle each item there: decide it
+now, pre-delegate it to you within a stated bound, or name it as the one
+point where its thread will stop. An item left for later must name what keeps
+running while it waits.
 
 Then ask the user, through the dialog, to agree to the plan: the threads and
 each one's scope. For high autonomy, include the separate explicit session
 grant question in this opening dialog. Wait for the required answers before
-starting. Leave the threads' open decisions and other planned interventions
-out of it, so the agreement doesn't wait on them. Record the agreement, with
+starting. Ask the items from "Clear the run before the user leaves" as
+separate questions in the same round, so the user settles everything in one
+sitting, but don't make the plan agreement wait on them. Record the agreement, with
 the date, in each thread's script entry, in a commit of its own, so a
 replacement overseer can find it. Invoking you is the request to implement;
 confirming the script never was.
@@ -242,12 +274,24 @@ A finished phase, chunk or thread is never a stopping point while agreed
 scope remains. Before ending any turn, including a heartbeat turn, list the
 ready work: threads whose dependencies are met, next phases inside an
 approval, and independent work inside threads that wait on the user. Start or
-resume all of it. A thread waiting on a decision keeps its worker on
+resume all of it, except work the stop-loss below holds. A thread waiting on a decision keeps its worker on
 independent work; a pending dialog never pauses the threads it doesn't
 block. When every remaining item waits on the user, say so in an update
 listing each item and what it waits on, and keep the heartbeat running.
 When you find work that sat idle though it could have run, restart it and
 report the idle time and its cause in your next update.
+
+### Stop-loss
+
+At each heartbeat and phase completion, compare each thread's active time and
+delivered outcomes with its estimate. When a thread reaches 1.5× its estimate
+with its done check unmet, or the campaign reaches 1.5× its total, start no new
+work in it. Let running chunks reach a safe stopping point, and ask the user
+in one dialog, with what has landed, what remains and a fresh estimate:
+continue with a new estimate, trim the scope to what has landed, or abandon
+and revert unmerged work. Recommend one. Workers keep finishing safe
+in-flight work while the dialog waits. A kill criterion the user agreed acts
+without a dialog: apply it and report.
 
 When a worker reports its thread done, verify the claims before launching
 dependents: the script marks the thread done, its commits are on the remote,
