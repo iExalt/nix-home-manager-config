@@ -125,9 +125,11 @@ value you remember isn't a baseline.
    `NotificationShade`, or `isKeyguardShowing=true`), you can't unlock a PIN.
    Ask the user to unlock it, by push notification if they may be away.
 4. **Do Not Disturb.** Turn on priority-only DND with
-   `a shell cmd notification set_dnd priority`
-   (or `settings put global zen_mode 1`), so heads-up notifications can't
-   cover the app under test. Send your own pushes before you enable DND or
+   `a shell cmd notification set_dnd priority`, then read back
+   `a shell settings get global zen_mode` and check for `1`. Change DND
+   through the notification service: direct writes to `global zen_mode`
+   can be overwritten by the service, even when `settings put` succeeds.
+   Send your own pushes before you enable DND or
    after you restore it, because DND may suppress them.
 5. **Rotation.** If the test needs a particular orientation, set
    `accelerometer_rotation 0` and `user_rotation` yourself rather than asking
@@ -197,8 +199,25 @@ Do every step, even if the session failed or was cut short:
 
 1. Kill the keepalive loop and anything else you left running on the phone
    or host (screenrecord, logcat, perfetto).
-2. Restore every setting from the saved file, including Do Not Disturb, then
-   read them back and compare.
+2. Restore every setting from the saved file. Restore Do Not Disturb through
+   `a shell cmd notification set_dnd <mode>`, using the saved `global zen_mode`
+   value to choose the mode:
+
+   | Saved `zen_mode` | `set_dnd` mode |
+   | --- | --- |
+   | `0` (off) | `all` |
+   | `1` (priority only) | `priority` |
+   | `2` (no interruptions) | `none` |
+   | `3` (alarms only) | `alarms` |
+
+   For example, a saved `0` needs `a shell cmd notification set_dnd all`.
+   `none` enables total silence; it does not turn DND off. If the saved value
+   is missing or unrecognized, report that restoration is unresolved instead
+   of guessing. Read every restored setting back and compare it with the
+   saved file, including `a shell settings get global zen_mode`. A successful
+   command alone does not prove restoration. If any value differs, investigate
+   within the remaining device window and report any unresolved mismatch;
+   don't claim the phone was restored until all saved values match.
 3. Remove the forwards and reverses you added (`a forward --remove ...`,
    `a reverse --remove ...`), and anything you pushed to `/sdcard` or
    `/data/local/tmp`. Uninstall the debug build unless the user wants to
