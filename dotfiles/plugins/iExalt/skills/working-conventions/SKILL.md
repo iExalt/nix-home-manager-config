@@ -19,6 +19,13 @@ Before Glean CLI searches or document retrieval, Slack CLI searches, or Linear r
 [references/cli-contracts.md](references/cli-contracts.md). It carries user-owned
 corrections to externally managed CLI skills; don't patch their installed copies.
 
+Use `validate-agent-skill <skill-directory>` for skill validation. It selects the
+configured Mise Python and checks PyYAML before invoking the validator; an optional
+second argument supplies a different validator script. A dependency failure is
+not a reason to retry with a system interpreter. Project tool versions and declared
+environments take precedence over global defaults. Set up Mise separately inside
+nested shells, remote sessions and containers; local shell setup does not govern them.
+
 ## Authority
 
 - Approval covers what it names: its scope, its checks and its stated
