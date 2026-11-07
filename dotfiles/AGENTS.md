@@ -7,6 +7,7 @@
 * Keep shell quoting simple; use a script with an explicit interpreter when embedding code or nesting SSH commands.
 * Check availability and supported flags before using platform-specific utilities, such as GNU-only flags with macOS's BSD tools.
 * Check command output and intended results; a successful final command can hide earlier failures.
+* Before using Glean or Slack CLI searches, or changing Linear issue relations, read `iExalt:working-conventions`'s `references/cli-contracts.md` for maintained corrections to the installed CLI skills.
 
 ## Waiting on processes and agents
 
@@ -63,5 +64,5 @@
 * Send handoff text in a standalone message so I can copy and paste it without surrounding commentary.
 * Cite evidence by commit SHA, file path or link; inline only the few outputs that decide the point.
 * Run prose-fix in embedded mode, unasked, on prose people will read: PR, issue and commit-message bodies, reports and investigations, docs, messages sent on my behalf, and chat replies longer than a few sentences. Skip short replies, code and command output.
-* End your final report with a short **Friction** note only if an instruction or skill was wrong, ambiguous or contradictory, a tool or environment failure needed a workaround, or I corrected you; omit it otherwise. Give what happened, the evidence and a suggested fix, and append the same note, headed by the UTC date and repository, to `~/.local/state/agent-friction.md`.
+* End your final report with a short **Friction** note only if an instruction or skill was wrong, ambiguous or contradictory, a tool or environment failure needed a workaround, or I corrected you; omit it otherwise. Give what happened, the evidence and a suggested fix, and append the same note, headed by the UTC date and repository, to `~/.local/state/agent-friction.md`. In that private log, give each incident a stable ID, its original session/event reference, and status (`open`, `resolved` with fix evidence, or `unverified`). Follow-ups reuse the incident ID and reference the earlier entry; don't count repeated summaries as new incidents. Keep these private references out of public commits and PRs.
 * For technical times, use UTC followed by local time in parentheses; include time remaining for future events. Get current time and timezone from `date`. Use natural phrasing otherwise.

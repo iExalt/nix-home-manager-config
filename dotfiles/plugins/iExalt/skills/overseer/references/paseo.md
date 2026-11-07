@@ -23,7 +23,8 @@ project, and your whole job is the hand-off, done straight away:
 1. Create the run project and its checkout, as "Run project and workers"
    below describes, taking `<task>` and `<slug>` from the user's request.
 2. Create a workspace there:
-   `paseo workspace create --isolation local --path <run checkout> --project <project-id> --title "Overseer: <task>" --json`.
+   `paseo workspace create --isolation local --no-background --path <run checkout> --project <project-id> --title "Overseer: <task>" --json`.
+   Apply "Validate the workspace before launch" below before launching.
 3. Launch the overseer in it with
    `paseo agent run --no-wait --relationship detached --no-notify-on-finish --workspace <workspace-id> --title "Overseer: <task>" --provider <provider> --mode <mode> --model <model> --thinking <effort> "<prompt>"`,
    with your own provider and mode from `paseo agent status`, and the
@@ -47,6 +48,47 @@ archive may not stick. As the overseer, finish it: whenever you wake, check
 `paseo agent archive --force <launcher-id>`. Stop checking once it is
 closed.
 
+## Validate the workspace before launch
+
+Run `paseo prime` and inspect the installed command's help before parsing
+its output. Capture stdout separately from stderr. Workspace creation
+returns a top-level `workspaceId`; the list command returns an array whose
+entries have `workspaceId`, `cwd`, `isolation` and `workspace.projectId`.
+Do not substitute a guessed `.id` key or launch with an empty, whitespace,
+`null` or `undefined` identifier.
+
+Build `workspace_args` as a shell array from the chosen creation command,
+including `--no-background`, and set `project_id` and `isolation` to the
+planned project and isolation. Gate the launch on creation, ID validation
+and an exact inventory readback:
+
+```bash
+workspace_json=$(paseo workspace create "${workspace_args[@]}" --json) || exit 1
+workspace_id=$(jq -er '
+  .workspaceId | strings |
+  select(length > 0 and . != "null" and . != "undefined" and (test("\\s") | not))
+' <<< "$workspace_json") || exit 1
+workspace_list=$(paseo workspace ls --json) || exit 1
+jq -e --arg id "$workspace_id" --arg project "$project_id" \
+  --arg isolation "$isolation" --argjson created "$workspace_json" '
+  [.[] | select(.workspaceId == $id
+    and .workspace.projectId == $project
+    and .isolation == $isolation
+    and (.cwd | type == "string")
+    and (.cwd | length > 0)
+    and .cwd == $created.cwd
+    and .background == false)] | length == 1
+' <<< "$workspace_list" >/dev/null || exit 1
+```
+
+Confirm that the returned `cwd` is the intended checkout before passing
+`"$workspace_id"` to `agent run --workspace`. For worktree isolation, this
+is the new worker checkout, not the source checkout. If creation times out,
+its response cannot be parsed, or readback disagrees, stop the launch and
+reconcile the workspace inventory before retrying creation; the first
+request may already have succeeded. Apply this gate to overseer hand-offs
+and every worker launch.
+
 ## Run project and workers
 
 - **Run project:** keep the run's threads together in a temporary Paseo
@@ -61,7 +103,7 @@ closed.
 - **Isolation:** give each worker a workspace with worktree isolation in the
   run project, branching off the remote main branch rather than the local
   `main`, named after the worker:
-  `paseo workspace create --isolation worktree --notifications off --path <run checkout> --project <project-id> --base origin/main --title "Worker: <subtask>" --json`.
+  `paseo workspace create --isolation worktree --no-background --notifications off --path <run checkout> --project <project-id> --base origin/main --title "Worker: <subtask>" --json`.
   Paseo puts these worktrees under `~/.paseo/worktrees/`. Use the
   repository's `paseo.json` setup for ignored files when it provides them. A
   lone worker may use the run checkout itself, through a workspace created

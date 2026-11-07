@@ -82,6 +82,8 @@ existing task document.
 
 Prefer existing exact commits and `git show REV:path` for source inspection; when
 the commit supplies the review inputs, skip a separate snapshot copy or manifest.
+Read the review SHA from `git rev-parse --verify 'HEAD^{commit}'` after the commit
+exists; never predict it or substitute a proposed commit message for a revision.
 A changing checkout, HEAD label, or diff alone is not a stable source snapshot.
 For uncommitted work, freeze the relevant source and dependencies in an identified
 read-only review snapshot; keep actual implementation in the original repository.
@@ -138,9 +140,10 @@ browser or deployment to test may need a cleaner boundary.
 ## Messages and attention
 
 Use native direct messaging (for example `collaboration.send_message` in Codex,
-or `SendMessage` in Claude Code). Use the harness's resume/follow-up tool
-when a reviewer has finished its turn and needs new work; do not assume a message
-to an idle agent starts execution. The direct message carries the content; end a
+or `SendMessage` in Claude Code). Apply `working-conventions` › Delegation's
+state check: in Codex, resume a completed reviewer with
+`collaboration.followup_task`; message a running reviewer with
+`collaboration.send_message`. The request carries the review content; end a
 reviewer turn with a one-line final response naming what was sent rather than
 restating it.
 Process messages at the next available boundary and before starting dependent or

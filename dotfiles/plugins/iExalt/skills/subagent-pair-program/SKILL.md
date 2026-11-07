@@ -43,9 +43,11 @@ without a per-invocation model override that conflicts with it.
 
 ### Internal coordination
 
-In Codex, every pilot brief names the lead's canonical agent path and uses
+In Codex, every pilot brief names the lead's canonical agent path. Apply
+`working-conventions` › Delegation's state check: use
 `collaboration.send_message(target="<lead path>", ...)` for proposals, questions,
-blockers, and results. Call collaboration tools directly, not through
+blockers, and results while the lead is running; use `collaboration.followup_task`
+when a completed lead needs to act. Call collaboration tools directly, not through
 `functions.exec`. Never use desktop `list_threads`, `send_message_to_thread`, or
 the main task UUID for internal coordination.
 
