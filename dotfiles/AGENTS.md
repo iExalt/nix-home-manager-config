@@ -25,7 +25,7 @@
 * Always use conventional commits and conventional comments.
 * My GitHub username is iExalt.
 * Push branches to my repositories without requesting permission if my instructions explicitly or implicitly require commits or pushes.
-* Work directly in the repository; create a worktree only when I ask or a skill I invoked calls for one, in a sibling directory unless the harness manages worktrees itself.
+* Use an isolated worktree by default unless I ask you to work directly in the existing checkout. Create it in a sibling directory unless the harness manages worktrees itself; reuse the harness-managed worktree when one is already provided.
 * Use /tmp only for temporary files, never WIP changes.
 
 ## Working principles
