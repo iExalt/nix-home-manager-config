@@ -228,6 +228,10 @@ Revisit settled code only for a concrete interaction, changed dependency, covera
 gap, or new evidence. Run the appropriate combined checks; passing increment tests
 alone is not integration acceptance.
 
+Complete authorized publication through `working-conventions` › Publication,
+then report with its Completion contract and reconcile the canonical progress
+record. A pending PR remains pending when merge is part of the approved outcome.
+
 Finish only when the reviewer and main agent agree the final milestone satisfies
 its criteria with no unresolved material findings under the agreed bar; deferred
 optional findings do not block. At session end, the reviewer removes its

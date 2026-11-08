@@ -82,7 +82,7 @@ session grant in
 
 ## Establish what you oversee
 
-Read the script, the roadmap, the status document, the parts of the plan the
+Read the script, the roadmap, the canonical progress record, the parts of the plan the
 threads cite, the repository's instructions and `keep-me-in-the-loop`'s current
 instructions. Check the live state: Git and the remote, running sessions and
 worktrees, and resources that are up. A thread marked active may be stale, or
@@ -101,9 +101,10 @@ threads, those whose dependencies are met, in the opening message. For each
 thread, note its prompt, Depends on entry, Human entry, live resources and
 done check.
 
-When the campaign keeps tier 3 as workstream issues, read
+When the campaign keeps tier 3 in a tracker, read
 [references/tracker-workstreams.md](references/tracker-workstreams.md); where
-this skill says script, it means the tracker.
+this skill says script, it means the tracker. If the tracker also holds project
+status, use it for the status record as `working-conventions` › Records describes.
 
 ## Agree on the plan
 
@@ -294,8 +295,9 @@ in-flight work while the dialog waits. A kill criterion the user agreed acts
 without a dialog: apply it and report.
 
 When a worker reports its thread done, verify the claims before launching
-dependents: the script marks the thread done, its commits are on the remote,
-the status document is updated, and its done check passed.
+dependents: its done check passed, required publication is confirmed (including
+merge when required), and the canonical script/status records are reconciled.
+Use `working-conventions` › Completion; a pushed branch alone is not merge proof.
 
 When a worker reports a deviation that changes other threads, hold the
 affected threads that haven't launched. Re-sequence routine changes yourself,
@@ -304,7 +306,7 @@ in your next update. Take any change to outcomes, scope, acceptance checks,
 spending or risk to the user before the affected work proceeds.
 
 An unavailable or permission-blocked proof stays unmet, with its gate open
-in the script and status document, as `working-conventions` › Evidence
+in the canonical script/status records, as `working-conventions` › Evidence
 describes. Before asking the user to reuse, substitute or defer it, check the
 worker's claim against its evidence, and ask with the proposed evidence and
 what remains unproven. If more items miss than the user accepted, ask again
@@ -386,10 +388,9 @@ and for anything unexpected, batching events from all threads.
 A request for the user goes in a dialog of its own, as "Relay human
 interventions" describes, never in a status update.
 
-When the threads you oversee finish, report with a **TL;DR**: each thread's
-outcome and publication, evidence limits and deferrals, the judgment calls
-and human interventions that happened, the script's state, and the threads
-now ready.
+When the threads you oversee finish, report with a **TL;DR** using
+`working-conventions` › Completion for each thread. Include judgment calls and
+human interventions, the script's state, and the threads now ready.
 
 ## Clean up
 

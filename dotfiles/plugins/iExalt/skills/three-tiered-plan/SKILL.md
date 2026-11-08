@@ -22,6 +22,11 @@ documents, each more concise and more literal than the last:
 Tier 3 can instead live in the repository's issue tracker as **workstreams**,
 one issue per thread ("Keep tier 3 as tracker workstreams").
 
+If the project already keeps plans and status in a canonical tracker, preserve
+that home as `working-conventions` › Records describes. Apply the three tiers'
+content and approval gates to its existing records instead of creating parallel
+documents. For Acyclic, use the shared queue reference linked from Records.
+
 Grill each tier out of the user and write it with a continuous reviewer, in
 order, then ask the user to confirm the complete set in one dialog.
 

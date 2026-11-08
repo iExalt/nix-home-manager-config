@@ -1,5 +1,14 @@
 # Workstreams in a tracker
 
+For Acyclic, first read
+[../../working-conventions/references/acyclic.md](../../working-conventions/references/acyclic.md).
+Use its items, thread notes and `waits-for` fields for the outcomes below.
+Record the user's approval with its source and scope in existing notes; don't
+invent issue comments, signatures or an approval state the tracker lacks.
+Finishing means satisfying acceptance and recording the required merged
+evidence, not merely closing an issue. Preserve the user's authorized scope
+when a claimed thread contains other work.
+
 When the campaign keeps tier 3 as workstream issues (three-tiered-plan's
 "Keep tier 3 as tracker workstreams"), each workstream is a thread and its
 issue is the thread's entry. Where the overseer skill says script, read the tracker,

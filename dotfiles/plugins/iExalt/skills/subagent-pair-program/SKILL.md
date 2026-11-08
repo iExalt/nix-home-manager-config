@@ -189,9 +189,8 @@ purpose or explicit requirement. Honor exact parity when requested. Focused test
 do not establish integrated correctness; retain necessary independent review of
 ownership, lifecycle, and cross-language contracts.
 
-An acceptance packet states the item, reviewed changes, what the user can now do
-or know, verification commands/results, limitations, and any decision or recommended
-next item. Distinguish working prerequisites from delivered capabilities. Keep
+An acceptance packet names the item and follows `working-conventions` › Completion.
+Distinguish working prerequisites from delivered capabilities. Keep
 walkthroughs and raw logs in team context or working evidence; never omit failures
 or inflate partial results for brevity.
 

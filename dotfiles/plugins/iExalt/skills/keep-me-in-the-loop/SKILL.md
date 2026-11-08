@@ -12,13 +12,14 @@ or read its `SKILL.md` where your harness lists the path.
 
 Turn the next substantial phase of an existing plan into a few meaningful chunks.
 Shape that chunk plan with the reviewer, obtain the user's approval once, then
-implement, review, verify, commit, and push each chunk autonomously. Report
+implement, review, verify, and complete each chunk's authorized publication. Report
 between chunks and continue; seek approval for the next phase after finishing
 the current one, unless the user approved the remaining phases together.
 
 ## Establish the current boundary
 
-Read the governing plan, roadmap/checklist, and existing project-status document.
+Read the governing plan, roadmap/checklist, and canonical progress record
+(tracker or project-status document, as `working-conventions` › Records describes).
 Inspect current source, relevant verification evidence, Git state, and repository
 instructions to establish what is complete and what remains.
 
@@ -99,8 +100,9 @@ Within each chunk:
    deferrals and unmet proofs.
 3. Complete the review skill's milestone/integration closure and required checks
    for the chunk, using `working-conventions`' work states.
-4. Reconcile the plan/checklist and project-status document with the evidence,
-   then commit and push as `working-conventions` › Publication describes.
+4. Complete authorized publication as `working-conventions` › Publication
+   describes, including PR follow-through when required. Reconcile the
+   plan/checklist and canonical progress record with the verified outcome.
 5. Report the outcome and proceed directly to the next approved chunk. Do not
    append an approval question or end execution just because a report is due.
 
@@ -138,19 +140,10 @@ request.
 Use compact bullets by default; expand for consequential changes, surprises, or
 decisions.
 
-A typical chunk report covers:
-
-- **Accomplished:** meaningful behavior or evidence gained, with roadmap IDs
-  when useful.
-- **Evidence and limits:** decisive checks with their command and result,
-  required review closure, skipped or unrun checks, known limits, and named
-  deferred verification gates. State whether newly reported bugs are fixed,
-  still open, or explicitly deferred.
-- **Publication:** commit/push status with a useful revision reference.
-- **Next:** the next approved chunk and its outcome, or the specific decision
-  needed if the approved route can no longer proceed.
-
-This is a content guide, not a requirement for four headings in every update.
+Use `working-conventions` › Completion for chunk and phase completion reports.
+Include roadmap IDs when useful and state whether newly reported bugs are
+fixed, still open, or explicitly deferred. The next action is the next approved
+chunk or the decision needed when the approved route can no longer proceed.
 
 At phase completion, reconcile the phase's full exit criteria with current
 evidence and report results, accepted deferrals, and remaining boundaries.

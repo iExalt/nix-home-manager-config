@@ -20,6 +20,10 @@ Resolve the reference or link with the tracker's own tooling:
   parent, comments, and attachments.
 - **Jira:** `jira-cli` (see `managing-jira`), including subtasks, links, and
   comments.
+- **Acyclic:** run `acyclic prime`, resolve the item in the configured tracker,
+  and read [../working-conventions/references/acyclic.md](../working-conventions/references/acyclic.md)
+  for claims, next actions and completion. Keep the assigned scope separate
+  from the thread lease.
 - **Anything else:** a URL, pasted text, or a description in chat. Read what
   is reachable; ask for the rest only when the missing part decides the work.
 
