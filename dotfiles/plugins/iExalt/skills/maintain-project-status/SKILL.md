@@ -5,9 +5,16 @@ description: "Create or maintain an evidence-backed project status document betw
 
 # Maintain project status
 
-Keep a durable project-status document that bridges governing strategy and
+Keep a durable project-status record that bridges governing strategy and
 detailed implementation tasks, concise enough to guide current execution
 without becoming a duplicate checklist.
+
+When the project already uses a tracker as its canonical progress record,
+apply this skill's evidence, boundary, dependency and update semantics there.
+Do not create a parallel status document or export a duplicate checklist.
+For Acyclic, read [../working-conventions/references/acyclic.md](../working-conventions/references/acyclic.md).
+The document/template instructions below apply to document-based projects;
+tracker-backed projects use existing notes and fields without inventing states.
 
 Start a new document from
 [assets/status-document-template.md](assets/status-document-template.md).
@@ -28,7 +35,7 @@ and update semantics.
 
 ## Documentation and evidence retention
 
-Keep one project-wide status document and the active implementation plan,
+For document-based projects, keep one project-wide status document and the active implementation plan,
 which may hold its checklist. Don't create per-item reports, acceptance
 receipts, benchmark writeups or hand-off documents; add a document only for a
 distinct ongoing reader need the existing ones can't serve. Component READMEs
