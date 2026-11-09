@@ -446,4 +446,10 @@ document. A merged PR does not complete a broader item with unmet criteria.
 - Tear down what you started: servers and processes by PID, tunnels, browser
   sessions, test data, and settings you changed, restored to their original
   values. Remove only task-owned material, and say what you removed.
+- Use explicit, quoted literal paths for deletion commands. Never construct
+  deletion targets with variables, command substitution, globs, or
+  parent-directory inference such as `dirname`. Inspect the exact target
+  first and confirm it contains only task-owned material. Delete individual
+  files where possible; use recursive deletion only for a verified task-owned
+  directory.
 - Never discard unpushed commits or uncommitted changes without asking.
