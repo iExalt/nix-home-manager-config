@@ -136,6 +136,29 @@ def doctor():
         raise ScoreboardError("unexpected `acyclic doctor` schema: no data.commits.unchecked/unmerged")
 
 
+def git_verified(commit):
+    """True when owner/name@sha is an ancestor of origin's default branch in the clone mapped
+    by ~/.config/acyclic/clones.toml; None when that can't be established."""
+    try:
+        repo, sha = commit.split("@", 1)
+        clone = None
+        with open(os.path.expanduser("~/.config/acyclic/clones.toml")) as f:
+            for line in f:
+                k, eq, v = line.partition("=")
+                if eq and k.strip().strip('"').lower() == repo.lower():
+                    clone = os.path.expanduser(v.strip().strip('"'))
+        if not clone:
+            return None
+        head = subprocess.run(["git", "-C", clone, "symbolic-ref", "refs/remotes/origin/HEAD"],
+                              capture_output=True, text=True, timeout=30).stdout.strip()
+        if not head:
+            return None
+        return subprocess.run(["git", "-C", clone, "merge-base", "--is-ancestor", sha, head],
+                              capture_output=True, timeout=30).returncode == 0
+    except (OSError, ValueError, subprocess.TimeoutExpired):
+        return None
+
+
 def resolve_root(items, ref):
     """Find the initiative or item named by id, id ending or exact title."""
     hits = [i for i in items if i["id"] == ref or i["id"].endswith(ref) and len(ref) >= 6]
@@ -176,13 +199,14 @@ def running_seconds(task_state, now):
     return total
 
 
-def evaluate(campaign, state, items, shown, doc, now):
+def evaluate(campaign, state, items, shown, doc, now, verify=git_verified):
     """Pure function: all scoreboard fields from frozen campaign, state and Acyclic data."""
     start = parse_time(campaign["start"])
     frozen = list(campaign["tasks"])
     approved = set(campaign.get("approved_added", []))
     launch = set(campaign["launch_tasks"])
-    total_ids = sorted(set(frozen) | approved)
+    dropped = set(campaign.get("dropped", []))
+    total_ids = sorted((set(frozen) | approved) - dropped)
 
     shown_by = {s["id"]: s for s in shown}
     by_id = {i["id"]: i for i in items}
@@ -200,7 +224,10 @@ def evaluate(campaign, state, items, shown, doc, now):
             ev = (it.get("evidence") or {})
             commit = ev.get("commit")
             done_at = it.get("done_at")
-            if commit and commit not in unmerged and doc["unchecked"] == 0:
+            # `doctor` counts unchecked commits tracker-wide, so only then re-check this one.
+            ok = bool(commit) and commit not in unmerged and (
+                doc["unchecked"] == 0 or verify(commit) is True)
+            if ok:
                 row["done"] = True
                 row["done_at"] = done_at
                 if done_at:
@@ -208,7 +235,8 @@ def evaluate(campaign, state, items, shown, doc, now):
             else:
                 reason = ("no merge commit recorded" if not commit
                           else "commit unmerged" if commit in unmerged
-                          else "tracker reports %d unchecked commit(s)" % doc["unchecked"])
+                          else "tracker reports %d unchecked commit(s) and ancestry could not be confirmed"
+                          % doc["unchecked"])
                 row["unverified_done"] = reason
                 unverified.append({"task": tid, "title": it.get("title"), "reason": reason})
         ts = (state.get("tasks") or {}).get(tid)
@@ -217,7 +245,9 @@ def evaluate(campaign, state, items, shown, doc, now):
         if ts:
             row["running_h"] = round(running_seconds(ts, now) / 3600.0, 2)
             row["paused"] = bool(ts["segments"]) and ts["segments"][-1][1] is not None
-            row["over_high"] = bool(est) and not row["done"] and row["running_h"] > est[1]
+            first = parse_time(ts["segments"][0][0])
+            row["paused_h"] = round(max(0.0, (now - first).total_seconds() - running_seconds(ts, now)) / 3600.0, 2)
+            row["over_high"] = bool(est) and it.get("state") != "done" and row["running_h"] > est[1]
         tasks[tid] = row
 
     done = sum(1 for r in tasks.values() if r["done"])
@@ -230,7 +260,8 @@ def evaluate(campaign, state, items, shown, doc, now):
 
     root = campaign.get("under")
     if root:
-        current = set(leaves_under(items, root)) - set(campaign.get("excluded", []))
+        current = (set(leaves_under(items, root)) - set(campaign.get("excluded", []))
+                   - dropped)
         extra = sorted(current - launch)
     else:
         extra = []
@@ -238,8 +269,11 @@ def evaluate(campaign, state, items, shown, doc, now):
     base = max(1, len(launch))
     growth_pct = 100.0 * len(unapproved) / base
 
-    forecasts = []
+    forecasts, seen = [], set()
     for f in state.get("forecasts", []):
+        if (f["task"], f["at"]) in seen:  # a repeated forecast is not a new one
+            continue
+        seen.add((f["task"], f["at"]))
         at = parse_time(f["at"])
         t = tasks.get(f["task"])
         done_at = parse_time(t["done_at"]) if t and t.get("done_at") else None
@@ -349,6 +383,23 @@ def resolve_tasks(items, refs):
     return out
 
 
+def parse_tripwire(k, v):
+    numeric = k in ("scope_growth_pct", "forecast_misses")
+    if numeric:
+        if v == "off":
+            return None
+        try:
+            n = float(v)
+        except ValueError:
+            n = -1
+        if n < 0:
+            raise ScoreboardError("tripwire %s takes a number >= 0 or off, not %r" % (k, v))
+        return int(n) if n == int(n) else n
+    if v.lower() not in ("true", "false", "on", "off"):
+        raise ScoreboardError("tripwire %s takes on or off, not %r" % (k, v))
+    return v.lower() in ("true", "on")
+
+
 def cmd_freeze(a, d, now):
     path = os.path.join(d, CAMPAIGN_FILE)
     items = item_list()
@@ -370,13 +421,16 @@ def cmd_freeze(a, d, now):
         added = resolve_tasks(items, a.add_task or [])
         if added:
             change["approved_added"] = added
+        dropped = resolve_tasks(items, a.drop_task or [])
+        if dropped:
+            change["dropped"] = dropped
         if not change:
-            raise ScoreboardError("--amend changed nothing: give --goal, --estimate, --task-estimate or --add-task")
+            raise ScoreboardError("--amend changed nothing: give --goal, --estimate, --task-estimate, --add-task or --drop-task")
         c.setdefault("amendments", []).append({
             "at": iso(now), "approved_by": a.approved_by, "reason": a.reason,
             "from": {k: c.get(k) for k in change}, "to": change})
         for k, v in change.items():
-            if k == "approved_added":
+            if k in ("approved_added", "dropped"):
                 c[k] = sorted(set(c.get(k, [])) | set(v))
             elif k == "task_estimates":
                 c.setdefault(k, {}).update(v)
@@ -416,9 +470,7 @@ def cmd_freeze(a, d, now):
         k, _, v = kv.partition("=")
         if k not in DEFAULT_TRIPWIRES:
             raise ScoreboardError("unknown tripwire %r; known: %s" % (k, ", ".join(sorted(DEFAULT_TRIPWIRES))))
-        c["tripwires"][k] = (None if v == "off" else
-                             (float(v) if "." in v else int(v)) if v.replace(".", "").isdigit()
-                             else v.lower() == "true")
+        c["tripwires"][k] = parse_tripwire(k, v)
     write_json(path, c)
     print("froze %d task(s) in %s" % (len(tasks), path))
 
@@ -452,8 +504,11 @@ def cmd_forecast(a, d, now):
     if tid not in set(campaign["tasks"]) | set(campaign.get("approved_added", [])):
         raise ScoreboardError("%s is not a frozen task" % tid)
     state = load_state(d)
-    state.setdefault("forecasts", []).append(
-        {"task": tid, "at": iso(parse_forecast(a.time, now)), "made_at": iso(now)})
+    when = iso(parse_forecast(a.time, now))
+    if any(f["task"] == tid and f["at"] == when for f in state.get("forecasts", [])):
+        print("forecast %s done by %s (already recorded)" % (tid, when))
+        return
+    state.setdefault("forecasts", []).append({"task": tid, "at": when, "made_at": iso(now)})
     write_json(os.path.join(d, STATE_FILE), state)
     print("forecast %s done by %s" % (tid, state["forecasts"][-1]["at"]))
 
@@ -507,6 +562,8 @@ def build_parser():
     f.add_argument("--approved-by")
     f.add_argument("--reason")
     f.add_argument("--add-task", nargs="+", help="approve these added tasks into the frozen scope")
+    f.add_argument("--drop-task", nargs="+", help="remove these tasks from the scope (trimmed, canceled, "
+                   "or an added gate that is not merge-proven work)")
     s = sub.add_parser("show")
     s.add_argument("--json", action="store_true")
     s.add_argument("--digest", action="store_true", help="record this digest as sent (overseer only)")

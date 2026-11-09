@@ -35,7 +35,7 @@ as this file's.
 | [references/paseo.md](references/paseo.md) | Always: hand-off, run project, launching workers and the auditor, messaging, watching and run-project cleanup. |
 | [references/high-autonomy.md](references/high-autonomy.md) | The user asks for high autonomy, before starting workers. |
 | [references/tracker-workstreams.md](references/tracker-workstreams.md) | The campaign keeps tier 3 as tracker workstreams. |
-| [references/question-session.md](references/question-session.md) | Your only dialog blocks your session, as Claude's `AskUserQuestion` does. |
+| [references/question-session.md](references/question-session.md) | Always: your only dialog, `AskUserQuestion`, blocks your session. |
 | [assets/worker-brief.md](assets/worker-brief.md) | You brief a worker. |
 | [assets/auditor-brief.md](assets/auditor-brief.md) | The launcher briefs the auditor; you only need its tripwire list. |
 | [scripts/scoreboard.py](scripts/scoreboard.py) | Always: freezes the campaign and prints the digest's line 1. |
@@ -131,8 +131,8 @@ how many jobs may run at once across workers and reviewers, and budgets for
 routine tests and expensive evidence checks, so the plan's approval covers
 them. Ask before exceeding an agreed limit or changing a required check.
 
-Give each thread an active-time estimate and the campaign a total, both
-recorded in the script as LOW-HIGH ranges, so the stop-loss and the scoreboard
+Give each thread an active-time estimate and the campaign a wall-clock total
+from plan agreement, both recorded in the script as LOW-HIGH ranges, so the stop-loss and the scoreboard
 have a baseline. Quote the user's goal verbatim in the opening message.
 
 The opening dialog also settles, as separate questions in the same round:
@@ -208,9 +208,13 @@ never compute them yourself.
   user's approval (`working-conventions` › Authority). Work added later under the
   scope root counts as "scope +N" until the user approves it with
   `--amend --add-task`.
-- **`task-start <task>`** when its worker launches, **`task-pause`** when the
-  thread waits on the user, **`task-resume`** after. A task's clock excludes the
-  time it waits on the user.
+- **`task-start <task>`** when work on that task begins: at its worker's launch
+  for the thread's first task, and for each later task of the thread when the
+  previous one is reported done. **`task-pause`** only when the task is wholly
+  blocked on the user (not while its worker does other work), **`task-resume`**
+  after. A task's clock excludes that wait. A task without a clock or estimate
+  never trips the per-task tripwire; a thread's estimate is the sum of its
+  tasks'.
 - **`forecast <task> <time>`** records your "next done expected" in each digest.
   Record it when you send the digest; a missed forecast counts against you.
 - **`show`** prints line 1 of the digest; `show --digest` also records that
@@ -279,7 +283,7 @@ Route as `working-conventions` › Model routing describes. Under an overseer:
 
 | Role | Model | Effort |
 | --- | --- | --- |
-| You, the overseer | Claude Opus, in every harness | `medium` |
+| You, the overseer | Claude Opus | `medium` |
 | Auditor | Claude Opus | `medium` |
 | Worker | GPT Sol | `medium` |
 | A worker's reviewer | The "Independent substantive reviewer" row | `high` |
@@ -298,8 +302,11 @@ model; report a mismatch instead.
 ## Brief each worker
 
 Build each brief from [assets/worker-brief.md](assets/worker-brief.md): the
-load instruction, then the script's prompt for the thread, then the terms,
-filled in for the worker. Workers paste nothing else from this skill, so keep
+load instruction, then the script's prompt for the thread with its
+`/iExalt:keep-me-in-the-loop` invocation replaced by
+`/iExalt:continuous-peer-review` (ignore the prompt's phase, chunk and
+approval-item wording: the terms govern), then the terms, filled in for the
+worker. Workers paste nothing else from this skill, so keep
 every term.
 
 ## Run the threads
@@ -312,8 +319,10 @@ unblock.
 The user's agreement to a thread's scope is the thread's only approval. A
 worker sends no phase proposal and no chunk report; it implements the scope
 with its reviewer and messages you only when its thread is done (with
-completion evidence), when it hits a blocker or needs a human, or when a
-deviation affects another thread. Never ask a worker to come back for approval
+completion evidence), when it hits a blocker or needs a human, when a deviation
+affects another thread, or once after its first measurement (the re-baseline
+gate); it holds only work that depends on the gap while you ask, and continues
+the rest. Never ask a worker to come back for approval
 of a probe, experiment, re-run or repair inside the agreed scope and limits;
 when a worker asks anyway, answer that it is already approved and remind it of
 the brief. Relay a request that changes an outcome, an acceptance check, a
@@ -354,12 +363,13 @@ cause.
 ### Stop-loss
 
 At each heartbeat and task completion, read `scoreboard.py show --json` and
-compare each thread's running time and delivered outcomes with its estimate.
+compare each running task's time (`tasks.<id>.running_h`) and delivered
+outcomes with its estimate, and the campaign's elapsed time with its total.
 When a thread passes the high end of its estimate with its done check unmet, or
 the campaign passes the high end of its total, start no new work in it. Let running work reach a safe stopping point, and ask the user
 in one dialog, with what has landed, what remains and a fresh estimate:
-continue with a new estimate, trim the scope to what has landed, or abandon
-and revert unmerged work. Recommend one. Workers keep finishing safe
+continue with a new estimate, trim the scope to what has landed (recorded with
+`freeze --amend --drop-task`), or abandon and revert unmerged work. Recommend one. Workers keep finishing safe
 in-flight work while the dialog waits. A kill criterion the user agreed acts
 without a dialog: apply it and report.
 

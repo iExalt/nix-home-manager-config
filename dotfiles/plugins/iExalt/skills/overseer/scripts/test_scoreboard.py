@@ -46,10 +46,10 @@ def campaign(**kw):
 ITEMS = [item("EPIC", parent="INIT")] + [item(x) for x in "abcd"]
 
 
-def run(c=None, state=None, items=None, shows=None, doc=DOC_OK, now=None):
+def run(c=None, state=None, items=None, shows=None, doc=DOC_OK, now=None, verify=lambda c: None):
     c = c or campaign()
     return SB.evaluate(c, state or {"tasks": {}, "forecasts": []}, items or ITEMS,
-                       shows if shows is not None else [], doc, now or at(3))
+                       shows if shows is not None else [], doc, now or at(3), verify)
 
 
 def fired(r):
@@ -66,6 +66,11 @@ class Done(unittest.TestCase):
         r = run(shows=[shown("a")], doc={"unchecked": 1, "unmerged": []})
         self.assertEqual(r["done"], 0)
         self.assertIn("unverified_done", fired(r))
+
+    def test_unchecked_elsewhere_rechecked_per_commit(self):
+        r = run(shows=[shown("a")], doc={"unchecked": 1, "unmerged": []}, verify=lambda c: True)
+        self.assertEqual(r["done"], 1)
+        self.assertNotIn("unverified_done", fired(r))
 
     def test_unmerged_commit_not_verified(self):
         r = run(shows=[shown("a")], doc={"unchecked": 0, "unmerged": ["o/r@abc"]})
@@ -180,6 +185,11 @@ class Forecasts(unittest.TestCase):
         self.assertEqual(r["missed_forecasts"], 2)
         self.assertIn("forecast_missed", fired(r))
 
+    def test_repeated_identical_forecast_counts_once(self):
+        r = run(state=self.fc(("a", 1), ("a", 1), ("a", 1)), now=at(3))
+        self.assertEqual(r["missed_forecasts"], 1)
+        self.assertNotIn("forecast_missed", fired(r))
+
     def test_one_miss_does_not_fire(self):
         self.assertNotIn("forecast_missed", fired(run(state=self.fc(("a", 1), ("a", 4)), now=at(3))))
 
@@ -199,6 +209,25 @@ class Forecasts(unittest.TestCase):
         now = at(3)  # 05:00
         self.assertEqual(SB.parse_forecast("16:00", now), at(14))
         self.assertEqual(SB.parse_forecast("04:00", now), at(26))
+
+
+class Dropped(unittest.TestCase):
+    def test_dropped_leaves_total_and_scope(self):
+        c = campaign(dropped=["d", "n0"])
+        its = ITEMS + [item("n0")]
+        r = run(c=c, items=its, shows=[shown(x) for x in "abc"], now=at(30))
+        self.assertEqual((r["done"], r["total"], r["scope_added"]), (3, 3, 0))
+        self.assertNotIn("campaign_over_high", fired(r))
+
+    def test_done_but_unverified_task_does_not_also_trip_clock(self):
+        st = {"tasks": {"a": {"segments": [[iso(0), None]]}}, "forecasts": []}
+        r = run(state=st, now=at(9), shows=[shown("a", commit=None)])
+        self.assertNotIn("task_over_high", fired(r))
+        self.assertIn("unverified_done", fired(r))
+
+    def test_paused_hours_reported(self):
+        st = {"tasks": {"a": {"segments": [[iso(0), iso(1)], [iso(3), None]]}}, "forecasts": []}
+        self.assertAlmostEqual(run(state=st, now=at(4))["tasks"]["a"]["paused_h"], 2.0)
 
 
 class Tripwires(unittest.TestCase):
@@ -263,6 +292,18 @@ class Cli(unittest.TestCase):
         self.assertEqual(c["tasks"], ["a", "b", "c"])
         r = run(c=c)
         self.assertEqual((r["total"], r["scope_added"]), (3, 0))
+
+    def test_bad_tripwire_values_rejected(self):
+        for bad in ("forecast_misses=two", "forecast_misses=-1", "campaign_over_high=yes"):
+            self.assertEqual(self.go("freeze", "--name", "ci", "--goal", "g", "--under", "EPIC",
+                                     "--estimate", "8-12", "--tripwire", bad), 1)
+        self.assertEqual(self.go("freeze", "--name", "ci", "--goal", "g", "--under", "EPIC", "--estimate", "8-12",
+                                 "--tripwire", "scope_growth_pct=off", "campaign_over_high=off"), 0)
+
+    def test_amend_drop_task(self):
+        self.go("freeze", "--name", "ci", "--goal", "g", "--under", "EPIC", "--estimate", "8-12")
+        self.assertEqual(self.go("freeze", "--amend", "--drop-task", "d", "--approved-by", "user", "--reason", "trim"), 0)
+        self.assertEqual(SB.read_json(os.path.join(self.d, "campaign.json"), "c")["dropped"], ["d"])
 
     def test_missing_campaign_fails_loudly(self):
         self.assertEqual(self.go("show"), 1)

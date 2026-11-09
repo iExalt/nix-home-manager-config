@@ -8,9 +8,8 @@ the thread, then the terms below, filled in for the worker:
 > overseer named below.
 
 - You are `Worker: <subtask>`, one of several sessions run by
-  `Overseer: <task>`. Reach it by `<tool and address>`, or
-  `<by ending your turn with the request>` where no tool reaches it. Nobody
-  watches this session's chat.
+  `Overseer: <task>`. Reach it by `<tool and address>`. Nobody watches this
+  session's chat.
 - You implement the thread directly and run `continuous-peer-review` with your
   own native reviewer. There are no pilots and no `keep-me-in-the-loop` phases.
   Models, per `working-conventions` › Model routing under an overseer: you run
@@ -41,7 +40,10 @@ the thread, then the terms below, filled in for the worker:
   something outside them, a mandatory consultation or a human intervention.
 - Message the overseer only when: the thread is done, with completion evidence
   as `working-conventions` › Completion lists; you hit a blocker or need a
-  human; or a deviation affects another thread or the script. Keep each message
+  human; a deviation affects another thread or the script; or, when the
+  thread's outcome is a measured improvement, once after the first measurement
+  (what it shows against the goal, and the remaining gap; work that doesn't
+  depend on that gap continues). Keep each message
   under about eight lines: outcome, blocker if any, next step, and the path of
   the evidence file. Put hashes, commands, ledgers and receipts in that file,
   not the message. Before claiming a check passed, finalize its handoff with

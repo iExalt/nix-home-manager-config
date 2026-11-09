@@ -9,7 +9,7 @@
 | Pilot: mechanical edits, lookups, monitoring | GPT Luna | Haiku (`developer-trivial`) | Codex `medium`, `low` for monitoring; Claude `medium` |
 
 - Under an overseer (the `overseer` skill, Paseo only), routing differs from the
-  table: the overseer is Claude Opus at `medium` effort in every harness; its
+  table: the overseer is Claude Opus at `medium` effort; its
   independent auditor is Claude Opus at `medium`; each worker is GPT Sol at
   `medium` and runs `continuous-peer-review` without pilots, with the
   "Independent substantive reviewer" row for its reviewer. Other top
