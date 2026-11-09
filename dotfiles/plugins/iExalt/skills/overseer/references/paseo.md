@@ -24,10 +24,12 @@ project, and your whole job is the hand-off, done straight away:
    below describes, taking `<task>` and `<slug>` from the user's request.
 2. Create a workspace there:
    `paseo workspace create --isolation local --no-background --path <run checkout> --project <project-id> --title "Overseer: <task>" --json`.
-   Apply "Validate the workspace before launch" below before launching.
+   Apply "Validate every launch" below.
 3. Launch the overseer in it with
    `paseo agent run --no-wait --relationship detached --no-notify-on-finish --workspace <workspace-id> --title "Overseer: <task>" --provider claude --mode <mode> --model <Opus> --thinking medium "<prompt>"`,
-   with your own mode from `paseo agent status` and the latest Opus model
+   with your own mode translated as `working-conventions` ›
+   [references/paseo-launch.md](../../working-conventions/references/paseo-launch.md)
+   step 4 describes, and the latest Opus model
    `paseo provider models` lists for the overseer route in
    `SKILL.md` › Model routing, whatever your own provider. If that route is
    unavailable, report it and stop. Its prompt invokes this skill and
@@ -58,10 +60,11 @@ launch, with the run checkout and project as the overseer's:
 
 1. Create a workspace in the run project with notifications on:
    `paseo workspace create --isolation local --no-background --notifications on --path <run checkout> --project <project-id> --title "Auditor: <task>" --json`.
-   Apply "Validate the workspace before launch" before launching.
+   Apply "Validate every launch".
 2. Launch it with
    `paseo agent run --no-wait --relationship detached --no-notify-on-finish --workspace <workspace-id> --title "Auditor: <task>" --provider claude --mode <mode> --model <Opus> --thinking medium "<brief>"`,
-   its brief being [../assets/auditor-brief.md](../assets/auditor-brief.md) with
+   with the mode chosen as for the overseer, and its brief being
+   [../assets/auditor-brief.md](../assets/auditor-brief.md) with
    the run checkout path, the scoreboard script path and the repository filled in.
    Unlike a worker's workspace, leave notifications on: the auditor is the one
    agent that messages the user. Don't add `--notify-on-finish`; the launcher is
@@ -75,46 +78,16 @@ agent) as its first action. Its heartbeat ends when it is archived: the overseer
 archives the auditor in "Clean up the run project" and the halt procedure archives
 it with the run's other agents.
 
-## Validate the workspace before launch
+## Validate every launch
 
-Run `paseo prime` and inspect the installed command's help before parsing
-its output. Capture stdout separately from stderr. Workspace creation
-returns a top-level `workspaceId`; the list command returns an array whose
-entries have `workspaceId`, `cwd`, `isolation` and `workspace.projectId`.
-Do not substitute a guessed `.id` key or launch with an empty, whitespace,
-`null` or `undefined` identifier.
-
-Build `workspace_args` as a shell array from the chosen creation command,
-including `--no-background`, and set `project_id` and `isolation` to the
-planned project and isolation. Gate the launch on creation, ID validation
-and an exact inventory readback:
-
-```bash
-workspace_json=$(paseo workspace create "${workspace_args[@]}" --json) || exit 1
-workspace_id=$(jq -er '
-  .workspaceId | strings |
-  select(length > 0 and . != "null" and . != "undefined" and (test("\\s") | not))
-' <<< "$workspace_json") || exit 1
-workspace_list=$(paseo workspace ls --json) || exit 1
-jq -e --arg id "$workspace_id" --arg project "$project_id" \
-  --arg isolation "$isolation" --argjson created "$workspace_json" '
-  [.[] | select(.workspaceId == $id
-    and .workspace.projectId == $project
-    and .isolation == $isolation
-    and (.cwd | type == "string")
-    and (.cwd | length > 0)
-    and .cwd == $created.cwd
-    and .background == false)] | length == 1
-' <<< "$workspace_list" >/dev/null || exit 1
-```
-
-Confirm that the returned `cwd` is the intended checkout before passing
-`"$workspace_id"` to `agent run --workspace`. For worktree isolation, this
-is the new worker checkout, not the source checkout. If creation times out,
-its response cannot be parsed, or readback disagrees, stop the launch and
-reconcile the workspace inventory before retrying creation; the first
-request may already have succeeded. Apply this gate to overseer hand-offs
-and every worker launch.
+Launch every agent of the run as `working-conventions` ›
+[references/paseo-launch.md](../../working-conventions/references/paseo-launch.md)
+describes: gate each launch on its workspace validation (step 3) and read the
+agent back (step 6) before you report it. The commands in this file fill in
+that recipe's project, isolation, settings and title for each role. If
+creation times out, its response can't be parsed or readback disagrees, stop
+and reconcile the inventory before retrying; the first request may already
+have succeeded.
 
 ## Run project and workers
 
