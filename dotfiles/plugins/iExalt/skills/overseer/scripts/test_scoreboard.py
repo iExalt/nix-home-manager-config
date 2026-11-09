@@ -96,7 +96,7 @@ class Elapsed(unittest.TestCase):
     def test_high_end_flags(self):
         r = run(now=at(21))
         self.assertTrue(r["over_high"])
-        self.assertIn("21h of 8–12h ⚠", SB.line1(r))
+        self.assertIn("21h active of 8–12h ⚠", SB.line1(r))
         self.assertIn("campaign_over_high", fired(r))
 
     def test_within_range_no_flag(self):
@@ -284,8 +284,9 @@ class Cli(unittest.TestCase):
         self.go("freeze", "--name", "ci", "--goal", "g", "--under", "EPIC", "--estimate", "8-12")
         self.assertEqual(self.go("task-start", "a"), 0)
         self.assertEqual(self.go("task-start", "a"), 1)
-        self.assertEqual(self.go("task-pause", "a", now="2026-11-07T03:00:00Z"), 0)
-        self.assertEqual(self.go("task-pause", "a", now="2026-11-07T03:10:00Z"), 1)
+        self.assertEqual(self.go("task-pause", "a", now="2026-11-07T03:00:00Z"), 1)  # no --on
+        self.assertEqual(self.go("task-pause", "a", "--on", "d", now="2026-11-07T03:00:00Z"), 0)
+        self.assertEqual(self.go("task-pause", "a", "--on", "d", now="2026-11-07T03:10:00Z"), 1)
         self.assertEqual(self.go("task-resume", "a", now="2026-11-07T04:00:00Z"), 0)
         self.assertEqual(self.go("forecast", "a", "06:00", now="2026-11-07T04:00:00Z"), 0)
         self.assertEqual(self.go("show", "--digest", now="2026-11-07T05:00:00Z"), 0)
@@ -313,6 +314,276 @@ class Cli(unittest.TestCase):
 
     def test_missing_campaign_fails_loudly(self):
         self.assertEqual(self.go("show"), 1)
+
+
+# ------------------------------------------------------ waiting on the user
+
+def rd(it, readiness, waiting=None):
+    it = dict(it)
+    it["readiness"] = {"readiness": readiness}
+    if waiting:
+        it["readiness"]["waiting"] = {w: {"why": "open"} for w in waiting}
+    return it
+
+
+def decision(state="parked", iid="D"):
+    return item(iid, parent="INIT", state=state)
+
+
+def paused_state(tid, on="D", start=0, end=1):
+    return {"segments": [[iso(start), iso(end)]], "pauses": [{"at": iso(end), "on": on}]}
+
+
+def running_state(start=0):
+    return {"segments": [[iso(start), None]]}
+
+
+def wait_items(waits=("a", "b", "c", "d"), extra=()):
+    """a..d wait for decision D (or sit ready when not in `waits`)."""
+    out = [ITEMS[0], decision()]
+    for x in "abcd":
+        out.append(rd(item(x), "waiting", ["D"]) if x in waits else rd(item(x), "ready"))
+    return out + list(extra)
+
+
+def wait_state(tasks, **kw):
+    st = {"tasks": tasks, "forecasts": []}
+    st.update(kw)
+    return st
+
+
+def is_waiting(tasks, items):
+    return SB.wait_status(campaign(), wait_state(tasks), items)["waiting"]
+
+
+class WaitStatus(unittest.TestCase):
+    ALL = {x: paused_state(x) for x in "abcd"}
+
+    def test_every_task_paused_on_open_decision_waits(self):
+        self.assertTrue(is_waiting(self.ALL, wait_items()))
+
+    def test_one_never_started_ready_task_makes_it_active(self):
+        tasks = {x: paused_state(x) for x in "abc"}
+        self.assertFalse(is_waiting(tasks, wait_items(waits="abc")))
+
+    def test_partial_pause_is_active(self):
+        tasks = dict(self.ALL, b=running_state())
+        self.assertFalse(is_waiting(tasks, wait_items()))
+
+    def test_dependency_blocked_task_behind_paused_blocker_waits(self):
+        its = wait_items(waits="abc", extra=[])
+        its[5] = rd(item("d"), "waiting", ["a"])
+        self.assertTrue(is_waiting({x: paused_state(x) for x in "abc"}, its))
+
+    def test_dependency_blocked_task_behind_running_blocker_is_active(self):
+        its = wait_items(waits="bc")
+        its[2] = rd(item("a"), "claimed")
+        its[5] = rd(item("d"), "waiting", ["a"])
+        tasks = {"a": running_state(), "b": paused_state("b"), "c": paused_state("c")}
+        self.assertFalse(is_waiting(tasks, its))
+
+    def test_pause_on_item_the_task_does_not_wait_for_is_active(self):
+        its = wait_items() + [decision(iid="E")]
+        tasks = dict(self.ALL, a=paused_state("a", on="E"))
+        self.assertFalse(is_waiting(tasks, its))
+
+    def test_pause_on_closed_decision_is_active(self):
+        for st in ("done", "canceled"):
+            its = wait_items()
+            its[1] = decision(state=st)
+            self.assertFalse(is_waiting(self.ALL, its), st)
+
+    def test_pause_without_recorded_decision_is_active(self):
+        tasks = dict(self.ALL, a={"segments": [[iso(0), iso(1)]]})
+        self.assertFalse(is_waiting(tasks, wait_items()))
+
+    def test_transitive_wait_is_enough(self):
+        its = wait_items()
+        its[1] = rd(decision(), "waiting", ["E"])
+        its.append(decision(iid="E"))
+        its[2] = rd(item("a"), "waiting", ["D"])
+        self.assertTrue(is_waiting(self.ALL, its[:2] + its[2:6] + [its[6]]))
+
+    def test_unlaunched_task_blocked_directly_on_cited_decision_waits(self):
+        its = wait_items(waits="abcd")
+        self.assertTrue(is_waiting({x: paused_state(x) for x in "abc"}, its))
+
+    def test_all_done_is_not_waiting(self):
+        its = [ITEMS[0], decision()] + [rd(item(x, state="done"), "done") for x in "abcd"]
+        self.assertFalse(is_waiting({}, its))
+
+
+class Waiting(unittest.TestCase):
+    """The clock through main(): wait_segments, active_h and the new tripwires."""
+
+    def setUp(self):
+        self.d = tempfile.mkdtemp()
+        self.items = wait_items()
+        self.shows = {}
+        p = [mock.patch.object(SB, "item_list", lambda: self.items),
+             mock.patch.object(SB, "item_show", lambda ids: [self.shows.get(i, shown(i, state="open")) for i in ids]),
+             mock.patch.object(SB, "doctor", lambda: DOC_OK)]
+        for x in p:
+            x.start()
+            self.addCleanup(x.stop)
+        self.go(0, "freeze", "--name", "ci", "--goal", "g", "--under", "EPIC", "--estimate", "8-12")
+
+    def go(self, h, *args):
+        return SB.main(["--campaign", self.d, "--now", iso(h)] + list(args))
+
+    def state(self):
+        return SB.read_json(os.path.join(self.d, "scoreboard-state.json"), "s")
+
+    def show(self, h):
+        import contextlib
+        import io
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            SB.main(["--campaign", self.d, "--now", iso(h), "show", "--json"])
+        return SB.json.loads(out.getvalue())
+
+    def park_all(self, h=1):
+        for x in "abcd":
+            self.assertEqual(self.go(0, "task-start", x), 0)
+        for x in "abcd":
+            self.assertEqual(self.go(h, "task-pause", x, "--on", "D"), 0)
+
+    def test_pause_requires_on(self):
+        self.go(0, "task-start", "a")
+        self.assertEqual(self.go(1, "task-pause", "a"), 1)
+        self.assertNotIn("pauses", self.state()["tasks"]["a"])
+
+    def test_segments_accumulate_only_between_writes_that_both_saw_waiting(self):
+        self.park_all(1)
+        self.assertNotIn("wait_segments", self.state())  # the first waiting write only opens a mark
+        self.go(3, "show", "--digest")
+        self.assertEqual(self.state()["wait_segments"], [[iso(1), iso(3)]])
+        self.go(4, "forecast", "a", "09:00")
+        self.assertEqual(self.state()["wait_segments"], [[iso(1), iso(4)]])  # contiguous: extended
+        self.go(5, "task-resume", "a")  # the pre-change write still saw waiting: bridged to 5
+        self.assertEqual(self.state()["wait_segments"], [[iso(1), iso(5)]])
+        self.go(7, "show", "--digest")
+        self.assertEqual(self.state()["wait_segments"], [[iso(1), iso(5)]])  # 5..7 counts as active
+        r = self.show(8)
+        self.assertAlmostEqual(r["waiting_h"], 4.0)
+        self.assertAlmostEqual(r["active_h"], 4.0)
+
+    def test_unwritten_tail_counts_while_still_waiting(self):
+        self.park_all(1)
+        r = self.show(6)
+        self.assertAlmostEqual(r["waiting_h"], 5.0)
+        self.assertAlmostEqual(r["active_h"], 1.0)
+        self.assertIn("1h active of 8–12h · 5h waiting on you", SB.line1(r))
+
+    def test_no_waiting_part_when_none(self):
+        self.go(0, "task-start", "a")
+        self.assertNotIn("waiting on you", SB.line1(self.show(3)))
+        self.assertEqual(self.show(3)["waiting_h"], 0)
+
+    def test_pause_after_decision_closed_counts_as_active(self):
+        self.park_all(1)
+        self.go(2, "show", "--digest")  # waiting [1,2]
+        for x in "abcd":
+            self.items[2 + "abcd".index(x)] = rd(item(x), "ready")
+        self.items[1] = decision(state="done")
+        self.shows["D"] = dict(shown("D"), done_at=iso(2.5))
+        self.go(3, "forecast", "a", "09:00")  # D closed: not waiting
+        self.go(6, "show", "--digest")
+        r = self.show(7)
+        self.assertAlmostEqual(r["waiting_h"], 1.0)  # nothing after D closed
+        self.assertAlmostEqual(r["active_h"], 6.0)
+        self.assertFalse(r["waiting_now"])
+        self.assertGreater(r["waiting_unexplained_h"], 4.0)  # paused, but no decision behind it
+
+    def test_invalid_pause_is_active_and_warned(self):
+        self.go(0, "task-start", "a")
+        self.items.append(decision(iid="E"))
+        self.assertEqual(self.go(1, "task-pause", "a", "--on", "E"), 0)
+        self.go(2, "show", "--digest")
+        self.assertEqual(self.show(5)["waiting_h"], 0)
+
+    def test_high_end_uses_active_not_elapsed(self):
+        self.park_all(1)
+        r = self.show(21)  # 21h elapsed, 20h waiting
+        self.assertFalse(r["over_high"])
+        self.assertNotIn("campaign_over_high", fired(r))
+        self.assertAlmostEqual(r["elapsed_h"], 21.0)
+        self.items = wait_items(waits="")
+        self.assertIn("campaign_over_high", fired(self.show(30)))
+
+    def test_waiting_on_user_fires_with_decision_notes_and_not_before(self):
+        self.shows["D"] = dict(shown("D", state="open"), title="Pick the cache backend", notes="Redis or SQLite?")
+        self.park_all(1)
+        self.go(2, "show", "--digest")
+        self.assertNotIn("waiting_on_user", fired(self.show(7)))  # 6h of waiting is not more than 6h
+        r = self.show(8)
+        self.assertIn("waiting_on_user", fired(r))
+        ev = [t for t in r["tripwires"] if t["name"] == "waiting_on_user"][0]["evidence"]
+        self.assertIn("Pick the cache backend: Redis or SQLite?", ev)
+
+    def test_waiting_on_user_override_and_off(self):
+        self.park_all(1)
+        self.go(2, "show", "--digest")
+        c = SB.read_json(os.path.join(self.d, "campaign.json"), "c")
+        c["tripwires"]["waiting_on_user"] = 2
+        SB.write_json(os.path.join(self.d, "campaign.json"), c)
+        self.assertIn("waiting_on_user", fired(self.show(5)))
+        c["tripwires"]["waiting_on_user"] = None
+        SB.write_json(os.path.join(self.d, "campaign.json"), c)
+        self.assertNotIn("waiting_on_user", fired(self.show(30)))
+
+    def test_idle_ready_fires_after_an_hour_not_before(self):
+        self.items = wait_items(waits="abc")  # d is ready and never launched
+        for x in "abc":
+            self.go(0, "task-start", x)
+        self.assertEqual(self.state()["ready_since"], {"d": iso(0)})
+        self.assertNotIn("idle_ready", fired(self.show(1)))  # exactly 1h
+        r = self.show(1.5)
+        self.assertIn("idle_ready", fired(r))
+        self.assertIn("d ready 1.5h, not launched", [t for t in r["tripwires"] if t["name"] == "idle_ready"][0]["evidence"])
+
+    def test_claimed_unstarted_task_is_not_idle(self):
+        self.items = wait_items(waits="abc")
+        self.items[5] = rd(item("d"), "claimed")
+        self.go(0, "task-start", "a")
+        self.assertEqual(self.state()["ready_since"], {})
+
+    def test_mark_bridges_a_quiet_wait_before_resume(self):
+        self.park_all(1)
+        self.assertEqual(self.go(5, "mark"), 0)
+        self.assertEqual(self.state()["wait_segments"], [[iso(1), iso(5)]])
+        self.items[1] = decision(state="done")
+        for x in "abcd":
+            self.items[2 + "abcd".index(x)] = rd(item(x), "ready")
+        self.go(9, "task-resume", "a")  # pre-change write sees D closed: 5..9 is active
+        r = self.show(10)
+        self.assertAlmostEqual(r["waiting_h"], 4.0)
+
+    def test_pre_change_write_bridges_wait_while_decision_still_open(self):
+        self.park_all(1)
+        self.go(9, "task-resume", "a")  # D still open: the wait up to the resume counts
+        self.assertEqual(self.state()["wait_segments"], [[iso(1), iso(9)]])
+
+    def test_idle_ready_clears_on_launch(self):
+        self.items = wait_items(waits="abc")
+        self.go(0, "task-start", "a")
+        self.go(2, "task-start", "d")
+        self.assertEqual(self.state()["ready_since"], {})
+        self.assertNotIn("idle_ready", fired(self.show(9)))
+
+    def test_idle_ready_unrecorded_task_does_not_fire(self):
+        self.items = wait_items(waits="abc")  # no write has seen d ready yet
+        self.assertNotIn("idle_ready", fired(self.show(9)))
+
+    def test_new_tripwires_are_frozen_defaults_and_overridable(self):
+        c = SB.read_json(os.path.join(self.d, "campaign.json"), "c")
+        self.assertEqual((c["tripwires"]["idle_ready"], c["tripwires"]["waiting_on_user"]), (1, 6))
+        d2 = tempfile.mkdtemp()
+        self.assertEqual(SB.main(["--campaign", d2, "--now", iso(0), "freeze", "--name", "n", "--goal", "g",
+                                  "--under", "EPIC", "--estimate", "8-12",
+                                  "--tripwire", "idle_ready=2", "waiting_on_user=off"]), 0)
+        c = SB.read_json(os.path.join(d2, "campaign.json"), "c")
+        self.assertEqual((c["tripwires"]["idle_ready"], c["tripwires"]["waiting_on_user"]), (2, None))
 
 
 class Acyclic(unittest.TestCase):

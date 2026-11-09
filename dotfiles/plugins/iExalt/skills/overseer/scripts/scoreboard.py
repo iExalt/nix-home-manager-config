@@ -12,8 +12,17 @@ Commands:
                 tripwire evaluation; --digest also records the digest as sent
   forecast      record the overseer's "next done expected" for a task
   task-start    start a task's clock when its worker launches
-  task-pause    stop the clock while the task waits on the user
+  task-pause    stop the clock while the task waits on the user; --on <decision item>
+                is required and the task must wait on that item in Acyclic
   task-resume   restart the clock
+  mark          record the wait state now, so a quiet wake still bridges a long wait
+
+The campaign clock is wall-clock minus waiting on the user. The overseer's writes
+(show --digest, mark, task-start, task-pause, task-resume, forecast) each record whether the
+campaign is waiting; the interval between two writes counts as waiting only when both
+saw it waiting, so time between writes, and any pause Acyclic doesn't back, counts as
+active. Waiting holds when no task runs and every ready, claimed or dependency-blocked
+task is paused on an open decision item it waits for.
 """
 
 import argparse
@@ -29,7 +38,11 @@ DEFAULT_TRIPWIRES = {
     "scope_growth_pct": 25,
     "forecast_misses": 2,
     "unverified_done": True,
+    "idle_ready": 1,          # hours a ready task may sit unlaunched
+    "waiting_on_user": 6,     # hours the campaign may wait on the user
 }
+NUMERIC_TRIPWIRES = ("scope_growth_pct", "forecast_misses", "idle_ready", "waiting_on_user")
+IGNORED_READINESS = ("done", "canceled", "parked", "parent")
 CAMPAIGN_FILE = "campaign.json"
 STATE_FILE = "scoreboard-state.json"
 
@@ -199,6 +212,98 @@ def running_seconds(task_state, now):
     return total
 
 
+def live_ids(campaign):
+    return (set(campaign["tasks"]) | set(campaign.get("approved_added", []))) - set(campaign.get("dropped", []))
+
+
+def waits_closure(by_id, tid):
+    """Every item `tid` waits for, directly or transitively, per Acyclic readiness."""
+    seen, stack = set(), [tid]
+    while stack:
+        for k in ((by_id.get(stack.pop()) or {}).get("readiness") or {}).get("waiting") or {}:
+            if k not in seen:
+                seen.add(k)
+                stack.append(k)
+    return seen
+
+
+def pause_of(state, tid):
+    """The task's open pause {'at','on'}, or None when it is running or never started."""
+    ts = (state.get("tasks") or {}).get(tid) or {}
+    segs = ts.get("segments") or []
+    if not segs or segs[-1][1] is None:
+        return None
+    pauses = ts.get("pauses") or []
+    return pauses[-1] if pauses else {"at": segs[-1][1], "on": None}
+
+
+def pause_valid(state, by_id, tid):
+    """True when the task is paused on a decision item that exists, is neither done nor canceled,
+    and that the task waits for in Acyclic."""
+    p = pause_of(state, tid)
+    d = by_id.get(p["on"]) if p and p.get("on") else None
+    return bool(d) and d.get("state") not in ("done", "canceled") and d["id"] in waits_closure(by_id, tid)
+
+
+def wait_status(campaign, state, items):
+    """Is the campaign waiting on the user right now, and which tasks sit ready but never launched."""
+    by_id = {i["id"]: i for i in items}
+    live = live_ids(campaign)
+    tasks = state.get("tasks") or {}
+
+    def rd(tid):
+        return ((by_id.get(tid) or {}).get("readiness") or {}).get("readiness")
+
+    def on_user(tid, seen=()):
+        if tid in seen or tid not in live:
+            return False
+        segs = (tasks.get(tid) or {}).get("segments") or []
+        if segs and segs[-1][1] is None:
+            return False  # running
+        if pause_valid(state, by_id, tid):
+            return True
+        waiting = ((by_id.get(tid) or {}).get("readiness") or {}).get("waiting") or {}
+        fresh = not segs  # a started task needs its own valid pause; an unlaunched one can't have one
+        return rd(tid) == "waiting" and bool(waiting) and all(
+            (fresh and k in decisions) or on_user(k, seen + (tid,)) for k in waiting)
+
+    open_tasks = [t for t in sorted(live) if rd(t) not in IGNORED_READINESS]
+    # a thread claim makes its later tasks `claimed` while the overseer holds them back, so only `ready` is idle
+    idle = [t for t in open_tasks if rd(t) == "ready" and not (tasks.get(t) or {}).get("segments")]
+    paused = [t for t in open_tasks if pause_valid(state, by_id, t)]
+    decisions = {pause_of(state, t)["on"] for t in paused}  # open items the user owes, cited by a valid pause
+    waiting = bool(paused) and all(on_user(t) for t in open_tasks)
+    return {"waiting": waiting, "idle": idle, "decisions": sorted(decisions)}
+
+
+def record_write(campaign, state, items, now):
+    """Fold the current wait status into the state at an overseer write."""
+    ws = wait_status(campaign, state, items)
+    mark = state.get("wait_mark")
+    if mark and mark["waiting"] and ws["waiting"]:
+        segs = state.setdefault("wait_segments", [])
+        if segs and segs[-1][1] == mark["at"]:
+            segs[-1][1] = iso(now)
+        else:
+            segs.append([mark["at"], iso(now)])
+    state["wait_mark"] = {"at": iso(now), "waiting": ws["waiting"]}
+    rs = state.setdefault("ready_since", {})
+    for t in ws["idle"]:
+        rs.setdefault(t, iso(now))
+    for t in [t for t in rs if t not in ws["idle"]]:
+        del rs[t]
+
+
+def merged(intervals):
+    out = []
+    for s_, e_ in sorted(intervals):
+        if out and s_ <= out[-1][1]:
+            out[-1][1] = max(out[-1][1], e_)
+        else:
+            out.append([s_, e_])
+    return out
+
+
 def evaluate(campaign, state, items, shown, doc, now, verify=git_verified):
     """Pure function: all scoreboard fields from frozen campaign, state and Acyclic data."""
     start = parse_time(campaign["start"])
@@ -247,6 +352,9 @@ def evaluate(campaign, state, items, shown, doc, now, verify=git_verified):
             row["paused"] = bool(ts["segments"]) and ts["segments"][-1][1] is not None
             first = parse_time(ts["segments"][0][0])
             row["paused_h"] = round(max(0.0, (now - first).total_seconds() - running_seconds(ts, now)) / 3600.0, 2)
+            pz = pause_of(state, tid)
+            if pz:
+                row["pause"] = {"on": pz.get("on"), "valid": pause_valid(state, by_id, tid)}
             row["over_high"] = bool(est) and it.get("state") != "done" and row["running_h"] > est[1]
         tasks[tid] = row
 
@@ -256,6 +364,27 @@ def evaluate(campaign, state, items, shown, doc, now, verify=git_verified):
     last_done = max(done_times) if done_times else None
 
     elapsed_h = (now - start).total_seconds() / 3600.0
+    ws = wait_status(campaign, state, items)
+    mark = state.get("wait_mark")
+    segs = [[parse_time(a), parse_time(b)] for a, b in state.get("wait_segments", [])]
+    tail = 0.0
+    if mark and mark["waiting"] and ws["waiting"]:
+        tail = max(0.0, (now - parse_time(mark["at"])).total_seconds())
+    stretch = tail
+    if tail and segs and segs[-1][1] == parse_time(mark["at"]):
+        stretch += (segs[-1][1] - segs[-1][0]).total_seconds()
+    waiting_s = sum(max(0.0, (min(b, now) - max(a, start)).total_seconds()) for a, b in segs) + tail
+    paused_iv = []
+    for ts in (state.get("tasks") or {}).values():
+        ss = ts.get("segments") or []
+        for k, (_, end) in enumerate(ss):
+            if end:
+                nxt = parse_time(ss[k + 1][0]) if k + 1 < len(ss) else now
+                paused_iv.append([parse_time(end), nxt])
+    paused_s = sum((b - a).total_seconds() for a, b in merged(paused_iv))
+    waiting_h = min(waiting_s, elapsed_h * 3600.0) / 3600.0
+    unexplained_h = max(0.0, paused_s - waiting_s) / 3600.0
+    active_h = elapsed_h - waiting_h
     lo, hi = campaign["estimate_h"]
 
     root = campaign.get("under")
@@ -288,12 +417,19 @@ def evaluate(campaign, state, items, shown, doc, now, verify=git_verified):
     cfg = dict(DEFAULT_TRIPWIRES)
     cfg.update(campaign.get("tripwires") or {})
     over_tasks = [r for r in tasks.values() if r.get("over_high")]
+
+    def by_title(i):
+        return ((shown_by.get(i) or by_id.get(i) or {}).get("title")) or i
+
+    ready_since = state.get("ready_since") or {}
+    idle_ready = sorted(((t, (now - parse_time(ready_since[t])).total_seconds() / 3600.0)
+                         for t in ws["idle"] if t in ready_since), key=lambda x: -x[1])
     tripwires = [
         {"name": "campaign_over_high", "enabled": bool(cfg["campaign_over_high"]),
-         "fired": bool(cfg["campaign_over_high"]) and done < len(total_ids) and elapsed_h > hi,
-         "value": round(elapsed_h, 1), "limit": hi,
-         "evidence": "elapsed %.1fh of %s-%sh estimate, %d/%d done" % (
-             elapsed_h, fmt_hours(lo), fmt_hours(hi), done, len(total_ids))},
+         "fired": bool(cfg["campaign_over_high"]) and done < len(total_ids) and active_h > hi,
+         "value": round(active_h, 1), "limit": hi,
+         "evidence": "active %.1fh of %s-%sh estimate (%.1fh elapsed, %.1fh waiting on the user), %d/%d done" % (
+             active_h, fmt_hours(lo), fmt_hours(hi), elapsed_h, waiting_h, done, len(total_ids))},
         {"name": "task_over_high", "enabled": bool(cfg["task_over_high"]),
          "fired": bool(cfg["task_over_high"]) and bool(over_tasks),
          "value": max([r["running_h"] / r["estimate_h"][1] for r in over_tasks] or [0]),
@@ -310,6 +446,16 @@ def evaluate(campaign, state, items, shown, doc, now, verify=git_verified):
          "value": misses, "limit": cfg["forecast_misses"],
          "evidence": "%d forecast(s) missed: %s" % (
              misses, ", ".join("%s due %s" % (f["task"], f["at"]) for f in forecasts if f["missed"]))},
+        {"name": "idle_ready", "enabled": cfg["idle_ready"] is not None,
+         "fired": cfg["idle_ready"] is not None and bool(idle_ready) and idle_ready[0][1] > cfg["idle_ready"],
+         "value": round(idle_ready[0][1], 1) if idle_ready else 0, "limit": cfg["idle_ready"],
+         "evidence": "; ".join("%s ready %.1fh, not launched" % (by_title(t), h) for t, h in idle_ready)},
+        {"name": "waiting_on_user", "enabled": cfg["waiting_on_user"] is not None,
+         "fired": cfg["waiting_on_user"] is not None and stretch / 3600.0 > cfg["waiting_on_user"],
+         "value": round(stretch / 3600.0, 1), "limit": cfg["waiting_on_user"],
+         "evidence": "campaign waiting on the user %.1fh: %s" % (stretch / 3600.0, "; ".join(
+             "%s: %s" % (by_title(d), ((shown_by.get(d) or {}).get("notes") or "no notes").strip())
+             for d in ws["decisions"]))},
         {"name": "unverified_done", "enabled": bool(cfg["unverified_done"]),
          "fired": bool(cfg["unverified_done"]) and bool(unverified),
          "value": len(unverified), "limit": 0,
@@ -323,8 +469,10 @@ def evaluate(campaign, state, items, shown, doc, now, verify=git_verified):
         "last_digest_at": last_digest["at"],
         "last_done_at": iso(last_done) if last_done else None,
         "last_done_age_s": int((now - last_done).total_seconds()) if last_done else None,
-        "elapsed_h": round(elapsed_h, 2), "estimate_h": [lo, hi],
-        "over_high": elapsed_h > hi and done < len(total_ids),
+        "elapsed_h": round(elapsed_h, 2), "active_h": round(active_h, 2),
+        "waiting_h": round(waiting_h, 2), "waiting_unexplained_h": round(unexplained_h, 2),
+        "waiting_now": ws["waiting"], "waiting_on": ws["decisions"], "estimate_h": [lo, hi],
+        "over_high": active_h > hi and done < len(total_ids),
         "scope_added": len(extra), "scope_added_unapproved": len(unapproved),
         "scope_growth_pct": round(growth_pct, 1), "added_tasks": extra,
         "tasks": tasks, "forecasts": forecasts, "missed_forecasts": misses,
@@ -340,9 +488,10 @@ def line1(r):
            if r["last_done_age_s"] is not None else "none done yet")
     lo, hi = r["estimate_h"]
     warn = " ⚠" if r["over_high"] else ""
-    return "%s · %d/%d done (%+d since %s) · %s · %sh of %s–%sh%s · scope +%d since launch" % (
+    waiting = (" · %sh waiting on you" % fmt_hours(r["waiting_h"])) if r["waiting_h"] >= 0.05 else ""
+    return "%s · %d/%d done (%+d since %s) · %s · %sh active of %s–%sh%s%s · scope +%d since launch" % (
         r["name"], r["done"], r["total"], r["done_since_digest"], since_t, age,
-        fmt_hours(r["elapsed_h"]), fmt_hours(lo), fmt_hours(hi), warn, r["scope_added"])
+        fmt_hours(r["active_h"]), fmt_hours(lo), fmt_hours(hi), warn, waiting, r["scope_added"])
 
 
 # -------------------------------------------------------------------- file IO
@@ -384,7 +533,7 @@ def resolve_tasks(items, refs):
 
 
 def parse_tripwire(k, v):
-    numeric = k in ("scope_growth_pct", "forecast_misses")
+    numeric = k in NUMERIC_TRIPWIRES
     if numeric:
         if v == "off":
             return None
@@ -479,13 +628,15 @@ def snapshot(d, now):
     campaign = read_json(os.path.join(d, CAMPAIGN_FILE), "campaign")
     state = load_state(d)
     items = item_list()
-    ids = sorted(set(campaign["tasks"]) | set(campaign.get("approved_added", [])))
-    return campaign, state, evaluate(campaign, state, items, item_show(ids), doctor(), now)
+    ids = set(campaign["tasks"]) | set(campaign.get("approved_added", []))
+    ids |= {ts["pauses"][-1]["on"] for ts in (state.get("tasks") or {}).values() if ts.get("pauses")}
+    return campaign, state, items, evaluate(campaign, state, items, item_show(sorted(ids)), doctor(), now)
 
 
 def cmd_show(a, d, now):
-    _, state, r = snapshot(d, now)
+    campaign, state, items, r = snapshot(d, now)
     if a.digest:
+        record_write(campaign, state, items, now)
         state["last_digest"] = {"at": iso(now), "done": r["done"]}
         write_json(os.path.join(d, STATE_FILE), state)
     if a.json:
@@ -499,12 +650,13 @@ def _task(items, ref):
 
 
 def live_tasks(campaign):
-    return (set(campaign["tasks"]) | set(campaign.get("approved_added", []))) - set(campaign.get("dropped", []))
+    return live_ids(campaign)
 
 
 def cmd_forecast(a, d, now):
     campaign = read_json(os.path.join(d, CAMPAIGN_FILE), "campaign")
-    tid = _task(item_list(), a.task)
+    items = item_list()
+    tid = _task(items, a.task)
     if tid not in live_tasks(campaign):
         raise ScoreboardError("%s is not a frozen task" % tid)
     state = load_state(d)
@@ -513,16 +665,30 @@ def cmd_forecast(a, d, now):
         print("forecast %s done by %s (already recorded)" % (tid, when))
         return
     state.setdefault("forecasts", []).append({"task": tid, "at": when, "made_at": iso(now)})
+    record_write(campaign, state, items, now)
     write_json(os.path.join(d, STATE_FILE), state)
     print("forecast %s done by %s" % (tid, state["forecasts"][-1]["at"]))
 
 
+def cmd_mark(a, d, now):
+    campaign = read_json(os.path.join(d, CAMPAIGN_FILE), "campaign")
+    state = load_state(d)
+    record_write(campaign, state, item_list(), now)
+    write_json(os.path.join(d, STATE_FILE), state)
+    print("marked: %s" % ("waiting" if state["wait_mark"]["waiting"] else "active"))
+
+
 def cmd_task_clock(a, d, now):
     campaign = read_json(os.path.join(d, CAMPAIGN_FILE), "campaign")
-    tid = _task(item_list(), a.task)
+    items = item_list()
+    tid = _task(items, a.task)
     if tid not in live_tasks(campaign):
         raise ScoreboardError("%s is not a frozen task" % tid)
+    if a.cmd == "task-pause" and not a.on:
+        raise ScoreboardError("task-pause needs --on <decision item>: pause only for a decision the user owes, "
+                              "which the task waits for in Acyclic")
     state = load_state(d)
+    record_write(campaign, state, items, now)  # bridge the wait up to this change
     t = state.setdefault("tasks", {}).get(tid)
     if a.cmd == "task-start":
         if t:
@@ -535,11 +701,17 @@ def cmd_task_clock(a, d, now):
         if a.cmd == "task-pause":
             if not open_seg:
                 raise ScoreboardError("%s is already paused" % tid)
+            on = _task(items, a.on)
             t["segments"][-1][1] = iso(now)
+            t.setdefault("pauses", []).append({"at": iso(now), "on": on})
+            if not pause_valid(state, {i["id"]: i for i in items}, tid):
+                print("warning: %s does not wait for open item %s in Acyclic; this pause counts as active time"
+                      % (tid, on), file=sys.stderr)
         else:
             if open_seg:
                 raise ScoreboardError("%s is already running" % tid)
             t["segments"].append([iso(now), None])
+    record_write(campaign, state, items, now)
     write_json(os.path.join(d, STATE_FILE), state)
     print("%s: %s" % (a.cmd, tid))
 
@@ -561,7 +733,7 @@ def build_parser():
     f.add_argument("--start", help="RFC 3339; default now")
     f.add_argument("--metric", nargs=3, metavar=("NAME", "BASELINE", "TARGET"))
     f.add_argument("--tripwire", nargs="+", metavar="NAME=VALUE",
-                   help="override a default; scope_growth_pct and forecast_misses take numbers or off")
+                   help="override a default; scope_growth_pct, forecast_misses, idle_ready and waiting_on_user take numbers or off")
     f.add_argument("--amend", action="store_true", help="record an approved change to frozen fields")
     f.add_argument("--approved-by")
     f.add_argument("--reason")
@@ -574,8 +746,13 @@ def build_parser():
     fc = sub.add_parser("forecast")
     fc.add_argument("task")
     fc.add_argument("time", help="RFC 3339, or HH:MM UTC (the next such time)")
+    sub.add_parser("mark")
     for name in ("task-start", "task-pause", "task-resume"):
-        sub.add_parser(name).add_argument("task")
+        tp = sub.add_parser(name)
+        tp.add_argument("task")
+        if name == "task-pause":
+            tp.add_argument("--on", metavar="DECISION", help="the decision item the user owes (required); "
+                            "the task must wait for it in Acyclic")
     return p
 
 
@@ -583,7 +760,7 @@ def main(argv=None):
     a = build_parser().parse_args(argv)
     now = parse_time(a.now) if a.now else dt.datetime.now(dt.timezone.utc)
     try:
-        {"freeze": cmd_freeze, "show": cmd_show, "forecast": cmd_forecast}.get(
+        {"freeze": cmd_freeze, "show": cmd_show, "forecast": cmd_forecast, "mark": cmd_mark}.get(
             a.cmd, cmd_task_clock)(a, a.campaign, now)
     except ScoreboardError as e:
         print("scoreboard: %s" % e, file=sys.stderr)

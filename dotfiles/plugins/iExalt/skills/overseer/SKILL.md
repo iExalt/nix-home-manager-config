@@ -131,9 +131,9 @@ how many jobs may run at once across workers and reviewers, and budgets for
 routine tests and expensive evidence checks, so the plan's approval covers
 them. Ask before exceeding an agreed limit or changing a required check.
 
-Give each thread an active-time estimate and the campaign a wall-clock total
+Give each thread an active-time estimate and the campaign an active-time total
 from plan agreement, both recorded in the script as LOW-HIGH ranges, so the stop-loss and the scoreboard
-have a baseline. Quote the user's goal verbatim in the opening message.
+have a baseline. Active time is wall-clock minus the time the campaign waits on the user. Quote the user's goal verbatim in the opening message.
 
 The opening dialog also settles, as separate questions in the same round:
 - **Constraint budgets:** qualifiers in the goal, such as "without losing
@@ -210,10 +210,26 @@ never compute them yourself.
   `--amend --add-task`.
 - **`task-start <task>`** when work on that task begins: at its worker's launch
   for the thread's first task, and for each later task of the thread when the
-  tracker shows the previous one done (check at each wake). **`task-pause`** only when the task is wholly
-  blocked on the user (not while its worker does other work), **`task-resume`**
-  after. A task's clock excludes that wait. A task without a clock or estimate
-  never trips the per-task tripwire. Plan task estimates per task; a thread's
+  tracker shows the previous one done (check at each wake). **`task-pause <task> --on <decision item>`**
+  only when the task is wholly blocked on the user (not while its worker does other work), and only with
+  `--on`: the open decision item the user owes, which the task waits for in Acyclic (`waits-for`, directly
+  or through other items). Waiting on CI, review or anyone other than the user is never a pause. When a worker reports an unplanned
+  blocker on the user, create the decision item and its `waits-for` link before pausing.
+  **`task-resume`** after. A task's clock excludes that wait. A task without a clock or estimate
+  never trips the per-task tripwire.
+- **The campaign clock** is `active_h`: wall-clock since plan agreement minus waiting on the user, so the
+  user's own delays don't count against the estimate. The script, not you, decides what is waiting. The
+  campaign waits only when no task runs and every ready, claimed or dependency-blocked task is paused on a
+  valid decision; a pause on a missing, done or canceled item, or one the task doesn't wait for, counts as
+  active, as does a pause that outlives its decision. A ready task you never launched makes the campaign
+  active. Each of your writes (`show --digest`, `mark`, `task-start`, `task-pause`, `task-resume`, `forecast`)
+  records the state, and task commands also record it just before they change a task; an interval counts as waiting only when the writes at both ends saw it waiting, so
+  time between writes counts as active. Run `scoreboard.py mark` at every wake that sends no digest, and
+  pause and resume promptly. A task blocked directly on the decision item, or on a paused task, needs no
+  pause of its own, but tasks of one thread that must run in order need `waits-for` between them: a later
+  task the thread claim leaves `claimed` and unstarted keeps the campaign active. The script does
+  not reconstruct history from the tracker. Work the user adds extends the estimate through
+  `freeze --amend`, never through the clock. Plan task estimates per task; a thread's
   estimate is the sum of its tasks'.
 - **`forecast <task> <time>`** records your "next done expected" in each digest.
   Record it when you send the digest; a missed forecast counts against you.
@@ -231,10 +247,12 @@ auditor), with notifications on, a heartbeat of its own and a brief of its own
 ([assets/auditor-brief.md](assets/auditor-brief.md)). It reads only
 `campaign.json`, `scoreboard.py show --json` and raw git, CI and tracker facts,
 and messages the user, once per tripwire, when one fires. The default tripwires:
-campaign elapsed past the high end of its estimate; a running task past the high
+campaign active time past the high end of its estimate; a running task past the high
 end of its own estimate; scope grown more than 25% since launch without a
 recorded user approval; your "next done" forecast missed twice; a task marked
-done without verified merge evidence. Never message, steer, brief, answer or
+done without verified merge evidence; a task ready but not launched for more than 1 h
+(`idle_ready`); the campaign waiting on the user for more than 6 h (`waiting_on_user`,
+quoting the decision's title and notes). Never message, steer, brief, answer or
 feed the auditor, and never write its inputs except through the scoreboard
 commands above. Its alarm is the user's, not yours to clear.
 
@@ -364,7 +382,7 @@ cause.
 
 At each heartbeat and task completion, read `scoreboard.py show --json` and
 compare each running task's time (`tasks.<id>.running_h`) and delivered
-outcomes with its estimate, and the campaign's elapsed time with its total.
+outcomes with its estimate, and the campaign's active time (`active_h`, not elapsed) with its total.
 When a thread passes the high end of its estimate with its done check unmet, or
 the campaign passes the high end of its total, start no new work in it. Let running work reach a safe stopping point, and ask the user
 in one dialog, with what has landed, what remains and a fresh estimate:
@@ -461,7 +479,7 @@ The digest looks like this. Line 1 is pasted verbatim from
 say is left out:
 
 ```text
-<campaign> · 3/11 done (+1 since 09:00) · last done 2h ago · 21h of 8–12h ⚠ · scope +8 since launch
+<campaign> · 3/11 done (+1 since 09:00) · last done 2h ago · 21h active of 8–12h ⚠ · 4h waiting on you · scope +8 since launch
 Waiting on you: <item> (since 14:27)
 Blocked: <thread> (<why>)
 Running: <threads> · next done expected: <thread> ~16:00

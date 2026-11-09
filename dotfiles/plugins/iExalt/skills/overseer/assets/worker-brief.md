@@ -31,7 +31,10 @@ the thread, then the terms below, filled in for the worker:
   a point in your work, message the overseer when you are about to reach it,
   allowing the lead time the action needs. For anything unplanned, message it
   as soon as you know you will need it. Either way, continue independent work
-  until you are blocked on the answer.
+  until you are blocked on the answer. When the blocker is a decision only the
+  user can give, name the tracker's decision item that your task waits for
+  (`waits-for`), so the overseer can pause your task's clock on it; waiting on
+  CI, review or anyone other than the user is never a reason to pause.
 - The user agreed to this thread's scope on `<date>`: `<scope>`. That agreement
   is your only approval: send no phase proposal and no chunk report, and run the
   scope to its end without pausing for confirmation. Never ask the overseer to

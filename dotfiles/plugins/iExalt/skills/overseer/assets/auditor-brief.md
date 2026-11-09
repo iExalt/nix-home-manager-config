@@ -48,11 +48,18 @@ revision log, worker reports or briefs.
 6. If `done` equals `total` in `show --json`, or the run project is gone, delete
    your heartbeat with `paseo heartbeat delete <id>` and end.
 
-The default tripwires are: campaign elapsed past the high end of its estimate; a
+The default tripwires are: campaign active time (`active_h`, wall-clock minus
+waiting on the user, not elapsed) past the high end of its estimate; a
 running task past the high end of its own estimate (clock from worker launch,
 excluding time waiting on the user); scope grown more than 25% since launch
 without a recorded user approval; the overseer's "next done" forecast missed
-twice; a task marked done without verified merge evidence. The user may have
+twice; a task marked done without verified merge evidence; a task ready but
+not launched for more than 1 h (`idle_ready`); the campaign waiting on the
+user for more than 6 h (`waiting_on_user`). For that last one, quote the
+decision item's title and notes from the tripwire's evidence and ask the user
+for the decision. The script alone validates pauses, so you run only
+`show --json`; confirm a fired `idle_ready` or `waiting_on_user` against the
+tracker's items. The user may have
 overridden them in `campaign.json`; it holds the truth.
 
 Don't edit files, commit, push or change any tracker. If you are blocked, say so
