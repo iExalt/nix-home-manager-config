@@ -77,6 +77,34 @@ class Validate(unittest.TestCase):
         self.assertIn("est_high_h is not finite", self.errs(rec(est_high_h=float("inf"))))
         self.assertIn("task is empty", self.errs(rec(task="  ")))
 
+    def test_percentiles_must_be_ordered(self):
+        ok = rec(est_p10_h=0.1, est_median_h=0.3, est_p90_h=0.9)
+        self.assertEqual(self.errs(ok), [])
+        for bad in (dict(ok, est_median_h=0.6), dict(ok, est_p10_h=0.3), dict(ok, est_p90_h=0.4)):
+            self.assertTrue(any("est_p10_h <= est_low_h" in e for e in self.errs(bad)), bad)
+
+    def test_bias_check_uses_the_stated_median_when_given(self):
+        gut = dict(raw_low_h=0.5, raw_high_h=1.0, bias_factor=0.6)
+        self.assertEqual(self.errs(rec(est_low_h=0.26, est_median_h=0.42, est_high_h=0.73, **gut)), [])
+        self.assertTrue(self.errs(rec(est_low_h=0.26, est_median_h=0.7, est_high_h=0.73, **gut)))
+
+    def test_revisions_are_validated(self):
+        rev = {"at": "2026-01-01T10:10:00Z", "elapsed_h": 0.1, "remaining_low_h": 0.2,
+               "remaining_median_h": 0.3, "remaining_high_h": 0.5, "trigger": "probe", "reason": "r"}
+        later = dict(rev, at="2026-01-01T10:30:00Z", elapsed_h=0.15, trigger="round")
+        self.assertEqual(self.errs(rec(actual_h=0.4, revisions=[rev, later])), [])
+        cases = {
+            "earlier than": [later, dict(rev, elapsed_h=0.15)],
+            "elapsed_h is lower": [dict(rev, elapsed_h=0.2), dict(later, elapsed_h=0.1)],
+            "elapsed_h exceeds actual_h": [dict(rev, elapsed_h=0.9)],
+            "remaining_low_h <= remaining_median_h": [dict(rev, remaining_median_h=0.6)],
+            "trigger": [dict(rev, trigger="whim")],
+            "bad keys ['when']": [dict(rev, when="x")],
+            "missing ['at']": [{k: v for k, v in rev.items() if k != "at"}],
+        }
+        for want, revs in cases.items():
+            self.assertTrue(any(want in e for e in self.errs(rec(actual_h=0.4, revisions=revs))), want)
+
     def test_actual_above_elapsed_is_a_warning_not_an_error(self):
         r = rec(actual_h=2, started_at="2026-01-01T10:00:00Z", ended_at="2026-01-01T11:00:00Z")
         errs, warns = E.validate(r)
@@ -187,6 +215,21 @@ class Calibration(unittest.TestCase):
         self.assertAlmostEqual(b_audit, 0.25 * math.log(2) + 0.75 * b_all)
         self.assertEqual(model["audit"][1:3], model["_all"][1:3])
 
+    def test_remaining_time_factor_weights_each_record_once(self):
+        def revs(*preds):
+            return [{"at": f"2026-01-01T10:{i:02d}:00Z", "elapsed_h": 0.0, "remaining_low_h": p / 2,
+                     "remaining_median_h": p, "remaining_high_h": p * 2} for i, p in enumerate(preds)]
+        recs = [rec(actual_h=1.0, revisions=revs(0.5, 0.5, 0.5, 0.5)),  # actual 2x stated, 4 times
+                rec(actual_h=1.0, revisions=revs(2.0))]                # actual 0.5x stated, once
+        per_rec, hits, n = E.remaining_calibration(recs)
+        self.assertEqual((len(per_rec), n), (2, 5))
+        self.assertAlmostEqual(math.exp(sum(per_rec) / 2), 1.0)
+        self.assertEqual(hits, 5)
+        broken = [dict(r, remaining_high_h=float("inf")) for r in revs(0.5)]
+        self.assertIn("revisions[0] has a non-finite number",
+                      " ".join(E.validate(rec(actual_h=1.0, revisions=broken))[0]))
+        self.assertEqual(E.remaining_calibration([rec(actual_h=1.0, revisions=broken)])[2], 1)
+
     def test_interval_score_penalises_width_and_misses(self):
         ln = math.log
         self.assertAlmostEqual(E.interval_score(ln(1), ln(2), ln(1.5)), 1.0)
@@ -210,6 +253,17 @@ class Calibration(unittest.TestCase):
                            env=dict(os.environ, TIME_ESTIMATE_LOG=str(path)))
         self.assertIn("small-fix", p.stdout)
         self.assertLessEqual(len(p.stdout.splitlines()), 30)
+        self.assertRegex(rows["fitted"][-1], r"^\d+%$")  # share of actuals under the fitted p90
+        env = dict(os.environ, TIME_ESTIMATE_LOG=str(path))
+        p = subprocess.run([sys.executable, "-I", str(SCRIPTS / "estimates.py"), "estimate",
+                            "--kind", "small-fix", "--low", "0.5", "--high", "2"],
+                           capture_output=True, text=True, env=env)
+        self.assertEqual(p.returncode, 0, p.stderr)
+        self.assertIn("Likely", p.stdout)
+        fragment = json.loads(p.stdout.splitlines()[-1])
+        full = dict(fragment, task="fixture task", outcome="done", actual_h=0.5)
+        self.assertEqual(E.validate(full), ([], []))  # the printed numbers log cleanly
+        self.assertAlmostEqual(fragment["est_median_h"], 0.55, delta=0.05)
 
 
 if __name__ == "__main__":
