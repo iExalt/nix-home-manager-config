@@ -285,8 +285,15 @@ one-line prefix or `overseer`'s roll call.
   output such as `failed=0`.
 - A timeout alone creates no work: wait again without reading logs or asking
   for status.
-- Before ending a turn to wait on a peer, confirm it is still running or has a
-  message in flight.
+- Before ending a turn to wait, arm something that wakes you; a peer that is
+  still running is not a wake source. Claude Code re-invokes you when a
+  background Agent, Bash task or Monitor finishes. A Codex native subagent's
+  messages and completion do **not** wake an idle root: they queue until your
+  next turn, which may never come. In Codex, stay in a `wait_agent` loop
+  (call it again on every timeout) or, under Paseo, arm
+  `paseo heartbeat create ...`. Paseo runs and sends with `--notify-on-finish`,
+  and heartbeats, wake you. A Stop hook blocks once when a Codex turn ends with
+  native subagents outstanding; treat that as a bug in your plan, not noise.
 - An agreed checkpoint is a stall threshold, not a reporting deadline. When an
   agent goes quiet past it, inspect it first (a permission prompt, exhausted
   context, a crash), then make one bounded inquiry.
@@ -308,6 +315,11 @@ one-line prefix or `overseer`'s roll call.
   If it completes before acknowledging the message, resume it with the pending
   task. These are native subagent tools; Paseo workers follow the overseer's
   Paseo CLI instructions.
+- Before handing work to a host or worker, prove it can reach the agreed end
+  state, such as a signed commit, push and PR creation, with a cheap probe: a
+  signed throwaway commit, `gh auth status` and `git push --dry-run`. Route any
+  gap (credentials, signing, network, permissions) before the work starts, not
+  after the worker blocks on it.
 - When a required capability is missing (subagents, routing, a native
   reviewer, a message channel), report it and continue only independent
   read-only preparation. Never fake delegation or silently take the work over.
