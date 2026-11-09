@@ -5,15 +5,18 @@ description: "Estimate the wall-clock time of agent-executed work from the user'
 
 # Time estimate
 
-Estimate wall-clock time with agents doing the work. Aim for a midpoint that lands on the actual
+Estimate wall-clock time with agents doing the work. Aim for a likely time that lands on the actual
 and a range that contains it about half the time, narrowed only by what you have learned about this
-task. Before this skill, agents' gut midpoints ran about 1.6x high and about half of actuals
+task. Durations are skewed: most outcomes cluster near the likely time with a long tail above it, so
+give the likely time and the tail, not just two ends. Keep the estimate current while you work:
+"how much longer?" matters more than the first guess. Before this skill, agents' gut midpoints ran about 1.6x high and about half of actuals
 landed below the range, so the procedure corrects the gut with measured numbers instead of
 padding it.
 
 ```sh
 te() { python3 -I "<this skill's directory>/scripts/estimates.py" "$@"; }   # zsh and bash
-te stats              # current factor and 50% spread per kind; read before every estimate
+te stats              # current factor and percentile multipliers per kind; read before every estimate
+te estimate --kind small-fix --low 0.5 --high 1   # gut range in hours -> calibrated numbers + JSON
 te log < record.json  # append one validated record when estimated work finishes
 te check              # validate the whole log
 te stats --backtest   # how this procedure would have scored on past work
@@ -60,24 +63,39 @@ The log is private JSONL at `~/.local/state/agent-estimates.jsonl` (override wit
      larger than the code change.
    - Debugging unknown failures takes the top of the range; profile before theorising.
    - Batch `claude -p` runs take seconds each; price evals by setup and mining, not by run count.
-2. **Debias.** Midpoint = gut midpoint × the kind's factor from `te stats`, where the gut midpoint
-   is the geometric mean √(low × high). Apply it even when your gut started from the anchor: the
-   factor was fitted on guts formed that way. Keep the gut range: you log it as `raw_low_h`/`raw_high_h`
-   with the factor as `bias_factor`, so later fits measure your gut, not the correction.
-3. **Width.** Range = midpoint × [low, high] from `te stats`. Narrow it only for an unknown a probe
-   settled, and say which. Don't narrow a range to look precise, and don't widen it as padding.
-4. **State it** in minutes under an hour and hours with one decimal above, never engineer-days,
+2. **Calibrate.** Run `te estimate --kind <kind> --low <gut low> --high <gut high>` (hours). It
+   multiplies the gut midpoint √(low × high) by the kind's factor to get the likely time (the
+   median), then applies the measured multipliers for p10, p25, p75 and p90, and prints a JSON
+   fragment for the record. Apply it even when your gut started from the anchor: the factor was
+   fitted on guts formed that way. Logging the gut range as `raw_low_h`/`raw_high_h` lets later fits
+   measure your gut, not the correction.
+3. **Width.** The range is the p25–p75 band: it should hold the actual half the time. Narrow it
+   only for an unknown a probe settled, and say which. Don't narrow it to look precise, and don't
+   widen it as padding. p10 and p90 describe the tails; they are not the range.
+4. **Name the drivers.** Say what would put the work near p10 (`why_low`) and what would push it
+   toward p90 (`why_high`): the unknowns, which are also what to probe. Take the numbers from the
+   calibration, not by adding up delays; summing padded parts made estimates worse in evals.
+5. **State it** in minutes under an hour and hours with one decimal above, never engineer-days,
    weeks or "sessions". Label any human-effort figure you cite from elsewhere as such. Give the
-   range, review rounds, what bounds it and the phases included, for example: "20–35 min, one
-   review round, bounded by the cold build; includes review, CI and merge."
+   likely time, the range, the tails with their drivers, review rounds and the phases included,
+   for example: "Likely 25 min, half the time 15–40 min; could be as low as 10 if the existing test
+   covers the path, or reach about an hour if the dependency install is cold. One review round;
+   includes review, CI and merge."
 
 ## While working
 
 - Count active time on the estimated scope. Track separately time blocked on the user (approvals,
   permissions, answers, and interruptions such as reboots or being asked to stop) and time spent on
   scope the user added or changed after the estimate.
-- When active time passes the high end, stop and re-estimate what remains, with the reason. Log the
-  original estimate at completion and put the revision in `reasoning`.
+- Re-estimate the remaining time at checkpoints: after a probe, after each review round, at chunk
+  boundaries, and whenever active time passes the high end (stop and re-estimate then). State it
+  as "about R remaining (R1–R2)" with the reason, and answer "how much longer?" with the latest one.
+- Keep each revision as stated at the time (`at`, active `elapsed_h`, `remaining_low_h`,
+  `remaining_median_h`, `remaining_high_h`, `trigger`: probe, round, boundary, overrun or other,
+  and `reason`). At completion copy them into `revisions` from the conversation; if a compaction
+  lost them, omit them. A revision reconstructed in hindsight is worse than none. `te stats`
+  reports how remaining-time estimates compare with the time that actually remained.
+- Log the original estimate, not the latest revision.
 
 ## At completion
 
@@ -94,16 +112,21 @@ The log is private JSONL at `~/.local/state/agent-estimates.jsonl` (override wit
 te log <<'EOF'
 {"task": "Add retry to the sync client", "repo": "owner/repo", "thread_id": "<your conversation or thread id>",
  "harness": "claude-code", "model": "claude-opus-5-5", "kind": "small-fix",
- "raw_low_h": 0.5, "raw_high_h": 1.0, "bias_factor": 0.6, "est_low_h": 0.3, "est_high_h": 0.6,
+ "raw_low_h": 0.5, "raw_high_h": 1.0, "bias_factor": 0.56, "est_p10_h": 0.17, "est_low_h": 0.25,
+ "est_median_h": 0.39, "est_high_h": 0.68, "est_p90_h": 1.0,
+ "why_low": "existing retry helper covers the client", "why_high": "cold install or a second review round",
  "est_rounds_low": 1, "est_rounds_high": 1, "includes": ["impl", "review", "ci", "publish"],
- "probe": true, "probe_minutes": 2, "anchor": "small-fix median 25m",
+ "probe": true, "probe_minutes": 2, "anchor": "small-fix median 18 min",
  "est_at": "2026-11-09T15:40:00Z", "started_at": "2026-11-09T15:40:00Z", "ended_at": "2026-11-09T16:20:00Z",
+ "revisions": [{"at": "2026-11-09T15:55:00Z", "elapsed_h": 0.2, "remaining_low_h": 0.1,
+   "remaining_median_h": 0.15, "remaining_high_h": 0.25, "trigger": "round", "reason": "review asked for a jitter test"}],
  "actual_h": 0.4, "actual_rounds": 2, "blocked_h": 0.25, "scope_h": 0, "compactions": 0, "outcome": "done",
  "reasoning": "...", "cause": "...", "lesson": "...", "suggestion": "..."}
 EOF
 ```
 
-- Without debiasing, omit the `raw_*` fields and `bias_factor`.
+- Paste the numeric fields from `te estimate`. Without calibration, omit the `raw_*` fields,
+  `bias_factor` and the percentile fields.
 - `actual_h` is active time; `blocked_h` and `scope_h` are 0 when nothing applies.
 - In a campaign, each worker sets `parent_id` to the campaign's id, and the coordinator logs the
   campaign's own record with that id as its `thread_id`. Stats then count the campaign once.
