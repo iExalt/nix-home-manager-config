@@ -57,7 +57,7 @@ MAX_REVISIONS = 50
 PORTED_OPTIONAL = {"kind", "est_low_h", "est_high_h"}
 MAX_RECORD_BYTES = 64 * 1024
 HEADLINE_WINDOW = 60
-TAIL_MIN = 120    # tail multipliers (p10, p90) pool all kinds over at least this many units
+PERCENTILE_MIN = 30  # below this many headline units, percentiles are noise
 SHRINK_N = 8      # per-kind factor reaches full weight at this many units
 SPREAD_N = 12     # per-kind quartiles used only from this many units
 BACKTEST_START = 30
@@ -202,6 +202,8 @@ def validate_revisions(revs, actual_h):
                 r["remaining_high_h"]]
         if not (0 <= trio[0] <= trio[1] <= trio[2]):
             errs.append(f"{where}: need 0 <= remaining_low_h <= remaining_median_h <= remaining_high_h")
+        if any(isinstance(v, float) and not math.isfinite(v) for v in r.values()):
+            errs.append(f"{where} has a non-finite number")
         if r.get("trigger") is not None and r["trigger"] not in TRIGGERS:
             errs.append(f"{where}.trigger is not one of {', '.join(TRIGGERS)}")
     return errs
@@ -378,7 +380,7 @@ def remaining_calibration(recs):
             left = r["actual_h"] - v["elapsed_h"]
             lo, hi = v["remaining_low_h"], v["remaining_high_h"]
             pred = v.get("remaining_median_h") or (gmid(lo, hi) if lo > 0 else hi / 2)
-            if left <= 0 or pred <= 0:
+            if not (0 < left < math.inf and 0 < pred < math.inf):
                 continue
             logs.append(math.log(left / pred))
             hits += lo <= left <= hi
@@ -397,11 +399,11 @@ def cmd_stats(args):
     if not win:
         sys.exit("no headline records yet")
     model = fit(win)
-    t10, t90 = tails(us) if len(us) >= 10 else (float("nan"), float("nan"))
+    t10, t90 = tails(us) if len(us) >= PERCENTILE_MIN else (float("nan"), float("nan"))
     skipped = ", ".join(f"{v} {k}" for k, v in excluded.items() if v)
-    print(f"# factor and p25/p75 from the last {len(win)} of {len(us)} headline units; p10/p90 "
-          f"pooled over all {len(us)} ({len(recs)} records; skipped: {skipped or 'none'}; "
-          f"{len(bad)} invalid)")
+    print(f"# {len(recs)} records, {len(bad)} invalid; skipped: {skipped or 'none'}")
+    print(f"# factor, p25, p75: last {len(win)} of {len(us)} headline units; "
+          f"p10, p90: all {len(us)}, all kinds")
     print("# likely = gut midpoint x factor; each percentile = likely x its multiplier; "
           "`estimate` does the arithmetic")
     print(f"{'kind':18s} {'n':>3s} {'factor':>6s} {'p10':>5s} {'p25':>5s} {'p75':>5s} {'p90':>5s} "
@@ -432,6 +434,10 @@ def cmd_estimate(args):
         sys.exit("need 0 < --low <= --high (hours)")
     model = fit(win)
     b, q25, q75, n = model.get(args.kind, model["_all"])
+    if len(us) < PERCENTILE_MIN:
+        likely = gmid(args.low, args.high) * math.exp(b)
+        sys.exit(f"only {len(us)} headline units: percentiles would be noise. Likely about "
+                 f"{fmt_h(likely)}; state your gut range as the band and log it uncorrected.")
     t10, t90 = tails(us)
     likely = gmid(args.low, args.high) * math.exp(b)
     pts = {"p10": likely * math.exp(t10), "p25": likely * math.exp(q25), "likely": likely,

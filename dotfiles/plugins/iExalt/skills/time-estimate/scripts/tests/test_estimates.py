@@ -225,6 +225,10 @@ class Calibration(unittest.TestCase):
         self.assertEqual((len(per_rec), n), (2, 5))
         self.assertAlmostEqual(math.exp(sum(per_rec) / 2), 1.0)
         self.assertEqual(hits, 5)
+        broken = [dict(r, remaining_high_h=float("inf")) for r in revs(0.5)]
+        self.assertIn("revisions[0] has a non-finite number",
+                      " ".join(E.validate(rec(actual_h=1.0, revisions=broken))[0]))
+        self.assertEqual(E.remaining_calibration([rec(actual_h=1.0, revisions=broken)])[2], 1)
 
     def test_interval_score_penalises_width_and_misses(self):
         ln = math.log
