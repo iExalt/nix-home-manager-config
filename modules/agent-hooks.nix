@@ -6,6 +6,9 @@ let
   guard = "${pkgs.python3}/bin/python3 -I -S ${../dotfiles/hooks/process-probe-guard.py}";
   guardPython = pkgs.python3.withPackages (p: [ p.bashlex ]);
   miseGuard = "AGENT_MISE_BIN=${pkgs.mise}/bin/mise ${guardPython}/bin/python3 -I ${../dotfiles/hooks/mise-tool-guard.py}";
+  # fix(hooks): Codex does not wake an idle root for native subagent messages, so a turn that ends with
+  # subagents outstanding stalls. Claude Code re-invokes the parent for background work; no Stop guard there.
+  yieldGuard = "${pkgs.python3}/bin/python3 -I -S ${../dotfiles/hooks/unbacked-yield-guard.py}";
   entry = matcher: {
     inherit matcher;
     hooks = [
@@ -21,6 +24,7 @@ in
   # existing sessions can retain their earlier hook definitions until restarted.
   home.file.".codex/hooks.json".text = builtins.toJSON {
     hooks.PreToolUse = [ (entry "^(Bash|exec_command|shell|local_shell)$") ];
+    hooks.Stop = [ { hooks = [ { type = "command"; command = yieldGuard; timeout = 10; } ]; } ];
   };
 
   # Claude Code keeps hooks in its live, untracked settings.json, which it also rewrites itself.

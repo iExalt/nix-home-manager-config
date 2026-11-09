@@ -16,7 +16,7 @@
 * Track your own processes by PID (`cmd & echo $! > pidfile`, then `kill -0`), not by `pgrep -f` or `pkill -f` patterns: inside `ssh` or `kubectl exec`, and on Linux, those match the shell running your command, and `ps | grep X` always lists the grep itself. If you must match a pattern, bracket it (`[b]uild.sh`), and kill only PIDs you started.
 * Run work that may take over 10 minutes in the background or under a watcher, and wait for its notification; never start a second watcher on something already watched.
 * Check what actually runs, such as the daemon's version rather than the app bundle's, and prefer watchers that stop at the first failure, such as `gh pr checks --watch --fail-fast`.
-* Never end a turn on a promise. If your last message says you're waiting, something armed must wake you: a background task, Monitor, a scheduled wake-up, or a peer that is still running. A subagent's final hand-back is its last message. When the next piece of work is already approved, start it instead of announcing it.
+* Never end a turn on a promise. If your last message says you're waiting, something armed must wake you: a background task, Monitor, a scheduled wake-up, or a Paseo run (`--notify-on-finish`) or heartbeat. A running peer is not enough: in Codex, native subagent messages and completion do not wake an idle root, so stay in a `wait_agent` loop or arm a heartbeat. A subagent's final hand-back is its last message. When the next piece of work is already approved, start it instead of announcing it.
 * Never create Paseo background workspaces or agents (`--background`, or `background: true`).
 
 ## Git and workspace
