@@ -314,8 +314,21 @@ one-line prefix or `overseer`'s state digest.
   `collaboration.list_agents`. Use `collaboration.followup_task` to resume a
   completed agent; use `collaboration.send_message` for an agent still running.
   If it completes before acknowledging the message, resume it with the pending
-  task. These are native subagent tools; Paseo workers follow the overseer's
-  Paseo CLI instructions.
+  task. These are native subagent tools.
+- Keep three kinds of agent apart:
+  - **Worker:** a top-level Paseo agent in its own visible workspace, for
+    implementation, a thread or any work the user should see.
+  - **Paseo subagent:** a Paseo agent with a parent, listed under the
+    parent's subagents. Launch one only when the user asks for a subagent in
+    Paseo.
+  - **Native subagent:** a Claude Code `Agent` or Codex `spawn_agent` helper
+    that lives inside your session, for reviews (including
+    `continuous-peer-review`'s reviewer), lookups and other short helpers.
+    Never use one for implementation the user should see as a thread.
+- Launch every Paseo agent as
+  [references/paseo-launch.md](references/paseo-launch.md) describes:
+  its project, a visible workspace, `--relationship detached`, settings that
+  match yours unless routing says otherwise, and a readback.
 - Before handing work to a host or worker, prove it can reach the agreed end
   state, such as a signed commit, push and PR creation, with a cheap probe: a
   signed throwaway commit, `gh auth status` and `git push --dry-run`. Route any

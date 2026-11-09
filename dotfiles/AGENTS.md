@@ -17,7 +17,7 @@
 * Run work that may take over 10 minutes in the background or under a watcher, and wait for its notification; never start a second watcher on something already watched.
 * Check what actually runs, such as the daemon's version rather than the app bundle's, and prefer watchers that stop at the first failure, such as `gh pr checks --watch --fail-fast`.
 * Never end a turn on a promise. If your last message says you're waiting, something armed must wake you: a background task, Monitor, a scheduled wake-up, or a Paseo run (`--notify-on-finish`) or heartbeat. A running peer is not enough: in Codex, native subagent messages and completion do not wake an idle root, so stay in a `wait_agent` loop or arm a heartbeat. A subagent's final hand-back is its last message. When the next piece of work is already approved, start it instead of announcing it.
-* Never create Paseo background workspaces or agents (`--background`, or `background: true`).
+* Never create Paseo background workspaces or agents (`--background`, or `background: true`). Before launching any Paseo agent, read `iExalt:working-conventions`'s `references/paseo-launch.md` and follow it: a worker gets its own visible workspace in the right project, `--relationship detached`, and your own settings unless routing says otherwise.
 
 ## Git and workspace
 
