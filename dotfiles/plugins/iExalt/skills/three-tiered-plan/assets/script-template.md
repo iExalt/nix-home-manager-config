@@ -65,7 +65,7 @@ This script groups the [roadmap](<ROADMAP>.md)'s steps; the [plan](<PLAN>.md) sa
   - <When nothing is needed mid-run or after, replace those two lines with "None after approval.">.
 - **Chunks (proposed):** <2–4 chunks; the loop reshapes them with its reviewer>.
 - **Live:** <resources, spending and teardown>.
-- **Estimate:** <active-time range and review rounds; the overseer's stop-loss triggers past the upper bound>.
+- **Estimate:** <active-time range and review rounds; the overseer's stop-loss triggers past the upper bound; a campaign total, in wall-clock hours from plan agreement, goes in the script header; with a tracker, per-task ranges>.
 - **Done when:** <the deliverable and exit check, and the gate it passes, if any. For a measured goal: the agreed method,
   the kill criterion, and "merged with the number reported">.
 

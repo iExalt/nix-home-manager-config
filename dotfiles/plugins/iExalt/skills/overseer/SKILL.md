@@ -210,11 +210,11 @@ never compute them yourself.
   `--amend --add-task`.
 - **`task-start <task>`** when work on that task begins: at its worker's launch
   for the thread's first task, and for each later task of the thread when the
-  previous one is reported done. **`task-pause`** only when the task is wholly
+  tracker shows the previous one done (check at each wake). **`task-pause`** only when the task is wholly
   blocked on the user (not while its worker does other work), **`task-resume`**
   after. A task's clock excludes that wait. A task without a clock or estimate
-  never trips the per-task tripwire; a thread's estimate is the sum of its
-  tasks'.
+  never trips the per-task tripwire. Plan task estimates per task; a thread's
+  estimate is the sum of its tasks'.
 - **`forecast <task> <time>`** records your "next done expected" in each digest.
   Record it when you send the digest; a missed forecast counts against you.
 - **`show`** prints line 1 of the digest; `show --digest` also records that

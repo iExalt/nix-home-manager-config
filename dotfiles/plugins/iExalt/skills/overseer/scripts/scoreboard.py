@@ -235,7 +235,7 @@ def evaluate(campaign, state, items, shown, doc, now, verify=git_verified):
             else:
                 reason = ("no merge commit recorded" if not commit
                           else "commit unmerged" if commit in unmerged
-                          else "tracker reports %d unchecked commit(s) and ancestry could not be confirmed"
+                          else "tracker reports %d unchecked commit(s); ancestry unconfirmed (fetch the mapped clone?)"
                           % doc["unchecked"])
                 row["unverified_done"] = reason
                 unverified.append({"task": tid, "title": it.get("title"), "reason": reason})
@@ -271,8 +271,8 @@ def evaluate(campaign, state, items, shown, doc, now, verify=git_verified):
 
     forecasts, seen = [], set()
     for f in state.get("forecasts", []):
-        if (f["task"], f["at"]) in seen:  # a repeated forecast is not a new one
-            continue
+        if (f["task"], f["at"]) in seen or f["task"] not in tasks:
+            continue  # a repeated forecast is not a new one; a dropped task's forecast is moot
         seen.add((f["task"], f["at"]))
         at = parse_time(f["at"])
         t = tasks.get(f["task"])
@@ -498,10 +498,14 @@ def _task(items, ref):
     return resolve_tasks(items, [ref])[0]
 
 
+def live_tasks(campaign):
+    return (set(campaign["tasks"]) | set(campaign.get("approved_added", []))) - set(campaign.get("dropped", []))
+
+
 def cmd_forecast(a, d, now):
     campaign = read_json(os.path.join(d, CAMPAIGN_FILE), "campaign")
     tid = _task(item_list(), a.task)
-    if tid not in set(campaign["tasks"]) | set(campaign.get("approved_added", [])):
+    if tid not in live_tasks(campaign):
         raise ScoreboardError("%s is not a frozen task" % tid)
     state = load_state(d)
     when = iso(parse_forecast(a.time, now))
@@ -516,7 +520,7 @@ def cmd_forecast(a, d, now):
 def cmd_task_clock(a, d, now):
     campaign = read_json(os.path.join(d, CAMPAIGN_FILE), "campaign")
     tid = _task(item_list(), a.task)
-    if tid not in set(campaign["tasks"]) | set(campaign.get("approved_added", [])):
+    if tid not in live_tasks(campaign):
         raise ScoreboardError("%s is not a frozen task" % tid)
     state = load_state(d)
     t = state.setdefault("tasks", {}).get(tid)

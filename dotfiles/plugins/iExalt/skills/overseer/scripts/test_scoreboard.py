@@ -225,6 +225,12 @@ class Dropped(unittest.TestCase):
         self.assertNotIn("task_over_high", fired(r))
         self.assertIn("unverified_done", fired(r))
 
+    def test_dropped_task_forecast_is_moot(self):
+        c = campaign(dropped=["c"])
+        st = {"tasks": {}, "forecasts": [{"task": "c", "at": iso(1), "made_at": T0}]}
+        r = run(c=c, state=st, now=at(5))
+        self.assertEqual(r["missed_forecasts"], 0)
+
     def test_paused_hours_reported(self):
         st = {"tasks": {"a": {"segments": [[iso(0), iso(1)], [iso(3), None]]}}, "forecasts": []}
         self.assertAlmostEqual(run(state=st, now=at(4))["tasks"]["a"]["paused_h"], 2.0)

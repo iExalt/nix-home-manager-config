@@ -84,6 +84,6 @@ the thread, then the terms below, filled in for the worker:
 - Don't launch other workers. Your continuous reviewer is part of your own
   work. If it stops when neither you nor the user stopped it, tell the
   overseer at once.
-- When the thread is complete, mark it done in the script (for a tracker, with
-  `item done --commit` once the merge lands), record any deviation, tell the
-  overseer, and stop.
+- With a tracker, run `item done --commit` as each task's merge lands, without
+  messaging the overseer: the scoreboard reads it. When the thread is complete,
+  mark it done in the script, record any deviation, tell the overseer, and stop.
