@@ -1,6 +1,6 @@
 # Overseer in Paseo
 
-Read this when the overseer runs in Paseo. Drive Paseo through its CLI, not
+The overseer runs only in Paseo. Drive Paseo through its CLI, not
 built-in agent tools: `paseo` below means `"$PASEO_CLI"`, which Paseo sets in
 its agents' environment, and the macOS app bundles it at
 `/Applications/Paseo.app/Contents/Resources/bin/paseo`. Your own agent ID is
@@ -26,27 +26,54 @@ project, and your whole job is the hand-off, done straight away:
    `paseo workspace create --isolation local --no-background --path <run checkout> --project <project-id> --title "Overseer: <task>" --json`.
    Apply "Validate the workspace before launch" below before launching.
 3. Launch the overseer in it with
-   `paseo agent run --no-wait --relationship detached --no-notify-on-finish --workspace <workspace-id> --title "Overseer: <task>" --provider <provider> --mode <mode> --model <model> --thinking <effort> "<prompt>"`,
-   with your own provider and mode from `paseo agent status`, and the
-   overseer model and effort from `SKILL.md` › Three-tier model routing. Its
-   prompt invokes this skill and carries the user's request verbatim, with
-   anything else they said in this thread, and your agent ID as the
-   launcher's.
-4. Right after the launch, tell the user in one line where the overseer
-   runs (its thread and project), then archive yourself: with
+   `paseo agent run --no-wait --relationship detached --no-notify-on-finish --workspace <workspace-id> --title "Overseer: <task>" --provider claude --mode <mode> --model <Opus> --thinking medium "<prompt>"`,
+   with your own mode from `paseo agent status` and the latest Opus model
+   `paseo provider models` lists for the overseer route in
+   `SKILL.md` › Model routing, whatever your own provider. If that route is
+   unavailable, report it and stop. Its prompt invokes this skill and
+   carries the user's request verbatim, with anything else they said in this
+   thread, and your agent ID as the launcher's.
+4. Start the auditor, as "Start the auditor" below describes.
+5. Right after the launches, tell the user in one line where the overseer
+   and the auditor run (their threads and project), then archive yourself: with
    `paseo workspace archive <your workspace-id>` when you are the only agent
    in your workspace (`paseo agent status <agent-id> --json` shows each
    agent's `snapshot.workspaceId`), otherwise with
    `paseo agent archive --force "$PASEO_AGENT_ID"`.
 
-If the `paseo` CLI is missing or fails, skip the hand-off, say so, and oversee
-from this thread in the repository's existing project.
+If the `paseo` CLI is missing or fails, say so and stop; the overseer runs only
+in Paseo.
 
 Paseo reopens an archived session the user is viewing, so the launcher's own
 archive may not stick. As the overseer, finish it: whenever you wake, check
 `paseo agent status <launcher-id> --json`, and if it isn't `closed`, run
 `paseo agent archive --force <launcher-id>`. Stop checking once it is
 closed.
+
+## Start the auditor
+
+The launcher, never the overseer, starts the auditor, so the overseer cannot
+shape its inputs or instructions. Do it in the hand-off, after the overseer's
+launch, with the run checkout and project as the overseer's:
+
+1. Create a workspace in the run project with notifications on:
+   `paseo workspace create --isolation local --no-background --notifications on --path <run checkout> --project <project-id> --title "Auditor: <task>" --json`.
+   Apply "Validate the workspace before launch" before launching.
+2. Launch it with
+   `paseo agent run --no-wait --relationship detached --no-notify-on-finish --workspace <workspace-id> --title "Auditor: <task>" --provider claude --mode <mode> --model <Opus> --thinking medium "<brief>"`,
+   its brief being [../assets/auditor-brief.md](../assets/auditor-brief.md) with
+   the run checkout path, the scoreboard script path and the repository filled in.
+   Unlike a worker's workspace, leave notifications on: the auditor is the one
+   agent that messages the user. Don't add `--notify-on-finish`; the launcher is
+   about to archive itself.
+3. Tell the overseer only that an auditor exists and that its alarms go to the
+   user, in the overseer's prompt. Never give it the auditor's agent ID or a way
+   to message it.
+
+The auditor creates its own heartbeat (`paseo heartbeat create` is per calling
+agent) as its first action. Its heartbeat ends when it is archived: the overseer
+archives the auditor in "Clean up the run project" and the halt procedure archives
+it with the run's other agents.
 
 ## Validate the workspace before launch
 
@@ -114,11 +141,10 @@ and every worker launch.
   your own workspace.
 - **Launch:** start each worker as a top-level thread in its workspace, with
   the brief as its initial prompt:
-  `paseo agent run --no-wait --relationship detached --notify-on-finish --workspace <workspace-id> --title "Worker: <subtask>" --provider <provider> --mode <mode> --model <model> --thinking <effort> "<brief>"`.
-  Choose the provider and model as Paseo's guidance says: the profile the
-  user named, or the one from `paseo profile ls` whose notes fit
-  implementation, otherwise your own provider. Apply `SKILL.md` › Three-tier
-  model routing to both providers when choosing the model and effort. Name
+  `paseo agent run --no-wait --relationship detached --notify-on-finish --workspace <workspace-id> --title "Worker: <subtask>" --provider codex --mode <mode> --model <GPT Sol> --thinking medium "<brief>"`,
+  with the latest GPT Sol model `paseo provider models` lists, as
+  `SKILL.md` › Model routing requires, unless the user named another route.
+  If the route is unavailable, report it and hold the launch. Name
   yourself with `paseo agent update "$PASEO_AGENT_ID" --name "<name>"`.
 - **Address:** reach every agent by its Paseo agent ID, which survives a
   restart, with
@@ -141,7 +167,8 @@ and every worker launch.
   Its prompt says to check the workers and pending permissions, act on what
   changed, start any ready work as the skill's "Keep work moving" describes,
   and end the turn with no text only when nothing changed and no work that
-  could run is idle. Record the ID it returns in your checklist, and delete
+  could run is idle. It also reads `scoreboard.py show --json` for the stop-loss
+  and sends a digest only when the scoreboard changed. Record the ID it returns in your checklist, and delete
   it with `paseo heartbeat delete <heartbeat-id>` when the agreed scope is
   complete or the user stops the run. At decision
   points, read `paseo agent activity <agent-id>`.
@@ -155,8 +182,8 @@ dialog, such as `AskUserQuestion`, whether to clean up the run project; with
 nothing left to run, the dialog blocks nothing. Name what cleanup would
 remove and anything unpushed it would keep.
 
-- **Clean up:** archive each worker's and question session's agent and
-  workspace, and remove each worker's worktree under `~/.paseo/worktrees/`
+- **Clean up:** archive each worker's, the auditor's and each question
+  session's agent and workspace, and remove each worker's worktree under `~/.paseo/worktrees/`
   as `SKILL.md` › Clean up describes. Say what you removed and what goes next, since your own thread
   goes with it. Then, as your last action, remove the run checkout and its
   `overseer/<slug>` branch with `git -C <main checkout>`, since you are
@@ -177,7 +204,7 @@ notification wakes its overseer, which can resume the workers. Instead:
 
 1. Archive the overseer first with `paseo agent archive --force <id>`, so no
    notification can wake it. Archiving also completes its heartbeats.
-2. Then archive every worker, reviewer and question session of the run.
+2. Then archive every worker, reviewer, question session and the auditor of the run.
 3. After about 30 seconds, check `paseo agent ls --json` again and re-archive
    any agent of the run that is live.
 4. Confirm each heartbeat under `~/.paseo/schedules/` that targets the run's

@@ -1,6 +1,6 @@
 ---
 name: three-tiered-plan
-description: "Grill the user about a campaign spanning days or weeks, then write and maintain, with a continuous reviewer, a history-grounded plan, a roadmap of steps with proofs, and a script of keep-me-in-the-loop threads (or tracker workstreams) with dependencies and human interventions. Use to start, re-plan, revise or close such a campaign; not for work one session can hold (agentic-workflow) or for running a thread (keep-me-in-the-loop)."
+description: "Grill the user about a campaign spanning days or weeks, then write and maintain, with a continuous reviewer, a history-grounded plan, a roadmap of steps with proofs, and a script of threads, each a keep-me-in-the-loop run or an overseer worker (or tracker workstreams) with dependencies and human interventions. Use to start, re-plan, revise or close such a campaign; not for work one session can hold (agentic-workflow) or for running a thread (keep-me-in-the-loop)."
 ---
 
 # Three-Tiered Plan
@@ -268,8 +268,10 @@ threads.
 
 Group roadmap steps into threads:
 
-- A thread is one `keep-me-in-the-loop` invocation and one approval, sized to
-  its substantial phase of about 2 to 4 chunks, which run in order. Front-load
+- A thread is one agent's run and one approval: a `keep-me-in-the-loop`
+  invocation when the user opens it, or a worker running `continuous-peer-review`
+  under `overseer`, whose only approval is the user's agreement to the thread's
+  scope. Size it to its substantial phase of about 2 to 4 chunks, which run in order. Front-load
   the thread's decisions, authority and spending to that approval so it can run
   to the end.
 - Cut where the user must decide; where a live resource's life begins and ends,
@@ -405,4 +407,4 @@ doesn't say, the reviewer's closing position, which decisions remain open and
 who owns them, and the next action: any remaining tier, or the script's ready
 threads with their prompts and when a human is next needed. For workstreams,
 link the readiness summary and name the ones awaiting the user's approval.
-Mention that `overseer` can run the ready threads as separate sessions.
+Mention that `overseer` can run the ready threads as separate Paseo agents.

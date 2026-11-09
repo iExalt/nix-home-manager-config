@@ -256,7 +256,8 @@ parallelism. Changing required proofs or their gate still needs approval.
 - Begin proposals and reports with a one- or two-line **TL;DR**.
 - Report outcomes, not activity. Don't narrate or announce next steps; this
   overrides default guidance to comment at intervals or before tool calls.
-- Send an update when:
+- Send an update when (an overseer instead follows `overseer` › Keep the user in
+  the loop, which routes worker-level events to its run log):
   - a reviewer accepts an increment, a chunk or thread finishes, or work is
     published;
   - a live operation starts (with its stop condition), deviates materially or
@@ -276,7 +277,7 @@ parallelism. Changing required proofs or their gate still needs approval.
   the user, not only the reviewer.
 
 The workflow skill sets each update's format, such as `keep-me-in-the-loop`'s
-one-line prefix or `overseer`'s roll call.
+one-line prefix or `overseer`'s state digest.
 
 ## Waiting
 

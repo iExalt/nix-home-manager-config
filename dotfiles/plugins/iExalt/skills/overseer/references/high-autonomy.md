@@ -5,7 +5,7 @@ Read this before exercising high autonomy as an overseer.
 At the beginning of **every high-autonomy overseer session**, before starting
 workers or exercising delegated authority, ask a question dialog that
 requires an explicit answer. This includes a replacement overseer, a new run,
-and switching an existing session to high. In Paseo, the actual overseer asks
+and switching an existing session to high. The actual overseer asks
 after the launcher hand-off; a launcher's or previous session's grant does
 not carry over. A same-session resume may retain its recorded grant. Like
 any session grant, it never covers a release (`working-conventions` ›

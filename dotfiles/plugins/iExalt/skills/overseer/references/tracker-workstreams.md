@@ -26,12 +26,16 @@ and follow the repository's instructions for its fields and commands:
   approval; otherwise ask the user to set it, as a planned any-time
   intervention. A workstream without its approval state doesn't launch.
 - **Workers:** brief each with the workstream prompt, such as
-  `/iExalt:keep-me-in-the-loop Run workstream #<N>`. The worker claims the
+  `/iExalt:continuous-peer-review Run workstream #<N>`, in place of the
+  tracker's standalone `keep-me-in-the-loop` prompt. The worker claims the
   issue as the repository's instructions say and keeps the sibling worktree
   they name. Name it after the workstream, such as `Worker: <name> #<N>`.
 - **Judgment calls and deviations:** record them as signed comments on the
   affected workstream issues, update those issues' bodies or links, and rerun
   the readiness tool before launching their dependents.
+- **Scoreboard:** freeze the workstreams' tasks with `scoreboard.py freeze`,
+  which reads Acyclic. For another tracker, write line 1 by hand marked
+  "(self-reported)", as `SKILL.md` › Scoreboard and auditor describes.
 - **Done:** besides the checks in `SKILL.md` › Run the threads, the workstream issue is
   closed, the readiness tool has run, and the summary shows its dependents
   unblocked. Report its drift check with the done check.
