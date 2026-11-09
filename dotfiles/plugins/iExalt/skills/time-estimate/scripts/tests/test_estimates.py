@@ -60,6 +60,18 @@ class Validate(unittest.TestCase):
         no_raw = rec(bias_factor=0.6)
         self.assertTrue(any("raw_low_h/raw_high_h are required" in e for e in self.errs(no_raw)))
 
+    def test_rounded_estimates_warn_but_a_missing_factor_errors(self):
+        rounded = rec(raw_low_h=0.5, raw_high_h=1.0, bias_factor=0.6, est_low_h=0.33, est_high_h=0.67)
+        errs, warns = E.validate(rounded)
+        self.assertEqual(errs, [])
+        self.assertTrue(warns)
+        self.assertTrue(self.errs(dict(rounded, est_low_h=0.5, est_high_h=1.0)))
+
+    def test_rejects_other_versions_non_finite_numbers_and_empty_task(self):
+        self.assertIn("v 2 is not 1", self.errs(rec(v=2)))
+        self.assertIn("est_high_h is not finite", self.errs(rec(est_high_h=float("inf"))))
+        self.assertIn("task is empty", self.errs(rec(task="  ")))
+
     def test_actual_above_elapsed_is_a_warning_not_an_error(self):
         r = rec(actual_h=2, started_at="2026-01-01T10:00:00Z", ended_at="2026-01-01T11:00:00Z")
         errs, warns = E.validate(r)
@@ -133,6 +145,23 @@ class Calibration(unittest.TestCase):
         self.assertEqual(len(us), 1)
         self.assertEqual(us[0]["act"], 5)
         self.assertEqual(ex["child of recorded parent"], 2)
+
+    def test_an_excluded_parent_does_not_swallow_its_children(self):
+        kids = [rec(parent_id="camp", actual_h=0.3), rec(parent_id="camp", actual_h=0.3)]
+        for parent in (rec(thread_id="camp", outcome="stopped"),
+                       dict(rec(thread_id="camp"), source="md-port-prose")):
+            us, ex = E.units(kids + [parent])
+            self.assertEqual(len(us), 1)
+            self.assertAlmostEqual(us[0]["act"], 0.6)
+            self.assertEqual(ex["child of recorded parent"], 0)
+
+    def test_null_raw_falls_back_to_stated_and_missing_stated_is_excluded(self):
+        us, _ = E.units([rec(raw_low_h=None, raw_high_h=None)])
+        self.assertEqual((us[0]["raw_lo"], us[0]["raw_hi"]), (0.25, 0.5))
+        ported = {"task": "t", "kind": "small-fix", "outcome": "done", "source": "md-port",
+                  "raw_low_h": 0.2, "raw_high_h": 0.4, "actual_h": 0.3}
+        us, ex = E.units([ported])
+        self.assertEqual((len(us), ex["no numbers"]), (0, 1))
 
     def test_null_ids_never_link(self):
         us, _ = E.units([rec(thread_id=None, parent_id=None), rec(parent_id=None)])

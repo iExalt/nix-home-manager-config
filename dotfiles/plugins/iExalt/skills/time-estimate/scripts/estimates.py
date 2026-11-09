@@ -75,6 +75,12 @@ def validate(rec):
             errs.append(f"{k} has type {type(val).__name__}")
     if errs:
         return errs, warns
+    if rec.get("v", 1) != 1:
+        errs.append(f"v {rec['v']} is not 1")
+    if not rec["task"].strip():
+        errs.append("task is empty")
+    errs += [f"{k} is not finite" for k, v in rec.items()
+             if isinstance(v, float) and not math.isfinite(v)]
     if rec.get("kind") is not None and rec["kind"] not in KINDS:
         errs.append(f"kind {rec['kind']!r} is not one of {', '.join(KINDS)}")
     if rec["outcome"] not in OUTCOMES:
@@ -104,10 +110,14 @@ def validate(rec):
             if rec.get("raw_low_h") is None:
                 errs.append("raw_low_h/raw_high_h are required when bias_factor is not 1")
             elif rec.get("est_low_h") is not None:
+                # Rounding to friendly numbers is fine; a missing or inverted factor is not.
                 for e, r in (("est_low_h", "raw_low_h"), ("est_high_h", "raw_high_h")):
                     want = rec[r] * factor
-                    if abs(rec[e] - want) > 0.05 * want + 1e-9:
-                        errs.append(f"{e} should be {r} x bias_factor = {want:.3g}")
+                    off = abs(rec[e] - want) / want if want else 0
+                    if off > 0.25:
+                        errs.append(f"{e} should be about {r} x bias_factor = {want:.3g}")
+                    elif off > 0.05:
+                        warns.append(f"{e} is {off:.0%} from {r} x bias_factor = {want:.3g}")
     if rec["outcome"] in ("done", "partial") and rec.get("actual_h") is None and not ported:
         errs.append(f"actual_h is required when outcome is {rec['outcome']}")
     times = {}
@@ -207,20 +217,26 @@ def units(recs):
     Returns (units, exclusion counts)."""
     excluded = {"prose port": 0, "not done": 0, "no numbers": 0, "child of recorded parent": 0,
                 "children merged into parent": 0}
-    parents = {r["thread_id"] for r in recs if r.get("thread_id")}
+    def why_not(r):
+        if r.get("source") == "md-port-prose":
+            return "prose port"
+        if r["outcome"] != "done":
+            return "not done"
+        if not (r.get("est_low_h") and r.get("est_high_h") and r.get("actual_h")):
+            return "no numbers"
+        return None
+
+    # Only a parent that itself counts can stand in for its children.
+    parents = {r["thread_id"] for r in recs if r.get("thread_id") and why_not(r) is None}
     out, groups = [], {}
     for r in recs:
-        if r.get("source") == "md-port-prose":
-            excluded["prose port"] += 1
+        reason = why_not(r)
+        if reason:
+            excluded[reason] += 1
             continue
-        if r["outcome"] != "done":
-            excluded["not done"] += 1
-            continue
-        lo = r.get("raw_low_h", r.get("est_low_h"))
-        hi = r.get("raw_high_h", r.get("est_high_h"))
-        if not lo or not hi or not r.get("actual_h"):
-            excluded["no numbers"] += 1
-            continue
+        # Explicit nulls in raw_* fall back to the stated range.
+        lo = r.get("raw_low_h") or r["est_low_h"]
+        hi = r.get("raw_high_h") or r["est_high_h"]
         pid = r.get("parent_id")
         if pid and pid in parents:
             excluded["child of recorded parent"] += 1
