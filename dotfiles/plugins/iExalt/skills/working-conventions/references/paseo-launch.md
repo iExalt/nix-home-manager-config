@@ -35,13 +35,14 @@ self_project=$(paseo workspace ls --json | jq -er --arg ws "$self_workspace" \
 
 | New agent | Project |
 | --- | --- |
-| Worker, reviewer thread or question session | Yours (`$self_project`) |
+| Worker or question session for work in your own repository | Yours (`$self_project`) |
 | Overseer | A new run project, as `overseer` › [references/paseo.md](../../overseer/references/paseo.md) describes |
 | Overseer's worker or auditor | The overseer's run project, whatever repository the worker changes |
-| Work in another repository, outside an overseer run | That repository's registered project, from `paseo project ls --json`; ask the user if it has none |
+| Work in another repository, outside an overseer run | That repository's registered project: match `realpath` of its checkout against `realpath` of each `path` in `paseo project ls --json`, since a symlinked path may be registered; ask the user if none matches |
 
 Target the project by ID with `workspace create --project <id>`, which accepts
-any checkout path. Never let the project follow from a `cd` or `--cwd`.
+any checkout path. Never let the project follow from a `cd` or `--cwd`. Reviewers stay native
+subagents (`SKILL.md` › Delegation), not Paseo agents.
 
 ## 3. Create the workspace and validate it
 
@@ -79,23 +80,28 @@ the agent.
 
 ## 4. Choose its settings
 
-By default the new agent matches you: copy `snapshot.model`,
-`snapshot.thinkingOptionId` and `snapshot.currentModeId` from `$self`. A
-workflow skill's model routing, the brief's role or the user's choice
-overrides that default; a read-only role doesn't need your full access.
+By default the new agent matches you. A workflow skill's model routing, the
+brief's role or the user's choice overrides that default; a read-only role
+doesn't need your full access.
 
-When the provider differs, translate the mode by meaning, using the IDs
-`paseo provider inspect <provider> --json` lists under `modes`:
+- **Same provider:** copy `snapshot.model`, `snapshot.thinkingOptionId` and
+  `snapshot.currentModeId` from `$self`.
+- **Different provider:** model and thinking IDs don't carry over. Take the
+  model from `paseo provider models <provider> --full --json` and a thinking
+  option that model lists, matching your effort where it exists. Translate the
+  mode to its closest match, using the IDs `paseo provider inspect <provider>
+  --json` lists under `modes`:
 
-| Claude | Codex |
-| --- | --- |
-| `bypassPermissions` | `full-access` |
-| `auto` | `auto-review` |
-| `default`, `acceptEdits` | `auto` |
-| `plan` | none: ask, or give a read-only brief |
+  | Claude | Codex |
+  | --- | --- |
+  | `bypassPermissions` | `full-access` |
+  | `auto` | `auto-review` |
+  | `default` (`acceptEdits` maps here too) | `auto` |
+  | `plan` | none: ask, or give a read-only brief |
 
-Pass IDs, never labels such as `"Full Access"`. Take models from
-`paseo provider models <provider>`; never invent one.
+  Read the table in either direction; from Codex, `auto` maps to `default`.
+
+Pass IDs, never labels such as `"Full Access"`, and never invent a model.
 
 ## 5. Launch
 
@@ -105,7 +111,8 @@ paseo run --no-wait --json --relationship detached --workspace "$workspace_id" \
   --model <model> --thinking <thinking> --mode <mode> --prompt-file <brief>
 ```
 
-Add `--notify-on-finish` when you must hear when it finishes. Parse stdout
+Paseo notifies you when an agent you launched finishes; pass
+`--no-notify-on-finish` when you don't need that. Parse stdout
 only: `run` prints notices such as `Using workspace …` on stderr, so never pipe
 `2>&1` into a JSON parser. If the response is lost or unparseable, the agent may
 still exist: check `paseo agent ls -a -g --label task=<unique-key> --json`
@@ -124,7 +131,8 @@ paseo agent status "$agent_id" --json | jq -e \
 ' >/dev/null
 ```
 
-A null `paseo.parent-agent-id` label means no parent. Fix any mismatch before
+A null `paseo.parent-agent-id` label means no parent. Step 3's gate already
+checked the workspace's project. Fix any mismatch before
 you report the launch. To make a Paseo subagent independent, run
 `paseo agent detach <id>`; never edit its labels. If Paseo drops
 `--relationship detached`, launch, then detach.

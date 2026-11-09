@@ -27,7 +27,9 @@ project, and your whole job is the hand-off, done straight away:
    Apply "Validate every launch" below.
 3. Launch the overseer in it with
    `paseo agent run --no-wait --relationship detached --no-notify-on-finish --workspace <workspace-id> --title "Overseer: <task>" --provider claude --mode <mode> --model <Opus> --thinking medium "<prompt>"`,
-   with your own mode from `paseo agent status` and the latest Opus model
+   with your own mode translated as `working-conventions` ›
+   [references/paseo-launch.md](../../working-conventions/references/paseo-launch.md)
+   step 4 describes, and the latest Opus model
    `paseo provider models` lists for the overseer route in
    `SKILL.md` › Model routing, whatever your own provider. If that route is
    unavailable, report it and stop. Its prompt invokes this skill and
@@ -61,7 +63,8 @@ launch, with the run checkout and project as the overseer's:
    Apply "Validate every launch".
 2. Launch it with
    `paseo agent run --no-wait --relationship detached --no-notify-on-finish --workspace <workspace-id> --title "Auditor: <task>" --provider claude --mode <mode> --model <Opus> --thinking medium "<brief>"`,
-   its brief being [../assets/auditor-brief.md](../assets/auditor-brief.md) with
+   with the mode chosen as for the overseer, and its brief being
+   [../assets/auditor-brief.md](../assets/auditor-brief.md) with
    the run checkout path, the scoreboard script path and the repository filled in.
    Unlike a worker's workspace, leave notifications on: the auditor is the one
    agent that messages the user. Don't add `--notify-on-finish`; the launcher is
