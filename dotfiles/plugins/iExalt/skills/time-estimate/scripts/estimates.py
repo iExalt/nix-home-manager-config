@@ -110,14 +110,17 @@ def validate(rec):
             if rec.get("raw_low_h") is None:
                 errs.append("raw_low_h/raw_high_h are required when bias_factor is not 1")
             elif rec.get("est_low_h") is not None:
-                # Rounding to friendly numbers is fine; a missing or inverted factor is not.
-                for e, r in (("est_low_h", "raw_low_h"), ("est_high_h", "raw_high_h")):
-                    want = rec[r] * factor
-                    off = abs(rec[e] - want) / want if want else 0
-                    if off > 0.25:
-                        errs.append(f"{e} should be about {r} x bias_factor = {want:.3g}")
-                    elif off > 0.05:
-                        warns.append(f"{e} is {off:.0%} from {r} x bias_factor = {want:.3g}")
+                # Compare midpoints: the width may change (stats spread, probe narrowing) and
+                # rounding is fine, but a missing or inverted factor is not.
+                want = gmid(rec["raw_low_h"], rec["raw_high_h"]) * factor
+                got = gmid(rec["est_low_h"], rec["est_high_h"])
+                off = abs(got - want) / want if want else 0
+                if off > 0.25:
+                    errs.append(f"estimate midpoint {got:.3g}h should be about raw midpoint x "
+                                f"bias_factor = {want:.3g}h")
+                elif off > 0.15:
+                    warns.append(f"estimate midpoint {got:.3g}h is {off:.0%} from raw midpoint x "
+                                 f"bias_factor = {want:.3g}h")
     if rec["outcome"] in ("done", "partial") and rec.get("actual_h") is None and not ported:
         errs.append(f"actual_h is required when outcome is {rec['outcome']}")
     times = {}

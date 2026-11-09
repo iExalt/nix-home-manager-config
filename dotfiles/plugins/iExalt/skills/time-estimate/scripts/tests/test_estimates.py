@@ -60,12 +60,17 @@ class Validate(unittest.TestCase):
         no_raw = rec(bias_factor=0.6)
         self.assertTrue(any("raw_low_h/raw_high_h are required" in e for e in self.errs(no_raw)))
 
-    def test_rounded_estimates_warn_but_a_missing_factor_errors(self):
-        rounded = rec(raw_low_h=0.5, raw_high_h=1.0, bias_factor=0.6, est_low_h=0.33, est_high_h=0.67)
-        errs, warns = E.validate(rounded)
+    def test_debiased_ranges_of_any_width_validate_but_a_missing_factor_errors(self):
+        gut = dict(raw_low_h=0.5, raw_high_h=1.0, bias_factor=0.6)
+        # stats-width range, probe-narrowed range and rounded gut-width range: midpoint ~0.42h
+        for lo, hi in ((0.212, 0.764), (0.34, 0.53), (0.33, 0.67)):
+            self.assertEqual(E.validate(rec(est_low_h=lo, est_high_h=hi, **gut)), ([], []), (lo, hi))
+        errs, warns = E.validate(rec(est_low_h=0.36, est_high_h=0.62, **gut))  # midpoint 0.47h, 12% off
+        self.assertEqual(errs, [])
+        errs, warns = E.validate(rec(est_low_h=0.4, est_high_h=0.7, **gut))  # 25% > off > 15%
         self.assertEqual(errs, [])
         self.assertTrue(warns)
-        self.assertTrue(self.errs(dict(rounded, est_low_h=0.5, est_high_h=1.0)))
+        self.assertTrue(self.errs(rec(est_low_h=0.5, est_high_h=1.0, **gut)))  # factor not applied
 
     def test_rejects_other_versions_non_finite_numbers_and_empty_task(self):
         self.assertIn("v 2 is not 1", self.errs(rec(v=2)))

@@ -7,8 +7,9 @@ description: "Estimate the wall-clock time of agent-executed work from the user'
 
 Estimate wall-clock time with agents doing the work. Aim for a midpoint that lands on the actual
 and a range that contains it about half the time, narrowed only by what you have learned about this
-task. History says agents' gut midpoints run about 1.6x high and the typical actual lands at the
-bottom of the range, so the procedure corrects the gut with measured numbers instead of padding it.
+task. Before this skill, agents' gut midpoints ran about 1.6x high and about half of actuals
+landed below the range, so the procedure corrects the gut with measured numbers instead of
+padding it.
 
 ```sh
 te() { python3 -I "<this skill's directory>/scripts/estimates.py" "$@"; }   # zsh and bash
@@ -51,7 +52,8 @@ The log is private JSONL at `~/.local/state/agent-estimates.jsonl` (override wit
    - Price at agent pace, not human pace: a trimmed rewrite from targeted reads takes minutes, not
      the hours a line-by-line port would.
    - A small one-PR task takes one review round. Multi-increment work takes about two per increment
-     plus one or two integration rounds. Count work that runs in parallel once.
+     plus one or two integration rounds. A round costs the reviewer's latency, typically 4–9
+     minutes. Count work that runs in parallel once.
    - Price cold setup (dependency installs, cold builds, new worktrees) and CI separately; they
      dominate small changes.
    - For a performance or "make it faster" goal, price measurement and proof explicitly; it is often
@@ -59,7 +61,8 @@ The log is private JSONL at `~/.local/state/agent-estimates.jsonl` (override wit
    - Debugging unknown failures takes the top of the range; profile before theorising.
    - Batch `claude -p` runs take seconds each; price evals by setup and mining, not by run count.
 2. **Debias.** Midpoint = gut midpoint × the kind's factor from `te stats`, where the gut midpoint
-   is the geometric mean √(low × high). Keep the gut range: you log it as `raw_low_h`/`raw_high_h`
+   is the geometric mean √(low × high). Apply it even when your gut started from the anchor: the
+   factor was fitted on guts formed that way. Keep the gut range: you log it as `raw_low_h`/`raw_high_h`
    with the factor as `bias_factor`, so later fits measure your gut, not the correction.
 3. **Width.** Range = midpoint × [low, high] from `te stats`. Narrow it only for an unknown a probe
    settled, and say which. Don't narrow a range to look precise, and don't widen it as padding.
@@ -78,7 +81,8 @@ The log is private JSONL at `~/.local/state/agent-estimates.jsonl` (override wit
 
 ## At completion
 
-1. Compare actual active time and review rounds with the estimate. When they differ materially,
+1. Compare actual active time and review rounds with the estimate; judge the estimate against
+   active time alone. When they differ materially,
    find which assumption failed and what probe would have caught it. Give a concrete suggestion for
    improving future estimates even when the actual falls inside the range.
 2. Report the estimate next to the actual active, blocked and scope time, review rounds and context
