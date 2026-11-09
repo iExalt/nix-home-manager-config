@@ -49,6 +49,22 @@ The log is private JSONL at `~/.local/state/agent-estimates.jsonl` (override wit
 3. Decide which phases the estimate includes (`impl`, `review`, `ci`, `publish`, `proof`) and price
    each one. Say which you included.
 
+## Typical actuals
+
+Typical wall-clock by kind of work, agents doing the work. Start the gut range from the matching
+anchor, then adjust for size and for the phases you include; don't start from a human-paced guess.
+There is no one-hour floor: a third of logged tasks finished in under 30 minutes.
+
+- A small fix or feature in a codebase the agent knows, one PR with probe, review and CI: 10–30 min.
+- A larger change to existing code with a concurrent reviewer (a new skill, CLI or feature across
+  several files): 0.4–1.1 h, even at several hundred lines.
+- Bounded operations (audits, cleanups, deletions): 5–20 min.
+- A read-only inventory or document audit with working tools: 1–5 min; broader proof is separate.
+- A settled single-file skill or doc edit, warm activation and no CI: 3–10 min.
+- A campaign phase of independent items: 0.6–0.7 h; one with many components, harness and CI
+  work: about 5 h.
+- Debugging a flaky failure with several causes: about 3 h.
+
 ## Form the estimate
 
 1. **Gut range.** Start from the anchor and adjust for what you know. Rules that hold across tasks:
