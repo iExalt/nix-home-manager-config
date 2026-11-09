@@ -1,6 +1,6 @@
 ---
 name: overseer
-description: "Run threads of a three-tiered-plan script, or tracker workstreams, to the end of the agreed scope as a dedicated orchestrator: launch worker sessions that run keep-me-in-the-loop (Paseo agents in Paseo, otherwise Claude Code or Codex sessions), enforce dependencies, route every human intervention to the user and send concise updates. Use when the user wants script threads run while they are away from the keyboard; not for writing the script (three-tiered-plan) or running one thread in this session (keep-me-in-the-loop)."
+description: "Paseo only. Run threads of a three-tiered-plan script, or tracker workstreams, to the end of the agreed scope as a dedicated orchestrator: launch Paseo worker agents that run continuous-peer-review, enforce dependencies, route every human intervention to the user, and keep the user informed with a scoreboard digest checked by an independent auditor. Use when the user wants script threads run in Paseo while they are away from the keyboard; not for writing the script (three-tiered-plan) or running one thread in this session (keep-me-in-the-loop)."
 ---
 
 # Overseer
@@ -10,9 +10,16 @@ rules shared across the workflow skills, and this skill cites its sections as
 `working-conventions` › Section without restating them. Invoke it as a skill,
 or read its `SKILL.md` where your harness lists the path.
 
-## First, in Paseo: move into a run project
+## Paseo only
 
-In Paseo, before any other overseer work, including reading the script, the
+The overseer runs only in Paseo. If you are not a Paseo agent (`$PASEO_AGENT_ID`
+unset) or the `paseo` CLI doesn't work, tell the user the overseer runs only in
+Paseo, and stop; do nothing else, and don't fall back to oversee from your own
+harness. The overseer is a Claude agent; workers are Codex agents.
+
+## First: move into a run project
+
+Before any other overseer work, including reading the script, the
 plan or the repository's instructions, read
 [references/paseo.md](references/paseo.md) › First, move into a run project
 and follow it. It decides whether you are the overseer or the launcher that
@@ -25,22 +32,24 @@ as this file's.
 
 | File | Read when |
 |---|---|
-| [references/paseo.md](references/paseo.md) | You run in Paseo: hand-off, run project, launching, messaging, watching and run-project cleanup. |
-| [references/claude-code.md](references/claude-code.md) | You launch workers as Claude Code background sessions. |
-| [references/codex.md](references/codex.md) | You launch workers with `codex exec`. |
+| [references/paseo.md](references/paseo.md) | Always: hand-off, run project, launching workers and the auditor, messaging, watching and run-project cleanup. |
 | [references/high-autonomy.md](references/high-autonomy.md) | The user asks for high autonomy, before starting workers. |
 | [references/tracker-workstreams.md](references/tracker-workstreams.md) | The campaign keeps tier 3 as tracker workstreams. |
-| [references/question-session.md](references/question-session.md) | Your only dialog blocks your session, as Claude Code's does. |
+| [references/question-session.md](references/question-session.md) | Your only dialog blocks your session, as Claude's `AskUserQuestion` does. |
 | [assets/worker-brief.md](assets/worker-brief.md) | You brief a worker. |
+| [assets/auditor-brief.md](assets/auditor-brief.md) | The launcher briefs the auditor; you only need its tripwire list. |
+| [scripts/scoreboard.py](scripts/scoreboard.py) | Always: freezes the campaign and prints the digest's line 1. |
 
 ## Role
 
 Run script threads without implementing them. You launch **workers**, separate
-top-level sessions that act as middle-tier thread leads and each run
-`keep-me-in-the-loop`, usually one per thread. They delegate implementation
-to cheaper native pilots within their own sessions. You brief them, enforce
-the script's order, carry their requests for a human to the user, and keep
-the user in the loop. The user and the workers both talk to you.
+top-level Paseo agents, usually one per thread. Each worker implements its
+thread directly and runs `continuous-peer-review` with its own reviewer; the
+hierarchy is two tiers, with no pilots and no `keep-me-in-the-loop` phases
+under you. You brief them, enforce the script's order, carry their requests
+for a human to the user, and keep the user in the loop. The user and the
+workers both talk to you. You never talk to the auditor (see "Scoreboard and
+auditor").
 
 Run the whole agreed scope to its conclusion, using the autonomy level below
 to decide when to involve the user. Record consequential judgment calls and
@@ -69,21 +78,21 @@ session of its own, or to the user. A Paseo agent launched detached, as
 reviewer a worker starts inside its own session is part of that worker's job.
 
 Keep a checklist of the threads you oversee, each with its worker and state:
-waiting, ready, running, awaiting approval, awaiting a human, blocked, done.
-Your status updates show it as a one-line roll call.
+waiting, ready, running, awaiting a human, blocked, done. Keep it in the run
+log, `OVERSEER_RUN.md` in the run checkout (see "Keep the user in the loop").
 
 ## Choose autonomy and establish authority
 
 Set the autonomy level as `working-conventions` › Autonomy describes. At
-every level you approve phases within scope, at low after consulting the
-user on consequential choices. High autonomy takes effect only after the
+every level you decide routine matters within scope, at low after consulting
+the user on consequential choices. High autonomy takes effect only after the
 session grant in
 [references/high-autonomy.md](references/high-autonomy.md).
 
 ## Establish what you oversee
 
 Read the script, the roadmap, the canonical progress record, the parts of the plan the
-threads cite, the repository's instructions and `keep-me-in-the-loop`'s current
+threads cite, the repository's instructions and `continuous-peer-review`'s current
 instructions. Check the live state: Git and the remote, running sessions and
 worktrees, and resources that are up. A thread marked active may be stale, or
 another session may be running it; never launch a duplicate.
@@ -110,9 +119,8 @@ status, use it for the status record as `working-conventions` › Records descri
 
 Before launching anything, send an opening message that starts with a
 **TL;DR**. Say which threads you will run, in what order and with what
-parallelism, which session mechanism you will use, and each thread's scope:
-its roadmap steps, proposed chunks, live resources and spending, and the
-decisions and authority its approval settles. List every known human
+parallelism, and each thread's scope: its roadmap steps, live resources and
+spending, and the decisions and authority its approval settles. List every known human
 intervention in those threads, taken from their Human entries and the
 roadmap's human interventions table, and say when you will ask for each, as
 "Time each request for a human" describes. When the threads have no known
@@ -124,7 +132,22 @@ routine tests and expensive evidence checks, so the plan's approval covers
 them. Ask before exceeding an agreed limit or changing a required check.
 
 Give each thread an active-time estimate and the campaign a total, both
-recorded in the script, so the stop-loss in "Keep work moving" has a baseline.
+recorded in the script as LOW-HIGH ranges, so the stop-loss and the scoreboard
+have a baseline. Quote the user's goal verbatim in the opening message.
+
+The opening dialog also settles, as separate questions in the same round:
+- **Constraint budgets:** qualifiers in the goal, such as "without losing
+  proof", become guardrails: existing required checks stay green, and new
+  proof, validation or measurement infrastructure is out of scope unless the
+  user approves it here, with a time cap.
+- **Frozen scope:** the tasks (or the initiative or epic whose tasks) the
+  campaign is measured against; later additions count as scope growth. Leaves
+  that are approval gates or decisions rather than merge-proven work are
+  excluded from the tasks.
+- **Tripwires:** the auditor's defaults ("Scoreboard and auditor") or the
+  user's overrides.
+- **Auditor:** that the launcher started an independent auditor, who messages
+  the user directly, and that you never talk to it.
 
 Every thread ends in a deliverable: a merged change, a published artifact or
 a written decision. When a thread's outcome is a measured improvement, such as
@@ -140,6 +163,12 @@ faster CI or a frame-time target, settle three things in the opening dialog:
 Estimate the measurement as its own chunk with a time cap; the worker brief's
 measurement term applies it.
 
+**Re-baseline gate:** after the first measurement, such as a Phase 0
+baseline, close every part of the goal the baseline already meets, restate the
+remaining gap against the estimate, and ask the user, in a dialog before more
+work starts, whether to continue when the gap is gone or too small to justify
+the estimate. A change to the frozen goal or estimate is an amendment.
+
 ### Clear the run before the user leaves
 
 Before launching, list every decision the run is likely to reach while the
@@ -152,14 +181,58 @@ point where its thread will stop. An item left for later must name what keeps
 running while it waits.
 
 Then ask the user, through the dialog, to agree to the plan: the threads and
-each one's scope. For high autonomy, include the separate explicit session
+each one's scope. The user's agreement is each thread's only approval:
+workers send no phase proposals. For high autonomy, include the separate explicit session
 grant question in this opening dialog. Wait for the required answers before
 starting. Ask the items from "Clear the run before the user leaves" as
 separate questions in the same round, so the user settles everything in one
 sitting, but don't make the plan agreement wait on them. Record the agreement, with
 the date, in each thread's script entry, in a commit of its own, so a
-replacement overseer can find it. Invoking you is the request to implement;
+replacement overseer can find it, then run `scoreboard.py freeze` as
+"Scoreboard and auditor" describes. Invoking you is the request to implement;
 confirming the script never was.
+
+## Scoreboard and auditor
+
+`scripts/scoreboard.py` (run as `python3 -I <skill>/scripts/scoreboard.py
+--campaign <run checkout> ...`) is the campaign's one source of progress numbers;
+never compute them yourself.
+
+- **`freeze`** at plan agreement writes `campaign.json` in the run checkout: the
+  user's verbatim goal, the frozen tasks (`--under <initiative or epic>`, or
+  `--tasks <ids>`), each task's estimate and the campaign estimate as LOW-HIGH
+  hours, the start time, an optional metric (name, baseline, target) and the
+  auditor's tripwire thresholds. Frozen goal, scope and estimates change only
+  through `freeze --amend --approved-by <the user's words and date> --reason ...`,
+  which records an amendment; never edit the file, and never amend without the
+  user's approval (`working-conventions` › Authority). Work added later under the
+  scope root counts as "scope +N" until the user approves it with
+  `--amend --add-task`.
+- **`task-start <task>`** when its worker launches, **`task-pause`** when the
+  thread waits on the user, **`task-resume`** after. A task's clock excludes the
+  time it waits on the user.
+- **`forecast <task> <time>`** records your "next done expected" in each digest.
+  Record it when you send the digest; a missed forecast counts against you.
+- **`show`** prints line 1 of the digest; `show --digest` also records that
+  digest as sent, so the next "since" counts from it. A task is done only when
+  Acyclic reports it done by `item done --commit` and the commit's merge
+  ancestry is verified; `unchecked_commits` is not verified.
+- **No tracker:** write line 1 yourself, marked "(self-reported)", with the same
+  fields, and keep your own frozen task list and times in the run log.
+  The auditor has no `campaign.json` then; say so in the opening dialog.
+
+The **auditor** is an independent top-level Paseo agent that the launcher
+starts at hand-off ([references/paseo.md](references/paseo.md) › Start the
+auditor), with notifications on, a heartbeat of its own and a brief of its own
+([assets/auditor-brief.md](assets/auditor-brief.md)). It reads only
+`campaign.json`, `scoreboard.py show --json` and raw git, CI and tracker facts,
+and messages the user, once per tripwire, when one fires. The default tripwires:
+campaign elapsed past the high end of its estimate; a running task past the high
+end of its own estimate; scope grown more than 25% since launch without a
+recorded user approval; your "next done" forecast missed twice; a task marked
+done without verified merge evidence. Never message, steer, brief, answer or
+feed the auditor, and never write its inputs except through the scoreboard
+commands above. Its alarm is the user's, not yours to clear.
 
 ## Time each request for a human
 
@@ -179,52 +252,48 @@ three kinds differ only in when you ask:
 ## Name sessions and give workers worktrees
 
 Name your own session `Overseer: <task>` and each worker `Worker: <subtask>`,
-such as `Worker: thread 2, station pilot`, wherever the harness supports names.
-Where it doesn't, as with `codex exec`, keep the worker's name beside its
-session ID in your checklist.
+such as `Worker: thread 2, station pilot`.
 
-By default, give each worker its own worktree; a lone worker may use the
-main checkout when nothing else runs there. Outside Paseo, use
-`../<repo>-worker-<slug>/` on branch `worker/<slug>`, from the freshly fetched
-remote main branch, per `working-conventions` › Workspace and cleanup. A fresh
-worktree lacks ignored files such as `.env`, so provide what a worker needs.
-Pick each worker's artifact directory for the brief, and resolve missing
-access to ignored inputs or tools before dependent work starts.
+Give each worker its own worktree through a Paseo workspace, as
+[references/paseo.md](references/paseo.md) › Run project and workers
+describes; a lone worker may use the run checkout when nothing else runs
+there. A fresh worktree lacks ignored files such as `.env`, so provide what a
+worker needs. Pick each worker's artifact directory for the brief, and resolve
+missing access to ignored inputs or tools before dependent work starts.
 
-## Choose the session mechanism
+## Session mechanism
 
-Use the first mechanism that applies, name it in the opening message, and
-read its reference before launching workers:
+Launch every worker as a Paseo agent, as
+[references/paseo.md](references/paseo.md) › Run project and workers describes,
+and name that in the opening message.
 
-1. **Paseo,** when you run in it and its `paseo` CLI works:
-   [references/paseo.md](references/paseo.md) › Run project and workers.
-2. **Your own harness,** so that messages travel natively: Claude Code
-   ([references/claude-code.md](references/claude-code.md)) or Codex
-   ([references/codex.md](references/codex.md)).
-3. **Elsewhere:** the harness's equivalent of a resumable, addressable
-   session. If it has none, say so, give the user each worker's brief to open
-   by hand, and keep overseeing through what they relay.
+Never interrupt a running session; message it as that reference describes. A
+worker's first action is to acknowledge its brief to you: record each worker's
+agent ID in your checklist, and if no acknowledgement arrives, find out why,
+such as a wrong address, a held message or a permission prompt, before
+launching more workers.
 
-Never interrupt a running session; message it through the channel your
-mechanism's reference describes. A worker's first action is to acknowledge
-its brief to you: record each worker's session ID and address in your
-checklist, and if no acknowledgement arrives, find out why, such as a wrong
-address, a held message or a permission prompt, before launching more
-workers.
+### Model routing
 
-### Three-tier model routing
+Route as `working-conventions` › Model routing describes. Under an overseer:
 
-Route every session as `working-conventions` › Model routing describes: you
-take the top-orchestrator row, each worker the lead row, and its pilots and
-independent reviewer theirs. The `subagent-pair-program` exception for
-standalone leads does not apply under an overseer. The user's explicit
-choices and this policy, carried in every worker brief, override conflicting
-model defaults in `keep-me-in-the-loop`, its review skill and other descendant
-workflows, which keep their review and acceptance gates. Ask the user before
+| Role | Model | Effort |
+| --- | --- | --- |
+| You, the overseer | Claude Opus, in every harness | `medium` |
+| Auditor | Claude Opus | `medium` |
+| Worker | GPT Sol | `medium` |
+| A worker's reviewer | The "Independent substantive reviewer" row | `high` |
+
+Workers have no pilots. The `subagent-pair-program` exception for standalone
+leads does not apply under an overseer. The user's explicit choices and this
+policy, carried in every worker brief, override conflicting model defaults in
+`continuous-peer-review` and other descendant workflows, which keep their
+review and acceptance gates. If a route is unavailable, report it and hold the
+affected launches; never silently inherit another model. Ask the user before
 changing the hierarchy when it cannot deliver the required result.
 
-In Paseo, a profile must match the assigned tier. Don't change a live
-session's model; report a mismatch instead.
+A Paseo profile must match the assigned role. Don't change a live session's
+model; report a mismatch instead.
 
 ## Brief each worker
 
@@ -240,14 +309,14 @@ alongside** entry, a **not before** date or the user's limit on concurrent
 workers holds it back. As threads finish, launch workers for the threads they
 unblock.
 
-Check each phase proposal against the scope the user agreed for its thread.
-Approve it on the user's behalf when it fits and the autonomy rules allow you
-to decide. At medium and high autonomy, approve every phase inside the agreed
-scope at once, as `keep-me-in-the-loop`'s multi-phase approval, and add no
-conditions beyond the agreed scope and limits. Never ask a worker to come back
-for approval of a probe, experiment, re-run or repair inside them; when a
-worker asks anyway, answer that it is already approved and remind it of the
-brief. Relay one that changes an outcome, an acceptance check, a
+The user's agreement to a thread's scope is the thread's only approval. A
+worker sends no phase proposal and no chunk report; it implements the scope
+with its reviewer and messages you only when its thread is done (with
+completion evidence), when it hits a blocker or needs a human, or when a
+deviation affects another thread. Never ask a worker to come back for approval
+of a probe, experiment, re-run or repair inside the agreed scope and limits;
+when a worker asks anyway, answer that it is already approved and remind it of
+the brief. Relay a request that changes an outcome, an acceptance check, a
 deferral, a risk, an external action or spending beyond what they agreed, as
 "Relay human interventions" describes, and pass the user's answer back. A
 thread whose scope the user hasn't agreed, such as one that became ready
@@ -271,23 +340,23 @@ claims you report or use to unblock a dependent.
 
 ### Keep work moving
 
-A finished phase, chunk or thread is never a stopping point while agreed
-scope remains. Before ending any turn, including a heartbeat turn, list the
-ready work: threads whose dependencies are met, next phases inside an
-approval, and independent work inside threads that wait on the user. Start or
+A finished task or thread is never a stopping point while agreed scope
+remains. Before ending any turn, including a heartbeat turn, list the ready
+work: threads whose dependencies are met, and independent work inside threads
+that wait on the user. Start or
 resume all of it, except work the stop-loss below holds. A thread waiting on a decision keeps its worker on
 independent work; a pending dialog never pauses the threads it doesn't
-block. When every remaining item waits on the user, say so in an update
-listing each item and what it waits on, and keep the heartbeat running.
-When you find work that sat idle though it could have run, restart it and
-report the idle time and its cause in your next update.
+block. When every remaining item waits on the user, say so in the digest's
+"Waiting on you" lines and keep the heartbeat running. When you find work that
+sat idle though it could have run, restart it and log the idle time and its
+cause.
 
 ### Stop-loss
 
-At each heartbeat and phase completion, compare each thread's active time and
-delivered outcomes with its estimate. When a thread reaches 1.5× its estimate
-with its done check unmet, or the campaign reaches 1.5× its total, start no new
-work in it. Let running chunks reach a safe stopping point, and ask the user
+At each heartbeat and task completion, read `scoreboard.py show --json` and
+compare each thread's running time and delivered outcomes with its estimate.
+When a thread passes the high end of its estimate with its done check unmet, or
+the campaign passes the high end of its total, start no new work in it. Let running work reach a safe stopping point, and ask the user
 in one dialog, with what has landed, what remains and a fresh estimate:
 continue with a new estimate, trim the scope to what has landed, or abandon
 and revert unmerged work. Recommend one. Workers keep finishing safe
@@ -315,8 +384,7 @@ about the rest.
 When a worker goes quiet without reporting, inspect it before nudging it, as
 `working-conventions` › Waiting describes. Resume the same session with what
 it needs, or relaunch the thread in a new worker with a handoff of its
-recorded state, since `keep-me-in-the-loop` resumes from the documents and
-Git. When a worker fails the same way twice, report it with what you are doing
+recorded state, since a worker resumes from the documents and Git. When a worker fails the same way twice, report it with what you are doing
 about it, and ask the user only if the remedy needs them.
 
 ## Relay human interventions
@@ -331,9 +399,7 @@ When a request for a human comes due, whether planned or raised by a worker:
 2. Otherwise ask the user, as `working-conventions` › Ask the user describes,
    saying which thread it is for, what waits on the answer, and by when.
 3. Ask through an async dialog, and keep the plan moving until it is blocked
-   on the answer. Use a native async input dialog, such as Codex's
-   `request_user_input_async`, when your harness has one. When your only
-   dialog blocks your session, as Claude Code's `AskUserQuestion` does,
+   on the answer. Your only dialog, `AskUserQuestion`, blocks your session, so
    launch a question session to ask for you, as
    [references/question-session.md](references/question-session.md)
    describes. Put every decision in a dialog. For an action, such as
@@ -362,31 +428,40 @@ agent's, so an approval you relay, even quoting the user, doesn't unblock it.
 When a worker is blocked on an action that needs the user's authority, ask
 the user, as steps 1 to 4 describe, to approve it directly in that worker's
 thread: name the thread, the exact action and the block's reason, and say how
-to open the thread, such as its Paseo title or `claude attach <id>`. Never
+to open the thread, such as its Paseo title. Never
 try to supply that authorization yourself, at any autonomy level.
 
 ## Keep the user in the loop
 
-Every status update looks like this: a few lines, ending with the roll call.
+Two channels. Your chat with the user carries only:
+- **(a) A state digest,** sent only when the scoreboard changes: a task closes,
+  a blocker appears or clears, a forecast slips, or scope changes. Send no digest
+  otherwise, and never a filler one.
+- **(b) Decision dialogs,** as "Relay human interventions" describes. A request
+  for the user never goes in a digest.
+- **(c) The completion report.**
+
+Worker-level events go to the run log, `OVERSEER_RUN.md` in the run checkout,
+which the digest links: launches, acknowledgements, reviews, repair rounds and
+their trend, recoveries, judgment calls, and each worker's evidence. Don't
+commit it. Leave the three-tiered-plan revision log to what that skill assigns it.
+
+The digest looks like this. Line 1 is pasted verbatim from
+`scoreboard.py show --digest`; the rest are yours, and a line with nothing to
+say is left out:
 
 ```text
-**Done:** thread 2 (station pilot) published chunk 2 of 3: the driver handoff works on the dev host.
-**Next:** thread 2 tests the relay fallback; thread 4 starts when thread 2 finishes.
-**Unexpected:** a rate limit slowed thread 3's host listing; it retried and carried on.
-Threads: 1 done · 2 chunk 3/3 · 3 chunk 1/2 · 4 waiting on 2
+<campaign> · 3/11 done (+1 since 09:00) · last done 2h ago · 21h of 8–12h ⚠ · scope +8 since launch
+Waiting on you: <item> (since 14:27)
+Blocked: <thread> (<why>)
+Running: <threads> · next done expected: <thread> ~16:00
+Log: <path to OVERSEER_RUN.md>
 ```
 
-Each update answers what did we just accomplish, what happens next, and did
-anything unexpected occur; leave the third out when nothing did. Name threads
-by number and outcome, not by number alone (workstreams by name and issue
-number). The roll call is required in every update, and each update must
-read on its own after hours away.
-
-Send status updates for the events `working-conventions` › Updates lists,
-and for anything unexpected, batching events from all threads.
-
-A request for the user goes in a dialog of its own, as "Relay human
-interventions" describes, never in a status update.
+Record the "next done expected" with `scoreboard.py forecast`. Write for a reader
+on a phone after hours away: name threads by outcome, not by number alone
+(workstreams by name and issue number). A turn with nothing to report ends with
+no text.
 
 When the threads you oversee finish, report with a **TL;DR** using
 `working-conventions` › Completion for each thread. Include judgment calls and
@@ -394,13 +469,12 @@ human interventions, the script's state, and the threads now ready.
 
 ## Clean up
 
-Archive a worker's Paseo agent and workspace, remove its Claude background
-session with `claude rm`, or end its Codex session, only after its work is
+Archive a worker's Paseo agent and workspace only after its work is
 pushed and verified. Inspect a worktree before removing it, and force a
 removal only when nothing in it is work, such as a file a Git filter
 normalized. Delete a `worker/<slug>` branch once its commits are on the
 remote main branch. Say what you removed in the final report. Unpushed work
 follows `working-conventions` › Workspace and cleanup.
 
-A Paseo run project is the exception: follow
-[references/paseo.md](references/paseo.md) › Clean up the run project.
+Follow [references/paseo.md](references/paseo.md) › Clean up the run project for
+the project, and archive the auditor there when the campaign closes.

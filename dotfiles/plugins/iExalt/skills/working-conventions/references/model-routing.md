@@ -8,6 +8,12 @@
 | Pilot: implementation, diagnosis, bounded discovery | GPT Luna | Haiku (`developer-trivial` when its scope fits, otherwise explicit Haiku routing) | Codex `high`; Claude `medium` |
 | Pilot: mechanical edits, lookups, monitoring | GPT Luna | Haiku (`developer-trivial`) | Codex `medium`, `low` for monitoring; Claude `medium` |
 
+- Under an overseer (the `overseer` skill, Paseo only), routing differs from the
+  table: the overseer is Claude Opus at `medium` effort in every harness; its
+  independent auditor is Claude Opus at `medium`; each worker is GPT Sol at
+  `medium` and runs `continuous-peer-review` without pilots, with the
+  "Independent substantive reviewer" row for its reviewer. Other top
+  orchestrators, such as a team's main navigator, keep the Top orchestrator row.
 - Preserve the user's explicit provider, model and effort choices.
 - Resolve each class to the latest model the provider advertises; never
   invent identifiers. Set model and effort explicitly at launch and at resume.
