@@ -49,7 +49,8 @@ class CLI(unittest.TestCase):
         update.update(status='resolved', resolution={'summary': 'Help fixed.', 'evidence': [
             {'ref': 'commit:example', 'note': 'Help now lists supported options.'}]})
         self.run_cli('log', rec=update)
-        self.assertEqual(self.run_cli('check'), {'records': 2, 'incidents': 1, 'imports': 0})
+        self.assertEqual(self.run_cli('check'), {'records': 2, 'incidents': 1, 'contexts': 0,
+                                               'chains': 1, 'imports': 0})
         self.assertEqual(self.run_cli('latest'), [update])
         self.assertEqual(self.log.stat().st_mode & 0o777, 0o600)
 
@@ -172,6 +173,58 @@ class CLI(unittest.TestCase):
         with self.source.open('a') as out:
             out.write('## 2026-01-02\nID: shared\nStatus: open\n')
         self.assertIn('current incident head', self.port(reconcile=True, ok=False))
+
+    def test_context_keeps_history_and_links_without_counting_as_incident(self):
+        self.source.write_text('## 2026-01-01\nFollow-up fragment.\n')
+        self.port()
+        old = self.run_cli('latest')[0]
+        self.run_cli('log', rec=record())
+        prefix = self.log.read_bytes()
+        context = record('context', old['incident_id'], old['event_id'])
+        context.update(origin=old['origin'], record_type='context', context_of=['i1'],
+                       status=None, kind='other', summary='Additional context for i1.')
+        self.run_cli('log', rec=context)
+        self.assertTrue(self.log.read_bytes().startswith(prefix))
+        self.assertEqual(self.run_cli('latest'), [record()])
+        self.assertEqual(len(self.run_cli('latest', '--include-context')), 2)
+        self.assertEqual(self.run_cli('check', '--actionable'), {
+            'records': 3, 'incidents': 1, 'contexts': 1, 'chains': 2, 'imports': 1})
+
+    def test_context_links_and_types_are_checked(self):
+        self.run_cli('log', rec=record())
+        context = record('c1', 'context')
+        context.update(record_type='context', context_of=[], status=None, kind='other')
+        for edit in ({'context_of': ['missing']}, {'context_of': ['context']},
+                     {'context_of': ['i1', 'i1']}, {'context_of': None},
+                     {'context_of': [False]}, {'record_type': 'fragment'},
+                     {'status': 'open'}, {'kind': 'tool'}):
+            with self.subTest(edit=edit):
+                self.run_cli('log', rec={**context, **edit}, ok=False)
+        self.run_cli('log', rec=context)
+        other = {**context, 'incident_id': 'another', 'event_id': 'c2', 'context_of': ['context']}
+        self.run_cli('log', rec=other, ok=False)
+        self.run_cli('log', rec={**record('e2', previous='e1'), 'context_of': []}, ok=False)
+        linked = {**context, 'incident_id': 'linked', 'event_id': 'c3', 'context_of': ['i1']}
+        self.run_cli('log', rec=linked)
+        # A target cannot become context while a current context still links to it.
+        target = {**context, 'incident_id': 'i1', 'event_id': 'e2', 'previous_event_id': 'e1'}
+        self.run_cli('log', rec=target, ok=False)
+
+    def test_actionable_checks_current_heads_without_rewriting_imports(self):
+        self.source.write_text('## 2026-01-01\nID: old\nStatus: resolved.\n')
+        self.port()
+        old = self.run_cli('latest')[0]
+        prefix = self.log.read_bytes()
+        self.assertIn('resolution', self.run_cli('check', '--actionable', ok=False))
+        fixed = record('normalized', 'old', old['event_id'])
+        fixed['origin'] = old['origin']
+        self.run_cli('log', rec=fixed)
+        self.assertTrue(self.log.read_bytes().startswith(prefix))
+        self.assertEqual(self.run_cli('check', '--actionable')['incidents'], 1)
+        heading = {**fixed, 'event_id': 'heading', 'previous_event_id': 'normalized',
+                   'summary': '## Imported heading\nOld report.'}
+        self.run_cli('log', rec=heading)
+        self.assertIn('complaint summary', self.run_cli('check', '--actionable', ok=False))
 
 
 if __name__ == '__main__':

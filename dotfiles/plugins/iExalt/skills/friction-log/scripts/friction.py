@@ -17,7 +17,8 @@ KINDS = ('instructions', 'tool', 'environment', 'workflow', 'other')
 STATUSES = ('open', 'resolved', 'unverified')
 FIELDS = {'v', 'event_id', 'incident_id', 'previous_event_id', 'logged_at', 'date',
           'source', 'repo', 'thread_id', 'harness', 'model', 'origin', 'kind', 'status',
-          'subject', 'summary', 'evidence', 'workaround', 'resolution', 'suggestion', 'migration'}
+          'subject', 'summary', 'evidence', 'workaround', 'resolution', 'suggestion', 'migration',
+          'record_type', 'context_of'}
 REQUIRED = {'v', 'event_id', 'incident_id', 'previous_event_id', 'logged_at', 'date',
             'source', 'repo', 'thread_id', 'origin', 'kind', 'status', 'summary',
             'evidence', 'suggestion'}
@@ -53,13 +54,26 @@ def validate(rec):
     if rec.keys() - FIELDS or REQUIRED - rec.keys():
         raise ValueError(f'unknown fields {sorted(rec.keys() - FIELDS)}; missing {sorted(REQUIRED - rec.keys())}')
     ported = rec.get('source') == 'md-port'
+    record_type = rec.get('record_type', 'incident')
+    if record_type not in ('incident', 'context'):
+        raise ValueError('record_type must be incident or context')
+    context = record_type == 'context'
+    if context:
+        targets = rec.get('context_of')
+        if (not isinstance(targets, list) or not all(nonempty(x) for x in targets)
+                or len(targets) != len(set(targets))):
+            raise ValueError('context_of requires a list of distinct incident IDs')
+        if rec.get('status') is not None or rec.get('kind') != 'other':
+            raise ValueError('context requires status null and kind other')
+    elif 'context_of' in rec:
+        raise ValueError('context_of is only allowed for context records')
     if type(rec['v']) is not int or rec['v'] != 1 or rec['source'] not in ('live', 'md-port'):
         raise ValueError('v must be 1 and source live or md-port')
     for key in ('event_id', 'incident_id', 'summary'):
         if not nonempty(rec[key]):
             raise ValueError(f'{key} must be a nonempty string')
     for key in ('repo', 'thread_id', 'kind', 'status', 'suggestion', 'date'):
-        if rec[key] is None and (ported or key == 'repo'):
+        if rec[key] is None and (ported or key == 'repo' or (context and key == 'status')):
             continue
         if not nonempty(rec[key]):
             raise ValueError(f'{key} must be a nonempty string')
@@ -126,7 +140,30 @@ def check_records(records):
             latest[rec['incident_id']] = rec
         except (ValueError, TypeError, KeyError) as exc:
             raise ValueError(f'record {n}: {exc}') from exc
+    for rec in latest.values():
+        for target in rec.get('context_of', []):
+            if target == rec['incident_id'] or target not in latest:
+                raise ValueError('context_of must refer to an existing different incident')
+            if latest[target].get('record_type') == 'context':
+                raise ValueError('context_of cannot refer to another context record')
     return events, latest
+
+
+def check_actionable(latest):
+    """Check current reports without imposing new requirements on retained history."""
+    for rec in latest.values():
+        if rec.get('record_type') == 'context':
+            continue
+        missing = [key for key in ('thread_id', 'date', 'kind', 'status', 'suggestion')
+                   if not nonempty(rec.get(key))]
+        if not references(rec['evidence']):
+            missing.append('evidence')
+        if rec['status'] == 'resolved' and rec.get('resolution') is None:
+            missing.append('resolution')
+        if rec['summary'].lstrip().startswith('#'):
+            missing.append('complaint summary without an imported heading')
+        if missing:
+            raise ValueError(f"incident {rec['incident_id']} is not actionable: {', '.join(missing)}")
 
 
 def read_log(path):
@@ -357,8 +394,10 @@ def main():
                         str(Path.home() / '.local/state/agent-friction.jsonl'))))
     sub = parser.add_subparsers(dest='command', required=True)
     sub.add_parser('log', help='validate and append one JSON object from stdin; print the complete retryable snapshot')
-    sub.add_parser('check', help='validate records and incident chains')
-    sub.add_parser('latest', help='print latest snapshot per incident; follow-ups are not new incidents')
+    p = sub.add_parser('check', help='validate records and incident chains')
+    p.add_argument('--actionable', action='store_true', help='also require complete current incident reports')
+    p = sub.add_parser('latest', help='print current incident snapshots, excluding archival context')
+    p.add_argument('--include-context', action='store_true', help='also include archival context heads')
     p = sub.add_parser('port', help='losslessly import Markdown, preserving original source bytes')
     p.add_argument('source', type=Path)
     p.add_argument('--archive-dir', type=Path, required=True)
@@ -373,9 +412,15 @@ def main():
             with locked(args.log):
                 records = read_log(args.log)
             _, latest = check_records(records)
-            result = list(latest.values()) if args.command == 'latest' else {
-                'records': len(records), 'incidents': len(latest),
-                'imports': sum(r['source'] == 'md-port' for r in records)}
+            incidents = [r for r in latest.values() if r.get('record_type') != 'context']
+            if args.command == 'latest':
+                result = list(latest.values()) if args.include_context else incidents
+            else:
+                if args.actionable:
+                    check_actionable(latest)
+                result = {'records': len(records), 'incidents': len(incidents),
+                          'contexts': len(latest) - len(incidents), 'chains': len(latest),
+                          'imports': sum(r['source'] == 'md-port' for r in records)}
         print(json.dumps(result, ensure_ascii=False, allow_nan=False))
     except (ValueError, TypeError, KeyError, OSError) as exc:
         parser.exit(1, f'not written: {exc}\n')
