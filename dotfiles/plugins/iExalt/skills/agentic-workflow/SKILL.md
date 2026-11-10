@@ -67,8 +67,11 @@ the route costly or unnecessary, then propose the smallest representative probe
 that could disprove it. Distinguish demonstrated prerequisites, chosen design
 constraints, and untested assumptions.
 
-Define the question, workload, initial effort allowance, reassessment point,
-success/failure observations, and resulting route choices. Make setup, build,
+State in one sentence the claim the probe can establish, at which layer (unit
+correctness, numerical tolerance, integrated behavior or statistical evidence),
+and its comparison criterion; treat approaches the user already rejected as
+constraints. Define the question, workload, initial effort allowance,
+reassessment point, success/failure observations, and resulting route choices. Make setup, build,
 execution, and analysis costs visible. Resolve material effort and priority
 tradeoffs through the dialog; retain budgets already supplied by the user.
 

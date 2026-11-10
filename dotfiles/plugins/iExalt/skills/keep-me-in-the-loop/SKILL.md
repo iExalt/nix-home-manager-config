@@ -33,6 +33,11 @@ Use `maintain-project-status` for the durable progress record and
 `continuous-peer-review` for implementation and review; status semantics and
 reviewer mechanics belong to those skills.
 
+Under an `overseer`, don't run this skill: a worker follows
+`continuous-peer-review` and reports through the overseer's digest, as
+`overseer` › Brief each worker describes, not through this skill's chunk
+reports.
+
 Start the `continuous-peer-review` reviewer before drafting the first phase
 proposal; it persists across chunks and phases as `working-conventions` ›
 Review loops describes.
@@ -53,6 +58,8 @@ For each chunk, name:
 - its outcome and covered roadmap steps;
 - why the boundary is useful and what it depends on;
 - its acceptance checks and any verification assigned to a named later gate;
+- any scarce device it occupies and for how long, batching its live-device
+  proofs into as few named windows as the acceptance checks allow;
 - material exclusions, risks, or external actions the user needs to assess.
 
 Make the overall phase boundary and important decisions clear. State that

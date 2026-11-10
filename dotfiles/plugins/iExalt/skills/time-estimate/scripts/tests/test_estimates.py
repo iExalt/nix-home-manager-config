@@ -82,6 +82,10 @@ class Validate(unittest.TestCase):
         self.assertTrue(any("review_round_minutes" in e
                             for e in self.errs(rec(review_round_minutes=-1))))
 
+    def test_actual_approx_must_be_a_boolean(self):
+        self.assertEqual(self.errs(rec(actual_approx=True)), [])
+        self.assertTrue(any("actual_approx" in e for e in self.errs(rec(actual_approx="yes"))))
+
     def test_percentiles_must_be_ordered(self):
         ok = rec(est_p10_h=0.1, est_median_h=0.3, est_p90_h=0.9)
         self.assertEqual(self.errs(ok), [])

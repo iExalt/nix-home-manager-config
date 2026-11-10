@@ -43,7 +43,11 @@ directly.
    doesn't need the device first, then use the phone once for all device
    checks. Installs don't touch the screen, so do them while the user still
    has the phone. Wireless installs are slow: a 168 MB release APK took over
-   5 minutes, against about 1 minute for a debug APK.
+   5 minutes, against about 1 minute for a debug APK. Prove delivery works
+   before changing any phone setting. If a wireless transfer stalls, cap the
+   attempt and switch to the user's agreed fallback: serve the APK from the
+   laptop over their private network for the phone to download, or use USB.
+   Don't keep retrying while the phone sits in a modified state.
 4. **Time estimate.** Tell the user how long you need the phone, broken
    into setup, the checks and teardown, and give the end time. If they set
    a time limit, it's a hard limit. Without one, plan for a stint of about
@@ -115,13 +119,19 @@ value you remember isn't a baseline.
    while it's unlocked and never touches the keyguard:
 
    ```zsh
-   while true; do
-     a shell dumpsys window | grep -q 'isKeyguardShowing=true' || a shell input keyevent KEYCODE_WAKEUP
-     sleep 90
-   done
+   deadline=$(( $(date +%s) + <stint seconds> ))
+   ( while (( $(date +%s) < deadline )); do
+       w=$(a shell dumpsys window) || break   # unreadable lock state: stop, don't wake
+       [[ $w == *isKeyguardShowing=* && $w != *isKeyguardShowing=true* ]] &&
+         a shell input keyevent KEYCODE_WAKEUP
+       sleep 90
+     done ) &
+   print $! > <repo-or-scratch-dir>/keepalive.pid
    ```
 
-   Kill it at teardown. If the phone locks anyway (`mCurrentFocus` shows
+   Set the deadline to the stint's end minus its teardown time; the loop
+   stops by itself there. Kill it by its recorded PID at teardown, or as
+   soon as the stint fails. If the phone locks anyway (`mCurrentFocus` shows
    `NotificationShade`, or `isKeyguardShowing=true`), you can't unlock a PIN.
    Ask the user to unlock it, by push notification if they may be away.
 4. **Do Not Disturb.** Turn on priority-only DND with
@@ -203,8 +213,8 @@ unless Expo accepts the push. Keep the text short and specific, for example
 
 Do every step, even if the session failed or was cut short:
 
-1. Kill the keepalive loop and anything else you left running on the phone
-   or host (screenrecord, logcat, perfetto).
+1. Kill the keepalive loop by its recorded PID, and anything else you left
+   running on the phone or host (screenrecord, logcat, perfetto).
 2. Restore every setting from the saved file. Restore Do Not Disturb through
    `a shell cmd notification set_dnd <mode>`, using the saved `global zen_mode`
    value to choose the mode:

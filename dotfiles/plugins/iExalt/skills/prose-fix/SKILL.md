@@ -88,6 +88,10 @@ answers, read [references/draft.md](references/draft.md).
 ## Final check
 
 - No fact, attribution, condition, scope, quotation, link, or experience drifted or appeared.
+  For a long or multi-file rewrite, compare the protected spans (code, links, quotations,
+  numbers, headings) mechanically, such as with a script or diff, then inspect every changed
+  condition, attribution, time scope, and normative word by hand. Matching numbers and links
+  alone don't show the meaning survived.
 - The medium still works: procedures scan, warnings stay visible, messages lead with the ask,
   and agent instructions keep every rule.
 - The rewrite does not repeat a pattern it removed under new punctuation.

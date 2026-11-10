@@ -30,7 +30,8 @@ boundaries, supported behavior, repository instructions, baseline, available
 tests, deferred verification, whether the user authorized idle review of
 unrelated repository areas, and these skill instructions. The reviewer reads
 the relevant source independently and challenges shared design assumptions as
-well as departures from the plan.
+well as departures from the plan. Its first reply proves the return address
+works; fix the route before sending the first review request.
 
 The reviewer must be a native subagent with direct message delivery. If the
 harness cannot provide one, handle it as `working-conventions` › Delegation
@@ -47,7 +48,10 @@ decisions, changed assumptions, and consequential failure cases. A routine
 increment needs only a brief amendment to settled designs and agreement; expand
 the proposal when behavior, interfaces, dependencies, or acceptance evidence need
 discussion. Agree the design and closure criteria, batching upcoming proposals so
-the reviewer can answer while reviewing the preceding increment.
+the reviewer can answer while reviewing the preceding increment. When an
+increment adds a process, network, persistence or trust boundary, the reviewer
+first checks the repository's existing executable architecture rules, such as
+tests that forbid subprocesses, before agreeing the design.
 
 Agree on the discriminating verification before coding: what would distinguish
 correct behavior from the plausible failure? For consequential execution paths,
@@ -84,6 +88,7 @@ Prefer existing exact commits and `git show REV:path` for source inspection; whe
 the commit supplies the review inputs, skip a separate snapshot copy or manifest.
 Read the review SHA from `git rev-parse --verify 'HEAD^{commit}'` after the commit
 exists; never predict it or substitute a proposed commit message for a revision.
+The reviewer rejects a revision that doesn't resolve rather than reviewing HEAD.
 A changing checkout, HEAD label, or diff alone is not a stable source snapshot.
 For uncommitted work, freeze the relevant source and dependencies in an identified
 read-only review snapshot; keep actual implementation in the original repository.
@@ -217,7 +222,12 @@ boundaries, consolidate it into that checkpoint with evidence references. When
 the harness allows requesting compaction, compact after the checkpoint rather
 than waiting for automatic compaction. If the reviewer must be replaced,
 transfer this record and evidence references; do not silently restart
-discovery.
+discovery. When a durable campaign outlives its native reviewer, as when a
+resumed session finds it gone, start a new native reviewer with the record.
+Earlier verdicts stay acceptances of the revisions they named; the
+replacement's verdict covers only what it reviewed itself. Using a reviewer of
+another kind, such as a visible Paseo agent, needs the user's authorization;
+never substitute one silently.
 
 ## Integration and completion
 

@@ -39,7 +39,7 @@ FIELDS = {
     "anchor": (STR, False), "est_at": (STR, False), "includes": ((list,), False),
     "probe": ((bool,), False), "probe_minutes": (NUM, False),
     "actual_h": (NUM, False), "actual_rounds": (NUM, False), "blocked_h": (NUM, False),
-    "review_round_minutes": (NUM, False),
+    "review_round_minutes": (NUM, False), "actual_approx": ((bool,), False),
     "scope_h": (NUM, False), "compactions": ((int,), False),
     "started_at": (STR, False), "ended_at": (STR, False), "outcome": (STR, True),
     "reasoning": (STR, False), "cause": (STR, False), "lesson": (STR, False),

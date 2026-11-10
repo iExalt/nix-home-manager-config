@@ -73,6 +73,13 @@ the thread, then the terms below, filled in for the worker:
   credible method, stating its limits; tell the overseer if that can't
   decide the gate. After the first measurement, report any part of the goal it
   already meets and the remaining gap before building anything else.
+- When the thread needs live verification on shared or deployed systems,
+  rehearse cheaply before building a bespoke safety harness: check the
+  deployed version's CLI behavior, generated names and the other environment
+  facts the test relies on, and rehearse startup and diagnostics locally,
+  all before mutating anything. Cap any harness under the same rule as the
+  measurement method above. A rehearsal never replaces the required live
+  proof without the user's approval.
 - A reply that quotes the user is the user's answer. A reply the overseer
   marks as its own decision carries only the authority the user gave the
   overseer.

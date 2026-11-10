@@ -88,7 +88,11 @@ lockfile using the warm package store, rather than linked to another checkout's 
      or throttle Chrome (`Emulation.setCPUThrottlingRate`);
    - run the test repeatedly (`--repeat-each`) with more parallel workers than cores;
    - run the same test on the base branch to tell a regression from an existing flake.
-   Generic load can miss a race that a held response hits every time.
+   Generic load can miss a race that a held response hits every time. Set one reproduction
+   budget (runs and time) for the whole investigation before the first batch; restarts,
+   resumed sessions and other shards draw on it. When a batch shows no failures, prefer a forced
+   interleaving or instrumentation to another load batch, and have any further batch name the
+   new condition it tests. A baseline that never failed can't support a before-and-after claim.
 5. Find the mechanism: what moved, what the test waited for, and what the app was still doing.
    Fix the app when it is wrong (blocking work, a repaint that shouldn't happen, layout that
    shifts when content arrives) and add the settled signal the test needs.

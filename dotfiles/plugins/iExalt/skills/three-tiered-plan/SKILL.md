@@ -165,7 +165,10 @@ able to resume the interview from the draft alone.
   **Agreed**, **Proposed**, **Open**, **Rejected** and **Verified**.
 - Revise in place and keep the trail: "**Changed (the user, <date>):** …,
   replacing …". Record corrected and rejected ideas as lessons, so later agents
-  don't propose them again.
+  don't propose them again. Keep the current plan readable without that trail:
+  the decisions table shows each decision's current form, and superseded
+  rationale moves to the decision's subsection or the rejected-ideas section
+  rather than staying inline in the text agents read first.
 
 ## Tier 1: the plan
 
