@@ -12,7 +12,8 @@ write for a lead, reviewer or worker with the instruction to load this skill
 before any other step; a pilot's brief carries the rules its task needs
 instead, and always the Authority rule on permission boundaries and classifier
 blocks: report a refused action and wait for authorization before retrying it,
-continuing independent work. Avoiding the need for it is fine; retrying it through another tool or route is not.
+continuing independent work. Avoiding the need for it is fine; retrying it
+through another tool or route is not.
 
 A bare skill name here, such as `keep-me-in-the-loop`, means
 `iExalt:keep-me-in-the-loop`; invoke it by the namespaced name.
