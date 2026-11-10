@@ -14,7 +14,9 @@ Keep log contents, source references and thread IDs out of public commits and PR
 fr() { python3 -I "<this skill's directory>/scripts/friction.py" "$@"; }
 fr log < report.json       # validate, append, print the complete snapshot
 fr check                   # validate every record and incident chain
-fr latest                  # latest snapshot per incident, as a JSON array
+fr check --actionable      # also require complete current incident reports
+fr latest                  # current incident snapshots, as a JSON array
+fr latest --include-context # also show archival context heads
 ```
 
 Use the project's selected Mise Python. The script uses only the standard library.
@@ -41,6 +43,32 @@ itself resolve the incident. Follow-ups may reopen an incident.
 Use an existing incident ID when this is the same incident. Similar wording alone
 does not establish identity. `latest` counts one snapshot per incident; raw line
 counts include follow-ups and must not be reported as incident counts.
+
+## Keep current reports actionable
+
+Use a concise summary naming the complaint and its consequence, concrete evidence,
+and a specific `suggestion`: the next command, source or proof needed for an open or
+unverified report, or the prevention for a resolved one. A historical assertion of
+resolution without independently checked fix evidence stays `unverified`. Preserve
+partial fixes and remaining complaint components; do not close the whole report
+because one component was repaired.
+
+An imported heading, detached recommendation or explicit follow-up to another
+incident is archival context, not another incident. Append a complete snapshot on
+the fragment's existing chain with `record_type: "context"`, `kind: "other"`,
+`status: null`, and `context_of: ["exact-existing-incident-id"]`. Preserve its
+origin and cite the source establishing each link. Use `context_of: []` for
+unattributed metadata; never invent a target from similar wording. Move meaningful
+new evidence into a follow-up on the linked incident before archiving the fragment,
+preserving uncertainty and each incident's original origin. Links must target
+existing incident heads, never another context head or the fragment itself.
+
+`latest` excludes context; `latest --include-context` retains access to every
+chain head. `check` reports incident, context and total chain counts separately.
+`check --actionable` also rejects incomplete current incidents and resolved heads
+without fix proof. It leaves historical imports intact. This structural check
+does not judge whether prose is useful or evidence actually proves a fix; read
+both before accepting a cleanup. Existing records default to `record_type: "incident"`.
 
 ```json
 {
@@ -94,6 +122,8 @@ optional or generated. Omit unknown optional values or use null.
 | `workaround` | Optional account of how the task proceeded despite the problem. |
 | `resolution` | Object with `summary` and nonempty `evidence`, using the same reference format; required when a live report is resolved. |
 | `suggestion` | Concrete improvement tied to the reported friction. |
+| `record_type` | Optional `incident` (default) or `context` for archival fragments. |
+| `context_of` | Required on context: distinct existing incident IDs, or an empty array for unattributed metadata. Forbidden on incidents. Context has `kind: "other"` and `status: null`. |
 | `migration` | Imports only: source `file`, inclusive `line_start`/`line_end`, verbatim `original_text`, and a string array of extraction `notes`. |
 
 The writer holds a stable sidecar lock through validation and append, flushes
