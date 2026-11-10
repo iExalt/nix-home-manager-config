@@ -245,7 +245,9 @@ roadmap's closing table.
 
 Then grill the user to shrink that table: settle decisions now, provision
 access ahead of time, and move mid-step interventions to the thread's
-approval. Record each answer in the table; what remains is the planned human
+approval. Turn approvals the thread will repeat, such as one per release or
+per credential use, into standing grants asked at that approval
+(`working-conventions` › Standing grants). Record each answer in the table; what remains is the planned human
 work.
 
 Settle first any decision whose answer changes an invariant other steps rely
