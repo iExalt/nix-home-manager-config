@@ -100,6 +100,7 @@ answers, read [references/draft.md](references/draft.md).
 - The ending stops on the last useful thought, not a recap or send-off.
 - The edit did not make the prose colder or less the writer's just to remove a tell. Where the
   source earned an image, stance, joke, or memorable line, it survives. Supported claims of credit
-  or impact keep their force; only unsupported promotion goes.
+  or impact keep their force; unsupported promotion goes, and so does generic promotional wording,
+  even beside a supported claim.
 
 Sources and licenses are listed in [NOTICE.md](NOTICE.md).

@@ -128,13 +128,12 @@ milestones and decisions, and each decision into the ones that depend on it. The
 - Challenge answers that conflict with the code, the evidence or an earlier
   answer.
 - When talking can't settle a question because it needs evidence or something
-  to react to, stop grilling it. Propose the smallest spike, following
-  `agentic-workflow`'s spike guidance, and mark the decision Open pending it.
-  When the user needs something concrete to react to, the spike can be a
-  quick prototype or mockup.
-  The roadmap schedules the spike before the work it de-risks. Planning
-  authorizes read-only investigation; a spike that spends money, touches live
-  systems or runs long needs the user's authorization.
+  to react to, such as a quick prototype or mockup, stop grilling it. Propose
+  the smallest spike, following `agentic-workflow`'s spike guidance, and mark
+  the decision Open pending it. The roadmap schedules the spike before the
+  work it de-risks. Planning authorizes read-only investigation; a spike that
+  spends money, touches live systems or runs long needs the user's
+  authorization.
 - Treat "I don't know" as an answer: turn it into a spike, a deferral with a
   trigger, or a provisional assumption labelled as one.
 - Don't cap the questions. If the tree outgrows one campaign, propose a
