@@ -19,8 +19,9 @@ and follow the repository's instructions for its fields and commands:
   reports ready, or in flight with ready items, and take **not alongside**
   rules from their Depends on sections and the repository's exclusion table.
   A workstream the tool calls provisional waits for its refinement.
-- **Agreement and approval:** record the user's agreement as a signed comment
-  on each workstream issue that quotes the dialog answer. When the repository
+- **Agreement and approval:** in an issue tracker such as GitHub or Linear,
+  record the user's agreement as a signed comment on each workstream issue
+  that quotes the dialog answer. When the repository
   makes approval a tracker state, such as a status of Approved, set it from
   that agreement only where its instructions let an agent record the user's
   approval; otherwise ask the user to set it, as a planned any-time
@@ -30,8 +31,8 @@ and follow the repository's instructions for its fields and commands:
   tracker's standalone `keep-me-in-the-loop` prompt. The worker claims the
   issue as the repository's instructions say and keeps the sibling worktree
   they name. Name it after the workstream, such as `Worker: <name> #<N>`.
-- **Judgment calls and deviations:** record them as signed comments on the
-  affected workstream issues, update those issues' bodies or links, and rerun
+- **Judgment calls and deviations:** in an issue tracker, record them as
+  signed comments on the affected workstream issues, update those issues' bodies or links, and rerun
   the readiness tool before launching their dependents.
 - **Scoreboard:** freeze the workstreams' tasks with `scoreboard.py freeze`,
   which reads Acyclic. For another tracker, write line 1 by hand marked
@@ -39,3 +40,7 @@ and follow the repository's instructions for its fields and commands:
 - **Done:** besides the checks in `SKILL.md` › Run the threads, the workstream issue is
   closed, the readiness tool has run, and the summary shows its dependents
   unblocked. Report its drift check with the done check.
+
+In Acyclic, record agreement and judgment calls in the items' thread notes
+instead, as the opening paragraph says, with no comments or approval state,
+and launch a workstream once that agreement is recorded.

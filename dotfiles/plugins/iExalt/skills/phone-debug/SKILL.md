@@ -134,6 +134,12 @@ value you remember isn't a baseline.
 5. **Rotation.** If the test needs a particular orientation, set
    `accelerometer_rotation 0` and `user_rotation` yourself rather than asking
    the user to turn the phone, and restore both at the end.
+6. **Debug-app data.** After installing the debug build and before this
+   session's first launch, run `a shell pm clear <debug package>`: Android may
+   have restored a backed-up production host into it. Skip this only if the
+   user asked to keep its data. Clearing also resets runtime permissions, so
+   re-grant any the test needs. Before pairing, check the app shows no saved hosts, and
+   never edit production token stores.
 
 ## Input discipline
 

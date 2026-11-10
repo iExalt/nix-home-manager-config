@@ -157,10 +157,12 @@ reviewable capability, evidence package, or decision.
 Before recommending work, check:
 
 1. **Dependency cycles:** Build a directed graph from each goal to its
-   prerequisites. A valid next goal must have all required incoming evidence.
-   If no unfinished goal can become ready, report the cycle. Resolve it by
-   splitting out a bounded spike, shared evidence prerequisite, or explicit
-   decision gate; do not hide the cycle by changing labels.
+   prerequisites. A valid next goal must have the evidence from all its
+   prerequisites. Report a cycle only when you find one, naming its goal IDs,
+   and resolve it by splitting out a bounded spike, shared evidence
+   prerequisite, or explicit decision gate; do not hide the cycle by changing
+   labels. If no goal is ready and there is no cycle, report each unmet
+   external prerequisite or pending decision and its owner instead.
 2. **Exit ownership conflicts:** Map every exit condition and final decision to
    one owning goal. If two goals claim the same final selection or gate,
    designate one owner and make the other an evidence contributor.
@@ -241,7 +243,7 @@ classify the affected outcome as verified.
 
 Finish with:
 
-- the status-document path;
+- the canonical record: the tracker item(s) or the status-document path;
 - the baseline and evidence sources inspected;
 - the current boundary and recommended next sequence;
 - verification performed and any unverified claims;

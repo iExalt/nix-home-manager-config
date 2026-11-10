@@ -445,7 +445,9 @@ When a request for a human comes due, whether planned or raised by a worker:
    asking worker continue its independent work.
 4. Relay the answer to the worker, quoting the user and saying what they chose
    and for which thread or item, as `working-conventions` › Record the user's
-   decisions describes.
+   decisions describes. Number each decision per thread, ask the worker to
+   acknowledge it by number and to drop any earlier answer it replaces, and
+   treat it as delivered only once acknowledged.
 
 Answer a question from the user before anything else.
 
