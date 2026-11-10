@@ -175,8 +175,8 @@ its own steps, with a before-and-after screenshot, and run one first-glance swee
 screenshots in each theme) on every form factor in scope to catch what the fixes broke elsewhere.
 A regression your fix caused is yours to fix; if the second attempt fails too, revert that fix and
 file the finding. There is no second exploratory round by default. Run another round only when the
-user asks for one, usually after their own look (step 6). For that round, add the filed findings to the brief's
-"Already decided or filed" field. A request to fix filed findings starts a separate repair phase: re-check
+user asks for one, usually after their own look (step 6). For that round, add the filed findings to
+the brief's "Already decided or filed" field. A request to fix filed findings starts a separate repair phase: re-check
 those fixes as above; it does not authorize another exploratory round.
 
 **Keep to the time budget.** Note the start time. If the pass reaches one and a half times its

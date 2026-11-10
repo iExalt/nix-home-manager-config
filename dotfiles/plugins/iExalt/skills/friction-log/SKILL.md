@@ -108,8 +108,9 @@ before printing anything shorter:
 
 ```sh
 dir=~/.local/state/friction-log   # private, never a checkout
-(umask 077; mkdir -p "$dir" && fr log < report.json > "$dir/last-snapshot.json") &&
-  jq -r '"\(.event_id) \(.status)"' "$dir/last-snapshot.json"
+snap="$dir/<event-id>.json"   # one file per event; a retry reads it and writes elsewhere
+(umask 077; mkdir -p "$dir" && fr log < report.json > "$snap") &&
+  jq -r '"\(.event_id) \(.status)"' "$snap"
 ```
 
 If a write's acknowledgement was lost, inspect `latest` before retrying. The
