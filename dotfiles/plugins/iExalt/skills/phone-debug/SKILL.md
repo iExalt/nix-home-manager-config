@@ -119,7 +119,7 @@ value you remember isn't a baseline.
    while it's unlocked and never touches the keyguard:
 
    ```zsh
-   deadline=$(( $(date +%s) + <stint seconds> ))
+   deadline=$(( $(date +%s) + <seconds until stint end minus teardown> ))
    ( while (( $(date +%s) < deadline )); do
        w=$(a shell dumpsys window) || break   # unreadable lock state: stop, don't wake
        [[ $w == *isKeyguardShowing=* && $w != *isKeyguardShowing=true* ]] &&
