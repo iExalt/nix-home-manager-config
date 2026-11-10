@@ -77,6 +77,11 @@ class Validate(unittest.TestCase):
         self.assertIn("est_high_h is not finite", self.errs(rec(est_high_h=float("inf"))))
         self.assertIn("task is empty", self.errs(rec(task="  ")))
 
+    def test_review_round_minutes_must_not_be_negative(self):
+        self.assertEqual(self.errs(rec(review_round_minutes=6)), [])
+        self.assertTrue(any("review_round_minutes" in e
+                            for e in self.errs(rec(review_round_minutes=-1))))
+
     def test_percentiles_must_be_ordered(self):
         ok = rec(est_p10_h=0.1, est_median_h=0.3, est_p90_h=0.9)
         self.assertEqual(self.errs(ok), [])
@@ -244,6 +249,14 @@ class Calibration(unittest.TestCase):
         self.assertIn("revisions[0] has a non-finite number",
                       " ".join(E.validate(grec(actual_h=1.0, revisions=broken))[0]))
         self.assertEqual(E.remaining_calibration([grec(actual_h=1.0, revisions=broken)])[2], 1)
+
+    def test_review_latency_reports_only_groups_with_enough_records(self):
+        recs = ([rec(kind="audit", review_round_minutes=m) for m in (2, 3, 4, 5, 6)] +
+                [rec(kind="docs", review_round_minutes=20)] + [rec()])
+        self.assertEqual(E.review_latency(recs), {"all": (4.5, 6), "audit": (4, 5)})
+        kindless = [{"review_round_minutes": m} for m in (1, 2, 3, 4, 5)]
+        self.assertEqual(E.review_latency(kindless)["other"], (3, 5))
+        self.assertEqual(E.review_latency(recs[:4]), {})
 
     def test_interval_score_penalises_width_and_misses(self):
         ln = math.log

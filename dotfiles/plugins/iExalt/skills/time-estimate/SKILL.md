@@ -71,7 +71,8 @@ There is no one-hour floor: a third of logged tasks finished in under 30 minutes
    - Price at agent pace, not human pace: a trimmed rewrite from targeted reads takes minutes, not
      the hours a line-by-line port would.
    - A small one-PR task takes one review round. Multi-increment work takes about two per increment
-     plus one or two integration rounds. A round costs the reviewer's latency, typically 4–9
+     plus one or two integration rounds. A round costs the reviewer's latency: use the median
+     `te stats` reports for the kind (overall when the kind has too few), else assume 4–9
      minutes. Count work that runs in parallel once.
    - Price cold setup (dependency installs, cold builds, new worktrees) and CI separately; they
      dominate small changes.
@@ -136,7 +137,7 @@ te log <<'EOF'
  "est_at": "2026-11-09T15:40:00Z", "started_at": "2026-11-09T15:40:00Z", "ended_at": "2026-11-09T16:20:00Z",
  "revisions": [{"at": "2026-11-09T15:55:00Z", "elapsed_h": 0.2, "remaining_low_h": 0.1,
    "remaining_median_h": 0.15, "remaining_high_h": 0.25, "trigger": "round", "reason": "review asked for a jitter test"}],
- "actual_h": 0.4, "actual_rounds": 2, "blocked_h": 0.25, "scope_h": 0, "compactions": 0, "outcome": "done",
+ "actual_h": 0.4, "actual_rounds": 2, "review_round_minutes": 6, "blocked_h": 0.25, "scope_h": 0, "compactions": 0, "outcome": "done",
  "reasoning": "...", "cause": "...", "lesson": "...", "suggestion": "..."}
 EOF
 ```
@@ -144,6 +145,10 @@ EOF
 - Paste the numeric fields from `te estimate`. Without calibration, still log your gut range as
   `raw_low_h`/`raw_high_h` (the same as the stated range) and omit `bias_factor` and the
   percentile fields. Only records with a gut range count toward the factor.
+- When the work had review rounds, set `review_round_minutes` to the median minutes from sending a
+  revision to receiving the reviewer's verdict; `te stats` reports it per kind once five records
+  carry it. Omit it if the send and verdict times aren't in the transcript, since a reconstructed
+  value is worse than none, and set it on worker and standalone records, not on a campaign's own.
 - `actual_h` is active time; `blocked_h` and `scope_h` are 0 when nothing applies.
 - In a campaign, each worker sets `parent_id` to the campaign's id, and the coordinator logs the
   campaign's own record with that id as its `thread_id`. Stats then count the campaign once.
