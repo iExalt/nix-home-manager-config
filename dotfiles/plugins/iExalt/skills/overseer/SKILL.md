@@ -240,7 +240,8 @@ never compute them yourself.
   digest as sent, so the next "since" counts from it. A task is done only when
   Acyclic reports it done by `item done --commit` and the commit's merge
   ancestry is verified; `unchecked_commits` is not verified. Acyclic learns each
-  clone when any acyclic command runs inside it, so workers finishing items from
+  clone when any acyclic command runs inside it (for a github.com origin; map any
+  other clone in `~/.config/acyclic/clones.toml`), so workers finishing items from
   their clone or worktree cover this. A repository it has never run in stays
   unchecked, and the task's `unverified_done` reason names the fix; apply it
   rather than checking ancestry by hand.
