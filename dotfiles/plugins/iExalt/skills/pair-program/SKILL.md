@@ -35,9 +35,9 @@ If the boundary is unclear, investigate first and propose a bounded item.
    - State the verification planned for the increment and the environment
      that can run it. If none is available, ask whether to defer that proof
      before starting work that depends on it.
-   - When the navigator is new to the domain, say whether each protocol or
-     format assumption is standardized, observed on real systems, or seen
-     only in fixtures.
+   - When the navigator is new to the domain, say whether each domain
+     assumption is established by a standard, observed in practice, or seen
+     only in test data.
    - Identify acceptance tolerances, exclusions, the input invariants the code
      may rely on, and unresolved decisions. For expensive experiments, propose a
      small feasibility check and an estimated total runtime including setup,

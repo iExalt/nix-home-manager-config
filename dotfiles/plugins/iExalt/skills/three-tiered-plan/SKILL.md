@@ -130,8 +130,8 @@ milestones and decisions, and each decision into the ones that depend on it. The
 - When talking can't settle a question because it needs evidence or something
   to react to, stop grilling it. Propose the smallest spike, following
   `agentic-workflow`'s spike guidance, and mark the decision Open pending it.
-  For an unfamiliar frontend choice, the spike is a quick prototype or mockup
-  made with `frontend-design`.
+  When the user needs something concrete to react to, the spike can be a
+  quick prototype or mockup.
   The roadmap schedules the spike before the work it de-risks. Planning
   authorizes read-only investigation; a spike that spends money, touches live
   systems or runs long needs the user's authorization.

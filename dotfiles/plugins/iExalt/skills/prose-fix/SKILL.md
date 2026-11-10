@@ -64,7 +64,6 @@ requirements and house style outrank these defaults.
 | PRs, commits, tickets | What changed, why, and what to check | Conventional prefixes, issue links, test evidence |
 | Email, Slack, replies | The ask, decision, or update, first | Real politeness and social context |
 | Essays, posts, talks | One takeaway, development, the author's judgment | Voice, uncertainty, asides, earned rhetoric |
-| Performance reviews | Outcomes first, with the writer's intended force | Supported self-advocacy and ownership claims at their evidence's strength; cut generic sales words, not the point |
 
 ## How to work
 
@@ -100,6 +99,7 @@ answers, read [references/draft.md](references/draft.md).
 - No em or en dashes remain in prose unless the writer's sample or house style uses them.
 - The ending stops on the last useful thought, not a recap or send-off.
 - The edit did not make the prose colder or less the writer's just to remove a tell. Where the
-  source earned an image, stance, joke, or memorable line, it survives.
+  source earned an image, stance, joke, or memorable line, it survives. Supported claims of credit
+  or impact keep their force; only unsupported promotion goes.
 
 Sources and licenses are listed in [NOTICE.md](NOTICE.md).

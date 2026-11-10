@@ -32,9 +32,8 @@ Start with a bounded profile or per-phase timings, including harness and fixture
 setup. Inspect callers when the measured wait exceeds the test or build body's
 own cost. Prefer fixes to polling, unintended serial work, repeated setup,
 duplicate builds, oversized fixtures and algorithms before adding concurrency.
-Before choosing a mechanical repair such as a cache or mirror, check whether the
-work can disappear through prepared dependencies, shared build ownership or a
-lighter module boundary, and say why when the smaller patch wins.
+Before choosing a local mechanical repair, check whether a structural change
+would remove the work altogether, and say why when the smaller patch wins.
 
 Keep each required invariant at the cheapest reliable layer. Consolidate redundant
 coverage while retaining distinct failure modes. Moving proof out of the routine

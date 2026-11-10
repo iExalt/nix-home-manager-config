@@ -70,9 +70,9 @@ then proceed.
 Read the selected skill's current instructions and run it in this session,
 unless the user asks for a separate or background session (or for it to run
 while they do something else); in that case launch one as
-`working-conventions` › Delegation describes (under Paseo, a worker in its own visible workspace per
-[paseo-launch.md](../working-conventions/references/paseo-launch.md), never a
-hidden background one) and pass the same brief. Give the workflow:
+`working-conventions` › Delegation describes (under Paseo, per
+[paseo-launch.md](../working-conventions/references/paseo-launch.md)) and pass
+the same brief. Give the workflow:
 
 - the item reference, link, and title;
 - the goal, acceptance criteria, and explicit non-goals, quoting the item where

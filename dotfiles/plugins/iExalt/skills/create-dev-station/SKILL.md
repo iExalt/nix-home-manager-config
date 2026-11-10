@@ -122,8 +122,8 @@ Check the tools and configuration the assigned work uses, beyond the compiler:
   disposable local repository. A read-only bootstrap token does not grant push access. Arrange an
   authorized publication route without copying private keys or trying stronger credentials after
   denial; build/test readiness can be handed off with publication explicitly unproven. Include
-  any private pre-push guard the repository requires, such as a deny-list for private details,
-  without copying private configuration unless authorized.
+  any pre-push checks the repository requires, without copying private configuration unless
+  authorized.
 
 Prove each capability separately:
 
