@@ -39,6 +39,7 @@ FIELDS = {
     "anchor": (STR, False), "est_at": (STR, False), "includes": ((list,), False),
     "probe": ((bool,), False), "probe_minutes": (NUM, False),
     "actual_h": (NUM, False), "actual_rounds": (NUM, False), "blocked_h": (NUM, False),
+    "review_round_minutes": (NUM, False),
     "scope_h": (NUM, False), "compactions": ((int,), False),
     "started_at": (STR, False), "ended_at": (STR, False), "outcome": (STR, True),
     "reasoning": (STR, False), "cause": (STR, False), "lesson": (STR, False),
@@ -58,6 +59,7 @@ PORTED_OPTIONAL = {"kind", "est_low_h", "est_high_h"}
 MAX_RECORD_BYTES = 64 * 1024
 HEADLINE_WINDOW = 60
 PERCENTILE_MIN = 30  # below this many headline units, percentiles are noise
+REVIEW_MIN = 5  # records with review_round_minutes before stats reports their median
 SHRINK_N = 8      # per-kind factor reaches full weight at this many units
 SPREAD_N = 12     # per-kind quartiles used only from this many units
 BACKTEST_START = 30
@@ -116,7 +118,8 @@ def validate(rec):
     errs += validate_revisions(rec.get("revisions"), rec.get("actual_h"))
     if not ported and rec.get("est_low_h") is not None and rec["est_low_h"] <= 0:
         errs.append("est_low_h must be above zero")
-    for k in ("actual_h", "blocked_h", "scope_h", "probe_minutes", "actual_rounds"):
+    for k in ("actual_h", "blocked_h", "scope_h", "probe_minutes", "actual_rounds",
+              "review_round_minutes"):
         if rec.get(k) is not None and rec[k] < 0:
             errs.append(f"{k} is negative")
     factor = rec.get("bias_factor")
@@ -392,6 +395,16 @@ def remaining_calibration(recs):
     return per_rec, hits, n
 
 
+def review_latency(recs):
+    """Median minutes per review round, overall ("all") and per kind, where n >= REVIEW_MIN."""
+    vals = [(r.get("kind") or "other", r["review_round_minutes"]) for r in recs
+            if r.get("review_round_minutes") is not None]
+    groups = {"all": [v for _, v in vals]}
+    for k, v in vals:
+        groups.setdefault(k, []).append(v)
+    return {k: (st.median(vs), len(vs)) for k, vs in groups.items() if len(vs) >= REVIEW_MIN}
+
+
 def cmd_stats(args):
     recs, bad = read_log(log_path())
     us, excluded = units(recs)
@@ -424,6 +437,14 @@ def cmd_stats(args):
     if per_rec:
         print(f"# remaining-time revisions: {n} in {len(per_rec)} records; actual remaining = "
               f"stated x {math.exp(st.mean(per_rec)):.2f}; {hits / n:.0%} inside the stated range")
+    lat = review_latency(recs)
+    if lat:
+        print("# review round minutes (median, n): " +
+              "; ".join(f"{k} {m:g} min (n={n})" for k, (m, n) in
+                        sorted(lat.items(), key=lambda kv: (kv[0] != "all", kv[0]))))
+    else:
+        print(f"# review round minutes: fewer than {REVIEW_MIN} records log review_round_minutes; "
+              "assume 4-9 min")
 
 
 def cmd_estimate(args):
