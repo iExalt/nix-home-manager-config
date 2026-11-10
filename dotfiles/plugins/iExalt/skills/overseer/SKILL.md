@@ -56,7 +56,8 @@ to decide when to involve the user. Record consequential judgment calls and
 their reasoning in the script's revision log and report them in the next
 update. Never weaken an acceptance check, exceed approved spending, or take a
 destructive or external action outside the user's authorization. A release
-needs the user's explicit approval naming it. Permission boundaries and
+needs the user's explicit approval naming it, or a standing release grant that
+covers it (`working-conventions` › Standing grants). Permission boundaries and
 releases follow `working-conventions` › Authority; the user's own checkouts
 and machines, including a dirty working tree on a remote host, follow
 `working-conventions` › Workspace and cleanup.
@@ -173,7 +174,9 @@ the estimate. A change to the frozen goal or estimate is an amendment.
 
 Before launching, list every decision the run is likely to reach while the
 user is away: each thread's Human entries, open plan items, hosted runs, pushes
-and draft PRs, credential and spending approvals, deferral of a missed proof,
+and draft PRs, credential and spending approvals (ask for a standing grant
+when the run will repeat them; `working-conventions` › Standing grants),
+releases, deferral of a missed proof,
 and the measurement method and kill criterion above. Ask in the opening
 dialog how long the user will be away, and settle each item there: decide it
 now, pre-delegate it to you within a stated bound, or name it as the one
