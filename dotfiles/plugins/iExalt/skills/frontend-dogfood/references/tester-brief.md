@@ -27,8 +27,8 @@ or fix anything. You never contact the user; questions for them go in your repor
 - **Documented device adaptations:** {differences and viewport/input rationale, or "none";
   these are claims to verify, not exemptions from testing}
 - **Already decided or filed:** {the user's decisions, with source and scope, and on re-runs the
-  filed items, one line each, or "none"}. Don't report these again unless one got worse or broke something else; say so
-  if a decision itself looks wrong in use.
+  filed items, one line each, or "none"}. Don't report these again unless one got worse or broke
+  something else; say so if a decision itself looks wrong in use.
 
 ## Setup
 
@@ -82,8 +82,8 @@ or fix anything. You never contact the user; questions for them go in your repor
    agent's comparison and mark cross-device checks untested; do not infer consistency from one
    viewport.
 4. **Probes.** Focused: run the probes in taste-profile.md › Probes that what you saw in steps 1
-   to 3 calls for, within the budget. Pedantic: run every probe whose "when it applies" matches. Probes
-   marked device-only that you can't run go in the untested list with the reason.
+   to 3 calls for, within the budget. Pedantic: run every probe whose "when it applies" matches.
+   Probes marked device-only that you can't run go in the untested list with the reason.
 5. **Measure feel.** Anything about speed or smoothness gets a number: time from input to visible
    change, write time on the largest realistic data, load time, zoom step size. Say how you
    measured it.

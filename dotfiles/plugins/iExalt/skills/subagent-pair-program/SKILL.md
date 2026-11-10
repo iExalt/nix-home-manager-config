@@ -226,9 +226,9 @@ checklist, the qualifying events are lead events: reviewed acceptance, a
 material finding, a decision request, or a changed scope, route, blocker or
 delivery expectation. Never inspect workers just to fill a message.
 
-Supply enough background to make sense without opening a pilot chat; do not
-merely compress the lead's packet. Combine actual checklist changes with these
-updates and show the final state at handoff. Report acceptance only after
+Supply enough background that the update makes sense without opening a pilot
+chat; do not merely compress the lead's packet. Combine actual checklist
+changes with these updates and show the final state at handoff. Report acceptance only after
 navigator review, labelled as `working-conventions` › Review loops describes,
 and keep the lead's and pilots' caveats in the user's report.
 

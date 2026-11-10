@@ -97,7 +97,8 @@ await context.addInitScript(() => {          // survives navigation, unlike page
 });
 ```
 
-The first works only if the app honours `prefers-reduced-motion`; the stylesheet covers the rest.
+`reducedMotion` works only if the app honours `prefers-reduced-motion`; the stylesheet covers the
+rest.
 Keep at least one test with animations on if motion is part of the behaviour.
 
 ## A coordinate tap that checks its target

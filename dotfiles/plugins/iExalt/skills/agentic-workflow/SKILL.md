@@ -13,10 +13,10 @@ or read its `SKILL.md` where your harness lists the path.
 Facilitate the human decisions in the
 [Agentic Workflow Primer](../../../../../AGENTIC_WORKFLOW_PRIMER.md).
 This skill's dialog rules add to `working-conventions` › Ask the user. Two of
-them deliberately override the user's global rules to batch questions and
-always recommend one: ask one consequential question at a time, and recommend
-only when evidence supports it. Here earlier answers reshape later questions,
-and an unsupported recommendation anchors the user.
+them deliberately override the user's global rules, which say to batch
+questions and always recommend an option: ask one consequential question at a
+time, and recommend only when evidence supports it. Here earlier answers
+reshape later questions, and an unsupported recommendation anchors the user.
 
 The primer restates this workflow for humans; don't load it. Point the user to
 it when they want the background.

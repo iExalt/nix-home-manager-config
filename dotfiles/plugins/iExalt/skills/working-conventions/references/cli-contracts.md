@@ -55,7 +55,7 @@ slack-cli message search --query "build failure" --limit 100 --page 1 --output j
 
 After a consequential mutation, read the entity back through a supported
 read command before reporting success. A successful exit or creation
-message alone has not proved that a requested relation exists.
+message alone does not prove that a requested relation exists.
 
 - For issue fields, use `linear issue view <issue> --json` and compare the
   requested values with the returned values.

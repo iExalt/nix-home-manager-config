@@ -34,8 +34,9 @@ ssh <host> 'loginctl show-user "$USER" -p Linger --value'
 
 Headed sessions also need Xvfb on the host (Ubuntu's `xvfb` package; installing it needs the
 user's say-so). dogfood.py's liveness check reads the unified cgroup v2 tree, which current
-distributions use; on a cgroup v1 host it would report every session as gone. uv runs touch_probe.py on the host. Lingering decides whether the browser and the touch hold, which
-run under the user's systemd manager, survive when the last login session on the host ends. With
+distributions use; on a cgroup v1 host it would report every session as gone. uv runs
+touch_probe.py on the host. Lingering decides whether the browser and the touch hold, which run
+under the user's systemd manager, survive when the last login session on the host ends. With
 `Linger=no` they still work while any other session keeps the manager up, but can stop mid-run
 without warning. `dogfood.py init` exits if agent-browser, uv, or (unless `--headless`) Xvfb is
 missing, and only warns when lingering is off; it doesn't check the cgroup version. Every later
@@ -45,8 +46,8 @@ including after the browser's idle timeout, failing with exit 3 if not: re-run `
 Turning lingering on (`loginctl enable-linger`) changes the user's machine, so ask them first.
 
 The laptop gets the same `npm:agent-browser@latest` from this repo's `home.nix`, only so its
-version and docs match. Compare
-`agent-browser --version` on both hosts and update the older one if they differ. Testing needs real
+version and docs match. Compare `agent-browser --version` on both hosts and update the older one
+if they differ. Testing needs real
 scrollbars, and Chrome needs `--no-sandbox` where AppArmor blocks its user-namespace sandbox (stock
 Ubuntu does), so keep this config at `~/.agent-browser/dogfood.json` on the host and export
 `AGENT_BROWSER_CONFIG` to point at it:
@@ -66,8 +67,8 @@ tag type findings "rendered on Linux, intended face missing".
 **Drive the browser with [../scripts/dogfood.py](../scripts/dogfood.py).** It runs on the laptop
 and sends each command to the host in one ssh call, quoting its arguments for you, so JavaScript and
 selectors survive. Testers who wrote their own wrappers spent turns on shell quoting instead of
-testing. Run it with `uv run <skill-dir>/scripts/dogfood.py`; `--help` lists every command The host needs
-agent-browser, `uv` and a system `python3`.
+testing. Run it with `uv run <skill-dir>/scripts/dogfood.py`; `--help` lists every command. The
+host needs agent-browser, `uv` and a system `python3`.
 
 ```sh
 dogfood.py init <session> --host <host> --evidence <evidence-dir> --url-part <port-or-path> --open <url>
@@ -85,12 +86,11 @@ dogfood.py close <session>                            # browser, touch hold, and
 
 `init` copies touch_probe.py to the host every time. With `--open` it also starts the browser
 headed, on a private virtual display (Xvfb), inside a systemd scope capped at the agreed 7 vCPU and
-16 GB. Headed matters:
-headless Chrome reports `(hover: hover)` and `(pointer: fine)` as false, so an app that switches on
-them shows a desktop tester its touch layout. `init` prints `mouse: true` when the page sees a real
-mouse. Pass `--headless` only if the host lacks Xvfb, and report hover- and pointer-dependent
-behaviour untested. It first closes any browser and touch hold left under that
-session name, so a re-run starts clean. The daemon and browser persist between calls; give every
+16 GB. Headed matters: headless Chrome reports `(hover: hover)` and `(pointer: fine)` as false,
+so an app that switches on them shows a desktop tester its touch layout. `init` prints
+`mouse: true` when the page sees a real mouse. Pass `--headless` only if the host lacks Xvfb, and
+report hover- and pointer-dependent behaviour untested. `init` first closes any browser and touch
+hold left under that session name, so a re-run starts clean. The daemon and browser persist between calls; give every
 parallel tester its own session name. The main agent usually runs `init` and hands the session to
 the tester; the tester leaves it open for the main agent to close.
 
@@ -147,8 +147,8 @@ session's colour scheme, viewport, and pixel ratio alone; dogfood.py drives it:
 touch_probe's docstring lists the steps (`tap`, `drag`, `pinch`, `wheel` with `ctrl` for trackpad
 pinch, `wait`, `eval`, `screenshot`, `time_to_change`). Don't put `"touch"` or `"cpu"` in a steps
 file while a hold runs: the steps run would clear the hold's emulation when it exits, so
-`dogfood.py steps` drops them during a hold. Coordinates
-are viewport CSS pixels, as `get box` reports them, so taps stay accurate after scrolling.
+`dogfood.py steps` drops them during a hold. Coordinates are viewport CSS pixels, as `get box`
+reports them, so taps stay accurate after scrolling.
 
 **Timing.** `dogfood.py tap <session> @e12 --until "<js predicate>"` prints the milliseconds from
 the touch to the first animation frame where the predicate holds, so it includes rendering; it is

@@ -13,18 +13,20 @@ This script groups the [roadmap](<ROADMAP>.md)'s steps; the [plan](<PLAN>.md) sa
 ## How to use it
 
 - Each thread is one `/iExalt:keep-me-in-the-loop` invocation (or, under `/iExalt:overseer`, one worker running
-  `continuous-peer-review`) and one approval, which settles the thread's decisions,
-  authority and live spending up front, so it can run to the end with its continuous reviewer. Its chunks run in
-  order.
+  `continuous-peer-review`) and one approval, which settles the thread's decisions, authority and live spending up
+  front, so it can run to the end with its continuous reviewer. Its chunks run in order.
 - **Threads run in parallel unless their Depends on entry says otherwise.** Open any thread whose dependencies are
-  met: start a fresh chat and paste its prompt, or have `/iExalt:overseer` run the ready threads as separate Paseo agents.
-- A thread running beside another works in its own worktree (`/iExalt:overseer` gives each worker a Paseo worktree), rebases before every push, and reconciles shared documents (roadmap ticks, status, this
-  script) without overwriting another thread's entries.
+  met: start a fresh chat and paste its prompt, or have `/iExalt:overseer` run the ready threads as separate Paseo
+  agents.
+- A thread running beside another works in its own worktree (`/iExalt:overseer` gives each worker a Paseo worktree),
+  rebases before every push, and reconciles shared documents (roadmap ticks, status, this script) without
+  overwriting another thread's entries.
 - **Human** lists every planned intervention. "None after approval" means the thread runs with nobody at the keyboard
   once it is approved.
 - When a thread finishes, its agent marks it done here, records any deviation that changes other threads, and marks
   the threads it unblocks ready.
-- Once the user confirms the final gate, close the campaign with `/iExalt:three-tiered-plan`'s "Close a finished campaign".
+- Once the user confirms the final gate, close the campaign with `/iExalt:three-tiered-plan`'s "Close a finished
+  campaign".
 - <Standing hazards that apply to every thread.>
 
 ## Where things stand
@@ -65,7 +67,9 @@ This script groups the [roadmap](<ROADMAP>.md)'s steps; the [plan](<PLAN>.md) sa
   - <When nothing is needed mid-run or after, replace those two lines with "None after approval.">.
 - **Chunks (proposed):** <2–4 chunks; the loop reshapes them with its reviewer>.
 - **Live:** <resources, spending and teardown>.
-- **Estimate:** <active-time range and review rounds; the overseer's stop-loss triggers past the upper bound; a campaign total, in wall-clock hours from plan agreement, goes in the script header; with a tracker, per-task ranges>.
+- **Estimate:** <active-time range and review rounds; the overseer's stop-loss triggers past the upper bound; a
+  campaign total, in wall-clock hours from plan agreement, goes in the script header; with a tracker, per-task
+  ranges>.
 - **Done when:** <the deliverable and exit check, and the gate it passes, if any. For a measured goal: the agreed method,
   the kill criterion, and "merged with the number reported">.
 

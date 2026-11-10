@@ -79,7 +79,7 @@ commitment.
 When the roadmap's later phases stay inside the agreed scope and hold no taste,
 scope, cost or release decision, offer to approve them together with this
 phase, and recommend it. List those phases coarsely, and name any decision you
-already know will come back to the user. Offer approving only this phase as the
+already know will come back to the user. Offer approval of this phase alone as the
 alternative. Under a multi-phase approval, shape each next phase with the
 reviewer, describe it in the phase-completion report, and start it in the same
 turn. Return to the user before a phase that departs from the approval or

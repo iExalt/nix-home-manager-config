@@ -9,8 +9,8 @@ and is likely to recur, suggest updating this file.
   exact dates for each stretch, and the thread that ties it together.
 - Each contribution starts with a **bold lead sentence that states the outcome**, in the first
   person, as something a reader outside the team would care about ("Three teams now deploy through
-  the pipeline I built", not "Worked on the deploy pipeline"). One or two sentences of
-  context follow.
+  the pipeline I built", not "Worked on the deploy pipeline"). One or two sentences of context
+  follow.
 - Under the lead, bullets each start with a **bold label that is a short "I + verb" claim** ("I cut
   the build time."), then the evidence: what, how much, when.
 - Order contributions by impact on people outside the team, then by size.
@@ -65,5 +65,5 @@ and is likely to recur, suggest updating this file.
   usually enough.
 - Keep it shorter than a self-review: their manager reads many. Set a word target when planning
   (the form's limit, or the length the user asked for; with neither, propose one in the plan for
-  the user to accept), check the export against it before
-  handoff, and trim to it unless the extra detail serves a need the user stated.
+  the user to accept), check the export against it before handoff, and trim to it unless the extra
+  detail serves a need the user stated.

@@ -99,8 +99,8 @@ Follow qa-conduct and [references/devices.md](references/devices.md):
   image. Resolve missing configuration, helper dependencies or a stale app build as setup defects;
   do not classify those failures as product findings. Include inputs that depend on the real
   environment's capabilities in that journey, and list what the test host can't do as untested
-  before briefing. Use `uv run` for dogfood.py so its
-  declared Pillow dependency is supplied. Keep timing comparisons on matched, quiet host conditions.
+  before briefing. Use `uv run` for dogfood.py so its declared Pillow dependency is supplied. Keep
+  timing comparisons on matched, quiet host conditions.
 - Create the local evidence directory, `<project>/design/dogfood/<YYYY-MM-DD>-<slug>/`, and keep it
   out of git (`.git/info/exclude`) unless the project commits its screenshots. Everything the tester
   cites must be a local path there, so you can show it in chat.
@@ -166,9 +166,9 @@ sequence.
 a private repository's issues), file each unfixed finding as an item without asking, grouped under
 one thread named for the pass, with its severity and evidence path in the notes. A public tracker
 needs the user's agreement first, and its items must not carry screenshots of or quotes from real
-data. Otherwise, or until they agree, keep the findings in the git-excluded `<evidence-dir>/findings.md`. Leave out
-anything on the "Already decided or filed" list and P3s the user has already declined. Don't list
-filed findings in chat beyond a count and the link.
+data. Otherwise, or until they agree, keep the findings in the git-excluded
+`<evidence-dir>/findings.md`. Leave out anything on the "Already decided or filed" list and P3s
+the user has already declined. Don't list filed findings in chat beyond a count and the link.
 
 **Re-check, don't re-explore.** When the fixes are merged, check each fixed finding yourself by
 its own steps, with a before-and-after screenshot, and run one first-glance sweep (cold load and

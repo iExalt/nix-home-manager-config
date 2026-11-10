@@ -41,8 +41,8 @@ self_project=$(paseo workspace ls --json | jq -er --arg ws "$self_workspace" \
 | Work in another repository, outside an overseer run | That repository's registered project: match `realpath` of its checkout against `realpath` of each `path` in `paseo project ls --json`, since a symlinked path may be registered; ask the user if none matches |
 
 Target the project by ID with `workspace create --project <id>`, which accepts
-any checkout path. Never let the project follow from a `cd` or `--cwd`. Reviewers stay native
-subagents (`SKILL.md` › Delegation), not Paseo agents.
+any checkout path. Never let the project follow from a `cd` or `--cwd`.
+Reviewers stay native subagents (`SKILL.md` › Delegation), not Paseo agents.
 
 ## 3. Create the workspace and validate it
 
@@ -112,8 +112,7 @@ paseo run --no-wait --json --relationship detached --workspace "$workspace_id" \
 ```
 
 Paseo notifies you when an agent you launched finishes; pass
-`--no-notify-on-finish` when you don't need that. Parse stdout
-only: `run` prints notices such as `Using workspace …` on stderr, so never pipe
+`--no-notify-on-finish` when you don't need that. Parse stdout only: `run` prints notices such as `Using workspace …` on stderr, so never pipe
 `2>&1` into a JSON parser. If the response is lost or unparseable, the agent may
 still exist: check `paseo agent ls -a -g --label task=<unique-key> --json`
 before any retry.
@@ -132,8 +131,8 @@ paseo agent status "$agent_id" --json | jq -e \
 ```
 
 A null `paseo.parent-agent-id` label means no parent. Step 3's gate already
-checked the workspace's project. Fix any mismatch before
-you report the launch. To make a Paseo subagent independent, run
+checked the workspace's project. Fix any mismatch before you report the
+launch. To make a Paseo subagent independent, run
 `paseo agent detach <id>`; never edit its labels. If Paseo drops
 `--relationship detached`, launch, then detach.
 

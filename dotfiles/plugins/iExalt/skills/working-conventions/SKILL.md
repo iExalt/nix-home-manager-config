@@ -11,8 +11,8 @@ first; this skill adds detail and never relaxes them. Open every brief you
 write for a lead, reviewer or worker with the instruction to load this skill
 before any other step; a pilot's brief carries the rules its task needs
 instead, and always the Authority rule on permission boundaries and classifier
-blocks: report a refused action and wait on that action. Avoiding the need for
-it is fine; retrying it through another tool or route is not.
+blocks: report a refused action and wait for the user to authorize it. Avoiding
+the need for it is fine; retrying it through another tool or route is not.
 
 A bare skill name here, such as `keep-me-in-the-loop`, means
 `iExalt:keep-me-in-the-loop`; invoke it by the namespaced name.
@@ -257,10 +257,8 @@ subtasks or a passing subset of tests don't make a milestone complete.
 
 ## Test cost
 
-Beyond the global instructions' test-cost rules:
-
-Aim for these end-to-end wall-clock latencies. Repository budgets may be tighter.
-These are optimization targets, not permission to weaken checks or change gates.
+Beyond the global instructions' test-cost rules, aim for these end-to-end
+wall-clock latencies. Repository budgets may be tighter. These are optimization targets, not permission to weaken checks or change gates.
 
 | Loop or gate | Target | Preferred |
 | --- | --- | --- |
@@ -320,7 +318,7 @@ one-line prefix or `overseer`'s state digest.
 
 - Prefer completion notifications to polling; otherwise use a bounded
   blocking check. Give each monitor failure filters that don't match success
-  output such as `failed=0`.
+  output, such as `failed=0`.
 - A timeout alone creates no work: wait again without reading logs or asking
   for status.
 - Before ending a turn to wait, arm something that wakes you; a peer that is
@@ -329,8 +327,8 @@ one-line prefix or `overseer`'s state digest.
   messages and completion do **not** wake an idle root: they queue until your
   next turn, which may never come. In Codex, stay in a `wait_agent` loop
   (call it again on every timeout) or, under Paseo, arm
-  `paseo heartbeat create ...`. Paseo runs and sends with `--notify-on-finish`,
-  and heartbeats, wake you. A Stop hook blocks once when a Codex turn ends with
+  `paseo heartbeat create ...`. Paseo heartbeats wake you, as do Paseo runs and
+  sends with `--notify-on-finish`. A Stop hook blocks once when a Codex turn ends with
   native subagents outstanding; treat that as a bug in your plan, not noise.
 - Before a campaign or long wait relies on a notification route, prove it: a
   cheap probe's completion or blocker must reach you without a nudge from the
@@ -509,7 +507,8 @@ document. A merged PR does not complete a broader item with unmet criteria.
 - Tear down what you started: servers and processes by PID, tunnels, browser
   sessions, test data, Paseo workspaces you created
   ([references/paseo-launch.md](references/paseo-launch.md) › Tear down), and
-  settings you changed, restored to their original values. Remove only task-owned material, and say what you removed.
+  settings you changed, restored to their original values. Remove only
+  task-owned material, and say what you removed.
 - Use explicit, quoted literal paths for deletion commands. Never construct
   deletion targets with variables, command substitution, globs, or
   parent-directory inference such as `dirname`. Inspect the exact target

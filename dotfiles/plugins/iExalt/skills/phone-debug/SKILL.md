@@ -139,8 +139,8 @@ value you remember isn't a baseline.
    `a shell settings get global zen_mode` and check for `1`. Change DND
    through the notification service: direct writes to `global zen_mode`
    can be overwritten by the service, even when `settings put` succeeds.
-   Send your own pushes before you enable DND or
-   after you restore it, because DND may suppress them.
+   Send your own pushes before you enable DND or after you restore it,
+   because DND may suppress them.
 5. **Rotation.** If the test needs a particular orientation, set
    `accelerometer_rotation 0` and `user_rotation` yourself rather than asking
    the user to turn the phone, and restore both at the end.

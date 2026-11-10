@@ -35,10 +35,11 @@ and update semantics.
 
 ## Documentation and evidence retention
 
-For document-based projects, keep one project-wide status document and the active implementation plan,
-which may hold its checklist. Don't create per-item reports, acceptance
-receipts, benchmark writeups or hand-off documents; add a document only for a
-distinct ongoing reader need the existing ones can't serve. Component READMEs
+For document-based projects, keep one project-wide status document and the
+active implementation plan, which may hold its checklist. Don't create
+per-item reports, acceptance receipts, benchmark writeups or hand-off
+documents; add a document only for a distinct ongoing reader need the existing
+ones can't serve. Component READMEs
 and `docs` directories hold durable usage, interface and design knowledge, not
 run logs.
 

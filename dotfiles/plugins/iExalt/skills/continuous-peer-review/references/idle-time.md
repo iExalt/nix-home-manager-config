@@ -1,7 +1,7 @@
 # Reviewer idle time
 
-Spare reviewer capacity keeps handoff turnaround fast, so idle work must
-never delay a response. Inbound messages always take priority. Work in short,
+Idle work fills spare reviewer capacity, which exists to keep handoff turnaround
+fast, so idle work must never delay a response. Inbound messages always take priority. Work in short,
 interruptible steps without long-running commands so messages are handled at the
 next tool boundary. Idle work may run read-only checks against live or shared
 systems the session is already permitted to access, but must not change their

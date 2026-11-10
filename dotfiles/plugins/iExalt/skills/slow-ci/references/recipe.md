@@ -4,7 +4,7 @@
 
 1. Write down the developer's wait, its target, and what must still be proved.
    Follow the workflow dependency chain through queueing and artifact delivery.
-2. Reuse existing timing logs or CI step timestamps. If insufficient, add temporary
+2. Reuse existing timing logs or CI step timestamps. If they are insufficient, add temporary
    monotonic timers around setup, execution and teardown. Bound the investigation
    by a deadline and retain its exit code; do not start overlapping benchmarks.
 3. Reproduce on the same revision and workload under comparable CPU/memory limits.
