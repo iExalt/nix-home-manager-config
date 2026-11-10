@@ -45,9 +45,9 @@ for non-commit outcomes, never to bypass missing merge proof for code work.
 
 Check the write's result and read the item back. If it reports
 `unchecked_commits`, the tracker has not verified merge ancestry: run an acyclic
-command from inside the repository's clone so Acyclic learns it, or make sure
-`gh` is authenticated, then re-check; otherwise keep the completion claim unverified and prevent
-dependents from being launched on that unchecked result. Never force completion over
+command from inside the repository's clone so Acyclic learns it, then
+re-check; otherwise keep the completion claim unverified and prevent dependents from being
+launched on that unchecked result. Never force completion over
 another holder or replace existing evidence without checking it first.
 
 Release task-owned claims when the thread has no remaining ready work; sync
