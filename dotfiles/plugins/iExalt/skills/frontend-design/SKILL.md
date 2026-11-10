@@ -90,7 +90,10 @@ agreed decisions in DESIGN.md ([references/design-record.md](references/design-r
 When the user must pick between visual alternatives (directions, mockups, competing builds or
 skill outputs), follow the judging rule in your global instructions; the judge also drops any that
 fail the craft floor, accessibility or the brief. Show them as same-scale images with realistic
-data, not prose descriptions.
+data, not prose descriptions. ASCII wireframes are for drafting; what the user picks from is
+rendered, using the real UI's components when the interface exists. Check each image is legible at
+the size it displays, show a small ranked comparison, and link every full-resolution image
+separately (a gallery when there are several screens).
 
 When no user can answer (a delegated or autonomous run), mark each assumption plainly in the
 brief, with the option you chose. If your instructions authorize implementation, also record the
@@ -156,7 +159,10 @@ P2 and P3 items briefly instead of burying the user in them.
 
 Then, before showing the user a built or changed UI, run the `frontend-dogfood` skill when it is
 installed: a fresh tester uses the running app the way this user would, and you fix or file what it
-finds.
+finds. For a narrow fix, keep the critique and the dogfood pass to the changed task, reuse existing
+evidence, and re-check fixes without exploring again. Name the one workflow that owns this loop and
+its stopping point, such as one focused pass or verification of named fixes. If the user said to
+skip dogfood for this work, skip it and say so in the report.
 
 ### 6. Iterate and preserve consistency
 

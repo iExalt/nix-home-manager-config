@@ -19,11 +19,17 @@ Coordinate through three roles:
 - **Implementation pilots:** inspect, propose, implement approved changes, verify, and explain
   the result to the lead.
 
-Keep routine approval and review between agents. Assign a lead for every item,
-including straightforward work; reuse agents when their context remains useful.
-Reserve capacity for the lead and at least one pilot. Serialize rather than bypass
-this structure. If subagent tools or required capacity are unavailable, handle it
-as `working-conventions` › Delegation describes.
+The structure pays off for substantive implementation of component-sized items.
+Do a small cleanup directly, research session history with `mine-sessions`, and
+settle an uncertain route with `agentic-workflow` first. When the user invokes
+this skill for such work, suggest the lighter route once; their choice stands.
+
+Once the skill is in use, keep routine approval and review between agents.
+Assign a lead for every item, including straightforward work; reuse agents when
+their context remains useful. Reserve capacity for the lead and at least one
+pilot. Serialize rather than bypass this structure. If subagent tools or
+required capacity are unavailable, handle it as `working-conventions` ›
+Delegation describes.
 
 ## Required models and routing
 

@@ -52,9 +52,10 @@ placeholders, and quoted material unchanged.
 
 ## Medium
 
-Decide who reads the text, what they already know, and what they should do or understand
-afterward. Then apply the matching posture. Explicit user requirements and house style outrank
-these defaults.
+Decide who reads the text, what they already know, what it must explain to them, and what they
+should do or understand afterward. When it recommends several things, settle how many the reader
+should act on first and lead with those. Then apply the matching posture. Explicit user
+requirements and house style outrank these defaults.
 
 | Medium | Optimize for | Keep |
 |---|---|---|
@@ -98,6 +99,8 @@ answers, read [references/draft.md](references/draft.md).
 - No em or en dashes remain in prose unless the writer's sample or house style uses them.
 - The ending stops on the last useful thought, not a recap or send-off.
 - The edit did not make the prose colder or less the writer's just to remove a tell. Where the
-  source earned an image, stance, joke, or memorable line, it survives.
+  source earned an image, stance, joke, or memorable line, it survives. Supported claims of credit
+  or impact keep their force; unsupported promotion goes, and so does generic promotional wording,
+  even beside a supported claim.
 
 Sources and licenses are listed in [NOTICE.md](NOTICE.md).

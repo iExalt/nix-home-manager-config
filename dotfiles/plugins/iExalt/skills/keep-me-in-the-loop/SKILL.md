@@ -119,7 +119,10 @@ to meet a time target.
 
 Between the phase proposal and chunk reports, send updates for the events
 `working-conventions` › Updates lists, plus one when a chunk's increment
-design is agreed and implementation starts.
+design is agreed and implementation starts. Before sending any text between
+tool calls, check that it reports one of these events or is text the user's
+instructions require; if not, send nothing, not even a note on what you're
+about to do.
 
 Check each reviewer message against these events when it arrives, including one
 queued during a tool loop; report a qualifying event at the next tool boundary

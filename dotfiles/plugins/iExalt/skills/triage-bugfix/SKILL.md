@@ -13,7 +13,7 @@ Identify observed and expected behavior, impact, the affected environment or ver
 
 ## Diagnose the mechanism
 
-Collect evidence and reproduce when practical, preferring checks that distinguish competing explanations. Separate defects from configuration, environmental or dependency failures, and intended lifecycle behavior. Preserve diagnostic artifacts when that avoids repeated expensive collection. For a flaky or failing UI test, or a UI fix that needs an automated test, also follow `iExalt:frontend-testing`.
+Collect evidence and reproduce when practical, preferring checks that distinguish competing explanations. Separate defects from configuration, environmental or dependency failures, and intended lifecycle behavior. Preserve diagnostic artifacts when that avoids repeated expensive collection. For a flaky or failing UI test, or a UI fix that needs an automated test, also follow `iExalt:frontend-testing`. For a slow test, check or build, follow `iExalt:slow-ci`'s profile-first recipe. When the open question is look and feel rather than a failing behavior, use `iExalt:frontend-design` to show the visual options before the user decides.
 
 Trace the exact failing operation and the causal chain behind the symptom. Distinguish observations, supported conclusions, hypotheses, and missing links. Check related failures or prior incidents when they could change the diagnosis or remedy. If the cause remains uncertain, name the next discriminating check instead of claiming certainty. Call a mitigation a mitigation when it does not establish or remove the cause.
 

@@ -61,7 +61,8 @@ Write down, from the project's docs (DESIGN.md, PRODUCT.md, README) and the chan
   justify dropping a feature.
 
 Pass the tester the product, not your opinion of it. Leave out known issues, what you already
-checked, and why you think it works.
+checked, and why you think it works. Do pass the user's settled design decisions, with their
+source and scope.
 
 ### 2. Prepare the environment
 
@@ -96,8 +97,10 @@ Follow qa-conduct and [references/devices.md](references/devices.md):
 - Before a batch, check host CPU/load and memory/swap, then run one representative journey and
   capture a screenshot through the supported helpers. Verify its result artifact and inspect the
   image. Resolve missing configuration, helper dependencies or a stale app build as setup defects;
-  do not classify those failures as product findings. Use `uv run` for dogfood.py so its declared
-  Pillow dependency is supplied. Keep timing comparisons on matched, quiet host conditions.
+  do not classify those failures as product findings. Include inputs that depend on the real
+  environment's capabilities in that journey, and list what the test host can't do as untested
+  before briefing. Use `uv run` for dogfood.py so its
+  declared Pillow dependency is supplied. Keep timing comparisons on matched, quiet host conditions.
 - Create the local evidence directory, `<project>/design/dogfood/<YYYY-MM-DD>-<slug>/`, and keep it
   out of git (`.git/info/exclude`) unless the project commits its screenshots. Everything the tester
   cites must be a local path there, so you can show it in chat.
@@ -172,8 +175,8 @@ its own steps, with a before-and-after screenshot, and run one first-glance swee
 screenshots in each theme) on every form factor in scope to catch what the fixes broke elsewhere.
 A regression your fix caused is yours to fix; if the second attempt fails too, revert that fix and
 file the finding. There is no second exploratory round by default. Run another round only when the
-user asks for one, usually after their own look (step 6). For that round, fill the brief's "Already
-decided or filed" field. A request to fix filed findings starts a separate repair phase: re-check
+user asks for one, usually after their own look (step 6). For that round, add the filed findings to
+the brief's "Already decided or filed" field. A request to fix filed findings starts a separate repair phase: re-check
 those fixes as above; it does not authorize another exploratory round.
 
 **Keep to the time budget.** Note the start time. If the pass reaches one and a half times its

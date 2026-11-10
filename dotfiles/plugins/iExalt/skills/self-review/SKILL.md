@@ -68,6 +68,11 @@ praise said aloud, invisible work, frustrations, what the user would do differen
 they need from their manager. Also ask the user to confirm claims the ledger is unsure of, such as
 names the user mixes up, numbers they measured themselves, and who a quote was about.
 
+Finish the ledger first. For a question that asks the user to recall examples (moments that stuck,
+strengths, growth items), offer two or three linked candidates from the ledger with a
+recommendation, and ask them to confirm, reject or replace each. An empty answer doesn't block the
+draft: draft from the candidates and mark each as an assumption the user can overturn.
+
 Batch the questions into as few rounds as the answers allow. Make each self-contained, with options
 and a recommendation where there is a real choice. Where an answer names something checkable (a
 talk, an email, a number), send one targeted miner to find its link before drafting from it. When

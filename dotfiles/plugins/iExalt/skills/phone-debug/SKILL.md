@@ -243,9 +243,12 @@ Do every step, even if the session failed or was cut short:
    the starting app was prod Paseo, bringing it to the front is also the
    user's agreed "done, or I need you" signal.
 5. Disconnect wireless adb: `$A disconnect <host>:<port>`.
-6. Send the done push notification, then tell the user in chat how long you
-   had the phone, what you found, what was restored, and anything you left
-   on the phone (open tabs, an installed build).
+6. Send the done push notification, then, before any unrelated work, tell
+   the user in a visible chat reply how long you had the phone, what you
+   found, what was restored, and anything you left on the phone (open tabs,
+   an installed build), and repeat it in the turn's final message if you
+   keep working. Do this even when the push succeeded. If the user asks
+   whether you're done with the phone, answer the same way.
 
 ## iOS tablet (iPad)
 

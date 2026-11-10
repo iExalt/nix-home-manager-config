@@ -65,6 +65,10 @@ stating coverage. Read the footer before drawing a conclusion: it says what was 
 6. **Report coverage.** State sessions matched, read, sampled and skipped, any footer marked
    `INCOMPLETE` or `NOT PARSED`, the caller exclusion, and the false-positive rate where measured.
    Quote the user only from `--author human` events.
+7. **Keep repeat analyses comparable.** When a scan will be rerun, name its artifacts by full
+   session IDs, and keep its method (CLI revision, filters, window boundaries) and aggregate
+   baselines in persistent private storage, not `/tmp`. Before claiming a change, recount the old
+   window with the same method, and report any change to the denominator.
 
 ## Your own session
 

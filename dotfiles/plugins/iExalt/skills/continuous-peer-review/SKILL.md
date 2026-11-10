@@ -25,7 +25,8 @@ Agree increment boundaries with the reviewer before implementation, separating
 independently verifiable behavior when it would otherwise delay useful feedback.
 
 Brief the reviewer as `working-conventions` › Delegation describes, with the
-author's native agent address as its return address, and add milestone
+author's native agent address as its return address (the ID or name the
+messaging tool accepts, never a session title), and add milestone
 boundaries, supported behavior, repository instructions, baseline, available
 tests, deferred verification, whether the user authorized idle review of
 unrelated repository areas, and these skill instructions. The reviewer reads

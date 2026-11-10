@@ -28,6 +28,10 @@ not a reason to retry with a system interpreter. Project tool versions and decla
 environments take precedence over global defaults. Set up Mise separately inside
 nested shells, remote sessions and containers; local shell setup does not govern them.
 
+Validation shows a skill loads, not that agents follow it: when shortening a
+skill, list its execution conditions (wake sources, gates, stop conditions) first
+and keep each one, and judge the change with a few behavior probes.
+
 ## Authority
 
 - Approval covers what it names: its scope, its checks and its stated

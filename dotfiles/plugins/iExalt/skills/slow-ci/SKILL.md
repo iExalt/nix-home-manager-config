@@ -17,6 +17,9 @@ budget. Measure the feedback the developer waits for: command start to usable
 local result, or CI trigger to all required results/artifacts. Separate queueing,
 setup, build, test, reporting and artifact work. The slowest dependency chain
 controls elapsed time; summed job durations describe compute cost instead.
+When the user asks for an audit or diagnosis only, stay read-only: inventory every
+relevant gate before ranking repairs, and end with the report. Implementation
+needs its own approval.
 
 Inspect a recent slow run and a stable comparable baseline before changing code.
 Record environment, tool versions, CPU/memory limits, concurrency, cache state,
@@ -29,6 +32,8 @@ Start with a bounded profile or per-phase timings, including harness and fixture
 setup. Inspect callers when the measured wait exceeds the test or build body's
 own cost. Prefer fixes to polling, unintended serial work, repeated setup,
 duplicate builds, oversized fixtures and algorithms before adding concurrency.
+Before choosing a local mechanical repair, check whether a structural change
+would remove the work altogether, and say why when the smaller patch wins.
 
 Keep each required invariant at the cheapest reliable layer. Consolidate redundant
 coverage while retaining distinct failure modes. Moving proof out of the routine
