@@ -44,9 +44,9 @@ For a squash merge, use the squash commit on the default branch. Use `--evidence
 for non-commit outcomes, never to bypass missing merge proof for code work.
 
 Check the write's result and read the item back. If it reports
-`unchecked_commits`, the tracker has not verified merge ancestry: establish it
-against the mapped repository's fetched default branch and reconcile the
-mapping/check, or keep the completion claim unverified and prevent dependents
+`unchecked_commits`, the tracker has not verified merge ancestry: run an acyclic
+command from inside the repository's clone so Acyclic learns it, or make sure
+`gh` is authenticated, then re-check; never hand-edit a mapping. Otherwise or keep the completion claim unverified and prevent dependents
 from being launched on that unchecked result. Never force completion over
 another holder or replace existing evidence without checking it first.
 
