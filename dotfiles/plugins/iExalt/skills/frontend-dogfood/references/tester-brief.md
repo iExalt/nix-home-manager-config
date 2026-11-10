@@ -1,9 +1,9 @@
 # Tester brief
 
 The main agent fills the `{…}` fields and passes everything below the line to a fresh subagent
-verbatim, adding nothing SKILL.md step 1 says to withhold. The one exception is a re-run: list
-what the user has decided and what is already filed, because round-three testers spent their
-findings on those.
+verbatim, adding nothing SKILL.md step 1 says to withhold. Always list the user's settled decisions,
+with their source and scope, because testers otherwise recommend reversing them; on a re-run, also
+list what is already filed, because round-three testers spent their findings on those.
 
 ---
 
@@ -26,8 +26,8 @@ or fix anything. You never contact the user; questions for them go in your repor
 - **Design references:** {DESIGN.md path, mockups, or "none"}
 - **Documented device adaptations:** {differences and viewport/input rationale, or "none";
   these are claims to verify, not exemptions from testing}
-- **Already decided or filed** (re-runs only): {the user's decisions and filed items, one line
-  each, or "none"}. Don't report these again unless one got worse or broke something else; say so
+- **Already decided or filed:** {the user's decisions, with source and scope, and on re-runs the
+  filed items, one line each, or "none"}. Don't report these again unless one got worse or broke something else; say so
   if a decision itself looks wrong in use.
 
 ## Setup

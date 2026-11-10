@@ -63,4 +63,6 @@ and is likely to recur, suggest updating this file.
 - Quote others' praise only from channels the user could see, and attribute it.
 - Make the growth item specific and actionable, with what would change if they did it. One is
   usually enough.
-- Keep it shorter than a self-review: their manager reads many.
+- Keep it shorter than a self-review: their manager reads many. Set a word target when planning
+  (the form's limit, or the length the user asked for), check the export against it before
+  handoff, and trim to it unless the extra detail serves a need the user stated.

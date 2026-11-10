@@ -24,6 +24,9 @@ instructions; it does not edit files or run Home Manager.
    higher-priority instructions and the user's scope and authorization.
    Reassess pending decisions or work affected by the change; do not restart
    unrelated completed work.
+4. Name the next action the change affects and how it now runs. Stop or
+   replace commands, helpers and monitors the change supersedes before
+   resuming, so the old routine doesn't keep running.
 
 ## Propagate through the active team
 
@@ -53,5 +56,7 @@ or stopped sessions, report the gap and require a reload if their work resumes;
 do not claim that sending a message proves it was read. Give future agents the
 current source when delegating skill-dependent work.
 
-Confirm briefly what was reread, the material effect on the task, and whether
-team propagation completed, was unnecessary, or remains blocked.
+Confirm briefly, in a few lines: the source and revision reread, the material
+effect on the task, and whether team propagation completed, was unnecessary,
+or remains blocked. Don't summarize the skill; expand only when the user asks
+for the diff or must decide something.

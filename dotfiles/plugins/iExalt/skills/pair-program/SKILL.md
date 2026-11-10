@@ -32,10 +32,16 @@ If the boundary is unclear, investigate first and propose a bounded item.
    - Summarize the proposed behavior and scope.
    - Name the files or components expected to change.
    - Explain the implementation approach and important tradeoffs.
-   - State the verification planned for the increment.
-   - Identify acceptance tolerances, exclusions, and unresolved decisions. For
-     expensive experiments, propose a small feasibility check and an estimated
-     total runtime including setup, drain, and analysis before a full campaign.
+   - State the verification planned for the increment and the environment
+     that can run it. If none is available, ask whether to defer that proof
+     before starting work that depends on it.
+   - When the navigator is new to the domain, say whether each protocol or
+     format assumption is standardized, observed on real systems, or seen
+     only in fixtures.
+   - Identify acceptance tolerances, exclusions, the input invariants the code
+     may rely on, and unresolved decisions. For expensive experiments, propose a
+     small feasibility check and an estimated total runtime including setup,
+     drain, and analysis before a full campaign.
    - Ask the navigator for explicit approval.
 4. Pause. Do not edit, format, generate files, install dependencies, or run
    other workspace-mutating commands until the navigator approves. Read-only

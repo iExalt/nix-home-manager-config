@@ -30,6 +30,13 @@ Change the smallest causal component. Measure it before stacking optimizations.
 Exhaust practical correctness, algorithm and structural fixes before parallelizing.
 Avoid moving setup outside a timer and calling that a speedup: retain total latency.
 
+Before declaring an environment or artifact reusable, check that tests don't skip
+or pass differently under a changed user (permission and SSH checks can skip as
+root in a container), that binaries and helpers don't depend on build-time paths
+or tools missing where they run, and that shared fixtures keep the timestamps,
+paths and feature selection tests rely on. Have the whole plan reviewed against
+the original objective before turning it into execution threads.
+
 ## Close the loop
 
 Record: revision; command/trigger; proof set; environment and resource limits;

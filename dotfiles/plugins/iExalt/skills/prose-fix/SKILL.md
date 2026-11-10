@@ -52,9 +52,10 @@ placeholders, and quoted material unchanged.
 
 ## Medium
 
-Decide who reads the text, what they already know, and what they should do or understand
-afterward. Then apply the matching posture. Explicit user requirements and house style outrank
-these defaults.
+Decide who reads the text, what they already know, what it must explain to them, and what they
+should do or understand afterward. When it recommends several things, settle how many the reader
+should act on first and lead with those. Then apply the matching posture. Explicit user
+requirements and house style outrank these defaults.
 
 | Medium | Optimize for | Keep |
 |---|---|---|
@@ -63,6 +64,7 @@ these defaults.
 | PRs, commits, tickets | What changed, why, and what to check | Conventional prefixes, issue links, test evidence |
 | Email, Slack, replies | The ask, decision, or update, first | Real politeness and social context |
 | Essays, posts, talks | One takeaway, development, the author's judgment | Voice, uncertainty, asides, earned rhetoric |
+| Performance reviews | Outcomes first, with the writer's intended force | Supported self-advocacy and ownership claims at their evidence's strength; cut generic sales words, not the point |
 
 ## How to work
 

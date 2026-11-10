@@ -25,6 +25,11 @@ Reserve capacity for the lead and at least one pilot. Serialize rather than bypa
 this structure. If subagent tools or required capacity are unavailable, handle it
 as `working-conventions` › Delegation describes.
 
+The structure pays off for substantive implementation of component-sized items.
+Do a small cleanup directly, research session history with `mine-sessions`, and
+settle an uncertain route with `agentic-workflow` first. When the user invokes
+this skill for such work, suggest the lighter route once; their choice stands.
+
 ## Required models and routing
 
 Route every descendant, replacement, reviewer and discovery worker as

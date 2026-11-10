@@ -103,10 +103,17 @@ chain; keep the newer lesson, or record why it changed. Existing records default
 
 Provide a stable event ID before the first attempt. Retrying the same completed
 snapshot is a no-op; reusing its ID with a changed payload is rejected. Retain the
-snapshot printed by `log`, including its generated timestamp, for retries. If a
-write's acknowledgement was lost, inspect `latest` before retrying. The writer can
-generate an event ID when omitted, but cannot make independently generated retries
-share an identity.
+snapshot printed by `log`, including its generated timestamp, for retries. Save it
+before printing anything shorter:
+
+```sh
+(umask 077; fr log < report.json > report.saved.json) &&
+  jq -r '"\(.event_id) \(.status)"' report.saved.json
+```
+
+If a write's acknowledgement was lost, inspect `latest` before retrying. The
+writer can generate an event ID when omitted, but cannot make independently
+generated retries share an identity.
 
 ## Version 1 schema
 

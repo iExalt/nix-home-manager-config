@@ -44,7 +44,8 @@ explain the tradeoff; the question belongs in the dialog.
 
 ## Guide the decisions
 
-Keep a short visible checklist of the unresolved stages. Start from the user's
+When several stages remain unresolved, keep a short visible checklist of them;
+for a single remaining choice, state that choice instead. Start from the user's
 current position: a new idea, a proposed route, or an ongoing campaign. Reuse
 explicit answers and inspect only enough context to make the next decision
 concrete. Don't replay a full intake or impose research on a routine,

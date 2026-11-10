@@ -130,6 +130,8 @@ milestones and decisions, and each decision into the ones that depend on it. The
 - When talking can't settle a question because it needs evidence or something
   to react to, stop grilling it. Propose the smallest spike, following
   `agentic-workflow`'s spike guidance, and mark the decision Open pending it.
+  For an unfamiliar frontend choice, the spike is a quick prototype or mockup
+  made with `frontend-design`.
   The roadmap schedules the spike before the work it de-risks. Planning
   authorizes read-only investigation; a spike that spends money, touches live
   systems or runs long needs the user's authorization.
@@ -147,8 +149,12 @@ Route every question through a native structured question tool, following
 `agentic-workflow`'s "Use the Q&A dialog" section, with one exception: ask the
 whole frontier per round instead of one question at a time. When the frontier
 exceeds the tool's per-call limit, split it across consecutive dialogs,
-grouping related questions. Use free-text answers for open questions such as
-the north star, history and expertise.
+grouping related questions. Keep each dialog small enough to render whole; if
+one renders incompletely or fails, keep the answers given and resend only the
+unanswered questions, and switch to prose when the user asks. Name the object
+and unit in any count or budget you ask about (threads, runs, workers, hours).
+Use free-text answers for open questions such as the north star, history and
+expertise.
 
 ### Keep the draft as the ledger
 
@@ -381,7 +387,9 @@ covers the tiers only, never a release.
 ## Publish and link
 
 Commit each confirmed tier on its own and push, following
-`working-conventions` › Publication. Other sessions may be editing the same
+`working-conventions` › Publication. When the user confirmed a mutually
+consistent set and separate commits would only rerun the repository's hooks,
+one commit for the set is fine. Other sessions may be editing the same
 documents, so check the worktree and the remote first. Run the repository's
 Markdown formatter and linter. Link the plan, roadmap, script and status
 document to each other, and point the repository's agent instructions at the

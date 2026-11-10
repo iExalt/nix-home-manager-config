@@ -55,7 +55,10 @@ credential or host scope, resolve that before applying it.
    ```
 
    Record the immutable ID, requested disk, rates and billing start. Bound creation and all readiness
-   waits with deadlines; on failure report the instance's actual state and continuing cost.
+   waits with deadlines; on failure report the instance's actual state and continuing cost. Run each
+   long wait as one watcher you own by PID that writes a completion marker on exit, as the user's
+   waiting rules and `working-conventions` › Waiting describe; never start a second watcher on the
+   same job.
 
 ## Connect and bootstrap
 
@@ -118,7 +121,9 @@ Check the tools and configuration the assigned work uses, beyond the compiler:
   bootstrap credential's capabilities before the first commit. Verify required signing works in a
   disposable local repository. A read-only bootstrap token does not grant push access. Arrange an
   authorized publication route without copying private keys or trying stronger credentials after
-  denial; build/test readiness can be handed off with publication explicitly unproven.
+  denial; build/test readiness can be handed off with publication explicitly unproven. Include
+  any private pre-push guard the repository requires, such as a deny-list for private details,
+  without copying private configuration unless authorized.
 
 Prove each capability separately:
 

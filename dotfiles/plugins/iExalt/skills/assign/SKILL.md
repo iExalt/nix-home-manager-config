@@ -68,8 +68,11 @@ then proceed.
 ## Hand off
 
 Read the selected skill's current instructions and run it in this session,
-unless the user asks for a separate or background session; then start one with
-the harness's session tooling and pass the same brief. Give the workflow:
+unless the user asks for it to run separately while they do something else.
+Then launch a separate session as `working-conventions` › Delegation describes
+(under Paseo, a worker in its own visible workspace per
+[paseo-launch.md](../working-conventions/references/paseo-launch.md), never a
+hidden background one) and pass the same brief. Give the workflow:
 
 - the item reference, link, and title;
 - the goal, acceptance criteria, and explicit non-goals, quoting the item where
