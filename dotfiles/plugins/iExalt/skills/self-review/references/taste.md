@@ -64,5 +64,6 @@ and is likely to recur, suggest updating this file.
 - Make the growth item specific and actionable, with what would change if they did it. One is
   usually enough.
 - Keep it shorter than a self-review: their manager reads many. Set a word target when planning
-  (the form's limit, or the length the user asked for), check the export against it before
+  (the form's limit, or the length the user asked for; with neither, propose one in the plan for
+  the user to accept), check the export against it before
   handoff, and trim to it unless the extra detail serves a need the user stated.
