@@ -257,8 +257,10 @@ subtasks or a passing subset of tests don't make a milestone complete.
 
 ## Test cost
 
-Beyond the global instructions' test-cost rules, aim for these end-to-end
-wall-clock latencies. Repository budgets may be tighter. These are optimization targets, not permission to weaken checks or change gates.
+Beyond the global instructions' test-cost rules:
+
+Aim for these end-to-end wall-clock latencies. Repository budgets may be tighter.
+These are optimization targets, not permission to weaken checks or change gates.
 
 | Loop or gate | Target | Preferred |
 | --- | --- | --- |

@@ -190,7 +190,7 @@ never overwrite live events with a regenerated migration.
 that the previous source is an unchanged byte prefix, and imports only appended
 text. An appended fragment without its own heading retains an unknown date and
 context in extraction notes; inspect it before interpreting it as a new incident.
-It refuses a previous source ending mid-line, edits to old text, a changed source
+`--reconcile` refuses a previous source ending mid-line, edits to old text, a changed source
 path, or a legacy follow-up to an incident updated in JSONL, and leaves each for
 explicit reconciliation. Nothing is silently discarded. The source is checked again before
 atomic destination replacement. A legacy writer may still append after that

@@ -34,7 +34,7 @@ revision log, worker reports or briefs.
    evidence). A tripwire you can't confirm is reported as unconfirmed, with why.
 3. Check `amendments` in `show --json`. Message the user once per new amendment
    (quote `approved_by`, `from` and `to`), since the overseer writes those and
-   the user should confirm they approved it. An amendment that raised an
+   the user should confirm they really approved it. An amendment that raised an
    estimate or approved added scope doesn't silence a tripwire you can't tie to
    the user's own approval.
 4. If a tripwire fires, message the user once for it: its name, the evidence

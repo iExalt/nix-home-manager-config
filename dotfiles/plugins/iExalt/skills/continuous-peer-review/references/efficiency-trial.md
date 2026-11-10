@@ -1,6 +1,6 @@
 # Efficiency trial
 
-Capture milestone start/end, review dispatch and acceptance times per revision, and
+For an efficiency trial, capture milestone start/end, review dispatch and acceptance times per revision, and
 actual blocked intervals for either role with their cause.
 Use native event timestamps where available, otherwise record them as events occur
 in the existing ledger. Snapshot creation times do not establish dispatch,
