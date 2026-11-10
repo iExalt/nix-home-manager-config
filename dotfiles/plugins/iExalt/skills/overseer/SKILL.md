@@ -506,8 +506,11 @@ human interventions, the script's state, and the threads now ready.
 ## Clean up
 
 Archive a worker's Paseo agent and workspace only after its work is
-pushed and verified. Inspect a worktree before removing it, and force a
-removal only when nothing in it is work, such as a file a Git filter
+pushed and verified, as `working-conventions` ›
+[references/paseo-launch.md](../working-conventions/references/paseo-launch.md)
+› Tear down describes; archiving the workspace removes its Paseo-owned
+worktree, so inspect the worktree first. If Paseo leaves a worktree behind,
+force its removal only when nothing in it is work, such as a file a Git filter
 normalized. Delete a `worker/<slug>` branch once its commits are on the
 remote main branch. Say what you removed in the final report. Unpushed work
 follows `working-conventions` › Workspace and cleanup.

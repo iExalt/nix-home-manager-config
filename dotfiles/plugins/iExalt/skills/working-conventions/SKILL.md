@@ -488,8 +488,9 @@ document. A merged PR does not complete a broader item with unmet criteria.
   such as `git stash`, reset or checkout in a dirty tree. Report the blocker
   and the options instead.
 - Tear down what you started: servers and processes by PID, tunnels, browser
-  sessions, test data, and settings you changed, restored to their original
-  values. Remove only task-owned material, and say what you removed.
+  sessions, test data, Paseo workspaces you created
+  ([references/paseo-launch.md](references/paseo-launch.md) › Tear down), and
+  settings you changed, restored to their original values. Remove only task-owned material, and say what you removed.
 - Use explicit, quoted literal paths for deletion commands. Never construct
   deletion targets with variables, command substitution, globs, or
   parent-directory inference such as `dirname`. Inspect the exact target
