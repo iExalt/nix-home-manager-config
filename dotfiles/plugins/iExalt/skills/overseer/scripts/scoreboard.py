@@ -146,9 +146,17 @@ def doctor():
     data = acyclic("doctor")
     try:
         c = data["commits"]
-        by_item = lambda rows: {str(x["item"]): str(x.get("reason") or "no reason given") for x in rows}
-        return {"unchecked": int(c["unchecked"]), "unmerged": by_item(c["unmerged"]),
-                "unchecked_commits": by_item(c["unchecked_commits"]) if "unchecked_commits" in c else None}
+        def by_item(rows):
+            out = {}
+            for x in rows:
+                out.setdefault(str(x["item"]), []).append(str(x.get("reason") or "no reason given"))
+            return {k: "; ".join(v) for k, v in out.items()}
+        n = int(c["unchecked"])
+        listed = by_item(c["unchecked_commits"]) if "unchecked_commits" in c else None
+        # Fewer rows than the count: the list is incomplete, so treat it like an older acyclic.
+        if listed is not None and n > len(c["unchecked_commits"]):
+            listed = None
+        return {"unchecked": n, "unmerged": by_item(c["unmerged"]), "unchecked_commits": listed}
     except (KeyError, TypeError, ValueError, AttributeError):
         raise ScoreboardError("unexpected `acyclic doctor` schema: no data.commits.unchecked/unmerged")
 
