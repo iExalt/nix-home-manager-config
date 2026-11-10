@@ -246,9 +246,9 @@ Do every step, even if the session failed or was cut short:
 6. Send the done push notification, then, before any unrelated work, tell
    the user in a visible chat reply how long you had the phone, what you
    found, what was restored, and anything you left on the phone (open tabs,
-   an installed build). Do this even when the push succeeded. If the user
-   asks whether you're done with the phone, answer visibly before resuming
-   tools.
+   an installed build), and repeat it in the turn's final message if you
+   keep working. Do this even when the push succeeded. If the user asks
+   whether you're done with the phone, answer the same way.
 
 ## iOS tablet (iPad)
 

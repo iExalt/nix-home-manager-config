@@ -107,8 +107,9 @@ snapshot printed by `log`, including its generated timestamp, for retries. Save 
 before printing anything shorter:
 
 ```sh
-(umask 077; fr log < report.json > report.saved.json) &&
-  jq -r '"\(.event_id) \(.status)"' report.saved.json
+dir=~/.local/state/friction-log   # private, never a checkout
+(umask 077; mkdir -p "$dir" && fr log < report.json > "$dir/last-snapshot.json") &&
+  jq -r '"\(.event_id) \(.status)"' "$dir/last-snapshot.json"
 ```
 
 If a write's acknowledgement was lost, inspect `latest` before retrying. The

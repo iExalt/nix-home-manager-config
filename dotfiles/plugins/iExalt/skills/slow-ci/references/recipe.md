@@ -34,8 +34,7 @@ Before declaring an environment or artifact reusable, check that tests behave
 the same when run as the intended user or account and in the environment they
 will run in, that binaries and helpers don't depend on where they were built, and
 that shared fixtures keep the properties tests rely on. Have the whole plan
-reviewed against the original objective before turning it into execution
-threads.
+reviewed against the original objective before executing it.
 
 ## Close the loop
 
