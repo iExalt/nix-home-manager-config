@@ -151,25 +151,40 @@ def doctor():
 
 def git_verified(commit):
     """True when owner/name@sha is an ancestor of origin's default branch in the clone mapped
-    by ~/.config/acyclic/clones.toml; None when that can't be established."""
+    by ~/.config/acyclic/clones.toml; otherwise a reason naming what to fix."""
+    repo = commit.split("@", 1)[0]
+    unmapped = ("no clone of %s mapped in ~/.config/acyclic/clones.toml; add `\"%s\" = \"<clone path>\"`"
+                " under [clones]" % (repo, repo))
     try:
-        repo, sha = commit.split("@", 1)
+        sha = commit.split("@", 1)[1]
         clone = None
-        with open(os.path.expanduser("~/.config/acyclic/clones.toml")) as f:
-            for line in f:
-                k, eq, v = line.partition("=")
-                if eq and k.strip().strip('"').lower() == repo.lower():
-                    clone = os.path.expanduser(v.strip().strip('"'))
+        try:
+            with open(os.path.expanduser("~/.config/acyclic/clones.toml")) as f:
+                for line in f:
+                    k, eq, v = line.partition("=")
+                    if eq and k.strip().strip('"').lower() == repo.lower():
+                        clone = os.path.expanduser(v.strip().strip('"'))
+        except FileNotFoundError:
+            pass
         if not clone:
-            return None
-        head = subprocess.run(["git", "-C", clone, "symbolic-ref", "refs/remotes/origin/HEAD"],
-                              capture_output=True, text=True, timeout=30).stdout.strip()
+            return unmapped
+        ref = subprocess.run(["git", "-C", clone, "symbolic-ref", "refs/remotes/origin/HEAD"],
+                             capture_output=True, text=True, timeout=30)
+        head = ref.stdout.strip()
         if not head:
-            return None
-        return subprocess.run(["git", "-C", clone, "merge-base", "--is-ancestor", sha, head],
-                              capture_output=True, timeout=30).returncode == 0
-    except (OSError, ValueError, subprocess.TimeoutExpired):
-        return None
+            err = ref.stderr.strip()
+            if "not a git repository" in err or "cannot change to" in err:
+                return "%s's mapped clone %s is not a git repository" % (repo, clone)
+            return "%s has no origin/HEAD; run `git -C %s remote set-head origin -a`" % (clone, clone)
+        rc = subprocess.run(["git", "-C", clone, "merge-base", "--is-ancestor", sha, head],
+                            capture_output=True, timeout=30).returncode
+        if rc == 0:
+            return True
+        if rc == 1:
+            return "%s is not on %s in %s" % (sha[:12], head, clone)
+        return "%s not found in %s; fetch the clone" % (sha[:12], clone)
+    except (OSError, ValueError, IndexError, subprocess.TimeoutExpired) as e:
+        return "cannot check %s: %s" % (commit, e)
 
 
 def resolve_root(items, ref):
@@ -330,8 +345,9 @@ def evaluate(campaign, state, items, shown, doc, now, verify=git_verified):
             commit = ev.get("commit")
             done_at = it.get("done_at")
             # `doctor` counts unchecked commits tracker-wide, so only then re-check this one.
-            ok = bool(commit) and commit not in unmerged and (
-                doc["unchecked"] == 0 or verify(commit) is True)
+            checked = (True if not commit or commit in unmerged or doc["unchecked"] == 0
+                       else verify(commit))
+            ok = bool(commit) and commit not in unmerged and checked is True
             if ok:
                 row["done"] = True
                 row["done_at"] = done_at
@@ -340,8 +356,8 @@ def evaluate(campaign, state, items, shown, doc, now, verify=git_verified):
             else:
                 reason = ("no merge commit recorded" if not commit
                           else "commit unmerged" if commit in unmerged
-                          else "tracker reports %d unchecked commit(s); ancestry unconfirmed (fetch the mapped clone?)"
-                          % doc["unchecked"])
+                          else "tracker reports %d unchecked commit(s); %s"
+                          % (doc["unchecked"], checked if isinstance(checked, str) else "ancestry unconfirmed"))
                 row["unverified_done"] = reason
                 unverified.append({"task": tid, "title": it.get("title"), "reason": reason})
         ts = (state.get("tasks") or {}).get(tid)

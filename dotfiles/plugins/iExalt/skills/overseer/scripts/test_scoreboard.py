@@ -72,6 +72,19 @@ class Done(unittest.TestCase):
         self.assertEqual(r["done"], 1)
         self.assertNotIn("unverified_done", fired(r))
 
+    def test_unmapped_repo_reason_names_the_fix(self):
+        with tempfile.TemporaryDirectory() as home, mock.patch.dict(os.environ, {"HOME": home}):
+            os.makedirs(os.path.join(home, ".config", "acyclic"))
+            with open(os.path.join(home, ".config", "acyclic", "clones.toml"), "w") as f:
+                f.write('[clones]\n"o/other" = "~/x"\n')
+            reason = SB.git_verified("o/r@abc")
+            r = run(shows=[shown("a")], doc={"unchecked": 1, "unmerged": []}, verify=SB.git_verified)
+            os.remove(os.path.join(home, ".config", "acyclic", "clones.toml"))
+            self.assertEqual(SB.git_verified("o/r@abc"), reason)
+        self.assertIn("no clone of o/r mapped", reason)
+        self.assertEqual(r["done"], 0)
+        self.assertIn(reason, r["tasks"]["a"]["unverified_done"])
+
     def test_unmerged_commit_not_verified(self):
         r = run(shows=[shown("a")], doc={"unchecked": 0, "unmerged": ["o/r@abc"]})
         self.assertEqual(r["done"], 0)

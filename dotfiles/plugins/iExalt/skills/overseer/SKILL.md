@@ -236,7 +236,12 @@ never compute them yourself.
 - **`show`** prints line 1 of the digest; `show --digest` also records that
   digest as sent, so the next "since" counts from it. A task is done only when
   Acyclic reports it done by `item done --commit` and the commit's merge
-  ancestry is verified; `unchecked_commits` is not verified.
+  ancestry is verified; `unchecked_commits` is not verified. Verification
+  reads `~/.config/acyclic/clones.toml`, so before `freeze`, map every
+  repository the campaign will commit to (`"owner/name" = "<clone path>"`) and
+  confirm `acyclic doctor` reports no unchecked commits for them. When a task's
+  `unverified_done` reason names a fix, apply it rather than checking ancestry
+  by hand.
 - **No tracker:** write line 1 yourself, marked "(self-reported)", with the same
   fields, and keep your own frozen task list and times in the run log.
   The auditor has no `campaign.json` then; say so in the opening dialog.
