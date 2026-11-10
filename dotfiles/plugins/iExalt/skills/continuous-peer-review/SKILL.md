@@ -12,8 +12,8 @@ or read its `SKILL.md` where your harness lists the path.
 
 Use two roles: the main agent owns implementation and integration; one native
 reviewer subagent jointly shapes increments and independently reviews their code.
-Keep the reviewer involved through the milestone, with relevant goal, design, and
-finding context. This workflow has no facilitator, external provider CLI, or
+Keep the reviewer involved through the milestone, and give it the relevant goal,
+design, and finding context. This workflow has no facilitator, external provider CLI, or
 nested review team.
 
 ## Establish the collaboration
@@ -37,16 +37,15 @@ works; fix the route before sending the first review request.
 The reviewer must be a native subagent with direct message delivery. If the
 harness cannot provide one, handle it as `working-conventions` › Delegation
 describes; never substitute an external CLI or pretend concurrent review
-occurred. Do not spawn extra agents
-unless separately authorized. The reviewer does not edit the author's files,
-commit, publish, or launch another reviewer. It may inspect, suggest concrete
+occurred. Do not spawn extra agents unless separately authorized. The reviewer
+does not edit the author's files, commit, publish, or launch another reviewer. It may inspect, suggest concrete
 fixes, and run permitted isolated probes without changing the reviewed artifact.
 
 ## Joint design, risk-based overlap
 
 Jointly shape each increment before implementation, focusing on unresolved
 decisions, changed assumptions, and consequential failure cases. A routine
-increment needs only a brief amendment to settled designs and agreement; expand
+increment needs only agreement on a brief amendment to settled designs; expand
 the proposal when behavior, interfaces, dependencies, or acceptance evidence
 need discussion. Agree the design and closure criteria, batching upcoming
 proposals so the reviewer can answer while reviewing the preceding increment.
@@ -124,8 +123,8 @@ fix, follows `working-conventions` › Review loops.
 
 Allow at most **two completed increments awaiting acceptance**, counting the one
 under review and any awaiting repairs, re-review, or required verification.
-At the cap, prioritize repairs, tests, and reviewer questions rather than starting
-more feature implementation.
+At the cap, prioritize repairs, tests, and reviewer questions over starting more
+feature implementation.
 Do not split an increment merely to evade the cap. Mark which later increments a
 finding affects; invalidate dependent acceptance where its assumptions no longer
 hold. Review revisions of an existing increment do not consume another slot.

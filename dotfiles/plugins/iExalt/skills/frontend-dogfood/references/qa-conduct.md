@@ -1,8 +1,9 @@
 # QA conduct: how the user expects a tester to behave
 
-Receipts are the user's words; square brackets replace the names of their machines. The browser host, the virtual
-tablet, and the user's own laptop, phone and tablet are described in devices.md and named in the user's environment file.
-The `phone-debug` skill covers the mechanics of borrowing a device; the rules below are the etiquette.
+Receipts are the user's words; square brackets replace the names of their machines. devices.md
+describes the browser host, the virtual tablet, and the user's own laptop, phone and tablet, and the
+user's environment file names them. The `phone-debug` skill covers the mechanics of borrowing a
+device; the rules below are the etiquette.
 
 ## 1. Verify it yourself; ask the user only for judgement
 - Measure what can be measured, including smoothness, frame time and latency, and never ask whether it feels smooth. "I should be consulted for visual/design look-and-feel, but you and the workers are perfectly equipped to answer mechanical questions."

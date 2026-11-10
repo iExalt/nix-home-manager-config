@@ -14,7 +14,7 @@ or read its `SKILL.md` where your harness lists the path.
 
 The overseer runs only in Paseo. If you are not a Paseo agent (`$PASEO_AGENT_ID`
 unset) or the `paseo` CLI doesn't work, tell the user the overseer runs only in
-Paseo, and stop; do nothing else, and don't fall back to oversee from your own
+Paseo, and stop; do nothing else, and don't fall back to overseeing from your own
 harness. The overseer is a Claude agent; workers are Codex agents.
 
 ## First: move into a run project
@@ -75,7 +75,7 @@ subagent, such as one from Claude Code's Agent tool or a Codex spawned agent,
 implement anything for you: you would brief, wait on and check its work in
 your own session, and it dies with your session. Give such work to a worker
 session of its own, or to the user. A Paseo agent launched detached, as
-[references/paseo.md](references/paseo.md) describes, is one. The continuous
+[references/paseo.md](references/paseo.md) describes, is such a session. The continuous
 reviewer a worker starts inside its own session is part of that worker's job.
 
 Keep a checklist of the threads you oversee, each with its worker and state:
@@ -85,9 +85,9 @@ log, `OVERSEER_RUN.md` in the run checkout (see "Keep the user in the loop").
 ## Choose autonomy and establish authority
 
 Set the autonomy level as `working-conventions` › Autonomy describes. At
-every level you decide routine matters within scope, at low after consulting
-the user on consequential choices. High autonomy takes effect only after the
-session grant in
+every level you decide routine matters within scope, at low autonomy after
+consulting the user on consequential choices. High autonomy takes effect only
+after the session grant in
 [references/high-autonomy.md](references/high-autonomy.md).
 
 ## Establish what you oversee
@@ -230,7 +230,7 @@ never compute them yourself.
   time between writes counts as active. Run `scoreboard.py mark` at every wake that sends no digest, and
   pause and resume promptly. A task blocked directly on the decision item, or on a paused task, needs no
   pause of its own, but tasks of one thread that must run in order need `waits-for` between them: a later
-  task the thread claim leaves `claimed` and unstarted keeps the campaign active. The script does
+  task the thread's claim leaves `claimed` but unstarted keeps the campaign active. The script does
   not reconstruct history from the tracker. Work the user adds extends the estimate through
   `freeze --amend`, never through the clock. Plan task estimates per task; a thread's
   estimate is the sum of its tasks'.
@@ -332,7 +332,7 @@ load instruction, then the script's prompt for the thread with its
 `/iExalt:keep-me-in-the-loop` invocation replaced by
 `/iExalt:continuous-peer-review` (ignore the prompt's phase, chunk and
 approval-item wording: the terms govern), then the terms, filled in for the
-worker. Workers paste nothing else from this skill, so keep
+worker. Workers get nothing else from this skill, so keep
 every term.
 
 ## Run the threads

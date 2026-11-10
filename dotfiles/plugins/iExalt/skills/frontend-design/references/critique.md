@@ -25,7 +25,7 @@ data (see SKILL.md, step 4).
    evidence; responsive layout alone is not a pass.
 2. **Cognitive load.** Run the checklist below; report any decision point with more than four
    visible options.
-3. **Heuristics.** Score Nielsen's ten heuristics 0–4. Mark a heuristic `n/a` when the surface
+3. **Heuristics.** Score Nielsen's ten heuristics 0 to 4. Mark a heuristic `n/a` when the surface
    genuinely has no use for it (a static article has little need for accelerators) rather than
    forcing a number.
 4. **Personas.** Walk the primary task as the two or three most relevant personas and record
@@ -473,12 +473,12 @@ above when no user context exists.
 
 ### Audit dimensions
 
-Score each 0–4 when a technical audit is requested; otherwise use them as a checklist.
+Score each 0 to 4 when a technical audit is requested; otherwise use them as a checklist.
 
 - **Accessibility:** contrast below SKILL.md › Conflicts › Contrast, including 3:1 for control
-  borders, focus indicators, and meaningful icons; `prefers-reduced-motion` handled
-  with an intentional alternative that preserves state changes, not a global kill that destroys
-  useful feedback; missing roles, labels, or states; keyboard traps, illogical tab order, missing
+  borders, focus indicators, and meaningful icons; `prefers-reduced-motion` handled with an
+  intentional alternative that preserves state changes, not a global kill that destroys useful
+  feedback; missing roles, labels, or states; keyboard traps, illogical tab order, missing
   focus indicators; heading hierarchy and landmarks; alt text; unlabeled inputs and unclear errors.
 - **Performance:** layout reads and writes in loops; casual layout-property animation or unbounded
   blur/filter/shadow effects; images not lazy-loaded or sized; `will-change` left on at rest;

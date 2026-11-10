@@ -109,12 +109,12 @@ Check these on the built result, together, in each look at the render. A pinned 
 established design overrides any value here; see SKILL.md › Conflicts › Radii and brief.
 
 - **Contrast:** per SKILL.md › Conflicts › Contrast, placeholder text included. On colored
-  surfaces, tint secondary text from that hue rather than using gray. Interactive states (hover, active,
-  focus) have more contrast than the rest state.
+  surfaces, tint secondary text from that hue rather than using gray. Interactive states (hover,
+  active, focus) have more contrast than the rest state.
 - **Depth:** shadows carry an offset and a soft blur; layered shadows (ambient plus direct) read
-  more natural. Borders with shadows: see SKILL.md › Conflicts › Elevation.
-  Nested radii: a child's radius is no larger than its parent's. When radii are open, cards sit around
-  12–16px and pills are for small controls.
+  more natural. Borders with shadows: see SKILL.md › Conflicts › Elevation. Nested radii: a
+  child's radius is no larger than its parent's. When radii are open, cards sit around 12 to 16px
+  and pills are for small controls.
 - **Spacing:** tight groups, generous separation, more space above a heading than below it. Align
   every element to something intentional: a grid, baseline, edge, or optical center.
 - **Type:** body measure per SKILL.md › Conflicts › Line length, display at most 6rem,
@@ -138,18 +138,18 @@ Build to this floor without announcing it: the user sees the result, not the che
 
 Familiarity is often a feature here. The test is whether a category-fluent user can trust the
 interface immediately or must pause at every subtly-off component. Product UI's failure mode isn't
-flatness, it's strangeness without purpose: over-decorated buttons, mismatched form controls,
+flatness; it's strangeness without purpose: over-decorated buttons, mismatched form controls,
 gratuitous motion, display fonts where labels should be, invented affordances for standard tasks.
 The tool should disappear into the task.
 
 - **Typography.** One well-tuned sans family is often right. Use a fixed rem scale with a tight
-  ratio (1.125–1.2), not fluid headings. Titles that come from user or system data (issue titles,
+  ratio (1.125 to 1.2), not fluid headings. Titles that come from user or system data (issue titles,
   error strings, file paths) stay at a modest heading size and wrap or clamp on narrow screens.
 - **Color.** Restrained by default; inactive states never get heavy color or full-saturation
-  accents. The accent marks primary actions, current selection, and state
-  only, not decoration. Standardize a semantic state vocabulary: hover, focus, active, disabled,
-  selected, loading, error, warning, success, info. A second neutral layer separates sidebars,
-  toolbars, and panels from content. Don't rely on color alone; pair it with text or an icon.
+  accents. The accent marks primary actions, current selection, and state only, not decoration.
+  Standardize a semantic state vocabulary: hover, focus, active, disabled, selected, loading, error,
+  warning, success, info. A second neutral layer separates sidebars, toolbars, and panels from
+  content. Don't rely on color alone; pair it with text or an icon.
 - **Layout.** Responsive behavior is structural (collapse the sidebar, reflow the table, change
   columns), not fluid typography. Overlays escape their container: use `<dialog>`, the popover API,
   `position: fixed`, or a portal so dropdowns are not clipped by `overflow` ancestors.

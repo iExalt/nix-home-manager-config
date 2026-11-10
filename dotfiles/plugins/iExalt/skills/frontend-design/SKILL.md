@@ -11,9 +11,9 @@ accessibility, and the hundreds of small details they would not know to request.
 goals, priorities, and preferences. Decide technical design questions yourself and explain the
 consequential ones in plain language.
 
-Prioritize clarity, consistency, and task efficiency over novelty. A beautiful interface here is one
-a first-time user understands in seconds, an expert operates quickly, and that looks deliberate
-rather than templated.
+Prioritize clarity, consistency, and task efficiency over novelty. Here, a beautiful interface is
+one that a first-time user understands in seconds, that an expert operates quickly, and that looks
+deliberate rather than templated.
 
 ## Ground rules
 
@@ -60,9 +60,9 @@ For a narrow fix inside an established design, start at step 3 with the existing
 
 Read DESIGN.md (and PRODUCT.md, if the project keeps users and purpose there) if they exist, then
 read the shared [taste profile](../frontend-dogfood/references/taste-profile.md) when available.
-Apply preferences recorded in DESIGN.md and the profile without re-asking; the current brief and latest
-feedback win. Then inspect the code, routes, components, tokens, and any data or API the UI will
-show. Write down what you can infer, then ask the user to confirm or correct it instead of
+Apply preferences recorded in DESIGN.md and the profile without re-asking; the current brief and
+latest feedback win. Then inspect the code, routes, components, tokens, and any data or API the UI
+will show. Write down what you can infer, then ask the user to confirm or correct it instead of
 interviewing from scratch. Use a structured question tool when one is available. Ask two or three
 questions per round, usually one round:
 
@@ -87,13 +87,13 @@ click)", or "undo after delete vs. a confirmation dialog". Show two or three wir
 when the layout is genuinely open, and recommend one. Get the user's go-ahead, then record the
 agreed decisions in DESIGN.md ([references/design-record.md](references/design-record.md)).
 
-When the user must pick between visual alternatives (directions, mockups, competing builds or
-skill outputs), follow the judging rule in your global instructions; the judge also drops any that
-fail the craft floor, accessibility or the brief. Show them as same-scale images with realistic
-data, not prose descriptions. ASCII wireframes are for drafting; what the user picks from is
-rendered, using the real UI's components when the interface exists. Check each image is legible at
-the size it displays, show a small ranked comparison, and link every full-resolution image
-separately (a gallery when there are several screens).
+When the user must pick between visual alternatives (directions, mockups, competing builds or skill
+outputs), follow the judging rule in your global instructions; the judge also drops any that fail
+the craft floor, accessibility or the brief. Show them as same-scale images with realistic data, not
+prose descriptions. ASCII wireframes are for drafting; what the user picks from is rendered, using
+the real UI's components when the interface exists. Check that each image is legible at the size it
+displays, show a small ranked comparison, and link every full-resolution image separately (a gallery
+when there are several screens).
 
 When no user can answer (a delegated or autonomous run), mark each assumption plainly in the
 brief, with the option you chose. If your instructions authorize implementation, also record the
@@ -111,8 +111,8 @@ Build one flow end to end before broadening. Read the "Craft floor" in
   [references/states-and-edge-cases.md](references/states-and-edge-cases.md).
 - For an established app, prefer an authorized snapshot of representative real data, and note
   where it came from. A preview you or another agent serves for review writes only to that
-  disposable copy and never touches the production app or its infrastructure, with outbound
-  effects cut as `frontend-dogfood` › Prepare the environment describes.
+  disposable copy and never touches the production app or its infrastructure. Cut its outbound
+  effects as `frontend-dogfood` › Prepare the environment describes.
 - Use semantic HTML and the project's existing components and tokens. Use standard controls for
   standard tasks.
 - Write the interface copy deliberately with [references/copy.md](references/copy.md).
@@ -129,8 +129,9 @@ touch context), reduced-motion and 200%-zoom passes on the first (key) state, a 
 control, and HTTP, console, and overflow problems. Install its browser once with
 `mise exec -- uv run <skill-dir>/scripts/browser_check.py --install-browser`; `--help` lists the
 options. Script the app-specific interactions separately, and write any that become automated
-tests following `iExalt:frontend-testing`: wait on state the app announces, never on time. Give transient
-states (posting, slow loads) a URL or fixture switch so they stay on screen long enough to capture.
+tests following `iExalt:frontend-testing`: wait on state the app announces, never on time. Give
+transient states (posting, slow loads) a URL or fixture switch so they stay on screen long enough
+to capture.
 
 - **Widths:** desktop (about 1440px), tablet (about 820px), and phone (about 375px), plus any width
   where the layout changes. Check 200% zoom on key screens.
@@ -146,10 +147,10 @@ states (posting, slow loads) a URL or fixture switch so they stay on screen long
 - **Accessibility tree:** check that controls have names and roles. Run an automated checker such
   as axe if one is available, as well as the manual pass.
 
-Look at every screenshot you take. Batch your fixes
-between looks. A visual fix, such as CSS added after a screenshot showed a problem, is not done
-until a new screenshot shows it fixed; if you can't take one, say so in the report. Save screenshots
-of the final states in the project (for example `design/screenshots/`).
+Look at every screenshot you take. Batch your fixes between looks. A visual fix, such as CSS added
+after a screenshot showed a problem, is not done until a new screenshot shows it fixed; if you can't
+take one, say so in the report. Save screenshots of the final states in the project (for example
+`design/screenshots/`).
 
 ### 5. Critique, audit, and fix
 
@@ -204,11 +205,11 @@ This section is the single authority wherever the sources or references disagree
   color to the palette, but don't reinvent their behavior.
 - **Motion:** on Persuade and Experience surfaces, at most one authored moment such as a page-load
   sequence. On Operate surfaces, no page-load choreography: motion answers user actions and shows
-  state changes in 150–250 ms. On Read surfaces, motion never competes with the text; a quiet
+  state changes in 150 to 250 ms. On Read surfaces, motion never competes with the text; a quiet
   entrance is fine, decorative ambient animation is not. Default to `transform` and `opacity`;
   blur, clip-path, mask, and shadow are fine for an authored moment when they stay smooth. Never
   animate layout properties or use `transition: all`.
-- **Line length:** 65–75 characters for body prose (Anthropic's "under 80" is the outer limit);
+- **Line length:** 65 to 75 characters for body prose (Anthropic's "under 80" is the outer limit);
   tables and dense UI may run wider.
 - **Monospace:** use `font-variant-numeric: tabular-nums` for numbers that are compared, including
   metrics and measurements. Reserve monospace for code, IDs, hashes, and paths.
@@ -231,7 +232,7 @@ This section is the single authority wherever the sources or references disagree
   outline. Use one only when the user's brief names it, or when the established design (DESIGN.md
   or the existing code) already uses it, which includes a world the user chose, such as
   neobrutalism or a blueprint canvas. Never introduce one because the subject suggests it.
-- **Radii and brief:** Craft floor values (such as 12–16px card radii, pills only for small
+- **Radii and brief:** Craft floor values (such as 12 to 16px card radii, pills only for small
   controls) are defaults for when the design leaves them open. A pinned brief or established
   design overrides them; Conflicts rules still apply.
 

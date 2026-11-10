@@ -15,8 +15,8 @@ answer five questions at a glance.
 - Run state survives reload and navigation. A long run must not depend on the tab staying open.
 
 **What needs my attention?**
-- Requests for approval or input get a distinct, consistent treatment, and you can find them from
-  anywhere: a badge, an attention list, or a notification when the user is elsewhere.
+- Requests for approval or input get a distinct, consistent treatment, and the user can find them
+  from anywhere: a badge, an attention list, or a notification when the user is elsewhere.
 - An approval states exactly what will happen, what it affects, and whether it can be undone, with
   specific action labels ("Delete 12 files", "Send email to 3 recipients"). Approve and deny are
   keyboard-reachable, with default focus on the safe choice (SKILL.md › Conflicts › Destructive

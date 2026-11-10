@@ -195,10 +195,10 @@ history cites its sources.
 
 ## Tier 2: the roadmap
 
-Derive the roadmap from the reviewer-accepted plan and the current state;
-the plan's own status may be stale. Grill only what the plan leaves open about how:
-ordering tradeoffs, grouping steps across milestones, live-resource lifetimes
-and budgets, and which human interventions can be settled now.
+Derive the roadmap from the reviewer-accepted plan and the current state,
+since the plan's own status may be stale. Grill only what the plan leaves open
+about how: ordering tradeoffs, grouping steps across milestones, live-resource
+lifetimes and budgets, and which human interventions can be settled now.
 
 For implementation campaigns, include a testing strategy that follows
 `working-conventions` › Test cost, and attach expensive evidence checks to
@@ -255,8 +255,8 @@ Then grill the user to shrink that table: settle decisions now, provision
 access ahead of time, and move mid-step interventions to the thread's
 approval. Turn approvals the thread will repeat, such as one per release or
 per credential use, into standing grants asked at that approval
-(`working-conventions` › Standing grants). Record each answer in the table; what remains is the planned human
-work.
+(`working-conventions` › Standing grants). Record each answer in the table;
+what remains is the planned human work.
 
 Settle first any decision whose answer changes an invariant other steps rely
 on, rather than leaving it open inside them. Give each dependent step a Needs
@@ -279,11 +279,11 @@ threads.
 Group roadmap steps into threads:
 
 - A thread is one agent's run and one approval: a `keep-me-in-the-loop`
-  invocation when the user opens it, or a worker running `continuous-peer-review`
-  under `overseer`, whose only approval is the user's agreement to the thread's
-  scope. Size it to its substantial phase of about 2 to 4 chunks, which run in order. Front-load
-  the thread's decisions, authority and spending to that approval so it can run
-  to the end.
+  invocation when the user opens it, or a worker running
+  `continuous-peer-review` under `overseer`, whose only approval is the user's
+  agreement to the thread's scope. Size it to one substantial phase of about 2
+  to 4 chunks, which run in order. Front-load the thread's decisions, authority
+  and spending to that approval so it can run to the end.
 - Cut where the user must decide; where a live resource's life begins and ends,
   so it is brought up, used fully and torn down rather than left idle between
   threads; at external dates such as lease ends, quota windows and the user's
@@ -294,10 +294,11 @@ Group roadmap steps into threads:
   wait, and keep each thread within reach of one context window.
 - Keep steps that change one behavior or invariant in one thread, even when
   the plan files them under different milestones, such as layout, framing and
-  selection on a shared canvas. Split across threads, the later thread
-  rediscovers and breaks the earlier one's assumptions. When coupled steps are too large for one thread, cut where the
-  first thread settles a contract and proves it with tests, and name that
-  contract in the second thread's Depends on.
+  selection on a shared canvas. When such steps are split across threads, the
+  later thread rediscovers and breaks the earlier one's assumptions. When
+  coupled steps are too large for one thread, cut where the first thread
+  settles a contract and proves it with tests, and name that contract in the
+  second thread's Depends on.
 - Put steps that fit no thread in a deferred list with the reason and trigger.
 
 ### Order threads only by explicit dependencies
@@ -376,8 +377,8 @@ position as `working-conventions` › Review loops describes.
 Ask one confirmation question covering all three tiers in one dialog, with
 links and a reading guide for each: which sections to check first, starting
 with the summary and every Decided row. Offer confirmation of the complete set
-or a request for revisions. When revising an existing set, identify which tiers changed and include those in
-the same confirmation. If revisions affect an upstream tier, propagate them
+or a request for revisions. When revising an existing set, identify which
+tiers changed and include them in the same confirmation. If revisions affect an upstream tier, propagate them
 downward and have the reviewer check the updated set before asking again.
 Don't publish the tiers or start implementation until the user explicitly
 confirms them, as `working-conventions` › Authority describes. Confirmation
@@ -400,8 +401,8 @@ Revise the affected tier and propagate downward when a thread ends with
 deviations, a parallel session changes a dependency, a gate fails or a decision
 changes. Keep the decision history in the plan, update the roadmap's steps, and
 re-derive the script's dependencies, ready threads and human interventions,
-with a dated entry in its revision log. Return to the user with
-a grilling round when outcomes, scope, priorities, acceptance criteria or
+with a dated entry in its revision log. Return to the user with a grilling
+round when outcomes, scope, priorities, acceptance criteria or
 spending change; propose routine re-sequencing within confirmed decisions
 directly. Never weaken a gate silently to finish.
 

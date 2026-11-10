@@ -30,8 +30,8 @@ machine or warm cache alone does not prove a code speedup.
 
 Start with a bounded profile or per-phase timings, including harness and fixture
 setup. Inspect callers when the measured wait exceeds the test or build body's
-own cost. Prefer fixes to polling, unintended serial work, repeated setup,
-duplicate builds, oversized fixtures and algorithms before adding concurrency.
+own cost. Before adding concurrency, prefer fixing polling, unintended serial
+work, repeated setup, duplicate builds, oversized fixtures and algorithms.
 Before choosing a local mechanical repair, check whether a structural change
 would remove the work altogether, and say why when the smaller patch wins.
 

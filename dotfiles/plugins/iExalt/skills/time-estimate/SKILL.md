@@ -9,9 +9,9 @@ Estimate wall-clock time with agents doing the work. Aim for a likely time that 
 and a range that contains it about half the time, narrowed only by what you have learned about this
 task. Durations are skewed: most outcomes cluster near the likely time with a long tail above it, so
 give the likely time and the tail, not just two ends. Keep the estimate current while you work:
-"how much longer?" matters more than the first guess. Before this skill, agents' gut midpoints ran about 1.6x high and about half of actuals
-landed below the range, so the procedure corrects the gut with measured numbers instead of
-padding it.
+"how much longer?" matters more than the first guess. Before this skill, agents' gut midpoints ran
+about 1.6x high and about half of actuals landed below the range, so the procedure corrects the gut
+with measured numbers instead of padding it.
 
 ```sh
 te() { python3 -I "<this skill's directory>/scripts/estimates.py" "$@"; }   # zsh and bash
@@ -56,13 +56,13 @@ Typical wall-clock by kind of work, agents doing the work. Start the gut range f
 anchor, then adjust for size and for the phases you include; don't start from a human-paced guess.
 There is no one-hour floor: a third of logged tasks finished in under 30 minutes.
 
-- A small fix or feature in a codebase the agent knows, one PR with probe, review and CI: 10–30 min.
+- A small fix or feature in a codebase the agent knows, one PR with probe, review and CI: 10 to 30 min.
 - A larger change to existing code with a concurrent reviewer (a new skill, CLI or feature across
-  several files): 0.4–1.1 h, even at several hundred lines.
-- Bounded operations (audits, cleanups, deletions): 5–20 min.
-- A read-only inventory or document audit with working tools: 1–5 min; broader proof is separate.
-- A settled single-file skill or doc edit, warm activation and no CI: 3–10 min.
-- A campaign phase of independent items: 0.6–0.7 h; one with many components, harness and CI
+  several files): 0.4 to 1.1 h, even at several hundred lines.
+- Bounded operations (audits, cleanups, deletions): 5 to 20 min.
+- A read-only inventory or document audit with working tools: 1 to 5 min; broader proof is separate.
+- A settled single-file skill or doc edit, warm activation and no CI: 3 to 10 min.
+- A campaign phase of independent items: 0.6 to 0.7 h; one with many components, harness and CI
   work: about 5 h.
 - Debugging a flaky failure with several causes: about 3 h.
 
@@ -73,7 +73,7 @@ There is no one-hour floor: a third of logged tasks finished in under 30 minutes
      the hours a line-by-line port would.
    - A small one-PR task takes one review round. Multi-increment work takes about two per increment
      plus one or two integration rounds. A round costs the reviewer's latency: use the median
-     `te stats` reports for the kind (overall when the kind has too few), else assume 4–9
+     `te stats` reports for the kind (overall when the kind has too few), else assume 4 to 9
      minutes. Count work that runs in parallel once.
    - Price cold setup (dependency installs, cold builds, new worktrees) and CI separately; they
      dominate small changes.
@@ -87,7 +87,7 @@ There is no one-hour floor: a third of logged tasks finished in under 30 minutes
    fragment for the record. Apply it even when your gut started from the anchor: the factor was
    fitted on guts formed that way. Logging the gut range as `raw_low_h`/`raw_high_h` lets later fits
    measure your gut, not the correction.
-3. **Width.** The range is the p25–p75 band: it should hold the actual half the time. Narrow it
+3. **Width.** The range is the p25 to p75 band: it should hold the actual half the time. Narrow it
    only for an unknown a probe settled, and say which. Don't narrow it to look precise, and don't
    widen it as padding. p10 and p90 describe the tails; they are not the range.
 4. **Name the drivers.** Say what would put the work near p10 (`why_low`) and what would push it
@@ -98,7 +98,7 @@ There is no one-hour floor: a third of logged tasks finished in under 30 minutes
    completion report doesn't count. Use minutes under an hour and hours with one decimal above,
    never engineer-days, weeks or "sessions". Label any human-effort figure you cite from elsewhere
    as such. Give the likely time, the range, the tails with their drivers, review rounds and the
-   phases included, for example: "Likely 25 min, half the time 15–40 min; could be as low as 10 if
+   phases included, for example: "Likely 25 min, half the time 15 to 40 min; could be as low as 10 if
    the existing test covers the path, or reach about an hour if the dependency install is cold. One
    review round; includes review, CI and merge."
 
@@ -120,9 +120,9 @@ There is no one-hour floor: a third of logged tasks finished in under 30 minutes
 ## At completion
 
 1. Compare actual active time and review rounds with the estimate; judge the estimate against
-   active time alone. When they differ materially,
-   find which assumption failed and what probe would have caught it. Give a concrete suggestion for
-   improving future estimates even when the actual falls inside the range.
+   active time alone. When they differ materially, find which assumption failed and what probe
+   would have caught it. Give a concrete suggestion for improving future estimates even when the
+   actual falls inside the range.
 2. Report the estimate next to the actual active, blocked and scope time, review rounds and context
    compactions.
 3. Log one record, including for work that stopped or was abandoned (`outcome`), so the log isn't
