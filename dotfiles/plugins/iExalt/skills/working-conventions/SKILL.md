@@ -23,13 +23,14 @@ corrections to externally managed CLI skills; don't patch their installed copies
 
 Use `validate-agent-skill <skill-directory>` for skill validation. It selects the
 configured Mise Python and checks PyYAML before invoking the validator; an optional
-second argument supplies a different validator script. Validation shows a skill
-loads, not that agents follow it: when shortening a skill, list its execution
-conditions (wake sources, gates, stop conditions) first and keep each one, and
-judge the change with a few behavior probes. A dependency failure is
+second argument supplies a different validator script. A dependency failure is
 not a reason to retry with a system interpreter. Project tool versions and declared
 environments take precedence over global defaults. Set up Mise separately inside
 nested shells, remote sessions and containers; local shell setup does not govern them.
+
+Validation shows a skill loads, not that agents follow it: when shortening a
+skill, list its execution conditions (wake sources, gates, stop conditions) first
+and keep each one, and judge the change with a few behavior probes.
 
 ## Authority
 
