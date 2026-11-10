@@ -96,7 +96,7 @@ The base role is not a complete compiler or browser image. Before installing pro
 project requires them. Use project-pinned mise tools. Install required tools first; optional Cargo
 helpers must not delay a workload that does not use them. Derive the install set from the assigned
 tasks' commands and name those tools (`mise install <tool>...`) before any bare `mise install`;
-compile optional generators only after the readiness checks pass, if the work needs them.
+install optional tools only after the readiness checks pass, if the work needs them.
 
 Clone an authorized project revision and record its commit/tree. Prefer anonymous clones for public
 source. Transfer only an explicit source allowlist when a patch is needed, checking its hash and

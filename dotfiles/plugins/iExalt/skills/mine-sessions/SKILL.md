@@ -60,7 +60,7 @@ stating coverage. Read the footer before drawing a conclusion: it says what was 
    For findings from miners, re-read each at its `file:line` with `show <ref> --lines N --width 5000`
    (or have a second agent do it) before it reaches the user. For your own reading, check each claim
    against the full event, not the clipped line you first saw. Before turning a historical finding
-   into a proposed fix, check the current code, installed CLI and any intended upstream behavior:
+   into a proposed fix, check the current code, tools and any intended upstream behavior:
    the failure may already be fixed, or be deliberate.
 6. **Report coverage.** State sessions matched, read, sampled and skipped, any footer marked
    `INCOMPLETE` or `NOT PARSED`, the caller exclusion, and the false-positive rate where measured.

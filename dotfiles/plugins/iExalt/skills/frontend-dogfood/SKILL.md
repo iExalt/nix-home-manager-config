@@ -29,10 +29,10 @@ The modes differ in how wide the tester searches and how much gets fixed in the 
 Pedantic mode trades time for breadth; use it before a release or when the user wants the
 papercuts too.
 
-When the user or campaign authorizes only local QA on synthetic data (no browser host, no real
-data), run a **restricted** pass: follow the workflow with those inputs, record which inputs were
-synthetic or local, and list every real-data, remote-host and device proof as untested. A
-restricted pass never stands in for a normal pass's acceptance.
+When the user or campaign restricts the environment or data a pass may use, run a **restricted**
+pass: follow the workflow within those limits, record which inputs and environments differ from
+the user's real setup, and list every proof the limits rule out as untested. A restricted pass
+never stands in for a normal pass's acceptance.
 
 Read [references/qa-conduct.md](references/qa-conduct.md) before you start: it is how the user
 expects agents to behave while testing. It binds you, and its sections 1, 2 and 4 bind the tester.

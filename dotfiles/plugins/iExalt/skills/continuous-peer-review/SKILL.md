@@ -48,10 +48,9 @@ decisions, changed assumptions, and consequential failure cases. A routine
 increment needs only a brief amendment to settled designs and agreement; expand
 the proposal when behavior, interfaces, dependencies, or acceptance evidence need
 discussion. Agree the design and closure criteria, batching upcoming proposals so
-the reviewer can answer while reviewing the preceding increment. When an
-increment adds a process, network, persistence or trust boundary, the reviewer
-first checks the repository's existing executable architecture rules, such as
-tests that forbid subprocesses, before agreeing the design.
+the reviewer can answer while reviewing the preceding increment. Before
+agreeing a design that adds a new kind of dependency or boundary, the reviewer
+checks it against the repository's existing architectural rules and checks.
 
 Agree on the discriminating verification before coding: what would distinguish
 correct behavior from the plausible failure? For consequential execution paths,
@@ -225,9 +224,7 @@ transfer this record and evidence references; do not silently restart
 discovery. When a durable campaign outlives its native reviewer, as when a
 resumed session finds it gone, start a new native reviewer with the record.
 Earlier verdicts stay acceptances of the revisions they named; the
-replacement's verdict covers only what it reviewed itself. Using a reviewer of
-another kind, such as a visible Paseo agent, needs the user's authorization;
-never substitute one silently.
+replacement's verdict covers only what it reviewed itself.
 
 ## Integration and completion
 
