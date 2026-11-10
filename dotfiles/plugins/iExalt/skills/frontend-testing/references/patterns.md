@@ -19,7 +19,9 @@ async function select(node) {
   await loadDetails(node.id);
   await camera.animateTo(node, { duration: 250 });
   if (mine !== generation) return;           // a newer selection owns the signal now
-  requestAnimationFrame(() => { map.dataset.framed = "true"; }); // after the final paint
+  requestAnimationFrame(() => {
+    if (mine === generation) map.dataset.framed = "true"; // animation done; runs before the next paint
+  });
 }
 ```
 

@@ -32,21 +32,21 @@ revision log, worker reports or briefs.
 2. Run `show --json`. For each tripwire with `fired` true, confirm it against raw
    facts (for example, that a task counted as unverified lacks merged-commit
    evidence). A tripwire you can't confirm is reported as unconfirmed, with why.
-3. If no tripwire fires, end the turn with no text. Never send "all clear" or
-   status.
-4. Check `amendments` in `show --json`. Message the user once per new amendment
+3. Check `amendments` in `show --json`. Message the user once per new amendment
    (quote `approved_by`, `from` and `to`), since the overseer writes those and
    the user should confirm they really approved it. An amendment that raised an
    estimate or approved added scope doesn't silence a tripwire you can't tie to
    the user's own approval.
-5. If one fires, message the user once for that tripwire: its name, the evidence
+4. If a tripwire fires, message the user once for it: its name, the evidence
    (numbers and sources), and a recommendation, either continue, trim or stop,
    with one sentence of reasoning. Send it again only if it worsens, meaning its
    `value` has grown materially since your last message about it (for
    `task_over_high`, per task). Keep earlier
    alerts in your own notes so you don't repeat them.
-6. If `done` equals `total` in `show --json`, or the run project is gone, delete
+5. If `done` equals `total` in `show --json`, or the run project is gone, delete
    your heartbeat with `paseo heartbeat delete <id>` and end.
+6. If steps 3 to 5 sent nothing, end the turn with no text. Never send "all
+   clear" or status.
 
 The default tripwires are: campaign active time (`active_h`, wall-clock minus
 waiting on the user, not elapsed) past the high end of its estimate; a

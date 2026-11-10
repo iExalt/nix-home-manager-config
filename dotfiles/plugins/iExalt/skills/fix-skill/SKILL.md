@@ -11,7 +11,8 @@ ask only if either is ambiguous.
 
 ## Delegate the edit
 
-Spawn a subagent with a focused brief: the target skill name and known source
+Spawn a native subagent, routed per `iExalt:working-conventions` › Model
+routing ("Pilot: implementation" row), with a focused brief: the target skill name and known source
 path, the user's requested change, relevant examples or constraints from this
 thread, and the main agent's address, without unrelated task history. Tell the
 subagent to:
@@ -27,7 +28,8 @@ subagent to:
    skill-creation guidance, and make the requested scoped edit while
    preserving unrelated work.
 3. Validate the skill and any changed executable behavior, then provision and
-   publish as those `AGENTS.md` files direct. Report failures separately from
+   publish as those `AGENTS.md` files direct, following `working-conventions`
+   › Publication. Report failures separately from
    completed edits.
 4. Return the skill name, authoritative path, revision or content fingerprint,
    brief diff summary, validation result, and provisioning/publication status.

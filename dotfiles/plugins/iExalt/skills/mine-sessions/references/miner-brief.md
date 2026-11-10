@@ -1,7 +1,9 @@
 # Miner brief template
 
 Fill in the brackets and send one brief per manifest shard. Keep the question and the match
-definition identical across shards so the results can be merged.
+definition identical across shards so the results can be merged. Launch each miner as a native
+subagent routed per `iExalt:working-conventions` › Model routing ("Pilot: implementation,
+diagnosis, bounded discovery" row).
 
 ---
 

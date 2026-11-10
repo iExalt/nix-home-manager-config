@@ -41,9 +41,13 @@ the thread, then the terms below, filled in for the worker:
   approve a probe, experiment, trial, re-run, read-only step, repair or review
   round inside the agreed scope and limits; decide it yourself. Ask only for
   something outside them, a mandatory consultation or a human intervention.
+- When only work that depends on an answer you asked for remains, end your
+  turn so the queued answer can arrive, rather than keeping busy. Acknowledge
+  each relayed decision by its number, and drop any earlier answer it replaces.
 - Message the overseer only when: the thread is done, with completion evidence
   as `working-conventions` › Completion lists; you hit a blocker or need a
-  human; a deviation affects another thread or the script; or, when the
+  human; you acknowledge a relayed decision (one line, by its number); a
+  deviation affects another thread or the script; or, when the
   thread's outcome is a measured improvement, once after the first measurement
   (what it shows against the goal, and the remaining gap; work that doesn't
   depend on that gap continues). Keep each message
