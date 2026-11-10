@@ -141,50 +141,24 @@ def item_show(ids):
 
 
 def doctor():
+    """Commit findings from `acyclic doctor`, keyed by item id with Acyclic's reason.
+    `unchecked_commits` is None when this acyclic predates the field."""
     data = acyclic("doctor")
     try:
         c = data["commits"]
-        return {"unchecked": int(c["unchecked"]), "unmerged": [str(x) for x in c["unmerged"]]}
-    except (KeyError, TypeError, ValueError):
+        def by_item(rows):
+            out = {}
+            for x in rows:
+                out.setdefault(str(x["item"]), []).append(str(x.get("reason") or "no reason given"))
+            return {k: "; ".join(v) for k, v in out.items()}
+        n = int(c["unchecked"])
+        listed = by_item(c["unchecked_commits"]) if "unchecked_commits" in c else None
+        # Fewer rows than the count: the list is incomplete, so treat it like an older acyclic.
+        if listed is not None and n > len(c["unchecked_commits"]):
+            listed = None
+        return {"unchecked": n, "unmerged": by_item(c["unmerged"]), "unchecked_commits": listed}
+    except (KeyError, TypeError, ValueError, AttributeError):
         raise ScoreboardError("unexpected `acyclic doctor` schema: no data.commits.unchecked/unmerged")
-
-
-def git_verified(commit):
-    """True when owner/name@sha is an ancestor of origin's default branch in the clone mapped
-    by ~/.config/acyclic/clones.toml; otherwise a reason naming what to fix."""
-    repo = commit.split("@", 1)[0]
-    unmapped = ("no clone of %s mapped in ~/.config/acyclic/clones.toml; add `\"%s\" = \"<clone path>\"`"
-                " under [clones]" % (repo, repo))
-    try:
-        sha = commit.split("@", 1)[1]
-        clone = None
-        try:
-            with open(os.path.expanduser("~/.config/acyclic/clones.toml")) as f:
-                for line in f:
-                    k, eq, v = line.partition("=")
-                    if eq and k.strip().strip('"').lower() == repo.lower():
-                        clone = os.path.expanduser(v.strip().strip('"'))
-        except FileNotFoundError:
-            pass
-        if not clone:
-            return unmapped
-        ref = subprocess.run(["git", "-C", clone, "symbolic-ref", "refs/remotes/origin/HEAD"],
-                             capture_output=True, text=True, timeout=30)
-        head = ref.stdout.strip()
-        if not head:
-            err = ref.stderr.strip()
-            if "not a git repository" in err or "cannot change to" in err:
-                return "%s's mapped clone %s is not a git repository" % (repo, clone)
-            return "%s has no origin/HEAD; run `git -C %s remote set-head origin -a`" % (clone, clone)
-        rc = subprocess.run(["git", "-C", clone, "merge-base", "--is-ancestor", sha, head],
-                            capture_output=True, timeout=30).returncode
-        if rc == 0:
-            return True
-        if rc == 1:
-            return "%s is not on %s in %s" % (sha[:12], head, clone)
-        return "%s not found in %s; fetch the clone" % (sha[:12], clone)
-    except (OSError, ValueError, IndexError, subprocess.TimeoutExpired) as e:
-        return "cannot check %s: %s" % (commit, e)
 
 
 def resolve_root(items, ref):
@@ -319,7 +293,7 @@ def merged(intervals):
     return out
 
 
-def evaluate(campaign, state, items, shown, doc, now, verify=git_verified):
+def evaluate(campaign, state, items, shown, doc, now):
     """Pure function: all scoreboard fields from frozen campaign, state and Acyclic data."""
     start = parse_time(campaign["start"])
     frozen = list(campaign["tasks"])
@@ -330,7 +304,8 @@ def evaluate(campaign, state, items, shown, doc, now, verify=git_verified):
 
     shown_by = {s["id"]: s for s in shown}
     by_id = {i["id"]: i for i in items}
-    unmerged = set(doc["unmerged"])
+    unmerged = doc["unmerged"]
+    unchecked = doc["unchecked_commits"]
 
     tasks = {}
     done_times = []
@@ -344,20 +319,22 @@ def evaluate(campaign, state, items, shown, doc, now, verify=git_verified):
             ev = (it.get("evidence") or {})
             commit = ev.get("commit")
             done_at = it.get("done_at")
-            # `doctor` counts unchecked commits tracker-wide, so only then re-check this one.
-            checked = (True if not commit or commit in unmerged or doc["unchecked"] == 0
-                       else verify(commit))
-            ok = bool(commit) and commit not in unmerged and checked is True
+            reason = None
+            if not commit:
+                reason = "no merge commit recorded"
+            elif tid in unmerged:
+                reason = "unmerged: %s" % unmerged[tid]
+            elif unchecked is None and doc["unchecked"] > 0:
+                reason = "unchecked: this acyclic doesn't say which commits; update acyclic"
+            elif unchecked and tid in unchecked:
+                reason = "unchecked: %s" % unchecked[tid]
+            ok = reason is None
             if ok:
                 row["done"] = True
                 row["done_at"] = done_at
                 if done_at:
                     done_times.append(parse_time(done_at))
             else:
-                reason = ("no merge commit recorded" if not commit
-                          else "commit unmerged" if commit in unmerged
-                          else "tracker reports %d unchecked commit(s); %s"
-                          % (doc["unchecked"], checked if isinstance(checked, str) else "ancestry unconfirmed"))
                 row["unverified_done"] = reason
                 unverified.append({"task": tid, "title": it.get("title"), "reason": reason})
         ts = (state.get("tasks") or {}).get(tid)

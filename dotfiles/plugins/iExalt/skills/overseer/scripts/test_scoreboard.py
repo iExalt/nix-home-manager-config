@@ -31,7 +31,13 @@ def shown(iid, commit="o/r@abc", done_at="2026-11-07T05:00:00Z", state="done"):
             "evidence": {"commit": commit, "text": None}, "role": "task"}
 
 
-DOC_OK = {"unchecked": 0, "unmerged": []}
+DOC_OK = {"unchecked": 0, "unmerged": {}, "unchecked_commits": {}}
+
+
+def doc_of(unmerged=(), unchecked=(), legacy=False):
+    """`doctor()` result for the given (item, reason) pairs; legacy omits unchecked_commits."""
+    return {"unchecked": len(unchecked), "unmerged": dict(unmerged),
+            "unchecked_commits": None if legacy else dict(unchecked)}
 
 
 def campaign(**kw):
@@ -46,10 +52,10 @@ def campaign(**kw):
 ITEMS = [item("EPIC", parent="INIT")] + [item(x) for x in "abcd"]
 
 
-def run(c=None, state=None, items=None, shows=None, doc=DOC_OK, now=None, verify=lambda c: None):
+def run(c=None, state=None, items=None, shows=None, doc=DOC_OK, now=None):
     c = c or campaign()
     return SB.evaluate(c, state or {"tasks": {}, "forecasts": []}, items or ITEMS,
-                       shows if shows is not None else [], doc, now or at(3), verify)
+                       shows if shows is not None else [], doc, now or at(3))
 
 
 def fired(r):
@@ -62,32 +68,26 @@ class Done(unittest.TestCase):
         self.assertEqual((r["done"], r["total"]), (1, 4))
         self.assertIn("unverified_done", fired(r))
 
-    def test_unchecked_commits_not_verified(self):
-        r = run(shows=[shown("a")], doc={"unchecked": 1, "unmerged": []})
-        self.assertEqual(r["done"], 0)
+    def test_unchecked_commit_carries_acyclic_reason(self):
+        r = run(shows=[shown("a"), shown("b")], doc=doc_of(unchecked=[("a", "no clone of o/r known")]))
+        self.assertEqual(r["done"], 1)
+        self.assertEqual(r["tasks"]["a"]["unverified_done"], "unchecked: no clone of o/r known")
+        self.assertNotIn("unverified_done", r["tasks"]["b"])
         self.assertIn("unverified_done", fired(r))
 
-    def test_unchecked_elsewhere_rechecked_per_commit(self):
-        r = run(shows=[shown("a")], doc={"unchecked": 1, "unmerged": []}, verify=lambda c: True)
+    def test_unmerged_detected_by_item(self):
+        r = run(shows=[shown("a"), shown("b")], doc=doc_of(unmerged=[("a", "abc is not on main")]))
         self.assertEqual(r["done"], 1)
-        self.assertNotIn("unverified_done", fired(r))
+        self.assertEqual(r["tasks"]["a"]["unverified_done"], "unmerged: abc is not on main")
 
-    def test_unmapped_repo_reason_names_the_fix(self):
-        with tempfile.TemporaryDirectory() as home, mock.patch.dict(os.environ, {"HOME": home}):
-            os.makedirs(os.path.join(home, ".config", "acyclic"))
-            with open(os.path.join(home, ".config", "acyclic", "clones.toml"), "w") as f:
-                f.write('[clones]\n"o/other" = "~/x"\n')
-            reason = SB.git_verified("o/r@abc")
-            r = run(shows=[shown("a")], doc={"unchecked": 1, "unmerged": []}, verify=SB.git_verified)
-            os.remove(os.path.join(home, ".config", "acyclic", "clones.toml"))
-            self.assertEqual(SB.git_verified("o/r@abc"), reason)
-        self.assertIn("no clone of o/r mapped", reason)
+    def test_older_acyclic_without_unchecked_commits_fails_closed(self):
+        r = run(shows=[shown("a"), shown("b")], doc={"unchecked": 1, "unmerged": {}, "unchecked_commits": None})
         self.assertEqual(r["done"], 0)
-        self.assertIn(reason, r["tasks"]["a"]["unverified_done"])
-
-    def test_unmerged_commit_not_verified(self):
-        r = run(shows=[shown("a")], doc={"unchecked": 0, "unmerged": ["o/r@abc"]})
-        self.assertEqual(r["done"], 0)
+        self.assertIn("update acyclic", r["tasks"]["a"]["unverified_done"])
+        short = mock.Mock(stdout='{"ok": true, "data": {"commits": {"checked": 0, "unchecked": 2, "unmerged": [], '
+                                 '"unchecked_commits": [{"item": "a", "reason": "x"}]}}}', stderr="", returncode=0)
+        with mock.patch.object(SB.subprocess, "run", return_value=short):
+            self.assertIsNone(SB.doctor()["unchecked_commits"])
 
     def test_no_unverified_when_all_verified(self):
         r = run(shows=[shown("a")])
@@ -612,6 +612,13 @@ class Acyclic(unittest.TestCase):
                 SB.item_list()
             with self.assertRaisesRegex(SB.ScoreboardError, "schema"):
                 SB.doctor()
+        real = mock.Mock(stdout='{"ok": true, "data": {"commits": {"checked": 1, "unchecked": 1, '
+                                '"unmerged": [{"item": "a", "repository": "o/r", "commit": "abc", "reason": "x"}, '
+                                '{"item": "a", "repository": "o/r", "commit": "abd", "reason": "z"}], '
+                                '"unchecked_commits": [{"item": "b", "repository": "o/r", "commit": "def", "reason": "y"}]}}}',
+                         stderr="", returncode=0)
+        with mock.patch.object(SB.subprocess, "run", return_value=real):
+            self.assertEqual(SB.doctor(), {"unchecked": 1, "unmerged": {"a": "x; z"}, "unchecked_commits": {"b": "y"}})
 
 
 if __name__ == "__main__":
