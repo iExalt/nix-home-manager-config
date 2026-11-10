@@ -153,51 +153,66 @@ class LogAndCheck(unittest.TestCase):
         self.assertIn(":1: invalid JSON", p.stdout)
 
 
+def grec(**kw):
+    """A record that logged its gut range; by default the same as its stated range."""
+    r = rec(**kw)
+    r.setdefault("raw_low_h", r.get("est_low_h"))
+    r.setdefault("raw_high_h", r.get("est_high_h"))
+    return r
+
+
 def unit_recs(ratios, kind="small-fix"):
     """Records with a 0.5-2h range (geometric midpoint 1h) and actual = ratio hours."""
-    return [rec(kind=kind, est_low_h=0.5, est_high_h=2.0, actual_h=r) for r in ratios]
+    return [grec(kind=kind, est_low_h=0.5, est_high_h=2.0, actual_h=r) for r in ratios]
 
 
 class Calibration(unittest.TestCase):
     def test_units_skip_prose_unfinished_and_numberless(self):
         rs = unit_recs([0.5]) + [
-            dict(rec(), source="md-port-prose"), rec(outcome="stopped"),
+            dict(grec(), source="md-port-prose"), grec(outcome="stopped"),
             {"task": "t", "outcome": "done", "source": "md-port", "kind": None}]
         us, ex = E.units(rs)
         self.assertEqual(len(us), 1)
         self.assertEqual((ex["prose port"], ex["not done"], ex["no numbers"]), (1, 1, 1))
 
     def test_children_merge_into_unrecorded_parent_and_drop_under_recorded_one(self):
-        kids = [rec(parent_id="camp", est_low_h=1, est_high_h=2, actual_h=1),
-                rec(parent_id="camp", est_low_h=1, est_high_h=2, actual_h=2)]
+        kids = [grec(parent_id="camp", est_low_h=1, est_high_h=2, actual_h=1),
+                grec(parent_id="camp", est_low_h=1, est_high_h=2, actual_h=2)]
         us, ex = E.units(kids)
         self.assertEqual(len(us), 1)
         self.assertEqual((us[0]["raw_lo"], us[0]["raw_hi"], us[0]["act"]), (2, 4, 3))
         self.assertEqual(ex["children merged into parent"], 1)
-        us, ex = E.units(kids + [rec(thread_id="camp", actual_h=5)])
+        us, ex = E.units(kids + [grec(thread_id="camp", actual_h=5)])
         self.assertEqual(len(us), 1)
         self.assertEqual(us[0]["act"], 5)
         self.assertEqual(ex["child of recorded parent"], 2)
 
     def test_an_excluded_parent_does_not_swallow_its_children(self):
-        kids = [rec(parent_id="camp", actual_h=0.3), rec(parent_id="camp", actual_h=0.3)]
-        for parent in (rec(thread_id="camp", outcome="stopped"),
-                       dict(rec(thread_id="camp"), source="md-port-prose")):
+        kids = [grec(parent_id="camp", actual_h=0.3), grec(parent_id="camp", actual_h=0.3)]
+        for parent in (grec(thread_id="camp", outcome="stopped"),
+                       dict(grec(thread_id="camp"), source="md-port-prose")):
             us, ex = E.units(kids + [parent])
             self.assertEqual(len(us), 1)
             self.assertAlmostEqual(us[0]["act"], 0.6)
             self.assertEqual(ex["child of recorded parent"], 0)
 
-    def test_null_raw_falls_back_to_stated_and_missing_stated_is_excluded(self):
-        us, _ = E.units([rec(raw_low_h=None, raw_high_h=None)])
-        self.assertEqual((us[0]["raw_lo"], us[0]["raw_hi"]), (0.25, 0.5))
+    def test_records_without_a_gut_range_do_not_fit_the_factor(self):
+        # A stated range may already be corrected by hand; only a logged gut can be debiased.
+        us, ex = E.units([grec(raw_low_h=None, raw_high_h=None), grec(raw_low_h=0.5, raw_high_h=1.0)])
+        self.assertEqual((len(us), ex["no gut range"]), (1, 1))
+        self.assertEqual((us[0]["raw_lo"], us[0]["raw_hi"]), (0.5, 1.0))
+        # A parent without a gut range can't stand in for its children, so they merge instead.
+        kids = [grec(parent_id="camp", actual_h=0.3), grec(parent_id="camp", actual_h=0.3)]
+        us, ex = E.units(kids + [grec(thread_id="camp", raw_low_h=None, raw_high_h=None)])
+        self.assertEqual((len(us), ex["no gut range"], ex["child of recorded parent"]), (1, 1, 0))
+        self.assertAlmostEqual(us[0]["act"], 0.6)
         ported = {"task": "t", "kind": "small-fix", "outcome": "done", "source": "md-port",
                   "raw_low_h": 0.2, "raw_high_h": 0.4, "actual_h": 0.3}
         us, ex = E.units([ported])
         self.assertEqual((len(us), ex["no numbers"]), (0, 1))
 
     def test_null_ids_never_link(self):
-        us, _ = E.units([rec(thread_id=None, parent_id=None), rec(parent_id=None)])
+        us, _ = E.units([grec(thread_id=None, parent_id=None), grec(parent_id=None)])
         self.assertEqual(len(us), 2)
 
     def test_fit_recovers_bias_and_spread(self):
@@ -219,16 +234,16 @@ class Calibration(unittest.TestCase):
         def revs(*preds):
             return [{"at": f"2026-01-01T10:{i:02d}:00Z", "elapsed_h": 0.0, "remaining_low_h": p / 2,
                      "remaining_median_h": p, "remaining_high_h": p * 2} for i, p in enumerate(preds)]
-        recs = [rec(actual_h=1.0, revisions=revs(0.5, 0.5, 0.5, 0.5)),  # actual 2x stated, 4 times
-                rec(actual_h=1.0, revisions=revs(2.0))]                # actual 0.5x stated, once
+        recs = [grec(actual_h=1.0, revisions=revs(0.5, 0.5, 0.5, 0.5)),  # actual 2x stated, 4 times
+                grec(actual_h=1.0, revisions=revs(2.0))]                # actual 0.5x stated, once
         per_rec, hits, n = E.remaining_calibration(recs)
         self.assertEqual((len(per_rec), n), (2, 5))
         self.assertAlmostEqual(math.exp(sum(per_rec) / 2), 1.0)
         self.assertEqual(hits, 5)
         broken = [dict(r, remaining_high_h=float("inf")) for r in revs(0.5)]
         self.assertIn("revisions[0] has a non-finite number",
-                      " ".join(E.validate(rec(actual_h=1.0, revisions=broken))[0]))
-        self.assertEqual(E.remaining_calibration([rec(actual_h=1.0, revisions=broken)])[2], 1)
+                      " ".join(E.validate(grec(actual_h=1.0, revisions=broken))[0]))
+        self.assertEqual(E.remaining_calibration([grec(actual_h=1.0, revisions=broken)])[2], 1)
 
     def test_interval_score_penalises_width_and_misses(self):
         ln = math.log

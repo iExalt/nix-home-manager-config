@@ -141,8 +141,9 @@ te log <<'EOF'
 EOF
 ```
 
-- Paste the numeric fields from `te estimate`. Without calibration, omit the `raw_*` fields,
-  `bias_factor` and the percentile fields.
+- Paste the numeric fields from `te estimate`. Without calibration, still log your gut range as
+  `raw_low_h`/`raw_high_h` (the same as the stated range) and omit `bias_factor` and the
+  percentile fields. Only records with a gut range count toward the factor.
 - `actual_h` is active time; `blocked_h` and `scope_h` are 0 when nothing applies.
 - In a campaign, each worker sets `parent_id` to the campaign's id, and the coordinator logs the
   campaign's own record with that id as its `thread_id`. Stats then count the campaign once.

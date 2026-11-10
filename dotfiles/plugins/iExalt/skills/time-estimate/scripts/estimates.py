@@ -281,8 +281,8 @@ def units(recs):
     """Headline units in file order, one per standalone task or per unrecorded parent.
 
     Returns (units, exclusion counts)."""
-    excluded = {"prose port": 0, "not done": 0, "no numbers": 0, "child of recorded parent": 0,
-                "children merged into parent": 0}
+    excluded = {"prose port": 0, "not done": 0, "no numbers": 0, "no gut range": 0,
+                "child of recorded parent": 0, "children merged into parent": 0}
     def why_not(r):
         if r.get("source") == "md-port-prose":
             return "prose port"
@@ -290,6 +290,10 @@ def units(recs):
             return "not done"
         if not (r.get("est_low_h") and r.get("est_high_h") and r.get("actual_h")):
             return "no numbers"
+        # The factor corrects gut ranges. A stated range without a logged gut may already be
+        # corrected by hand (ported summary-era records, mental adjustments), so it can't stand in.
+        if not (r.get("raw_low_h") and r.get("raw_high_h")):
+            return "no gut range"
         return None
 
     # Only a parent that itself counts can stand in for its children.
@@ -300,9 +304,7 @@ def units(recs):
         if reason:
             excluded[reason] += 1
             continue
-        # Explicit nulls in raw_* fall back to the stated range.
-        lo = r.get("raw_low_h") or r["est_low_h"]
-        hi = r.get("raw_high_h") or r["est_high_h"]
+        lo, hi = r["raw_low_h"], r["raw_high_h"]
         pid = r.get("parent_id")
         if pid and pid in parents:
             excluded["child of recorded parent"] += 1
