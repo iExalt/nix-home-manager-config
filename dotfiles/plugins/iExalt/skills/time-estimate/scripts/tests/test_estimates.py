@@ -201,6 +201,11 @@ class Calibration(unittest.TestCase):
         us, ex = E.units([grec(raw_low_h=None, raw_high_h=None), grec(raw_low_h=0.5, raw_high_h=1.0)])
         self.assertEqual((len(us), ex["no gut range"]), (1, 1))
         self.assertEqual((us[0]["raw_lo"], us[0]["raw_hi"]), (0.5, 1.0))
+        # A parent without a gut range can't stand in for its children, so they merge instead.
+        kids = [grec(parent_id="camp", actual_h=0.3), grec(parent_id="camp", actual_h=0.3)]
+        us, ex = E.units(kids + [grec(thread_id="camp", raw_low_h=None, raw_high_h=None)])
+        self.assertEqual((len(us), ex["no gut range"], ex["child of recorded parent"]), (1, 1, 0))
+        self.assertAlmostEqual(us[0]["act"], 0.6)
         ported = {"task": "t", "kind": "small-fix", "outcome": "done", "source": "md-port",
                   "raw_low_h": 0.2, "raw_high_h": 0.4, "actual_h": 0.3}
         us, ex = E.units([ported])
