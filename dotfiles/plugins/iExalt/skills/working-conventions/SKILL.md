@@ -11,9 +11,8 @@ first; this skill adds detail and never relaxes them. Open every brief you
 write for a lead, reviewer or worker with the instruction to load this skill
 before any other step; a pilot's brief carries the rules its task needs
 instead, and always the Authority rule on permission boundaries and classifier
-blocks: report a refused action and wait on that action. Avoiding the need for it, such as
-not creating a file whose deletion was refused, is fine; retrying it through
-another tool or route is not.
+blocks: report a refused action and wait on that action. Avoiding the need for
+it is fine; retrying it through another tool or route is not.
 
 A bare skill name here, such as `keep-me-in-the-loop`, means
 `iExalt:keep-me-in-the-loop`; invoke it by the namespaced name.
@@ -366,12 +365,11 @@ one-line prefix or `overseer`'s state digest.
   [references/paseo-launch.md](references/paseo-launch.md) describes:
   its project, a visible workspace, `--relationship detached`, settings that
   match yours unless routing says otherwise, and a readback.
-- Harness worktree isolation (such as the `Agent` tool's `isolation:
-  worktree`) branches from the repository you run in. When a native subagent works
-  in another repository, create a sibling worktree of that repository
-  yourself and pass its absolute path. Have the agent read back its Git root
-  and branch before its first edit, compare them with the intended ones, and
-  stop on a mismatch.
+- Harness worktree isolation branches from the repository you run in. When a
+  native subagent works in another repository, create a sibling worktree of
+  that repository yourself and pass its absolute path. Have the agent read
+  back its Git root and branch before its first edit, compare them with the
+  intended ones, and stop on a mismatch.
 - Before handing work to a host or worker, prove it can reach the agreed end
   state, such as a signed commit, push and PR creation, with a cheap probe: a
   signed throwaway commit, `gh auth status` and `git push --dry-run`. Route any

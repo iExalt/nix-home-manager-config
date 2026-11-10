@@ -173,13 +173,14 @@ you didn't fix.
 
 ### 6. Hand over
 
-Hand over as soon as step 5 is done; this is the user's early look, and their review decides
-whether another round is worth it. Show screenshots in chat, with a short plain-language summary,
-and offer a link they can open on their phone or laptop (over their private network, such as a
-tailnet, when they have one). Serve that link from its own throwaway copy of the real data with
-remotes removed, never from the real store. Before sharing it, read back the link server's data
-and config paths and confirm its outbound effects are cut, as in step 2. Say which parts of the
-link's path you couldn't test yourself. Give every file you mention as an absolute path.
+Hand over as soon as step 5 is done; this is the user's early look, and their review decides whether
+another round is worth it. Show screenshots in chat, with a short plain-language summary, and offer
+a link they can open on their phone or laptop (over their private network, such as a tailnet, when
+they have one). Serve that link from its own throwaway copy of the real data with remotes removed;
+the production app and its infrastructure stay untouched. Before sharing it, read back the link
+server's data and config paths and confirm its outbound effects are cut, as in step 2. Say which
+parts of the link's path you couldn't test yourself. Give every file you mention as an absolute
+path.
 
 - the top five problems, ranked, and what you did about each, plus every other P0 or P1 you didn't
   fix;
