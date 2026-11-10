@@ -140,9 +140,11 @@ you report the launch. To make a Paseo subagent independent, run
 ## 7. Tear down
 
 You own every workspace you created in step 3; end it with its agents, unless
-a workflow skill says to keep it for the user to review. Paseo's `agent stop`,
-`close`, `archive` and `delete` all leave the workspace behind as an empty
-sidebar entry, so tear down by workspace:
+a workflow skill says to keep it for the user to review. `agent stop` and
+`close` always leave the workspace behind. Archiving or deleting its last
+unarchived agent also archives it when `paseo agent archive --help` says so;
+older daemons leave an empty sidebar entry. Tearing down by workspace works on
+both:
 
 1. Target only a `workspace_id` you created and recorded. Target
    `$self_workspace` only when a workflow skill tells you to archive yourself,

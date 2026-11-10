@@ -184,5 +184,9 @@ notification wakes its overseer, which can resume the workers. Instead:
    agents shows `completed`. Check for in-flight CI runs and remote jobs the
    run started, and report them.
 
-Archiving agents keeps transcripts, workspaces, worktrees and branches, so the user
-can still review or revert the work. Run cleanup stays a separate decision.
+Archiving agents keeps transcripts and pushed branches, so the user can still
+review or revert the work. When `paseo agent archive --help` says the workspace
+goes with its last agent, halting also archives the run's workspaces and
+removes their clean Paseo-owned worktrees, keeping any with uncommitted or
+unpushed work; older daemons keep all workspaces and worktrees. Run cleanup
+stays a separate decision.
