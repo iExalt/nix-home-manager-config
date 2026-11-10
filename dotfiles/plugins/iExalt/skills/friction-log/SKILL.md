@@ -40,6 +40,16 @@ problem or claimed fix needs confirmation, and `resolved` only with verified fix
 evidence in `resolution`. A workaround belongs in `workaround`; it does not by
 itself resolve the incident. Follow-ups may reopen an incident.
 
+Use `canceled` when the user authorizes abandoning verification, including when
+the necessary historical evidence is no longer available after a bounded audit.
+Require `cancellation` with a concrete `reason` and nonempty `evidence` describing
+the missing proof and checks performed. This is administrative closure, not a
+verified fix; do not include `resolution` or convert the incident into context.
+Keep issues with a feasible live verification path open or unverified. Canceled
+incidents remain in `latest` and incident counts. To reopen one, append a new
+snapshot with its new status and omit `cancellation`; retained history records
+the earlier decision.
+
 Use an existing incident ID when this is the same incident. Similar wording alone
 does not establish identity. `latest` counts one snapshot per incident; raw line
 counts include follow-ups and must not be reported as incident counts.
@@ -116,11 +126,12 @@ optional or generated. Omit unknown optional values or use null.
 | `origin` | Object with original `thread_id` and `event_ref`; preserve on follow-up. Imported incidents may have an unknown original thread ID. |
 | `kind` | `instructions`, `tool`, `environment`, `workflow`, or `other`. |
 | `subject` | Optional specific skill, command, configuration, or workflow. |
-| `status` | `open`, `resolved`, or `unverified`. |
+| `status` | `open`, `resolved`, `unverified`, or `canceled`. |
 | `summary` | Nonempty account of the event and its consequence. |
 | `evidence` | Nonempty array of objects with nonempty `ref` and `note` strings. |
 | `workaround` | Optional account of how the task proceeded despite the problem. |
 | `resolution` | Object with `summary` and nonempty `evidence`, using the same reference format; required when a live report is resolved. |
+| `cancellation` | Object with a nonempty `reason` and nonempty `evidence`; required only for canceled incidents and incompatible with `resolution`. Records why verification was abandoned, not a fix. |
 | `suggestion` | Concrete improvement tied to the reported friction. |
 | `record_type` | Optional `incident` (default) or `context` for archival fragments. |
 | `context_of` | Required on context: distinct existing incident IDs, or an empty array for unattributed metadata. Forbidden on incidents. Context has `kind: "other"` and `status: null`. |

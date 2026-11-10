@@ -14,11 +14,11 @@ import tempfile
 import uuid
 
 KINDS = ('instructions', 'tool', 'environment', 'workflow', 'other')
-STATUSES = ('open', 'resolved', 'unverified')
+STATUSES = ('open', 'resolved', 'unverified', 'canceled')
 FIELDS = {'v', 'event_id', 'incident_id', 'previous_event_id', 'logged_at', 'date',
           'source', 'repo', 'thread_id', 'harness', 'model', 'origin', 'kind', 'status',
           'subject', 'summary', 'evidence', 'workaround', 'resolution', 'suggestion', 'migration',
-          'record_type', 'context_of'}
+          'record_type', 'context_of', 'cancellation'}
 REQUIRED = {'v', 'event_id', 'incident_id', 'previous_event_id', 'logged_at', 'date',
             'source', 'repo', 'thread_id', 'origin', 'kind', 'status', 'summary',
             'evidence', 'suggestion'}
@@ -106,6 +106,16 @@ def validate(rec):
         raise ValueError('resolution requires summary and nonempty evidence')
     if rec['status'] == 'resolved' and resolution is None and not ported:
         raise ValueError('resolved requires verified fix evidence in resolution')
+    cancellation = rec.get('cancellation')
+    if rec['status'] == 'canceled':
+        if (not exact_keys(cancellation, {'reason', 'evidence'}, {'reason', 'evidence'})
+                or not nonempty(cancellation['reason'])
+                or not references(cancellation['evidence'])):
+            raise ValueError('canceled requires cancellation reason and nonempty evidence')
+        if resolution is not None:
+            raise ValueError('canceled cannot claim a verified resolution')
+    elif 'cancellation' in rec:
+        raise ValueError('cancellation is only allowed for canceled incidents')
     if rec['source'] == 'live' and 'migration' in rec:
         raise ValueError('migration is only allowed for md-port')
     if ported:
