@@ -64,6 +64,41 @@ class CLI(unittest.TestCase):
         self.run_cli('log', rec=bad, ok=False)
         self.assertEqual(before, self.log.read_bytes())
 
+    def test_canceled_incident_retains_history_and_can_reopen(self):
+        initial = record()
+        initial['status'] = 'unverified'
+        self.run_cli('log', rec=initial)
+        prefix = self.log.read_bytes()
+        canceled = record('e2', previous='e1')
+        canceled.update(status='canceled', cancellation={
+            'reason': 'Verification abandoned because the original receipt is unavailable.',
+            'evidence': [{'ref': 'audit:receipt', 'note': 'Known archive paths were checked.'}]})
+        self.run_cli('log', rec=canceled)
+        self.run_cli('log', rec=canceled)
+        self.assertTrue(self.log.read_bytes().startswith(prefix))
+        self.assertEqual(self.run_cli('latest'), [canceled])
+        self.assertEqual(self.run_cli('check', '--actionable'), {
+            'records': 2, 'incidents': 1, 'contexts': 0, 'chains': 1, 'imports': 0})
+        reopened = record('e3', previous='e2')
+        self.run_cli('log', rec=reopened)
+        self.assertEqual(self.run_cli('latest'), [reopened])
+        self.assertEqual(self.run_cli('check', '--actionable')['records'], 3)
+
+    def test_cancellation_requires_evidence_and_cannot_claim_resolution(self):
+        proof = {'reason': 'Original evidence unavailable.',
+                 'evidence': [{'ref': 'audit:1', 'note': 'Retention checked.'}]}
+        canceled = {**record(), 'status': 'canceled', 'cancellation': proof}
+        for edit in ({'cancellation': None}, {'cancellation': {}},
+                     {'cancellation': {**proof, 'reason': ' '}},
+                     {'cancellation': {**proof, 'evidence': []}},
+                     {'cancellation': {**proof, 'extra': True}},
+                     {'resolution': {'summary': 'Fixed.', 'evidence': proof['evidence']}},
+                     {'status': 'open'}, {'status': 'unverified'},
+                     {'record_type': 'context', 'context_of': [], 'status': None, 'kind': 'other'}):
+            with self.subTest(edit=edit):
+                self.run_cli('log', rec={**canceled, **edit}, ok=False)
+        self.assertFalse(self.log.exists())
+
     def test_stale_and_origin_changes_rejected(self):
         self.run_cli('log', rec=record())
         self.run_cli('log', rec=record('e2', previous='e1'))
