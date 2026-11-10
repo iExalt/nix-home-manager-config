@@ -84,7 +84,9 @@ claim in the body. The appendix is for the user only. Put notes to the user insi
 ### 5. Fact-check
 
 Hand the draft and the ledger, not your conclusions, to a fresh agent that did not write the draft.
-It checks every number, date, name, quote, attribution and "I did X" against the ledger and flags:
+Keep your suspicions and candidate verdicts out of its brief; check your own concerns after its
+pass. Record which revision of the draft it checked (a saved copy or its hash). It checks every
+number, date, name, quote, attribution and "I did X" against the ledger and flags:
 
 - claims with no ledger entry, or only an `unverified` one;
 - overclaims: scope, ownership or impact stronger than the evidence ("all", "led", "a seat at the
@@ -107,6 +109,10 @@ It drops the appendix, comments, markup and link targets, and fails if there is 
 or the result still holds a URL, markup, an em or en dash, or a `[TK` or `[confirm` marker. Report
 its approximate word count against any limit. Its tests run with
 `python3 -I -m unittest discover -s "<this skill's directory>/scripts"`.
+
+Before calling the export ready to paste, have a fresh checker rerun phase 5 on every passage
+changed since the checked revision, including fact-check repairs and prose-fix changes, and name
+the revision it checked in the handoff. Until that check passes, the handoff is provisional.
 
 ### 7. Revise
 

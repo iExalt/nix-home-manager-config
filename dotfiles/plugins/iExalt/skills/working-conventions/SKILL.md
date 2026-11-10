@@ -10,7 +10,10 @@ global instructions (`AGENTS.md`, loaded as `CLAUDE.md` in Claude Code) come
 first; this skill adds detail and never relaxes them. Open every brief you
 write for a lead, reviewer or worker with the instruction to load this skill
 before any other step; a pilot's brief carries the rules its task needs
-instead.
+instead, and always the Authority rule on permission boundaries and classifier
+blocks: report a refused action and wait. Avoiding the need for it, such as
+not creating a file whose deletion was refused, is fine; retrying it through
+another tool or route is not.
 
 A bare skill name here, such as `keep-me-in-the-loop`, means
 `iExalt:keep-me-in-the-loop`; invoke it by the namespaced name.
@@ -326,6 +329,9 @@ one-line prefix or `overseer`'s state digest.
   `paseo heartbeat create ...`. Paseo runs and sends with `--notify-on-finish`,
   and heartbeats, wake you. A Stop hook blocks once when a Codex turn ends with
   native subagents outstanding; treat that as a bug in your plan, not noise.
+- Before a campaign or long wait relies on a notification route, prove it: a
+  cheap probe's completion or blocker must reach you without a nudge from the
+  user. Until it has, the route is unverified; keep a bounded fallback check.
 - An agreed checkpoint is a stall threshold, not a reporting deadline. When an
   agent goes quiet past it, inspect it first (a permission prompt, exhausted
   context, a crash), then make one bounded inquiry.
@@ -360,6 +366,11 @@ one-line prefix or `overseer`'s state digest.
   [references/paseo-launch.md](references/paseo-launch.md) describes:
   its project, a visible workspace, `--relationship detached`, settings that
   match yours unless routing says otherwise, and a readback.
+- Harness worktree isolation (such as the `Agent` tool's `isolation:
+  worktree`) branches from your own repository. When a native subagent works
+  in another repository, create a sibling worktree of that repository
+  yourself and pass its absolute path. Have the agent read back its Git root
+  and branch before its first edit.
 - Before handing work to a host or worker, prove it can reach the agreed end
   state, such as a signed commit, push and PR creation, with a cheap probe: a
   signed throwaway commit, `gh auth status` and `git push --dry-run`. Route any

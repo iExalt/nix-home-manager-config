@@ -106,6 +106,10 @@ Build one flow end to end before broadening. Read the "Craft floor" in
 - Seed realistic, reusable fixtures (long names, large datasets, empty results, slow responses,
   errors, permission limits) and design every reachable state; see
   [references/states-and-edge-cases.md](references/states-and-edge-cases.md).
+- For an established app, prefer an authorized snapshot of representative real data, and note
+  where it came from. A preview you or another agent serves for review writes only to that
+  disposable copy, never the real store, with outbound effects cut as `frontend-dogfood` › Prepare
+  the environment describes.
 - Use semantic HTML and the project's existing components and tokens. Use standard controls for
   standard tasks.
 - Write the interface copy deliberately with [references/copy.md](references/copy.md).
