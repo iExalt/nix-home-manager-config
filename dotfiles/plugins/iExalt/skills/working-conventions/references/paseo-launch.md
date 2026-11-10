@@ -136,3 +136,31 @@ checked the workspace's project. Fix any mismatch before
 you report the launch. To make a Paseo subagent independent, run
 `paseo agent detach <id>`; never edit its labels. If Paseo drops
 `--relationship detached`, launch, then detach.
+
+## 7. Tear down
+
+You own every workspace you created in step 3; end it with its agents, unless
+a workflow skill says to keep it for the user to review. Paseo's `agent stop`,
+`close`, `archive` and `delete` all leave the workspace behind as an empty
+sidebar entry, so tear down by workspace:
+
+1. Target only a `workspace_id` you created and recorded. Target
+   `$self_workspace` only when a workflow skill tells you to archive yourself,
+   and then as your last action: it can end your shell mid-command, so send
+   your handoff first and leave the readback in step 5 to whoever launched you.
+2. Confirm the workspace holds only agents you launched, none still working:
+   list candidates with `paseo agent query --cwd <workspace cwd> --json` and
+   keep those whose `paseo agent status <id> --json` shows
+   `.snapshot.workspaceId == $workspace_id`; each must have a `.snapshot.status`
+   other than `running`. If it also holds agents you don't own, archive only
+   your own with `paseo agent archive <id>` and leave the workspace.
+3. For `worktree` isolation, inspect the worktree first: archiving deletes a
+   Paseo-owned worktree directory that no other workspace uses, untracked and
+   ignored files included. `git -C <cwd> status --porcelain --ignored` must
+   show nothing but known-disposable paths, and `git -C <cwd> rev-list
+   @{u}..HEAD` must be empty. Anything else blocks the archive until you have
+   pushed it or confirmed it is disposable. `local` isolation never touches the
+   checkout.
+4. Run `paseo workspace archive "$workspace_id" --json`, which archives its
+   agents too.
+5. Confirm the ID is gone from `paseo workspace ls --json`.

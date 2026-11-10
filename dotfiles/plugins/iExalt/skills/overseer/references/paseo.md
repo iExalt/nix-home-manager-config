@@ -156,8 +156,8 @@ nothing left to run, the dialog blocks nothing. Name what cleanup would
 remove and anything unpushed it would keep.
 
 - **Clean up:** archive each worker's, the auditor's and each question
-  session's agent and workspace, and remove each worker's worktree under `~/.paseo/worktrees/`
-  as `SKILL.md` › Clean up describes. Say what you removed and what goes next, since your own thread
+  session's workspace as `SKILL.md` › Clean up describes; that archives their
+  agents and removes each worker's Paseo-owned worktree. Say what you removed and what goes next, since your own thread
   goes with it. Then, as your last action, remove the run checkout and its
   `overseer/<slug>` branch with `git -C <main checkout>`, since you are
   running in it, and delete the project with
@@ -184,5 +184,5 @@ notification wakes its overseer, which can resume the workers. Instead:
    agents shows `completed`. Check for in-flight CI runs and remote jobs the
    run started, and report them.
 
-Archiving keeps transcripts, workspaces, worktrees and branches, so the user
+Archiving agents keeps transcripts, workspaces, worktrees and branches, so the user
 can still review or revert the work. Run cleanup stays a separate decision.
