@@ -1,6 +1,6 @@
 ---
 name: time-estimate
-description: "Estimate the wall-clock time of agent-executed work from the user's measured history, and log estimate against actual when it finishes. Use before giving any time or effort estimate (a task, chunk, phase, plan, campaign or worker brief), when re-estimating after passing the high end, and at completion of estimated work."
+description: "Estimate the wall-clock time of agent-executed work from the user's measured history, and log estimate against actual when it finishes. Use before starting any task expected to take more than a minute, before giving any time or effort estimate (a task, chunk, phase, plan, campaign or worker brief), when re-estimating after passing the high end, and at completion of estimated work."
 ---
 
 # Time estimate
