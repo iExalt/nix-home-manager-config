@@ -29,6 +29,11 @@ The modes differ in how wide the tester searches and how much gets fixed in the 
 Pedantic mode trades time for breadth; use it before a release or when the user wants the
 papercuts too.
 
+When the user or campaign restricts the data or hosts a pass may use, run a **restricted** pass:
+follow the workflow within those limits, record which inputs and environments differ from the user's
+real setup, and list every proof the limits rule out as untested. A restricted pass never stands in
+for a normal pass's acceptance.
+
 Read [references/qa-conduct.md](references/qa-conduct.md) before you start: it is how the user
 expects agents to behave while testing. It binds you, and its sections 1, 2 and 4 bind the tester.
 [references/taste-profile.md](references/taste-profile.md) is the tester's yardstick, which it
@@ -103,7 +108,10 @@ Fill in [references/tester-brief.md](references/tester-brief.md), including the 
 a fresh subagent verbatim, with the paths of taste-profile.md, qa-conduct.md, and devices.md. Set
 the mode's budget (Modes), halved when only one screen changed. When several form factors are in
 scope and the harness allows it, run one tester per form factor in parallel, each with its own
-browser session name and evidence subdirectory. Wait for them in the foreground, not as background
+browser session name and evidence subdirectory. Each browser's cap (devices.md) is per launch:
+when the user sets an aggregate resource limit, the app server and every tester share it, so
+run them inside one scope that enforces it or run testers one at a time. Name who owns the
+server, each browser session and their teardown. Wait for them in the foreground, not as background
 tasks: some harnesses deliver a background subagent's completion to the top-level session, not to
 you.
 
@@ -165,7 +173,8 @@ screenshots in each theme) on every form factor in scope to catch what the fixes
 A regression your fix caused is yours to fix; if the second attempt fails too, revert that fix and
 file the finding. There is no second exploratory round by default. Run another round only when the
 user asks for one, usually after their own look (step 6). For that round, fill the brief's "Already
-decided or filed" field.
+decided or filed" field. A request to fix filed findings starts a separate repair phase: re-check
+those fixes as above; it does not authorize another exploratory round.
 
 **Keep to the time budget.** Note the start time. If the pass reaches one and a half times its
 mode's budget, stop fixing, file what's left, and hand over what is done, naming every P0 and P1
@@ -189,7 +198,9 @@ absolute path.
   shown as images; never ask them to check something measurable;
 - what was not tested and why (form factor not reachable, emulation limits, device-only probes);
 - how many findings you filed, and where;
-- how long the pass took against its budget, and the mode it ran in.
+- how long the pass took against its budget, and the mode it ran in;
+- what this handover closes: the exploratory pass, fix verification, or a separately authorized
+  repair phase.
 
 Tear down what you started (qa-conduct): servers by PID, tunnels, browser sessions, test data,
 guest settings you changed, and LOCK files.

@@ -47,7 +47,8 @@ The log is private JSONL at `~/.local/state/agent-estimates.jsonl` (override wit
    fixtures and caller inventory; check whether dependencies and builds are warm, and whether push,
    signing and CI access work. A quick probe beats padding.
 3. Decide which phases the estimate includes (`impl`, `review`, `ci`, `publish`, `proof`) and price
-   each one. Say which you included.
+   each one. Say which you included, and whether it covers active time already spent: a probe
+   is logged as `probe_minutes`, and `actual_h` covers the scope the estimate covers.
 
 ## Typical actuals
 
@@ -92,12 +93,14 @@ There is no one-hour floor: a third of logged tasks finished in under 30 minutes
 4. **Name the drivers.** Say what would put the work near p10 (`why_low`) and what would push it
    toward p90 (`why_high`): the unknowns, which are also what to probe. Take the numbers from the
    calibration, not by adding up delays; summing padded parts made estimates worse in evals.
-5. **State it** in minutes under an hour and hours with one decimal above, never engineer-days,
-   weeks or "sessions". Label any human-effort figure you cite from elsewhere as such. Give the
-   likely time, the range, the tails with their drivers, review rounds and the phases included,
-   for example: "Likely 25 min, half the time 15–40 min; could be as low as 10 if the existing test
-   covers the path, or reach about an hour if the dependency install is cold. One review round;
-   includes review, CI and merge."
+5. **State it** in a reply the user sees before the work starts: a turn-ending reply, or a
+   standalone message before your next tool call. An estimate only in thinking, tool output or the
+   completion report doesn't count. Use minutes under an hour and hours with one decimal above,
+   never engineer-days, weeks or "sessions". Label any human-effort figure you cite from elsewhere
+   as such. Give the likely time, the range, the tails with their drivers, review rounds and the
+   phases included, for example: "Likely 25 min, half the time 15–40 min; could be as low as 10 if
+   the existing test covers the path, or reach about an hour if the dependency install is cold. One
+   review round; includes review, CI and merge."
 
 ## While working
 
@@ -142,14 +145,18 @@ te log <<'EOF'
 EOF
 ```
 
-- Paste the numeric fields from `te estimate`. Without calibration, still log your gut range as
-  `raw_low_h`/`raw_high_h` (the same as the stated range) and omit `bias_factor` and the
-  percentile fields. Only records with a gut range count toward the factor.
+- Paste the numeric fields from `te estimate` as it printed them. To cover another phase, rerun it
+  with a gut range that includes the phase rather than editing its numbers. Without calibration,
+  still log your gut range as `raw_low_h`/`raw_high_h` (the same as the stated range) and omit
+  `bias_factor` and the percentile fields. Only records with a gut range count toward the factor.
 - When the work had review rounds, set `review_round_minutes` to the median minutes from sending a
   revision to receiving the reviewer's verdict; `te stats` reports it per kind once five records
   carry it. Omit it if the send and verdict times aren't in the transcript, since a reconstructed
   value is worse than none, and set it on worker and standalone records, not on a campaign's own.
-- `actual_h` is active time; `blocked_h` and `scope_h` are 0 when nothing applies.
+- `actual_h` is active time; `blocked_h` and `scope_h` are 0 when nothing applies. In a campaign,
+  `blocked_h` counts only intervals when no estimated work could advance; work that continued
+  during a wait is active. Set `actual_approx` to true when the actual is reconstructed or
+  approximate rather than measured.
 - In a campaign, each worker sets `parent_id` to the campaign's id, and the coordinator logs the
   campaign's own record with that id as its `thread_id`. Stats then count the campaign once.
 - Keep thread ids and log contents out of public commits and PRs.

@@ -27,7 +27,7 @@ For diagnosis-only requests, report findings and draft remediation. When impleme
 
 Exercise the original failure and relevant neighboring cases at the cheapest reliable layer. Where practical, show that the check fails on the original defect and passes with the fix. Use realistic workloads where scale matters, and verify that failed or incomplete execution cannot pass as success. Do not weaken checks or suppress errors to get a green result.
 
-Separate local verification, CI results, deployment, and live-system proof. State what remains unverified and what evidence would close the gap. Label each claim read, ran, or inferred, and cite the command and result for each check you report as run.
+Separate local verification, CI results, deployment, and live-system proof. Before claiming completion, reconcile each success criterion as met, known failing, not tested, or deferred with the user's authorization; a case you saw fail is known failing, not unverified. State what remains unverified and what evidence would close the gap. Label each claim read, ran, or inferred, and cite the command and result for each check you report as run.
 
 ## Prevent recurrence
 

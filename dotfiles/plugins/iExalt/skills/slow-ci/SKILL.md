@@ -44,13 +44,17 @@ Spending or changing shared runners still follows the user's authorization rules
 
 Re-run the failing or slow path first, then the full affected gate once. Compare
 before/after on equivalent inputs and conditions; repeat cheap measurements when
-variance could explain the gain. For a flake repair, also exercise the failure
+variance could explain the gain. Before hosted or otherwise costly reruns, agree
+a bounded plan: cold and warm run counts, the smallest gain worth acting on, the
+elapsed and compute cost, and the stopping rule. Start small; add runs only when
+variance prevents a decision. For a flake repair, also exercise the failure
 conditions, including fewer cores where relevant. A single successful run does
 not establish reliability.
 
 Report the cause, change, before/after elapsed time and conditions, retained proofs,
-remaining bottleneck and budget gap. Separate local results from actual CI and
-release evidence. Do not launch a release to benchmark it without explicit release
-approval. Keep a small reproducible timing command and stable baseline in the
-repository's existing check docs/config; avoid adding a benchmark framework for
-one repair. Report unmeasured stages plainly.
+remaining bottleneck and budget gap. Label elapsed (critical-path) time and summed
+runner compute separately, so neither is read as the other. Separate local results
+from actual CI and release evidence. Do not launch a release to benchmark it without
+explicit release approval. Keep a small reproducible timing command and stable
+baseline in the repository's existing check docs/config; avoid adding a benchmark
+framework for one repair. Report unmeasured stages plainly.

@@ -53,6 +53,8 @@ For each chunk, name:
 - its outcome and covered roadmap steps;
 - why the boundary is useful and what it depends on;
 - its acceptance checks and any verification assigned to a named later gate;
+- any scarce shared resource it occupies and for how long, batching the proofs
+  that need it into as few named windows as the acceptance checks allow;
 - material exclusions, risks, or external actions the user needs to assess.
 
 Make the overall phase boundary and important decisions clear. State that

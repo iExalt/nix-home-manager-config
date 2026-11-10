@@ -423,6 +423,11 @@ it needs, or relaunch the thread in a new worker with a handoff of its
 recorded state, since a worker resumes from the documents and Git. When a worker fails the same way twice, report it with what you are doing
 about it, and ask the user only if the remedy needs them.
 
+After a reboot or crash of the host, recover before relaunching anything:
+inventory the run's surviving remote jobs, CI runs and worktrees; recheck
+grants and each thread's exact revision; resume or relaunch the workers; then
+restore exactly one watcher per job and re-arm the heartbeat.
+
 ## Relay human interventions
 
 When a request for a human comes due, whether planned or raised by a worker:

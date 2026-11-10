@@ -70,13 +70,15 @@ corrects routing. If the route fails, report through the normal parent response.
    › Work-item size describes. Use bounded discovery if the item cannot yet be
    specified, and keep its acceptance boundary distinct from the backlog.
 3. Give the lead a contract containing:
-   - The desired outcome, why this item matters now, and acceptance criteria.
+   - The one useful result it delivers, why it matters now, and the acceptance
+     criteria and proof that accept it.
    - Scope, exclusions, tolerances, architectural constraints, and dependencies.
    - Relevant source, workspace, file ownership, concurrent work, and team capacity.
    - Verification, diagnostic authority, resource limits, and stopping conditions.
    - Existing status/plan paths and documentation/evidence retention expectations.
    - Model policy, pilot routing, proposal approval, and escalation rules.
-   - The next observable result and a workload-appropriate stall threshold.
+   - The next observable result, who owes the next packet and how that agent is
+     resumed, and a workload-appropriate stall threshold.
 4. The lead assigns pilots, reviews proposals, approves increments, and reviews
    their diffs and evidence. An explicitly approved complete approach in the
    assignment suffices; avoid redundant approval exchanges. Apply the review and

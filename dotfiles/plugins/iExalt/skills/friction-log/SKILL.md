@@ -73,12 +73,15 @@ new evidence into a follow-up on the linked incident before archiving the fragme
 preserving uncertainty and each incident's original origin. Links must target
 existing incident heads, never another context head or the fragment itself.
 
-`latest` excludes context; `latest --include-context` retains access to every
-chain head. `check` reports incident, context and total chain counts separately.
+`latest` excludes context; `latest --include-context` retains access to every chain
+head. `check` reports incident, context and total chain counts separately.
 `check --actionable` also rejects incomplete current incidents and resolved heads
-without fix proof. It leaves historical imports intact. This structural check
-does not judge whether prose is useful or evidence actually proves a fix; read
-both before accepting a cleanup. Existing records default to `record_type: "incident"`.
+without fix proof. It leaves historical imports intact. This structural check does not judge
+whether prose is useful or evidence actually proves a fix; read both before
+accepting a cleanup. Before normalizing or rewriting a head, check that its
+`suggestion` agrees with its `resolution` and with later user decisions in the
+chain; keep the newer lesson, or record why it changed. Existing records default to
+`record_type: "incident"`.
 
 ```json
 {
