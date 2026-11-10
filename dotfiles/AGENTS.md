@@ -60,6 +60,7 @@
 ## Communication
 
 * Anything meant for me goes in a visible reply; I can't see your thinking.
+* Make each turn's last message the one I need to read. Do side actions such as sends, launches and status pings before it, not after: my chat view folds everything before a turn's last message.
 * Send handoff text in a standalone message so I can copy and paste it without surrounding commentary.
 * Cite evidence by commit SHA, file path or link; inline only the few outputs that decide the point.
 * Run prose-fix in embedded mode, unasked, on prose people will read: PR, issue and commit-message bodies, reports and investigations, docs, messages sent on my behalf, and chat replies longer than a few sentences. Skip short replies, code and command output.
