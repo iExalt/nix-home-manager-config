@@ -67,13 +67,13 @@ the route costly or unnecessary, then propose the smallest representative probe
 that could disprove it. Distinguish demonstrated prerequisites, chosen design
 constraints, and untested assumptions.
 
-State in one sentence the claim the probe can establish, at what level of proof,
-and its comparison criterion; treat approaches the user already rejected as
-constraints. Define the question, workload, initial effort allowance,
-reassessment point, success/failure observations, and resulting route choices.
-Make setup, build, execution, and analysis costs visible. Resolve material
-effort and priority tradeoffs through the dialog; retain budgets already
-supplied by the user.
+State in one sentence the claim the probe can establish, at which layer or kind
+of evidence, and its comparison criterion; treat approaches the user already
+rejected as constraints. Define the question, workload, initial effort
+allowance, reassessment point, success/failure observations, and resulting route
+choices. Make setup, build, execution, and analysis costs visible. Resolve
+material effort and priority tradeoffs through the dialog; retain budgets
+already supplied by the user.
 
 A request for guided planning permits preparation and read-only investigation;
 it does not by itself authorize production changes or a long experiment. If a

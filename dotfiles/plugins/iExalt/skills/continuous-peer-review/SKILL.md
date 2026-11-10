@@ -46,11 +46,12 @@ fixes, and run permitted isolated probes without changing the reviewed artifact.
 Jointly shape each increment before implementation, focusing on unresolved
 decisions, changed assumptions, and consequential failure cases. A routine
 increment needs only a brief amendment to settled designs and agreement; expand
-the proposal when behavior, interfaces, dependencies, or acceptance evidence need
-discussion. Agree the design and closure criteria, batching upcoming proposals so
-the reviewer can answer while reviewing the preceding increment. Before
-agreeing a design that adds a new kind of dependency or boundary, the reviewer
-checks it against the repository's existing architectural rules and checks.
+the proposal when behavior, interfaces, dependencies, or acceptance evidence
+need discussion. Agree the design and closure criteria, batching upcoming
+proposals so the reviewer can answer while reviewing the preceding increment.
+Before agreeing a design that adds a new kind of dependency or boundary
+(process, network, storage or trust), the reviewer checks it against the
+repository's existing architectural rules and checks.
 
 Agree on the discriminating verification before coding: what would distinguish
 correct behavior from the plausible failure? For consequential execution paths,
