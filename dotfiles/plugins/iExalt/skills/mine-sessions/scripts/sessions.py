@@ -577,7 +577,9 @@ def main(argv=None) -> int:
     sh = sub.add_parser("show", parents=[common], help="compact view of one session: one line per event with its file line")
     sh.add_argument("ref")
     _add_filters(sh)
-    sh.add_argument("--lines", type=_line_range, help="physical line range: N, FROM:TO, FROM: or :TO")
+    sh.add_argument("--lines", type=_line_range,
+                    help="example: --lines 240:285; physical lines: N (one), FROM:TO (inclusive), "
+                         "FROM: (to end), or :TO (from start)")
     sh.add_argument("--last", type=_positive, help="only the last N matching events")
     sh.add_argument("--basis", action="store_true", help="show why each event got its author")
     sh.add_argument("--prose", action="store_true", help="skip tool output (faster on huge files)")

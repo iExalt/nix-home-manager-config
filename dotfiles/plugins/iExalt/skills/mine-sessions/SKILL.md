@@ -16,6 +16,7 @@ sm resolve <ref>                # uuid, id prefix/suffix, codex://threads/<id>, 
 sm find [regex] [--skill X]     # sessions by title or prompt text, newest first
 sm grep <regex> [filters]       # events across all sessions, grouped by session
 sm show <ref> [filters]         # one session, one line per event, with file:line
+sm show <ref> --lines 240:285   # read events at physical lines 240 through 285
 sm manifest [find args] --out m.tsv   # byte-balanced shards for miner subagents
 sm recall                       # your own session after compaction
 ```
