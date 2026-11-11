@@ -177,7 +177,7 @@ measurement term applies it.
 baseline, close every part of the goal the baseline already meets, restate the
 remaining gap against the estimate, and ask the user, in a dialog before more
 work starts, whether to continue when the gap is gone or too small to justify
-the estimate. A change to the frozen goal or estimate is an amendment.
+the estimate. A change to the frozen goal or estimate is an amendment. A later scope or approach change re-estimates as Stop-loss describes.
 
 ### Clear the run before the user leaves
 
@@ -223,6 +223,11 @@ never compute them yourself.
   `--approved-by` quotes the user verbatim (mark cuts with `…`) and cites where
   they said it: `overseer chat <UTC time>`, or `dialog <Question session Paseo
   ID>`. For a bare "yes", include the question it answers.
+  An amendment that adds, drops, merges or rescopes tasks, or changes the
+  approach, carries a re-estimate approved in the same dialog: `--estimate` for
+  the campaign and `--task-estimate` for each task it touches. Record totals,
+  not remainders: the tripwires compare a task's `running_h` and the campaign's
+  `active_h`, both counted from the start.
 - **`task-start <task>`** when work on that task begins: at its worker's launch
   for the thread's first task, and for each later task of the thread when the
   tracker shows the previous one done (check at each wake). **`task-pause <task> --on <decision item>`**
@@ -416,6 +421,21 @@ continue with a new estimate, trim the scope to what has landed (recorded with
 `freeze --amend --drop-task`), or abandon and revert unmerged work. Recommend one. Workers keep finishing safe
 in-flight work while the dialog waits. A kill criterion the user agreed acts
 without a dialog: apply it and report.
+
+When the scope or approach changed after plan agreement and no amendment has
+re-estimated since, the fresh estimate is a re-baseline, priced with
+`time-estimate` and kept as a revision there:
+- **Re-priced original:** the original tasks priced as if the current plan had
+  been the plan from the start, per task and in total.
+- **Remaining:** each open task's remaining time, marking tasks the change made
+  obsolete, merged or rescoped, with the done tasks' `running_h` against their
+  estimates from `show --json` as the pace so far.
+Split the overrun into scope (the re-priced original plus approved additions,
+minus the original) and execution (spent plus remaining, minus that). Scope
+overrun is no reason to trim; base your recommendation on the execution part.
+On approval, record spent plus remaining per task with `freeze --amend`. A
+re-estimate with no scope or approach change since the last one is no
+re-baseline: it is the ordinary "continue with a new estimate".
 
 When a worker reports its thread done, verify the claims before launching
 dependents: its done check passed, required publication is confirmed (including

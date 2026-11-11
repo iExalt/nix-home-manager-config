@@ -51,7 +51,17 @@ revision log, worker reports or briefs.
    `added_unapproved`, unless `scope_growth` is disabled.
 4. If a tripwire fires, message the user once for it: its name, the evidence
    (numbers and sources), and a recommendation, either continue, trim or stop,
-   with one sentence of reasoning. Send it again only if it worsens, meaning its
+   with one sentence of reasoning.
+
+   For `campaign_over_high` or `task_over_high`: if, since launch, an amendment
+   changed `goal`, `approved_added` or `dropped`, or the user's own words
+   approved a change of approach, and no later amendment sets `estimate_h` and
+   `task_estimates` for every open task, recommend a re-baseline (the
+   overseer's Stop-loss), not a trim. Otherwise, recommend trim or stop for
+   overrun against the latest re-baseline or for tasks the change made
+   obsolete. Don't judge from an amendment's `reason`: the overseer wrote it.
+
+   Send it again only if it worsens, meaning its
    `value` has grown materially since your last message about it (for
    `task_over_high`, per task). Keep earlier
    alerts in your own notes so you don't repeat them.
