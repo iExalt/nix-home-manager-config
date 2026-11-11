@@ -140,8 +140,10 @@ launch. To make a Paseo subagent independent, run
 
 When a worker asks for input, inspect the pending request's
 `input.questions` and answer every question by its displayed `header`. Pass a
-nonblank string for each header: the chosen option label or free text. Use the
-normalized `updatedInput` shape Paseo expects:
+string for each header: use the chosen option label for single-select, selected
+labels separated by commas for multi-select, or free text. Leave an answer
+nonblank unless that question explicitly sets `allowEmpty`. Use the normalized
+`updatedInput` shape Paseo expects:
 
 ```bash
 paseo permit allow <agent> <request> --input \
@@ -154,11 +156,11 @@ rejected, the request should remain pending; correct the payload and retry.
 If `paseo permit ls` shows no request, inspect the worker's current state
 before retrying because another answer may have completed concurrently.
 
-If the installed daemon predates async-question support, or `permit allow`
-cannot safely answer the request, check `paseo send --help` and steer the
-worker with `paseo send <agent> --behavior steer --prompt 'answer'`. Verify
-that the worker received the message. A steer may not resolve the pending
-async question, so do not report it as cleared without checking the request.
+If the CLI lacks question-answer validation, or the installed daemon cannot
+safely answer the request, check `paseo send --help` and steer the worker with
+`paseo send <agent> --behavior steer --prompt 'answer'`. Verify that the worker
+received the message. A steer may not resolve the pending async question, so do
+not report it as cleared without checking the request.
 
 ## 7. Tear down
 
