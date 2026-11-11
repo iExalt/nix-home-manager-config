@@ -421,6 +421,31 @@ class WaitStatus(unittest.TestCase):
         its = wait_items(waits="abcd")
         self.assertTrue(is_waiting({x: paused_state(x) for x in "abc"}, its))
 
+    def test_unlaunched_task_on_recorded_decision_waits_without_any_pause(self):
+        its = wait_items(extra=[item("E", parent="INIT")])
+        its[2:6] = [rd(item(x), "waiting", ["E"]) for x in "abcd"]
+        ws = SB.wait_status(campaign(), wait_state({}, decisions=["E"]), its)
+        self.assertTrue(ws["waiting"])
+        self.assertEqual((ws["decisions"], ws["uncited"]), (["E"], []))
+
+    def test_closed_recorded_decision_is_not_owed(self):
+        its = wait_items(waits="abc", extra=[item("E", parent="INIT", state="done")])
+        its[5] = rd(item("d"), "waiting", ["E"])
+        tasks = {x: paused_state(x) for x in "abc"}
+        self.assertFalse(SB.wait_status(campaign(), wait_state(tasks, decisions=["E"]), its)["waiting"])
+
+    def test_uncited_parked_item_waits_and_is_flagged(self):
+        its = wait_items(waits="abc", extra=[decision(iid="E")])
+        its[5] = rd(item("d"), "waiting", ["E"])
+        ws = SB.wait_status(campaign(), wait_state({x: paused_state(x) for x in "abc"}), its)
+        self.assertTrue(ws["waiting"])
+        self.assertEqual(ws["uncited"], ["E"])
+
+    def test_unlaunched_task_on_open_unrecorded_item_is_active(self):
+        its = wait_items(waits="abc", extra=[item("E", parent="INIT")])
+        its[5] = rd(item("d"), "waiting", ["E"])
+        self.assertFalse(is_waiting({x: paused_state(x) for x in "abc"}, its))
+
     def test_all_done_is_not_waiting(self):
         its = [ITEMS[0], decision()] + [rd(item(x, state="done"), "done") for x in "abcd"]
         self.assertFalse(is_waiting({}, its))
@@ -500,13 +525,63 @@ class Waiting(unittest.TestCase):
             self.items[2 + "abcd".index(x)] = rd(item(x), "ready")
         self.items[1] = decision(state="done")
         self.shows["D"] = dict(shown("D"), done_at=iso(2.5))
-        self.go(3, "forecast", "a", "09:00")  # D closed: not waiting
+        self.assertAlmostEqual(self.show(2.8)["waiting_h"], 1.5)  # unwritten: still ends at D's close
+        self.go(3, "forecast", "a", "09:00")  # D closed at 2.5: the wait ends there, not at the write
+        self.assertEqual(self.state()["wait_segments"], [[iso(1), iso(2.5)]])
         self.go(6, "show", "--digest")
         r = self.show(7)
-        self.assertAlmostEqual(r["waiting_h"], 1.0)  # nothing after D closed
-        self.assertAlmostEqual(r["active_h"], 6.0)
+        self.assertAlmostEqual(r["waiting_h"], 1.5)  # nothing after D closed
+        self.assertAlmostEqual(r["active_h"], 5.5)
         self.assertFalse(r["waiting_now"])
         self.assertGreater(r["waiting_unexplained_h"], 4.0)  # paused, but no decision behind it
+
+    def test_decision_command_counts_waits_and_leaves_scope(self):
+        self.items = wait_items(waits="abc") + [item("E", parent="EPIC", state="parked")]
+        self.items[5] = rd(item("d"), "waiting", ["E"])
+        self.park_all_but_d()
+        self.assertEqual(self.go(1, "decision", "d"), 1)  # a campaign task is never a decision
+        r = self.show(1)
+        self.assertEqual((r["scope_added"], r["waiting_on_uncited"]), (1, ["E"]))  # growth, flagged
+        self.assertEqual(self.go(1, "decision", "E"), 0)
+        self.assertEqual(self.state()["decisions"], ["E"])
+        r = self.show(3)
+        self.assertEqual((r["scope_added"], r["waiting_on_uncited"], r["waiting_on"]), (0, [], ["D", "E"]))
+        self.assertAlmostEqual(r["waiting_h"], 2.0)
+
+    def test_closed_decision_can_be_recorded_to_leave_scope(self):
+        self.items.append(item("E", parent="EPIC", state="done"))
+        self.assertEqual(self.show(1)["scope_added"], 1)
+        self.assertEqual(self.go(1, "decision", "E"), 0)
+        self.assertEqual(self.show(1)["scope_added"], 0)
+
+    def test_wait_ends_at_the_earliest_relied_on_decision_close(self):
+        self.items.append(decision(iid="E"))
+        self.items[5] = rd(item("d"), "waiting", ["E"])
+        self.park_all_but_d()  # waits on D (pauses) and E (d, uncited); mark at 1
+        self.assertEqual(self.state()["wait_mark"]["on"], ["D", "E"])
+        self.items[1], self.items[-1] = decision(state="done"), decision(iid="E", state="done")
+        self.items[2:6] = [rd(item(x), "ready") for x in "abcd"]
+        self.shows["D"] = dict(shown("D"), done_at=iso(1.5))
+        self.shows["E"] = dict(shown("E"), done_at=iso(5))
+        self.go(6, "mark")
+        self.assertEqual(self.state()["wait_segments"], [[iso(1), iso(1.5)]])
+
+    def test_closing_an_unrelated_recorded_decision_does_not_end_the_wait(self):
+        self.items.append(item("X", parent="INIT"))
+        self.go(0, "decision", "X")
+        self.park_all(1)
+        self.assertEqual(self.state()["wait_mark"]["on"], ["D"])
+        self.items[2:6] = [rd(item(x), "ready") for x in "abcd"]  # active for another reason
+        self.items[-1] = item("X", parent="INIT", state="done")
+        self.shows["X"] = dict(shown("X"), done_at=iso(4))
+        self.go(5, "mark")
+        self.assertNotIn("wait_segments", self.state())
+
+    def park_all_but_d(self):
+        for x in "abc":
+            self.go(0, "task-start", x)
+        for x in "abc":
+            self.go(1, "task-pause", x, "--on", "D")
 
     def test_invalid_pause_is_active_and_warned(self):
         self.go(0, "task-start", "a")

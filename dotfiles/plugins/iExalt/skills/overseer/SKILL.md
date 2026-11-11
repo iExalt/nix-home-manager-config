@@ -219,16 +219,20 @@ never compute them yourself.
   `--on`: the open decision item the user owes, which the task waits for in Acyclic (`waits-for`, directly
   or through other items). Waiting on CI, review or anyone other than the user is never a pause. When a worker reports an unplanned
   blocker on the user, create the decision item and its `waits-for` link before pausing.
-  **`task-resume`** after. A task's clock excludes that wait. A task without a clock or estimate
+  **`decision <item>`** right after creating any decision item: it keeps the item out of scope growth and
+  lets a task you never launched that waits on it count as waiting on the user. **`task-resume`** after. A task's clock excludes that wait. A task without a clock or estimate
   never trips the per-task tripwire.
 - **The campaign clock** is `active_h`: wall-clock since plan agreement minus waiting on the user, so the
   user's own delays don't count against the estimate. The script, not you, decides what is waiting. The
   campaign waits only when no task runs and every ready, claimed or dependency-blocked task is paused on a
   valid decision; a pause on a missing, done or canceled item, or one the task doesn't wait for, counts as
   active, as does a pause that outlives its decision. A ready task you never launched makes the campaign
-  active. Each of your writes (`show --digest`, `mark`, `task-start`, `task-pause`, `task-resume`, `forecast`)
+  active; one that waits only on open decisions (cited by a pause or recorded with `decision`) or on
+  waiting tasks counts as waiting. A parked item outside the campaign's tasks counts as a decision too,
+  but `waiting_on_uncited` and the tripwire evidence flag it until you record it. Each of your writes (`show --digest`, `mark`, `decision`, `task-start`, `task-pause`, `task-resume`, `forecast`)
   records the state, and task commands also record it just before they change a task; an interval counts as waiting only when the writes at both ends saw it waiting, so
-  time between writes counts as active. Run `scoreboard.py mark` at every wake that sends no digest, and
+  time between writes counts as active, except that a wait ends at the `done_at` of the decisions it
+  waited on, so closing a decision before resuming loses nothing. Run `scoreboard.py mark` at every wake that sends no digest, and
   pause and resume promptly. A task blocked directly on the decision item, or on a paused task, needs no
   pause of its own, but tasks of one thread that must run in order need `waits-for` between them: a later
   task the thread's claim leaves `claimed` but unstarted keeps the campaign active. The script does
