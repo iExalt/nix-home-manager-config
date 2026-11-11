@@ -23,7 +23,7 @@ and keep its ID. Then run the check below once.
 - Raw facts you fetch yourself: git history and merge ancestry in `<repository>`,
   CI runs, and the tracker's items.
 
-Never read the overseer's prose: its chat, `OVERSEER_RUN.md`, the script's
+Never read the overseer's prose: its chat, `OVERSEER_RUN.md`, `OVERSEER_GLOSSARY.md`, the script's
 revision log, worker reports or briefs.
 
 **Each check:**
