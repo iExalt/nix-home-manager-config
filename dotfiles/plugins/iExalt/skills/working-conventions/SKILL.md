@@ -311,8 +311,8 @@ parallelism. Changing required proofs or their gate still needs approval.
 - Write for a technically capable owner without expertise in the subsystem:
   what changed, why it matters, what remains unproven, and what's next.
   Explain necessary terms through their purpose.
-- Limits, deferrals, skipped checks and the reviewer's parked findings reach
-  the user, not only the reviewer.
+- Limits, deferrals, skipped checks, filed side issues and unfinished side
+  work reach the user, not only the reviewer.
 
 The workflow skill sets each update's format, such as `keep-me-in-the-loop`'s
 one-line prefix or `overseer`'s state digest.
@@ -365,7 +365,9 @@ one-line prefix or `overseer`'s state digest.
   - **Native subagent:** a Claude Code `Agent` or Codex `spawn_agent` helper
     that lives inside your session, for reviews (including
     `continuous-peer-review`'s reviewer), lookups and other short helpers.
-    Never use one for implementation the user should see as a thread.
+    Never use one for implementation the user should see as a thread. A
+    side fix under the "by the way" rule may use one in its own sibling
+    worktree; an overseer gives side fixes to workers instead.
 - Launch every Paseo agent as
   [references/paseo-launch.md](references/paseo-launch.md) describes:
   its project, a visible workspace, `--relationship detached`, settings that
@@ -406,8 +408,10 @@ rely on before implementing them. Discovery never authorizes the surrounding
 milestone.
 
 Out-of-scope issues follow the "by the way" rule in the user's global
-instructions. A reviewer keeps out-of-scope findings in a parking lot and
-delivers it once, at the milestone boundary.
+instructions. A reviewer sends each out-of-scope finding to the author as it
+finds it, labeled as a side issue, and the author routes it under that rule
+right away. Findings from idle review of unrelated areas are filed, not
+dispatched.
 
 ## Records
 

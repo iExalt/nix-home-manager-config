@@ -185,9 +185,9 @@ The reviewer spends spare capacity on the prioritized idle work in
 priority. Where the harness ends the reviewer's run after each reply, as Claude
 Code does, the author reads that file to assign bounded idle work.
 
-Pre-existing defects that affect the milestone are ordinary findings. Park the
-rest as `working-conventions` › Work-item size describes; the author relays the
-list to the user and does not act on it without separate authorization.
+Pre-existing defects that affect the milestone are ordinary findings. Send the
+rest to the author as side issues, as `working-conventions` › Work-item size
+describes.
 
 ## Resolve findings and retain context
 
