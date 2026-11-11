@@ -234,6 +234,9 @@ project's testing documentation; a short sentence suffices for a simple check.
 - Before applying a test Pod for a specific node, inspect its live taints and
   labels and adapt the scheduling fields from a running workload there. A
   server-side dry-run does not prove the Pod can schedule.
+- For standard S3 or OCI transfers, prefer an existing CLI client over a custom
+  driver. First rehearse redirect handling and cleanup limited to task-owned
+  resources with a tiny artifact, and record upload timing before verification.
 - Keep local-only inputs where authorized. Put private host, device and access
   details in untracked local configuration, never public plans or briefs.
 - On shared hosts, agree a build/process budget before launching, serialize
