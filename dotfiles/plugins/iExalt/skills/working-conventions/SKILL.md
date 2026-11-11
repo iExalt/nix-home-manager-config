@@ -231,6 +231,9 @@ project's testing documentation; a short sentence suffices for a simple check.
 - Native OS behavior and activation need the target platform; real-device and
   hardware gates need the specified device or capability. Compilation,
   emulation and browser simulation do not substitute for those proofs.
+- Before applying a test Pod for a specific node, inspect its live taints and
+  labels and adapt the scheduling fields from a running workload there. A
+  server-side dry-run does not prove the Pod can schedule.
 - Keep local-only inputs where authorized. Put private host, device and access
   details in untracked local configuration, never public plans or briefs.
 - On shared hosts, agree a build/process budget before launching, serialize
