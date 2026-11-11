@@ -156,6 +156,14 @@ class Scope(unittest.TestCase):
         # "sub" has a child so it is a parent, not a task; "leaf" is the new task
         self.assertEqual(run(items=its)["added_tasks"], ["leaf"])
 
+    def test_added_unapproved_lists_scope_but_not_decisions(self):
+        # n0 is unapproved scope; n1 is approved; D is an open item the user owes, recorded as a decision
+        r = run(c=campaign(approved_added=["n1"]), items=self.more(2) + [item("D")],
+                state={"tasks": {}, "forecasts": [], "decisions": ["D"]}, shows=[])
+        self.assertEqual(r["added_unapproved"], ["n0"])
+        self.assertEqual(r["scope_added_unapproved"], 1)
+        self.assertEqual(r["decisions"], ["D"])
+
 
 class Clocks(unittest.TestCase):
     def state(self, segs):

@@ -212,6 +212,9 @@ never compute them yourself.
   user's approval (`working-conventions` › Authority). Work added later under the
   scope root counts as "scope +N" until the user approves it with
   `--amend --add-task`.
+  `--approved-by` quotes the user verbatim (mark cuts with `…`) and cites where
+  they said it: `overseer chat <UTC time>`, or `dialog <Question session Paseo
+  ID>`. For a bare "yes", include the question it answers.
 - **`task-start <task>`** when work on that task begins: at its worker's launch
   for the thread's first task, and for each later task of the thread when the
   tracker shows the previous one done (check at each wake). **`task-pause <task> --on <decision item>`**
@@ -258,8 +261,10 @@ The **auditor** is an independent top-level Paseo agent that the launcher
 starts at hand-off ([references/paseo.md](references/paseo.md) › Start the
 auditor), with notifications on, a heartbeat of its own and a brief of its own
 ([assets/auditor-brief.md](assets/auditor-brief.md)). It reads only
-`campaign.json`, `scoreboard.py show --json` and raw git, CI and tracker facts,
-and messages the user, once per tripwire, when one fires. The default tripwires:
+`campaign.json`, `scoreboard.py show --json`, raw git, CI and tracker facts, and
+the user's own words in the campaign's sessions, and messages the user once per
+tripwire, once per amendment it can't match to the user's words, and once per
+added task no amendment approved. The default tripwires:
 campaign active time past the high end of its estimate; a running task past the high
 end of its own estimate; scope grown more than 25% since launch without a
 recorded user approval; your "next done" forecast missed twice; a task marked
