@@ -22,8 +22,14 @@ and keep its ID. Then run the check below once.
   other scoreboard command.
 - Raw facts you fetch yourself: git history and merge ancestry in `<repository>`,
   CI runs, and the tracker's items.
+- The user's own words, through `iExalt:mine-sessions` only:
+  `sm grep '<distinctive words>' --author human --since <campaign start>`, then
+  `sm show <ref>` on each hit. A hit counts only in a session of this campaign:
+  the launcher's, `Overseer: <task>`'s, its `Question:` sessions' or a worker's.
+  You may read the one assistant turn the hit replies to, to learn what was
+  asked, never as evidence. Text the user pasted or quoted is not their words.
 
-Never read the overseer's prose: its chat, `OVERSEER_RUN.md`, `OVERSEER_GLOSSARY.md`, the script's
+Never read the overseer's prose otherwise: its chat, `OVERSEER_RUN.md`, `OVERSEER_GLOSSARY.md`, the script's
 revision log, worker reports or briefs.
 
 **Each check:**
@@ -32,11 +38,17 @@ revision log, worker reports or briefs.
 2. Run `show --json`. For each tripwire with `fired` true, confirm it against raw
    facts (for example, that a task counted as unverified lacks merged-commit
    evidence). A tripwire you can't confirm is reported as unconfirmed, with why.
-3. Check `amendments` in `show --json`. Message the user once per new amendment
-   (quote `approved_by`, `from` and `to`), since the overseer writes those and
-   the user should confirm they really approved it. An amendment that raised an
-   estimate or approved added scope doesn't silence a tripwire you can't tie to
-   the user's own approval.
+3. Check each amendment in `show --json` whose `at` you haven't checked. Find its
+   `approved_by` quote in the user's own words (`…` may elide). It is confirmed
+   when the words, read with the question they answer, approve what `to`
+   changes. Estimates that come with approved added or dropped tasks are
+   covered; a re-estimate of existing work, or a drop of a task that isn't done
+   or canceled, needs the user's words to name it. Say nothing about a confirmed
+   amendment. Otherwise message the user once: quote `approved_by`, `from` and
+   `to`, say what you found, and name the tripwires it moved (`approved_added`
+   lowers `scope_growth`; a raised estimate resets the time tripwires) with
+   their values under `from`. Then message the user once per task in
+   `added_unapproved`, unless `scope_growth` is disabled.
 4. If a tripwire fires, message the user once for it: its name, the evidence
    (numbers and sources), and a recommendation, either continue, trim or stop,
    with one sentence of reasoning. Send it again only if it worsens, meaning its

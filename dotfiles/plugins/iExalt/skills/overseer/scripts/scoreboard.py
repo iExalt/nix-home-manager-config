@@ -512,6 +512,7 @@ def evaluate(campaign, state, items, shown, doc, now):
         "over_high": active_h > hi and done < len(total_ids),
         "scope_added": len(extra), "scope_added_unapproved": len(unapproved),
         "scope_growth_pct": round(growth_pct, 1), "added_tasks": extra,
+        "added_unapproved": unapproved, "decisions": sorted(state.get("decisions") or []),
         "tasks": tasks, "forecasts": forecasts, "missed_forecasts": misses,
         "next_done": pending[0] if pending else None,
         "amendments": campaign.get("amendments", []),
