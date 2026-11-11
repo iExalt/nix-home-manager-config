@@ -77,6 +77,11 @@ your own session, and it dies with your session. Give such work to a worker
 session of its own, or to the user. A Paseo agent launched detached, as
 [references/paseo.md](references/paseo.md) describes, is such a session. The continuous
 reviewer a worker starts inside its own session is part of that worker's job.
+Side issues outside the campaign follow the "by the way" rule, except that
+every fix you route gets its own worker: workers fix trivial ones inline and
+send you the rest, as their brief says. Create each side item's
+tracker item outside the campaign's root, so it doesn't count as scope growth,
+and report side work only if it is still open when the campaign ends.
 
 Keep a checklist of the threads you oversee, each with its worker and state:
 waiting, ready, running, awaiting a human, blocked, done. Keep it in the run

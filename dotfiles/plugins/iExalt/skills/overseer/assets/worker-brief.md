@@ -47,7 +47,9 @@ the thread, then the terms below, filled in for the worker:
 - Message the overseer only when: the thread is done, with completion evidence
   as `working-conventions` › Completion lists; you hit a blocker or need a
   human; you acknowledge a relayed decision (one line, by its number); a
-  deviation affects another thread or the script; or, when the
+  deviation affects another thread or the script; you find a side issue
+  outside your thread that isn't trivial (one line each: what, where, why;
+  the overseer routes it, so don't dispatch side fixes yourself); or, when the
   thread's outcome is a measured improvement, once after the first measurement
   (what it shows against the goal, and the remaining gap; work that doesn't
   depend on that gap continues). Keep each message
