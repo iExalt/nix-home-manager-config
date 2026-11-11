@@ -79,9 +79,12 @@ session of its own, or to the user. A Paseo agent launched detached, as
 reviewer a worker starts inside its own session is part of that worker's job.
 Side issues outside the campaign follow the "by the way" rule, except that
 every fix you route gets its own worker: workers fix trivial ones inline and
-send you the rest, as their brief says. Create each side item's
-tracker item outside the campaign's root, so it doesn't count as scope growth,
-and report side work only if it is still open when the campaign ends.
+send you the rest, as their brief says. Side workers count toward the user's
+concurrent-worker limit and the two-side-fix cap, never displace a ready
+thread, and touch no file or check that a running or ready thread owns. Create
+each side item's tracker item outside the campaign's root, so it doesn't count
+as scope growth. In the final digest, list finished side fixes under
+"Decisions I made" and name any side work still open, with its watcher.
 
 Keep a checklist of the threads you oversee, each with its worker and state:
 waiting, ready, running, awaiting a human, blocked, done. Keep it in the run
