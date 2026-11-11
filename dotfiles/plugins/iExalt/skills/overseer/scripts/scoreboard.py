@@ -15,14 +15,20 @@ Commands:
   task-pause    stop the clock while the task waits on the user; --on <decision item>
                 is required and the task must wait on that item in Acyclic
   task-resume   restart the clock
+  decision      record an item as a decision the user owes: tasks waiting on it count as
+                waiting on the user, and it never counts as scope growth
   mark          record the wait state now, so a quiet wake still bridges a long wait
 
 The campaign clock is wall-clock minus waiting on the user. The overseer's writes
-(show --digest, mark, task-start, task-pause, task-resume, forecast) each record whether the
+(show --digest, mark, decision, task-start, task-pause, task-resume, forecast) each record whether the
 campaign is waiting; the interval between two writes counts as waiting only when both
 saw it waiting, so time between writes, and any pause Acyclic doesn't back, counts as
-active. Waiting holds when no task runs and every ready, claimed or dependency-blocked
-task is paused on an open decision item it waits for.
+active, except that a wait ends when the decisions it waited on close, not at the next
+write. Waiting holds when no task runs and every ready, claimed or dependency-blocked
+task is paused on an open decision item it waits for. A task never launched needs no
+pause: it waits when everything it waits for is an open decision (cited by a pause or
+recorded with `decision`) or a task that is itself waiting. A parked item outside the
+campaign's tasks also counts as a decision, flagged as uncited until it is recorded.
 """
 
 import argparse
@@ -250,32 +256,66 @@ def wait_status(campaign, state, items):
         if segs and segs[-1][1] is None:
             return False  # running
         if pause_valid(state, by_id, tid):
+            relied.add(pause_of(state, tid)["on"])
             return True
         waiting = ((by_id.get(tid) or {}).get("readiness") or {}).get("waiting") or {}
         fresh = not segs  # a started task needs its own valid pause; an unlaunched one can't have one
         return rd(tid) == "waiting" and bool(waiting) and all(
-            (fresh and k in decisions) or on_user(k, seen + (tid,)) for k in waiting)
+            (fresh and owed(k)) or on_user(k, seen + (tid,)) for k in waiting)
+
+    def owed(k):
+        if k in decisions:
+            relied.add(k)
+            return True
+        if k not in live and (by_id.get(k) or {}).get("state") == "parked":
+            uncited.add(k)  # likely a decision nobody recorded; flagged so the auditor can check
+            relied.add(k)
+            return True
+        return False
 
     open_tasks = [t for t in sorted(live) if rd(t) not in IGNORED_READINESS]
     # a thread claim makes its later tasks `claimed` while the overseer holds them back, so only `ready` is idle
     idle = [t for t in open_tasks if rd(t) == "ready" and not (tasks.get(t) or {}).get("segments")]
     paused = [t for t in open_tasks if pause_valid(state, by_id, t)]
     decisions = {pause_of(state, t)["on"] for t in paused}  # open items the user owes, cited by a valid pause
-    waiting = bool(paused) and all(on_user(t) for t in open_tasks)
-    return {"waiting": waiting, "idle": idle, "decisions": sorted(decisions)}
+    decisions |= {k for k in state.get("decisions") or []  # or recorded with `decision`
+                  if k not in live and k in by_id and by_id[k].get("state") not in ("done", "canceled")}
+    uncited, relied = set(), set()
+    flags = [on_user(t) for t in open_tasks]  # no short circuit: collect every item relied on
+    waiting = bool(open_tasks) and all(flags)
+    return {"waiting": waiting, "idle": idle, "decisions": sorted(decisions),
+            "uncited": sorted(uncited) if waiting else [], "on": sorted(relied) if waiting else []}
+
+
+def wait_closed_at(mark, rows, now):
+    """When a marked wait ended because a decision it relied on closed: the earliest such done_at,
+    capped at now. Earliest can undercount when a redundant decision closes first; that errs
+    toward active time."""
+    on = set(mark.get("on") or [])
+    times = [parse_time(r["done_at"]) for r in rows
+             if r.get("id") in on and r.get("state") == "done" and r.get("done_at")]
+    return min(min(times), now) if times else None
 
 
 def record_write(campaign, state, items, now):
     """Fold the current wait status into the state at an overseer write."""
     ws = wait_status(campaign, state, items)
     mark = state.get("wait_mark")
-    if mark and mark["waiting"] and ws["waiting"]:
+    end = None
+    if mark and mark["waiting"]:
+        # still waiting: up to now; the wait ended: up to when its decisions closed, if they did
+        known = {i["id"] for i in items}  # an id deleted from Acyclic would make `item show` fail
+        end = now if ws["waiting"] else wait_closed_at(
+            mark, item_show(sorted(k for k in mark.get("on") or [] if k in known)), now)
+    if end and end > parse_time(mark["at"]):
         segs = state.setdefault("wait_segments", [])
         if segs and segs[-1][1] == mark["at"]:
-            segs[-1][1] = iso(now)
+            segs[-1][1] = iso(end)
         else:
-            segs.append([mark["at"], iso(now)])
+            segs.append([mark["at"], iso(end)])
     state["wait_mark"] = {"at": iso(now), "waiting": ws["waiting"]}
+    if ws["waiting"]:
+        state["wait_mark"]["on"] = ws["on"]
     rs = state.setdefault("ready_since", {})
     for t in ws["idle"]:
         rs.setdefault(t, iso(now))
@@ -360,10 +400,12 @@ def evaluate(campaign, state, items, shown, doc, now):
     ws = wait_status(campaign, state, items)
     mark = state.get("wait_mark")
     segs = [[parse_time(a), parse_time(b)] for a, b in state.get("wait_segments", [])]
-    tail = 0.0
-    if mark and mark["waiting"] and ws["waiting"]:
-        tail = max(0.0, (now - parse_time(mark["at"])).total_seconds())
-    stretch = tail
+    tail = stretch = 0.0
+    if mark and mark["waiting"]:
+        end = now if ws["waiting"] else wait_closed_at(mark, shown, now)
+        tail = max(0.0, (end - parse_time(mark["at"])).total_seconds()) if end else 0.0
+    if ws["waiting"]:
+        stretch = tail
     if tail and segs and segs[-1][1] == parse_time(mark["at"]):
         stretch += (segs[-1][1] - segs[-1][0]).total_seconds()
     waiting_s = sum(max(0.0, (min(b, now) - max(a, start)).total_seconds()) for a, b in segs) + tail
@@ -383,7 +425,7 @@ def evaluate(campaign, state, items, shown, doc, now):
     root = campaign.get("under")
     if root:
         current = (set(leaves_under(items, root)) - set(campaign.get("excluded", []))
-                   - dropped)
+                   - dropped - set(state.get("decisions") or []))
         extra = sorted(current - launch)
     else:
         extra = []
@@ -447,8 +489,9 @@ def evaluate(campaign, state, items, shown, doc, now):
          "fired": cfg["waiting_on_user"] is not None and stretch / 3600.0 > cfg["waiting_on_user"],
          "value": round(stretch / 3600.0, 1), "limit": cfg["waiting_on_user"],
          "evidence": "campaign waiting on the user %.1fh: %s" % (stretch / 3600.0, "; ".join(
-             "%s: %s" % (by_title(d), ((shown_by.get(d) or {}).get("notes") or "no notes").strip())
-             for d in ws["decisions"]))},
+             "%s%s: %s" % (by_title(d), " (uncited parked item %s)" % d if d in ws["uncited"] else "",
+                           ((shown_by.get(d) or {}).get("notes") or "no notes").strip())
+             for d in ws["on"]))},
         {"name": "unverified_done", "enabled": bool(cfg["unverified_done"]),
          "fired": bool(cfg["unverified_done"]) and bool(unverified),
          "value": len(unverified), "limit": 0,
@@ -464,7 +507,8 @@ def evaluate(campaign, state, items, shown, doc, now):
         "last_done_age_s": int((now - last_done).total_seconds()) if last_done else None,
         "elapsed_h": round(elapsed_h, 2), "active_h": round(active_h, 2),
         "waiting_h": round(waiting_h, 2), "waiting_unexplained_h": round(unexplained_h, 2),
-        "waiting_now": ws["waiting"], "waiting_on": ws["decisions"], "estimate_h": [lo, hi],
+        "waiting_now": ws["waiting"], "waiting_on": ws["on"] if ws["waiting"] else ws["decisions"],
+        "waiting_on_uncited": ws["uncited"], "estimate_h": [lo, hi],
         "over_high": active_h > hi and done < len(total_ids),
         "scope_added": len(extra), "scope_added_unapproved": len(unapproved),
         "scope_growth_pct": round(growth_pct, 1), "added_tasks": extra,
@@ -623,6 +667,9 @@ def snapshot(d, now):
     items = item_list()
     ids = set(campaign["tasks"]) | set(campaign.get("approved_added", []))
     ids |= {ts["pauses"][-1]["on"] for ts in (state.get("tasks") or {}).values() if ts.get("pauses")}
+    ws = wait_status(campaign, state, items)
+    ids |= set(state.get("decisions") or []) | set(ws["uncited"]) | set((state.get("wait_mark") or {}).get("on") or [])
+    ids &= {i["id"] for i in items}  # an id deleted from Acyclic would make `item show` fail
     return campaign, state, items, evaluate(campaign, state, items, item_show(sorted(ids)), doctor(), now)
 
 
@@ -669,6 +716,21 @@ def cmd_mark(a, d, now):
     record_write(campaign, state, item_list(), now)
     write_json(os.path.join(d, STATE_FILE), state)
     print("marked: %s" % ("waiting" if state["wait_mark"]["waiting"] else "active"))
+
+
+def cmd_decision(a, d, now):
+    campaign = read_json(os.path.join(d, CAMPAIGN_FILE), "campaign")
+    items = item_list()
+    did = _task(items, a.item)
+    if did in live_tasks(campaign):
+        raise ScoreboardError("%s is a campaign task, not a decision the user owes" % did)
+    state = load_state(d)
+    known = state.setdefault("decisions", [])
+    if did not in known:
+        known.append(did)
+    record_write(campaign, state, items, now)
+    write_json(os.path.join(d, STATE_FILE), state)
+    print("decision: %s" % did)
 
 
 def cmd_task_clock(a, d, now):
@@ -740,6 +802,8 @@ def build_parser():
     fc.add_argument("task")
     fc.add_argument("time", help="RFC 3339, or HH:MM UTC (the next such time)")
     sub.add_parser("mark")
+    dc = sub.add_parser("decision")
+    dc.add_argument("item", help="the open decision item the user owes")
     for name in ("task-start", "task-pause", "task-resume"):
         tp = sub.add_parser(name)
         tp.add_argument("task")
@@ -753,7 +817,8 @@ def main(argv=None):
     a = build_parser().parse_args(argv)
     now = parse_time(a.now) if a.now else dt.datetime.now(dt.timezone.utc)
     try:
-        {"freeze": cmd_freeze, "show": cmd_show, "forecast": cmd_forecast, "mark": cmd_mark}.get(
+        {"freeze": cmd_freeze, "show": cmd_show, "forecast": cmd_forecast, "mark": cmd_mark,
+         "decision": cmd_decision}.get(
             a.cmd, cmd_task_clock)(a, a.campaign, now)
     except ScoreboardError as e:
         print("scoreboard: %s" % e, file=sys.stderr)
