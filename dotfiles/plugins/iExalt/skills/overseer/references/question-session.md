@@ -20,9 +20,11 @@ back. It blocks while the user decides, and you keep working. Name it
   `paseo agent send --no-wait --if-running queue --no-notify-on-finish <your agent ID> "<answer>"`.
   Put questions that come due together in one session; its dialog takes up to
   four.
-- **Archive** it once its answer arrives. Its last action is
-  `paseo workspace archive <workspace-id>` on its own workspace, which keeps
-  the directory. Then check it with `paseo agent status <agent-id>`, and if
+- **Archive** it once its answer arrives. Its last action archives its own
+  workspace, which keeps the directory. Paseo gives an agent no workspace
+  variable, so put this exact command in its prompt rather than a placeholder:
+  `"$PASEO_CLI" workspace archive "$("$PASEO_CLI" agent status "$PASEO_AGENT_ID" --json | jq -r .snapshot.workspaceId)"`.
+  Then check it with `paseo agent status <agent-id>`, and if
   Paseo reopened it, run `paseo agent archive --force <agent-id>`. If the user
   answers some other way, archive it yourself.
 - **Fallback:** if a question session can't be launched or its dialog never
