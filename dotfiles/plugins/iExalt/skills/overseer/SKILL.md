@@ -503,6 +503,10 @@ one-line statement of what it settled, the threads it binds, whose call it
 was (the user's or yours) and, once replaced, the decision that superseded
 it; the plan's design-decision IDs, such as D3; thread and workstream
 names; and any shorthand you coin.
+Write the glossary as Markdown tables, never bullet lists: one table per kind
+of label, with threads and workstreams, tasks, design IDs and shorthand each in
+their own table. Give decisions one table per thread prefix, with the columns
+ID | Decision | Whose call | Binds | Replaced / replaces.
 Add the entry before the label first reaches the user, and copy the gist from
 it rather than paraphrasing. In chat, a decision number or ID never stands
 alone: write it with its gist on every mention, as in "CLI-4 (test
