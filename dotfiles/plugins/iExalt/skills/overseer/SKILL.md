@@ -80,7 +80,8 @@ reviewer a worker starts inside its own session is part of that worker's job.
 
 Keep a checklist of the threads you oversee, each with its worker and state:
 waiting, ready, running, awaiting a human, blocked, done. Keep it in the run
-log, `OVERSEER_RUN.md` in the run checkout (see "Keep the user in the loop").
+log, `OVERSEER_RUN.md` in the run checkout, and keep the labels you use in
+`OVERSEER_GLOSSARY.md` beside it (see "Keep the user in the loop").
 
 ## Choose autonomy and establish authority
 
@@ -452,7 +453,9 @@ When a request for a human comes due, whether planned or raised by a worker:
    and for which thread or item, as `working-conventions` › Record the user's
    decisions describes. Number each decision per thread, ask the worker to
    acknowledge it by number and to drop any earlier answer it replaces, and
-   treat it as delivered only once acknowledged.
+   treat it as delivered only once acknowledged. Give a decision sent to
+   several threads one number, and add it to the glossary (see "Keep the
+   user in the loop") before you send it.
 
 Answer a question from the user before anything else.
 
@@ -489,6 +492,20 @@ which the digest links: launches, acknowledgements, reviews, repair rounds and
 their trend, recoveries, judgment calls, and each worker's evidence. Don't
 commit it. Leave the three-tiered-plan revision log to what that skill assigns it.
 
+Keep a glossary, `OVERSEER_GLOSSARY.md` beside the run log and also
+uncommitted, so the user can look up any label instead of scrolling back.
+Give every label you use in chat an entry: each decision number with a
+one-line statement of what it settled, the threads it binds, whose call it
+was (the user's or yours) and, once replaced, the decision that superseded
+it; the plan's design-decision IDs, such as D3; thread and workstream
+names; and any shorthand you coin.
+Add the entry before the label first reaches the user, and copy the gist from
+it rather than paraphrasing. In chat, a decision number or ID never stands
+alone: write it with its gist on every mention, as in "CLI-4 (test
+hardlinks across /raid directories)", never a bare "CLI-4" or "(CLI-2, ALL-4)". Cite a decision
+number only after the user has seen that decision in full, in a decision
+dialog or a "Decisions I made" entry; otherwise state it in full first.
+
 The digest looks like this. Line 1 is pasted verbatim from
 `scoreboard.py show --digest`; the rest are yours, and a line with nothing to
 say is left out:
@@ -498,7 +515,7 @@ say is left out:
 Waiting on you: <item> (since 14:27)
 Blocked: <thread> (<why>)
 Running: <threads> · next done expected: <thread> ~16:00
-Log: <path to OVERSEER_RUN.md>
+Log: <path to OVERSEER_RUN.md> · Glossary: <path to OVERSEER_GLOSSARY.md>
 ```
 
 Record the "next done expected" with `scoreboard.py forecast`. Write for a reader
