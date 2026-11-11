@@ -136,6 +136,30 @@ launch. To make a Paseo subagent independent, run
 `paseo agent detach <id>`; never edit its labels. If Paseo drops
 `--relationship detached`, launch, then detach.
 
+## Answer a worker's question
+
+When a worker asks for input, inspect the pending request's
+`input.questions` and answer every question by its displayed `header`. Pass a
+nonblank string for each header: the chosen option label or free text. Use the
+normalized `updatedInput` shape Paseo expects:
+
+```bash
+paseo permit allow <agent> <request> --input \
+  '{"answers":{"Question 1":"chosen label or free text"}}'
+```
+
+Do not send Codex's raw `{id:{answers:[]}}` payload or a flat map keyed by
+question ID. Never silently choose the first option. If a malformed answer is
+rejected, the request should remain pending; correct the payload and retry.
+If `paseo permit ls` shows no request, inspect the worker's current state
+before retrying because another answer may have completed concurrently.
+
+If the installed daemon predates async-question support, or `permit allow`
+cannot safely answer the request, check `paseo send --help` and steer the
+worker with `paseo send <agent> --behavior steer --prompt 'answer'`. Verify
+that the worker received the message. A steer may not resolve the pending
+async question, so do not report it as cleared without checking the request.
+
 ## 7. Tear down
 
 You own every workspace you created in step 3; end it with its agents, unless
