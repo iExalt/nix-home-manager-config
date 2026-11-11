@@ -61,6 +61,12 @@ helper tests alone do not cover orchestration. Before a consequential rollout,
 review the actual command or script, canary target, stop condition, and recovery
 plan. A concurrency limit does not establish a canary or stop-on-failure boundary.
 
+For a process launched under another identity or a reduced capability set, verify
+the order of directory access, ID changes and exec in a minimal native probe. If
+the target profile is unavailable, inspect the runtime's startup implementation
+and keep native verification pending; mocked subprocess arguments do not establish
+that ordering.
+
 Classify dependencies together:
 
 - Routine, reversible work may build on an implemented but unaccepted increment.
