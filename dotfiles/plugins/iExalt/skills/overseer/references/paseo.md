@@ -122,12 +122,17 @@ have succeeded.
 - **Address:** reach every agent by its Paseo agent ID, which survives a
   restart, with
   `paseo agent send --no-wait --notify-on-finish --if-running queue <agent-id> "[overseer] <message>"`;
-  a queued message runs once the receiver is idle, so it never cuts into a
-  turn. Start every message with `[overseer]`; Paseo also marks it as another
-  agent's message, so never word it as if the user wrote it. Give workers your agent ID in the brief. They send to you the same
-  way, adding `--no-notify-on-finish` so your turns don't wake them. Never
-  send with `--if-running interrupt`: it cancels the receiver's turn in
-  flight and its subagents.
+  a queued message runs only when the receiver's turn ends, so a busy worker's
+  missing acknowledgement means "still queued", not "lost". Use
+  `--if-running steer` for time-sensitive or superseding messages (a slot
+  handoff, a freed lock, a replacing instruction, an awaited answer): it
+  reaches the receiver at its next tool call without cancelling its turn.
+  Start every message with `[overseer]`; Paseo also marks it as another
+  agent's message, so never word it as if the user wrote it. Give workers your
+  agent ID in the brief. They send to you the same way, adding
+  `--no-notify-on-finish` so your turns don't wake them. Never send with
+  `--if-running interrupt`: it cancels the receiver's turn in flight and its
+  subagents.
 - **Watch:** Paseo notifies you once when a run you started with
   `paseo agent run` or `paseo agent send` finishes, errors or needs
   permission. Add no idle subscriptions on top. Whenever something wakes you,
