@@ -185,15 +185,43 @@ item or thread. A rule nobody asked them about is Proposed, not theirs.
 
 ## Repeated failure
 
-When the same failure returns after two repairs at the same gate, or each
-repair exposes a new failure in the same interaction, stop patching. Have the
-design reassessed (which code owns the behavior, which invariants hold, the
-simplest change that satisfies them) or escalate with the hypotheses ruled out
-and the next discriminating experiment. A contract may set a different
-threshold for its workload. Failures on a new increment start a new count.
-A review finding that returns after its fix follows Review loops instead.
-Passing local tests don't resolve a failing end-to-end reproducer, and an
-approach doesn't run past its agreed stop condition.
+Count failed attempts per outcome, not per blocker. An attempt is any run you
+expected to reach the outcome that fails, whether or not you change anything
+before the next run. The outcome is the end result the user or contract asked
+for, such as a booted guest, a published image or a passing suite, not a stage
+or gate on the way to it. Renaming, narrowing or splitting it into new
+increments, workers or slot grants doesn't reset the count. Record each failed
+attempt (outcome, failing gate, repair) in the progress record and any
+handoff. Runs you expect to fail, such as a red test written first, don't
+count.
+
+After two failed attempts at the same outcome, don't run a third until you
+have stepped back:
+
+1. Walk the whole procedure from start to outcome, not only the last blocker
+   or two. List everything it depends on: binaries, paths, layouts,
+   permissions, users and groups, devices, resources, network routes, DNS,
+   credentials, input artifacts, leftover state and stated assumptions.
+2. Check each dependency against the real artifacts and environment, offline
+   or read-only where you can. Record every potential blocker, including those
+   no attempt has reached yet.
+3. Fix the blockers in scope as one batch, escalate the rest, and turn the
+   checks into a preflight that reports every problem at once before the next
+   attempt.
+4. Run the next attempt. If it fails, say why the walk missed the cause. For
+   a live bring-up, build or rollout, escalate with the walk, the miss and the
+   next discriminating experiment before trying again. For a cheap local
+   suite, step back again, and escalate if the attempt after that fails too.
+
+Size the walk to what an attempt costs: for a cheap local suite, read every
+failure and the causes they share before rerunning; for a live bring-up,
+build or rollout, walk the whole path. When the same failure returns after two
+repairs, the step-back must also reassess the design: which code owns the
+behavior, which invariants hold, and the simplest change that satisfies them.
+A contract may set a different threshold. A review finding that returns after
+its fix follows Review loops instead. Passing local tests don't resolve a
+failing end-to-end reproducer, and an approach doesn't run past its agreed
+stop condition.
 
 ## Evidence
 
