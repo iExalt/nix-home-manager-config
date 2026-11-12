@@ -73,7 +73,8 @@ revision log, worker reports or briefs.
 The default tripwires are: campaign active time (`active_h`, wall-clock minus
 waiting on the user, not elapsed) past the high end of its estimate; a
 running task past the high end of its own estimate (clock from worker launch,
-excluding time waiting on the user); scope grown more than 25% since launch
+excluding time waiting on the user or on another campaign task, which counts only
+while Acyclic reports the task `waiting`: a claimed task's waits never do); scope grown more than 25% since launch
 without a recorded user approval; the overseer's "next done" forecast missed
 twice; a task marked done without verified merge evidence; a task ready but
 not launched for more than 1 h (`idle_ready`); the campaign waiting on the

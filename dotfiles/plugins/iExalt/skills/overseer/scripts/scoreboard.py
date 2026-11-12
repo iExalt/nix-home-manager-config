@@ -29,6 +29,16 @@ task is paused on an open decision item it waits for. A task never launched need
 pause: it waits when everything it waits for is an open decision (cited by a pause or
 recorded with `decision`) or a task that is itself waiting. A parked item outside the
 campaign's tasks also counts as a decision, flagged as uncited until it is recorded.
+
+A started task's clock (`running_h`) also excludes its blocked time, `blocked_h`: the
+intervals where Acyclic reports the task `waiting` and every item it waits on, directly
+or through waiting items, is an unfinished campaign task or a valid decision, with at
+least one campaign task among them (`blocked_on` lists those campaign tasks now). It is
+measured like the campaign wait, at the same writes, and a blocked interval ends at the
+`done_at` of the blocking task. Only `waiting` readiness counts: Acyclic reports a
+claimed task's waits only as `links.waits_for`, which also lists done items and isn't in
+`item list`, and a claim means a worker holds the task, so claimed tasks keep their clock.
+Campaign `active_h` and the campaign wait do not change with it.
 """
 
 import argparse
@@ -240,6 +250,56 @@ def pause_valid(state, by_id, tid):
     return bool(d) and d.get("state") not in ("done", "canceled") and d["id"] in waits_closure(by_id, tid)
 
 
+def readiness_of(by_id, tid):
+    return ((by_id.get(tid) or {}).get("readiness") or {}).get("readiness")
+
+
+def decisions_owed(live, state, by_id):
+    """Open items the user owes: cited by a valid pause of an open task, or recorded with `decision`."""
+    open_tasks = [t for t in sorted(live) if readiness_of(by_id, t) not in IGNORED_READINESS]
+    decisions = {pause_of(state, t)["on"] for t in open_tasks if pause_valid(state, by_id, t)}
+    decisions |= {k for k in state.get("decisions") or []
+                  if k not in live and k in by_id and by_id[k].get("state") not in ("done", "canceled")}
+    return decisions
+
+
+def task_blockers(campaign, state, by_id, tid, decisions):
+    """The unfinished live campaign tasks that block `tid` now, or [] when it isn't blocked on them.
+
+    Blocked: Acyclic reports `tid` waiting, and every item it waits on, directly or through waiting
+    items, is an unfinished campaign task or a valid decision, with at least one campaign task. Says
+    nothing about whether `tid` runs; the clock also requires that. Claimed tasks are never blocked
+    here (see the module docstring)."""
+    live = live_ids(campaign)
+    if tid not in live or readiness_of(by_id, tid) != "waiting":
+        return []
+    blockers = []
+    for k in waits_closure(by_id, tid):
+        if k in live and k in by_id and by_id[k].get("state") not in ("done", "canceled"):
+            blockers.append(k)
+        elif k in decisions or (k in by_id and k not in live and by_id[k].get("state") == "parked"):
+            continue  # a valid decision, or a parked outside item the campaign wait treats as one
+        else:
+            return []
+    return sorted(blockers)
+
+
+def is_running(ts):
+    segs = (ts or {}).get("segments") or []
+    return bool(segs) and segs[-1][1] is None
+
+
+def blocked_seconds(ts, now, tail):
+    """Blocked time inside the task's running segments; `tail` is the open blocked interval, if any."""
+    running = [[parse_time(a), parse_time(b) if b else now] for a, b in (ts or {}).get("segments", [])]
+    blocked = merged([[parse_time(a), parse_time(b)] for a, b in (ts or {}).get("blocks", [])] + tail)
+    total = 0.0
+    for rs, re_ in running:
+        for bs, be in blocked:
+            total += max(0.0, (min(re_, be) - max(rs, bs)).total_seconds())
+    return total
+
+
 def wait_status(campaign, state, items):
     """Is the campaign waiting on the user right now, and which tasks sit ready but never launched."""
     by_id = {i["id"]: i for i in items}
@@ -247,7 +307,7 @@ def wait_status(campaign, state, items):
     tasks = state.get("tasks") or {}
 
     def rd(tid):
-        return ((by_id.get(tid) or {}).get("readiness") or {}).get("readiness")
+        return readiness_of(by_id, tid)
 
     def on_user(tid, seen=()):
         if tid in seen or tid not in live:
@@ -276,10 +336,7 @@ def wait_status(campaign, state, items):
     open_tasks = [t for t in sorted(live) if rd(t) not in IGNORED_READINESS]
     # a thread claim makes its later tasks `claimed` while the overseer holds them back, so only `ready` is idle
     idle = [t for t in open_tasks if rd(t) == "ready" and not (tasks.get(t) or {}).get("segments")]
-    paused = [t for t in open_tasks if pause_valid(state, by_id, t)]
-    decisions = {pause_of(state, t)["on"] for t in paused}  # open items the user owes, cited by a valid pause
-    decisions |= {k for k in state.get("decisions") or []  # or recorded with `decision`
-                  if k not in live and k in by_id and by_id[k].get("state") not in ("done", "canceled")}
+    decisions = decisions_owed(live, state, by_id)
     uncited, relied = set(), set()
     flags = [on_user(t) for t in open_tasks]  # no short circuit: collect every item relied on
     waiting = bool(open_tasks) and all(flags)
@@ -297,16 +354,39 @@ def wait_closed_at(mark, rows, now):
     return min(min(times), now) if times else None
 
 
+def task_closed_at(mark, rows, now):
+    """When a blocked interval ended because its blockers closed: the latest of their done_at, capped
+    at now, but only once every blocker is done. A task stays blocked until its last blocker finishes;
+    while one is still open, no time after the last write counts."""
+    on = set(mark.get("on") or [])
+    done = {r["id"]: parse_time(r["done_at"]) for r in rows
+            if r.get("id") in on and r.get("state") == "done" and r.get("done_at")}
+    if not on or set(done) != on:
+        return None
+    return min(max(done.values()), now)
+
+
 def record_write(campaign, state, items, now):
-    """Fold the current wait status into the state at an overseer write."""
+    """Fold the current wait status into the state at an overseer write: the campaign's wait (marked by
+    `wait_mark`), and each started task's blocked intervals (`blocks`, marked by its `block_mark`)."""
     ws = wait_status(campaign, state, items)
+    by_id = {i["id"]: i for i in items}
+    tasks = state.get("tasks") or {}
+    decisions = set(ws["decisions"])
+    now_blocked = {tid: task_blockers(campaign, state, by_id, tid, decisions) if is_running(ts) else []
+                   for tid, ts in tasks.items()}
     mark = state.get("wait_mark")
+    closing = set(mark.get("on") or []) if mark and mark["waiting"] and not ws["waiting"] else set()
+    for tid, ts in tasks.items():
+        bm = ts.get("block_mark") or {}
+        if bm.get("blocked") and not now_blocked[tid]:
+            closing |= set(bm.get("on") or [])
+    # the blockers that closed decide where a wait ends; an id deleted from Acyclic would fail `item show`
+    rows = item_show(sorted(k for k in closing if k in by_id))
     end = None
     if mark and mark["waiting"]:
         # still waiting: up to now; the wait ended: up to when its decisions closed, if they did
-        known = {i["id"] for i in items}  # an id deleted from Acyclic would make `item show` fail
-        end = now if ws["waiting"] else wait_closed_at(
-            mark, item_show(sorted(k for k in mark.get("on") or [] if k in known)), now)
+        end = now if ws["waiting"] else wait_closed_at(mark, rows, now)
     if end and end > parse_time(mark["at"]):
         segs = state.setdefault("wait_segments", [])
         if segs and segs[-1][1] == mark["at"]:
@@ -316,6 +396,18 @@ def record_write(campaign, state, items, now):
     state["wait_mark"] = {"at": iso(now), "waiting": ws["waiting"]}
     if ws["waiting"]:
         state["wait_mark"]["on"] = ws["on"]
+    for tid, ts in tasks.items():
+        bm = ts.get("block_mark") or {}
+        end = None
+        if bm.get("blocked"):
+            end = now if now_blocked[tid] else task_closed_at(bm, rows, now)
+        if end and end > parse_time(bm["at"]):
+            blocks = ts.setdefault("blocks", [])
+            if blocks and blocks[-1][1] == bm["at"]:
+                blocks[-1][1] = iso(end)
+            else:
+                blocks.append([bm["at"], iso(end)])
+        ts["block_mark"] = {"at": iso(now), "blocked": bool(now_blocked[tid]), "on": now_blocked[tid]}
     rs = state.setdefault("ready_since", {})
     for t in ws["idle"]:
         rs.setdefault(t, iso(now))
@@ -344,6 +436,7 @@ def evaluate(campaign, state, items, shown, doc, now):
 
     shown_by = {s["id"]: s for s in shown}
     by_id = {i["id"]: i for i in items}
+    decisions = decisions_owed(live_ids(campaign), state, by_id)
     unmerged = doc["unmerged"]
     unchecked = doc["unchecked_commits"]
 
@@ -380,8 +473,21 @@ def evaluate(campaign, state, items, shown, doc, now):
         ts = (state.get("tasks") or {}).get(tid)
         est = (campaign.get("task_estimates") or {}).get(tid)
         row["estimate_h"] = est
+        blockers = [] if it.get("state") in ("done", "canceled") else task_blockers(
+            campaign, state, by_id, tid, decisions)
+        row["blocked_on"] = blockers
+        row["blocked_h"] = 0.0
         if ts:
-            row["running_h"] = round(running_seconds(ts, now) / 3600.0, 2)
+            # the open blocked interval counts while the task still runs blocked, as the campaign's tail does
+            tail = []
+            bm = ts.get("block_mark") or {}
+            if bm.get("blocked"):
+                end = now if blockers and is_running(ts) else task_closed_at(bm, shown, now)
+                if end and end > parse_time(bm["at"]):
+                    tail = [[parse_time(bm["at"]), end]]
+            blocked_s = blocked_seconds(ts, now, tail)
+            row["blocked_h"] = round(blocked_s / 3600.0, 2)
+            row["running_h"] = round((running_seconds(ts, now) - blocked_s) / 3600.0, 2)
             row["paused"] = bool(ts["segments"]) and ts["segments"][-1][1] is not None
             first = parse_time(ts["segments"][0][0])
             row["paused_h"] = round(max(0.0, (now - first).total_seconds() - running_seconds(ts, now)) / 3600.0, 2)
@@ -670,6 +776,7 @@ def snapshot(d, now):
     ids |= {ts["pauses"][-1]["on"] for ts in (state.get("tasks") or {}).values() if ts.get("pauses")}
     ws = wait_status(campaign, state, items)
     ids |= set(state.get("decisions") or []) | set(ws["uncited"]) | set((state.get("wait_mark") or {}).get("on") or [])
+    ids |= {k for ts in (state.get("tasks") or {}).values() for k in (ts.get("block_mark") or {}).get("on") or []}
     ids &= {i["id"] for i in items}  # an id deleted from Acyclic would make `item show` fail
     return campaign, state, items, evaluate(campaign, state, items, item_show(sorted(ids)), doctor(), now)
 
