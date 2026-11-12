@@ -72,6 +72,10 @@ the thread, then the terms below, filled in for the worker:
   `<approved infrastructure and its time cap, or none>`. This reconciles with
   the measurement term below: that term is the only approved infrastructure
   unless the line above names more.
+  Review code that ships once per change, preserving `continuous-peer-review`'s
+  review and acceptance gates for every changed revision. Operational runs of
+  an unchanged, already-accepted procedure need no new review round; send the
+  reviewer the receipts afterwards.
 - When the thread's outcome is a measured improvement, build the measurement
   method as its own chunk, capped at `<harness time cap, default a third of
   the thread estimate>`. Validate the method only as far as the decision

@@ -382,6 +382,10 @@ after re-sequencing, waits until they do. One thread's agreed scope never
 covers another thread, and neither does one thread's answer: when the user
 answers for one thread, tell only that thread, and ask again for the others.
 
+A check or gate you add mid-run, such as a security audit, gets a time cap
+and its simplest credible method up front: a standard tool used as documented.
+Past the cap, simplify or escalate instead of building bespoke tooling.
+
 Before reporting an acceptance result or using it to unblock a dependent,
 require the finalized handoff the worker brief's reporting term lists
 ([assets/worker-brief.md](assets/worker-brief.md)), and check the claim
