@@ -682,6 +682,90 @@ class Waiting(unittest.TestCase):
         self.assertEqual((c["tripwires"]["idle_ready"], c["tripwires"]["waiting_on_user"]), (2, None))
 
 
+class BlockedOnTasks(unittest.TestCase):
+    """A started task waiting on unfinished campaign tasks stops its clock; a wait on anything else doesn't."""
+
+    def setUp(self):
+        self.d = tempfile.mkdtemp()
+        self.items = [ITEMS[0], rd(item("a"), "waiting", ["c"]), rd(item("b"), "ready"),
+                      rd(item("c"), "ready"), rd(item("d"), "ready")]
+        self.shows = {}
+        p = [mock.patch.object(SB, "item_list", lambda: self.items),
+             mock.patch.object(SB, "item_show", lambda ids: [self.shows.get(i, shown(i, state="open")) for i in ids]),
+             mock.patch.object(SB, "doctor", lambda: DOC_OK)]
+        for x in p:
+            x.start()
+            self.addCleanup(x.stop)
+        self.assertEqual(self.go(0, "freeze", "--name", "ci", "--goal", "g", "--under", "EPIC", "--estimate", "8-12"), 0)
+
+    def go(self, h, *args):
+        return SB.main(["--campaign", self.d, "--now", iso(h)] + list(args))
+
+    def state(self):
+        return SB.read_json(os.path.join(self.d, "scoreboard-state.json"), "s")
+
+    def show(self, h):
+        import contextlib
+        import io
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            self.assertEqual(SB.main(["--campaign", self.d, "--now", iso(h), "show", "--json"]), 0)
+        return SB.json.loads(out.getvalue())
+
+    def test_started_task_waiting_on_open_campaign_task_stops_and_resumes_at_its_done_at(self):
+        self.assertEqual(self.go(0, "task-start", "a"), 0)
+        self.assertEqual(self.go(2, "mark"), 0)
+        r = self.show(2)  # c is still open: the blocked interval so far counts, unwritten
+        self.assertEqual(r["tasks"]["a"]["running_h"], 0.0)
+        self.assertEqual(r["tasks"]["a"]["blocked_h"], 2.0)
+        self.assertEqual(r["tasks"]["a"]["blocked_on"], ["c"])
+        # c closes at 3h and a is no longer waiting; nothing is written until 6h
+        self.items[1] = rd(item("a"), "ready")
+        self.items[3] = rd(item("c", state="done"), "done")
+        self.shows["c"] = shown("c", done_at=iso(3))
+        r = self.show(6)
+        self.assertEqual(r["tasks"]["a"]["running_h"], 3.0)  # resumes at c's done_at, 3h, not at the write
+        self.assertEqual(r["tasks"]["a"]["blocked_h"], 3.0)
+        self.assertEqual(r["tasks"]["a"]["blocked_on"], [])
+        self.assertEqual(self.go(6, "mark"), 0)
+        self.assertEqual(self.state()["tasks"]["a"]["blocks"], [[iso(0), iso(3)]])
+
+    def test_started_task_waiting_on_outside_item_that_is_no_decision_still_accrues(self):
+        self.items.append(item("X", parent="INIT"))  # open, outside the campaign, not a decision
+        self.items[1] = rd(item("a"), "waiting", ["X"])
+        self.assertEqual(self.go(0, "task-start", "a"), 0)
+        self.assertEqual(self.go(2, "mark"), 0)
+        r = self.show(4)
+        self.assertEqual(r["tasks"]["a"]["running_h"], 4.0)
+        self.assertEqual(r["tasks"]["a"]["blocked_h"], 0.0)
+        self.assertEqual(r["tasks"]["a"]["blocked_on"], [])
+
+    def test_campaign_active_time_is_unchanged_by_a_task_waiting_on_campaign_tasks(self):
+        self.assertEqual(self.go(0, "task-start", "a"), 0)
+        self.assertEqual(self.go(2, "mark"), 0)
+        r = self.show(8)  # c stays open: a is blocked 8h, past the 6h user tripwire, but the campaign is active
+        self.assertEqual((r["active_h"], r["elapsed_h"], r["waiting_h"], r["waiting_now"]), (8.0, 8.0, 0.0, False))
+        self.assertNotIn("waiting_on_user", {t["name"] for t in r["tripwires"] if t["fired"]})
+        self.assertEqual(r["tasks"]["a"]["blocked_h"], 8.0)
+
+    def test_claimed_task_with_waits_for_links_is_not_blocked(self):
+        # Acyclic shows a claimed task's waits only in links.waits_for, so only `waiting` readiness counts
+        claimed = rd(item("a"), "claimed")
+        claimed["links"] = {"waits_for": ["c"]}
+        self.items[1] = claimed
+        self.assertEqual(self.go(0, "task-start", "a"), 0)
+        self.assertEqual(self.go(2, "mark"), 0)
+        r = self.show(4)
+        self.assertEqual(r["tasks"]["a"]["running_h"], 4.0)
+        self.assertEqual(r["tasks"]["a"]["blocked_on"], [])
+        self.assertEqual(r["tasks"]["a"]["blocked_h"], 0.0)
+
+    def test_blocked_through_a_waiting_campaign_task(self):
+        self.items[3] = rd(item("c"), "waiting", ["d"])  # a waits on c, and c waits on d
+        self.assertEqual(self.go(0, "task-start", "a"), 0)
+        self.assertEqual(self.show(1)["tasks"]["a"]["blocked_on"], ["c", "d"])
+
+
 class Acyclic(unittest.TestCase):
     def test_cli_error_and_bad_schema_fail_loudly(self):
         bad = mock.Mock(stdout='{"ok": false, "error": {"code": "not-set-up", "message": "no tracker"}}',
