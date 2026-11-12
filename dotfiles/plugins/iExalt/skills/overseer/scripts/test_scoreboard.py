@@ -749,8 +749,9 @@ class BlockedOnTasks(unittest.TestCase):
         self.assertEqual(r["tasks"]["a"]["blocked_h"], 8.0)
 
     def test_claimed_task_with_waits_for_links_is_not_blocked(self):
-        # Acyclic shows a claimed task's waits only in links.waits_for, so only `waiting` readiness counts
-        claimed = rd(item("a"), "claimed")
+        # Acyclic shows a claimed task's waits only in links.waits_for, so only `waiting` readiness counts;
+        # the fixture also carries readiness.waiting, so the readiness guard is what keeps it unblocked
+        claimed = rd(item("a"), "claimed", ["c"])
         claimed["links"] = {"waits_for": ["c"]}
         self.items[1] = claimed
         self.assertEqual(self.go(0, "task-start", "a"), 0)
@@ -764,6 +765,61 @@ class BlockedOnTasks(unittest.TestCase):
         self.items[3] = rd(item("c"), "waiting", ["d"])  # a waits on c, and c waits on d
         self.assertEqual(self.go(0, "task-start", "a"), 0)
         self.assertEqual(self.show(1)["tasks"]["a"]["blocked_on"], ["c", "d"])
+
+    def test_chain_blocked_interval_ends_at_the_last_blocker_done_at(self):
+        # a waits on c, and c waits on d: a stays blocked until c, its last blocker, is done
+        self.items[3] = rd(item("c"), "waiting", ["d"])
+        self.assertEqual(self.go(0, "task-start", "a"), 0)
+        self.assertEqual(self.go(1, "mark"), 0)
+        self.assertEqual(self.state()["tasks"]["a"]["block_mark"]["on"], ["c", "d"])
+        # d closes at 3h and c becomes ready; a still waits on c. c closes at 5h; nothing is written until 6h
+        self.items[4] = rd(item("d", state="done"), "done")
+        self.items[3] = rd(item("c"), "ready")
+        self.shows["d"] = shown("d", done_at=iso(3))
+        self.items[3] = rd(item("c", state="done"), "done")
+        self.shows["c"] = shown("c", done_at=iso(5))
+        self.items[1] = rd(item("a"), "ready")
+        r = self.show(6)
+        self.assertEqual((r["tasks"]["a"]["running_h"], r["tasks"]["a"]["blocked_h"]), (1.0, 5.0))
+        self.assertEqual(self.go(6, "mark"), 0)
+        self.assertEqual(self.state()["tasks"]["a"]["blocks"], [[iso(0), iso(5)]])
+
+    def test_blocks_stop_at_pause_restart_at_resume_and_are_never_subtracted_twice(self):
+        self.items[1] = rd(item("a"), "waiting", ["c", "D"])  # blocked by campaign task c; paused on decision D
+        self.items.append(item("D", parent="INIT", state="parked"))
+        self.assertEqual(self.go(0, "task-start", "a"), 0)
+        self.assertEqual(self.go(1, "mark"), 0)
+        self.assertEqual(self.go(2, "task-pause", "a", "--on", "D"), 0)  # blocked [0,2] while running, then paused
+        self.assertEqual(self.state()["tasks"]["a"]["blocks"], [[iso(0), iso(2)]])
+        r = self.show(3)  # paused: no blocked time is added, and none is taken from the pause
+        self.assertEqual((r["tasks"]["a"]["running_h"], r["tasks"]["a"]["blocked_h"]), (0.0, 2.0))
+        self.assertEqual(self.go(4, "task-resume", "a"), 0)  # the pause's write saw no block, so 2..4 doesn't bridge
+        self.assertEqual(self.go(5, "mark"), 0)  # blocked again from 4
+        self.assertEqual(self.state()["tasks"]["a"]["blocks"], [[iso(0), iso(2)], [iso(4), iso(5)]])
+        self.shows["c"] = shown("c", done_at=iso(6))  # c closes at 6h; the block runs to there
+        self.items[3] = rd(item("c", state="done"), "done")
+        r = self.show(7)  # running 0-2 blocked, 4-7 running 6-7 only
+        self.assertEqual((r["tasks"]["a"]["running_h"], r["tasks"]["a"]["blocked_h"]), (1.0, 4.0))
+
+
+class StoredBlocks(unittest.TestCase):
+    """The clock as the state stores it: blocked time counts only inside running segments."""
+
+    ITEMS_A_WAITS_C = [ITEMS[0], rd(item("a"), "waiting", ["c"]), item("b"), rd(item("c"), "ready"), item("d")]
+
+    def test_stored_blocks_outside_running_segments_never_reduce_running_time(self):
+        # blocks normally never overlap a pause; if one did, only its running part may be subtracted
+        st = {"tasks": {"a": {"segments": [[iso(0), iso(2)], [iso(4), None]], "blocks": [[iso(1), iso(5)]]}},
+              "forecasts": []}
+        r = run(state=st, items=self.ITEMS_A_WAITS_C, now=at(6))
+        self.assertEqual((r["tasks"]["a"]["running_h"], r["tasks"]["a"]["blocked_h"]), (2.0, 2.0))
+
+    def test_open_blocked_tail_does_not_count_while_the_task_is_paused(self):
+        # a stale mark, as if the pause's write were lost: the paused task's blocked tail must not extend
+        st = {"tasks": {"a": {"segments": [[iso(0), iso(2)]],
+                              "block_mark": {"at": iso(1), "blocked": True, "on": ["c"]}}}, "forecasts": []}
+        r = run(state=st, items=self.ITEMS_A_WAITS_C, now=at(6))
+        self.assertEqual((r["tasks"]["a"]["running_h"], r["tasks"]["a"]["blocked_h"]), (2.0, 0.0))
 
 
 class Acyclic(unittest.TestCase):

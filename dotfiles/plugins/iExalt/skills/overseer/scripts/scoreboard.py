@@ -354,6 +354,18 @@ def wait_closed_at(mark, rows, now):
     return min(min(times), now) if times else None
 
 
+def task_closed_at(mark, rows, now):
+    """When a blocked interval ended because its blockers closed: the latest of their done_at, capped
+    at now, but only once every blocker is done. A task stays blocked until its last blocker finishes;
+    while one is still open, no time after the last write counts."""
+    on = set(mark.get("on") or [])
+    done = {r["id"]: parse_time(r["done_at"]) for r in rows
+            if r.get("id") in on and r.get("state") == "done" and r.get("done_at")}
+    if not on or set(done) != on:
+        return None
+    return min(max(done.values()), now)
+
+
 def record_write(campaign, state, items, now):
     """Fold the current wait status into the state at an overseer write: the campaign's wait (marked by
     `wait_mark`), and each started task's blocked intervals (`blocks`, marked by its `block_mark`)."""
@@ -388,7 +400,7 @@ def record_write(campaign, state, items, now):
         bm = ts.get("block_mark") or {}
         end = None
         if bm.get("blocked"):
-            end = now if now_blocked[tid] else wait_closed_at(bm, rows, now)
+            end = now if now_blocked[tid] else task_closed_at(bm, rows, now)
         if end and end > parse_time(bm["at"]):
             blocks = ts.setdefault("blocks", [])
             if blocks and blocks[-1][1] == bm["at"]:
@@ -470,7 +482,7 @@ def evaluate(campaign, state, items, shown, doc, now):
             tail = []
             bm = ts.get("block_mark") or {}
             if bm.get("blocked"):
-                end = now if blockers and is_running(ts) else wait_closed_at(bm, shown, now)
+                end = now if blockers and is_running(ts) else task_closed_at(bm, shown, now)
                 if end and end > parse_time(bm["at"]):
                     tail = [[parse_time(bm["at"]), end]]
             blocked_s = blocked_seconds(ts, now, tail)

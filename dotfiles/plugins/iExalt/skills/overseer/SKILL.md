@@ -238,9 +238,19 @@ never compute them yourself.
   **`decision <item>`** right after creating any decision item: it keeps the item out of scope growth and
   lets a task you never launched that waits on it count as waiting on the user. **`task-resume`** after. A task's clock excludes that wait. A task without a clock or estimate
   never trips the per-task tripwire.
-  When a running task waits on another campaign task (`waits-for` in Acyclic),
-  its clock pauses until that task is done, the same as a pause on the user;
-  only time the task can progress counts against its estimate.
+  A running task that Acyclic reports `waiting` on other campaign tasks is blocked,
+  and its clock excludes that time, reported as `blocked_h`, not as a pause:
+  only time the task can progress counts against its estimate. The script counts it when:
+  - only a task Acyclic reports `waiting` counts; a claimed task never does, because
+    Acyclic shows its waits only as `links.waits_for`, so its clock keeps running;
+  - every transitive wait is an unfinished campaign task or a decision, with at least
+    one campaign task among them; a wait on anything else keeps the clock running;
+  - blocking is measured from the first overseer write that sees it blocked, and an
+    interval counts only when the writes at both ends saw it blocked. It ends at the
+    latest `done_at` of its blockers once all of them are done; until then, no time
+    after the last write counts;
+  - a running blocked task still keeps the campaign active, since it is not waiting on
+    the user.
 - **The campaign clock** is `active_h`: wall-clock since plan agreement minus waiting on the user, so the
   user's own delays don't count against the estimate. The script, not you, decides what is waiting. The
   campaign waits only when no task runs and every ready, claimed or dependency-blocked task is paused on a
