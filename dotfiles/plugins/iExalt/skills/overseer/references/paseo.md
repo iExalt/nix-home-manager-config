@@ -132,7 +132,10 @@ have succeeded.
   agent ID in the brief. They send to you the same way, adding
   `--no-notify-on-finish` so your turns don't wake them. Never send with
   `--if-running interrupt`: it cancels the receiver's turn in flight and its
-  subagents.
+  subagents. Never put message text inline in a shell-quoted argument: write it to a
+  file with a quoted heredoc (`<<'EOF'`) and pass `"$(cat file)"`, or pass it
+  as an argv element from Python without a shell. Backticks and `$()` in a
+  double-quoted body run as commands.
 - **Watch:** Paseo notifies you once when a run you started with
   `paseo agent run` or `paseo agent send` finishes, errors or needs
   permission. Add no idle subscriptions on top. Whenever something wakes you,

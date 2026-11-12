@@ -10,6 +10,10 @@ the thread, then the terms below, filled in for the worker:
 - You are `Worker: <subtask>`, one of several sessions run by
   `Overseer: <task>`. Reach it by `<tool and address>`. Nobody watches this
   session's chat.
+  Never put message text inline in a shell-quoted argument: write it to a
+  file with a quoted heredoc (`<<'EOF'`) and pass `"$(cat file)"`, or pass it
+  as an argv element from Python without a shell. Backticks and `$()` in a
+  double-quoted body run as commands.
 - You implement the thread directly and run `continuous-peer-review` with your
   own native reviewer. There are no pilots and no `keep-me-in-the-loop` phases.
   Models, per `working-conventions` › Model routing under an overseer: you run
