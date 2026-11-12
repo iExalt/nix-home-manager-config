@@ -112,6 +112,7 @@ have succeeded.
   user-facing updates. Keep `--notify-on-finish` on worker launches and
   messages so workers still wake the overseer. Never launch a worker into
   your own workspace.
+  Keep creation and parsing separate with `|| exit 1` on each; reject an empty or self workspace ID before launching.
 - **Launch:** start each worker as a top-level thread in its workspace, with
   the brief as its initial prompt:
   `paseo agent run --no-wait --relationship detached --notify-on-finish --workspace <workspace-id> --title "Worker: <subtask>" --provider codex --mode <mode> --model <GPT Sol> --thinking medium "<brief>"`,

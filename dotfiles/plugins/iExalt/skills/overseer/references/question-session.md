@@ -12,7 +12,23 @@ back. It blocks while the user decides, and you keep working. Name it
   local workspace on the run checkout, in the run project, even while workers
   use that checkout, and launch it with `--relationship detached` as for
   workers, so the user sees it as a thread of its own. Paseo flags it as
-  needing the user when its dialog opens.
+  needing the user when its dialog opens. Fill the placeholders, then run:
+
+  ```bash
+  self_json=$("$PASEO_CLI" agent status "$PASEO_AGENT_ID" --json) || exit 1
+  self_ws=$(jq -er '.snapshot.workspaceId | strings | select(length > 0)' <<< "$self_json") || exit 1
+  workspace_json=$("$PASEO_CLI" workspace create --isolation local --no-background \
+    --path "<run checkout>" --project "<run project>" --title "Question: <topic>" --json) || exit 1
+  ws=$(jq -er '.workspaceId | strings | select(length > 0)' <<< "$workspace_json") || exit 1
+  [ -n "$ws" ] && [ "$ws" != "$self_ws" ] || exit 1
+  # Apply paseo.md's "Validate every launch" workspace gate before running.
+  "$PASEO_CLI" agent run --no-wait --relationship detached --workspace "$ws" \
+    --title "Question: <topic>" --provider claude --model "<latest Sonnet>" \
+    --mode "<your mode>" --prompt-file "<finished dialog prompt file>"
+  ```
+
+  Read the agent back as "Validate every launch" requires. Never pipe workspace
+  creation into a parser: a parser's success can hide creation's failure.
 - **Prompt** it with the finished dialog: each question, its options with
   their consequences, and your recommendation. It calls `AskUserQuestion`
   with exactly those, does nothing else, and sends you the answer verbatim,
@@ -20,13 +36,36 @@ back. It blocks while the user decides, and you keep working. Name it
   `paseo agent send --no-wait --if-running queue --no-notify-on-finish <your agent ID> "<answer>"`.
   Put questions that come due together in one session; its dialog takes up to
   four.
-- **Archive** it once its answer arrives. Its last action archives its own
-  workspace, which keeps the directory. Paseo gives an agent no workspace
-  variable, so put this exact command in its prompt rather than a placeholder:
-  `"$PASEO_CLI" workspace archive "$("$PASEO_CLI" agent status "$PASEO_AGENT_ID" --json | jq -r .snapshot.workspaceId)"`.
-  Then check it with `paseo agent status <agent-id>`, and if
-  Paseo reopened it, run `paseo agent archive --force <agent-id>`. If the user
-  answers some other way, archive it yourself.
+- **Archive** it once its answer arrives. Put this exact footer in its prompt.
+  It archives its workspace only when no other unarchived agent holds it;
+  shared workspaces or failed inventory checks fall back to its own agent:
+
+  ```bash
+  sole_workspace() {
+    self_json=$("$PASEO_CLI" agent status "$PASEO_AGENT_ID" --json) || return 1
+    ws=$(jq -er '.snapshot.workspaceId | strings | select(length > 0)' <<< "$self_json") || return 1
+    agents=$("$PASEO_CLI" agent ls -g --background --json) || return 1
+    ids=$(jq -er 'if type == "array" and length > 0 and
+      all(.[]; .id | type == "string" and length > 0)
+      then .[].id else error("invalid agent inventory") end' <<< "$agents") || return 1
+    while IFS= read -r id; do
+      [ "$id" = "$PASEO_AGENT_ID" ] && continue
+      peer=$("$PASEO_CLI" agent status "$id" --json) || return 1
+      peer_ws=$(jq -er '.snapshot.workspaceId | strings | select(length > 0)' <<< "$peer") || return 1
+      [ "$peer_ws" != "$ws" ] || return 1
+    done <<< "$ids"
+  }
+  if sole_workspace; then
+    "$PASEO_CLI" workspace archive "$ws"
+  else
+    "$PASEO_CLI" agent archive --force "$PASEO_AGENT_ID"
+  fi
+  ```
+
+  Local workspace archive keeps the directory. Then check the agent with
+  `paseo agent status <agent-id>`, and if Paseo reopened it, run
+  `paseo agent archive --force <agent-id>`. If the user answers some other
+  way, archive only the question agent yourself.
 - **Fallback:** if a question session can't be launched or its dialog never
   appears, send the request as a message that leads with it, with a push
   notification, and open your own blocking dialog only when nothing useful
