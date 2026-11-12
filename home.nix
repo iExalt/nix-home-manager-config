@@ -104,7 +104,10 @@ in
   ];
 
   home.file.".local/bin/validate-agent-skill" = {
-    source = ./scripts/validate-agent-skill;
+    source = pkgs.writeShellScript "validate-agent-skill" ''
+      export AGENT_MISE_BIN=${pkgs.mise}/bin/mise
+      exec ${pkgs.bash}/bin/bash ${./scripts/validate-agent-skill} "$@"
+    '';
     executable = true;
   };
 
