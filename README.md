@@ -189,10 +189,12 @@ harness's shell tool, just like direct shell calls.
 Test both harnesses with a harmless unmanaged Python version command and a managed
 equivalent. A direct invocation of the guard tests its logic, not harness activation.
 
-Validate an edited skill with `validate-agent-skill <skill-directory>`. This selects
-the configured Mise base Python, checks PyYAML, and runs the installed skill-creator
-validator. Pass a validator path as the second argument if needed. The command does
-not install missing dependencies or unrelated project tools.
+Validate an edited skill with `validate-agent-skill <skill-directory>`. The installed
+helper uses the pinned Mise executable even when a child shell's PATH omits it. Mise
+selects the configured Python for the current project; the helper checks PyYAML and
+runs the installed skill-creator validator. Pass a validator path as the second
+argument if needed. The command does not install missing dependencies or unrelated
+project tools.
 
 ### iExalt skills
 

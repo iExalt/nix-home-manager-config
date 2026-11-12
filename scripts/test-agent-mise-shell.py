@@ -14,6 +14,33 @@ MISE = shutil.which("mise")
 
 
 class ShellTests(unittest.TestCase):
+    def test_validator_with_mise_absent_from_path_uses_bootstrap_and_project_python(self):
+        with tempfile.TemporaryDirectory(prefix="agent-validator-bootstrap-") as tmp:
+            base = Path(tmp)
+            python = subprocess.check_output([MISE, "which", "python"], text=True).strip()
+            (base / "mise.toml").write_text(
+                '[tools]\npython = "path:' + str(base) + '"\n')
+            (base / "bin").mkdir()
+            (base / "bin/python").symlink_to(python)
+            validator = base / "validator.py"
+            validator.write_text('import sys; print(sys.executable); print(sys.argv[1])\n')
+            result = subprocess.run(
+                ["/bin/bash", str(ROOT / "scripts/validate-agent-skill"), tmp, str(validator)],
+                cwd=tmp, env=dict(os.environ, PATH="/usr/bin:/bin", AGENT_MISE_BIN=MISE,
+                                  MISE_TRUSTED_CONFIG_PATHS=tmp, MISE_AUTO_INSTALL="0"),
+                capture_output=True, text=True, timeout=10)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stdout.splitlines(), [str(base / "bin/python"), tmp])
+
+    def test_validator_distinguishes_missing_mise_from_missing_python(self):
+        result = subprocess.run(
+            ["/bin/bash", str(ROOT / "scripts/validate-agent-skill"), str(ROOT), __file__],
+            env=dict(os.environ, AGENT_MISE_BIN="/nonexistent/agent-test-mise"),
+            capture_output=True, text=True, timeout=10)
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("Mise is unavailable", result.stderr)
+        self.assertNotIn("mise install python", result.stderr)
+
     def test_missing_selected_runtime_cannot_fall_back_to_system_python(self):
         with tempfile.TemporaryDirectory(prefix="agent-mise-missing-") as tmp:
             (Path(tmp) / "mise.toml").write_text('[tools]\npython = "3.1.999"\n')

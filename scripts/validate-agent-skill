@@ -11,7 +11,12 @@ if [[ ! -f "$validator" ]]; then
   echo "Validator not found: $validator; pass its path as the second argument." >&2
   exit 2
 fi
-if ! python_bin="$(mise which python)"; then
+mise_bin="${AGENT_MISE_BIN:-mise}"
+if ! command -v "$mise_bin" >/dev/null 2>&1; then
+  echo 'Mise is unavailable. Reinstall the Home Manager helper or initialize Mise in this shell.' >&2
+  exit 2
+fi
+if ! python_bin="$("$mise_bin" which python)"; then
   echo 'Install the configured Python with: mise install python (or select Python with mise use python@latest first).' >&2
   exit 2
 fi
