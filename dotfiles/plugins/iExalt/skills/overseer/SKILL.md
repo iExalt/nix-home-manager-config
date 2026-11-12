@@ -493,6 +493,9 @@ When a request for a human comes due, whether planned or raised by a worker:
    treat it as delivered only once acknowledged. Give a decision sent to
    several threads one number, and add it to the glossary (see "Keep the
    user in the loop") before you send it.
+   When re-sending or restating an approval, quote it verbatim or preserve
+   every precondition, scope limit, count and expiry. A worker may read the
+   restatement first and act on it as the operative approval.
 
 Answer a question from the user before anything else.
 
