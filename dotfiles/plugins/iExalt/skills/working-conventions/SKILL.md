@@ -226,6 +226,8 @@ plan or worker brief, record each required proof's command, owner, required
 capabilities, input restrictions, runtime budget and cleanup. Reuse the
 project's testing documentation; a short sentence suffices for a simple check.
 
+- For machine-consumed patches, use `git diff --no-ext-diff --no-color --binary`
+  so external diff tools and color settings cannot change the patch format.
 - Portable builds and fixture-based browser checks may run on a compatible
   remote environment. Confirm its selected tools and prerequisites first.
 - Native OS behavior and activation need the target platform; real-device and
