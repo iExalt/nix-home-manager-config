@@ -117,8 +117,8 @@ with the next action and its boundary instead of silently starting a campaign.
 Agree on proportional route-level triggers: a falsified central assumption, an
 unexpected subsystem on the critical path, materially increased remaining effort,
 or repeated increments without the promised demonstration or new useful evidence.
-Repeated repairs at one gate follow `working-conventions` › Repeated failure
-instead.
+Repeated failed attempts at one outcome follow `working-conventions` ›
+Repeated failure instead.
 
 For a campaign already underway, begin here: compare the best remaining routes,
 including switching costs, and preserve useful completed work.

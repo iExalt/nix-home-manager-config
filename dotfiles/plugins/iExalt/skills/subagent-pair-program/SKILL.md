@@ -122,8 +122,8 @@ The lead escalates when:
   authorization exceeds its contract.
 - Evidence weakens the item's necessity, reveals a cheaper credible route, or
   materially changes expected effort or delivery.
-- Repairs stop advancing the real acceptance gate, as `working-conventions` ›
-  Repeated failure describes.
+- A step-back under `working-conventions` › Repeated failure doesn't clear
+  the blockers, or clearing them needs authority beyond the contract.
 
 Return the decision needed, evidence, options, and recommendation; retain or
 remove provisional repairs deliberately.

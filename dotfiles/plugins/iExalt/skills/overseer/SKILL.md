@@ -475,8 +475,10 @@ about the rest.
 When a worker goes quiet without reporting, inspect it before nudging it, as
 `working-conventions` › Waiting describes. Resume the same session with what
 it needs, or relaunch the thread in a new worker with a handoff of its
-recorded state, since a worker resumes from the documents and Git. When a worker fails the same way twice, report it with what you are doing
-about it, and ask the user only if the remedy needs them.
+recorded state, since a worker resumes from the documents and Git. When a worker's attempts at one outcome fail twice, make sure it steps back
+as `working-conventions` › Repeated failure describes before a third, report
+it with what you are doing about it, and ask the user only if the remedy
+needs them.
 
 After a reboot or crash of the host, recover before relaunching anything:
 inventory the run's surviving remote jobs, CI runs and worktrees; recheck
