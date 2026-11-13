@@ -11,4 +11,28 @@ checkout="$("${DEV_INSTANCE_JQ:-jq}" -ers '
   else empty end' "$config")" || fail 'config.json must contain one object with an absolute checkout path.'
 [[ -d "$checkout" && -f "$checkout/mise.toml" && -f "$checkout/scripts/dev_instance_cli.py" ]] ||
   fail 'The configured checkout must be an existing AKE checkout with its Mise task and CLI.'
+git_bin="${DEV_INSTANCE_GIT:-git}"
+if revision="$("$git_bin" -C "$checkout" rev-parse --verify HEAD 2>/dev/null)"; then
+  printf 'dev-instance: checkout revision %s\n' "$revision" >&2
+  freshness='cached'
+  if [[ "${1:-}" == create ]]; then
+    if GIT_TERMINAL_PROMPT=0 "${DEV_INSTANCE_TIMEOUT:-timeout}" --kill-after=0.2s 1.8s \
+      "$git_bin" -C "$checkout" -c credential.interactive=false fetch --quiet --no-tags \
+      origin refs/heads/main:refs/remotes/origin/main >/dev/null 2>&1; then
+      freshness='refreshed'
+    else
+      printf 'dev-instance: warning: origin/main refresh failed; freshness unverified (using cached ref).\n' >&2
+    fi
+  fi
+  if missing="$("$git_bin" -C "$checkout" rev-list --count HEAD..refs/remotes/origin/main 2>/dev/null)"; then
+    if [[ "$missing" != 0 ]]; then
+      printf 'dev-instance: warning: checkout is missing %s commit(s) from origin/main (%s); update it before creating instances.\n' \
+        "$missing" "$freshness" >&2
+    fi
+  else
+    printf 'dev-instance: warning: origin/main unavailable; checkout freshness unverified.\n' >&2
+  fi
+else
+  printf 'dev-instance: warning: checkout revision unavailable; freshness unverified.\n' >&2
+fi
 exec "${DEV_INSTANCE_MISE:-mise}" -C "$checkout" run dev-instance -- "$@"
