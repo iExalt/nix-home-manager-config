@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 SCRIPTS = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(SCRIPTS))
@@ -126,7 +127,9 @@ class LogAndCheck(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.path = pathlib.Path(self.tmp.name) / "sub" / "log.jsonl"
-        self.env = dict(os.environ, TIME_ESTIMATE_LOG=str(self.path))
+        self.env = {k: v for k, v in os.environ.items()
+                    if k not in ("CLAUDE_CODE_SESSION_ID", "CODEX_THREAD_ID")}
+        self.env["TIME_ESTIMATE_LOG"] = str(self.path)
 
     def tearDown(self):
         self.tmp.cleanup()
@@ -169,7 +172,8 @@ class LogAndCheck(unittest.TestCase):
 
     def test_log_refuses_invalid_record_and_writes_nothing(self):
         for bad, why in ((rec(kind="nope"), "kind"), (rec(thread_id="/root/reviewer"), "agent path"),
-                         (rec(parent_id="/root"), "agent path")):
+                         (rec(parent_id="/root"), "agent path"),
+                         (rec(bias_factor=1, raw_low_h=0.25, raw_high_h=0.5), "whole fragment")):
             p = self.run_cli("log", stdin=json.dumps(bad))
             self.assertNotEqual(p.returncode, 0)
             self.assertIn("not logged", p.stderr)
@@ -204,7 +208,9 @@ class LogAndCheck(unittest.TestCase):
         self.assertNotIn("harness: codex", p.stdout)
         p = self.run_cli("stats", "--since", "2026-11-10T09:00Z", "--by", "harness")
         self.assertIn("# 1 finished records", p.stdout)  # a record logged at exactly that time
-        for bad in (("stats", "--since", "last week"), ("remaining", "--low", "0", "--high", "inf")):
+        for bad in (("stats", "--since", "last week"), ("remaining", "--low", "0", "--high", "inf"),
+                    ("stats", "--since", "2026-11-10", "--by", "harnes"),
+                    ("stats", "--since", "2026-11-10", "--backtest")):
             self.assertNotEqual(self.run_cli(*bad).returncode, 0)
 
     def test_log_does_not_join_a_partial_last_line(self):
@@ -329,9 +335,8 @@ class Calibration(unittest.TestCase):
              "remaining_high_h": 1.0}])
         self.assertEqual(E.validate(r)[0], [])
         self.assertTrue(E.validate(dict(r, scope_h=0))[0])
-        per_rec, hits, n, _ = E.remaining_calibration([r])
-        self.assertEqual((hits, n), (1, 1))
-        self.assertAlmostEqual(math.exp(per_rec[0]), 1.0)  # 0.5 h left, as predicted
+        # Scope may land before or after a revision, so such records don't fit remaining time.
+        self.assertEqual(E.remaining_calibration([r])[2], 0)
 
     def test_remaining_time_factor_weights_each_record_once(self):
         def revs(*preds):
@@ -381,6 +386,22 @@ class Calibration(unittest.TestCase):
             self.assertEqual(E.log_warnings(quiet, history), [])
         self.assertEqual(E.log_warnings(uncal, history[:5]), [])
         self.assertIn("model is missing", " ".join(E.log_warnings(rec(), [])))
+
+    def test_weighted_quantile_counts_each_record_once(self):
+        # One record with four revisions at 0, another with one at 1: the median is either.
+        pairs = [(0.0, 0.25)] * 4 + [(1.0, 1.0)]
+        self.assertEqual(E.wquantile(pairs, 0.5), 0.0)
+        self.assertEqual(E.wquantile(pairs, 0.75), 1.0)
+        self.assertEqual(E.quantile([0.0] * 4 + [1.0], 0.75), 0.0)  # unweighted, the four dominate
+
+    def test_harness_falls_back_to_an_unambiguous_environment_when_ps_cannot_run(self):
+        with mock.patch.object(E.subprocess, "run", side_effect=OSError("sandboxed")):
+            for env, want in (({"CODEX_THREAD_ID": "c"}, ("codex", "c")),
+                              ({"CLAUDE_CODE_SESSION_ID": "a"}, ("claude-code", "a")),
+                              ({"CODEX_THREAD_ID": "c", "CLAUDE_CODE_SESSION_ID": "a"}, None),
+                              ({}, None)):
+                with mock.patch.dict(os.environ, env, clear=True):
+                    self.assertEqual(E.harness_from_process(), want)
 
     def test_review_latency_reports_only_groups_with_enough_records(self):
         recs = ([rec(kind="audit", review_round_minutes=m) for m in (2, 3, 4, 5, 6)] +

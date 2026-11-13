@@ -153,7 +153,8 @@ EOF
 
 - `te log` fills a missing `harness` and `thread_id` from the harness it runs under, and warns when
   `model` is missing or a standalone record skipped `te estimate` although it had data to use. A
-  subagent still gives its own `<root thread id>/<agent path>`: the filled id is the session's.
+  Codex subagent gets its own thread id that way; a Claude Code subagent shares its session's id,
+  so it still gives `<session id>/<agent name>`.
 - Paste the numeric fields from `te estimate` as it printed them. To cover another phase, rerun it
   with a gut range that includes the phase rather than editing its numbers. Without calibration,
   still log your gut range as `raw_low_h`/`raw_high_h` (the same as the stated range) and omit
