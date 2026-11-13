@@ -50,8 +50,22 @@ Never launch into your own workspace, and never use `run --new-workspace`.
 Create the workspace, then gate the launch on its ID and an exact inventory
 readback. Build `workspace_args` as a shell array, for example
 `(--isolation worktree --no-background --path <checkout> --project "$project_id" --base origin/main --title "Worker: <subtask>")`
-or `--isolation local` for a lone thread in an existing checkout, and set
-`project_id` and `isolation` to match:
+or `--isolation local` for a lone thread in an existing checkout. Set
+`project_id` to match. Set `expected_isolation` to `worktree` for a requested
+worktree. For a requested local checkout, inspect the supplied path before
+creation. This preflight covers ordinary non-bare repositories with a `.git`
+directory in the main checkout; stop and reconcile bare or separate-Git-dir
+layouts instead of guessing. Compare the canonical Git directory and common
+Git directory from
+`git -C <checkout> rev-parse --absolute-git-dir` and `git -C <checkout>
+rev-parse --path-format=absolute --git-common-dir`. If they differ, the
+checkout is a linked worktree and its expected inventory isolation is
+`worktree`; otherwise it is `local`. Stop if this preflight cannot establish
+the topology. Nested directories inherit their checkout topology. For a confirmed
+non-Git directory the expected isolation is `local`; distinguish that case from
+a Git command failure, and stop on an operational error or ambiguity.
+Classification describes the checkout, not whether Paseo owns it. Then gate
+both the creation result and inventory on that expected classification:
 
 ```bash
 workspace_json=$(paseo workspace create "${workspace_args[@]}" --json) || exit 1
@@ -62,20 +76,22 @@ workspace_id=$(jq -er '
 [ "$workspace_id" != "$self_workspace" ] || exit 1
 workspace_list=$(paseo workspace ls --json) || exit 1
 jq -e --arg id "$workspace_id" --arg project "$project_id" \
-  --arg isolation "$isolation" --argjson created "$workspace_json" '
-  [.[] | select(.workspaceId == $id
+  --arg isolation "$expected_isolation" --argjson created "$workspace_json" '
+  ($created.isolation == $isolation) and
+  ([.[] | select(.workspaceId == $id
     and .workspace.projectId == $project
     and .isolation == $isolation
     and (.cwd | type == "string")
     and (.cwd | length > 0)
     and .cwd == $created.cwd
-    and .background == false)] | length == 1
+    and .background == false)] | length == 1)
 ' <<< "$workspace_list" >/dev/null || exit 1
 ```
 
 The workspace's ID is the top-level `workspaceId`; never guess `.id`. For
-worktree isolation, the returned `cwd` is the new worktree, not the source
-checkout. Add `--notifications off` when you, not the user, should hear from
+requested worktree isolation, the returned `cwd` is the new worktree, not
+the source checkout. For requested local isolation, confirm the returned `cwd`
+resolves to the supplied path before launching. Add `--notifications off` when you, not the user, should hear from
 the agent.
 
 ## 4. Choose its settings
@@ -186,8 +202,11 @@ both:
    ignored files included. `git -C <cwd> status --porcelain --ignored` must
    show nothing but known-disposable paths, and `git -C <cwd> rev-list
    @{u}..HEAD` must be empty. Anything else blocks the archive until you have
-   pushed it or confirmed it is disposable. `local` isolation never touches the
-   checkout.
+   pushed it or confirmed it is disposable. A workspace created with local
+   isolation on a worktree can still report `worktree`:
+   its classification alone does not establish Paseo ownership. Apply this
+   inspection conservatively; do not treat the directory as Paseo-owned merely
+   because of its classification.
 4. Run `paseo workspace archive "$workspace_id" --json`, which archives its
    agents too.
 5. Confirm the ID is gone from `paseo workspace ls --json`.
