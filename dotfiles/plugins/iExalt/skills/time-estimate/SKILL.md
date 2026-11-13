@@ -159,6 +159,12 @@ EOF
   approximate rather than measured.
 - In a campaign, each worker sets `parent_id` to the campaign's id, and the coordinator logs the
   campaign's own record with that id as its `thread_id`. Stats then count the campaign once.
+- Scope the user adds to a campaign gets one record per amendment, so planned and added time are
+  measured separately. Its `thread_id` is `<campaign id>#amend-<n>` and its `parent_id` is the campaign's
+  id. Its range is the estimate the amendment added, and its `actual_h` is the added tasks' measured
+  active time. The campaign's own record keeps the estimate from plan agreement. Its `actual_h` is the
+  campaign's active time minus these records' actuals, so it covers the scope its estimate covers,
+  and its `scope_h` is their sum.
 - Keep thread ids and log contents out of public commits and PRs.
 - Put a lesson that applies beyond the task in `lesson`; it stays searchable with
   `rg '"lesson"' ~/.local/state/agent-estimates.jsonl`. Change this skill's rules only on evidence
