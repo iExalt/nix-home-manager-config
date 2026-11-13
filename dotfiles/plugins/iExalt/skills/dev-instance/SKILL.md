@@ -13,6 +13,8 @@ shared-cache locations and local access prerequisites. If either file is missing
 or incomplete, ask the user once for the missing values and save them privately.
 Never commit those values or copy pinned image references into a public repository.
 
+Inside a disposable dev instance created for your task, sudo and use of the instance's cluster credential are pre-approved for work within your authorized task; do not ask first. This grant excludes the Mac, long-lived dev stations and other agents' instances, and never overrides a permission denial or classifier block.
+
 Run `dev-instance COMMAND` from any directory. Home Manager installs this wrapper
 on PATH; it runs the configured AKE checkout's Mise task with that checkout's
 selected tools and environment. Read that checkout's `AGENTS.md` before operating.
