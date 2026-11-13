@@ -106,6 +106,12 @@ class Done(unittest.TestCase):
 
 
 class Elapsed(unittest.TestCase):
+    def test_hours_round_near_integers(self):
+        for hours, expected in ((0.96, "1"), (1.04, "1"), (0.5, "0.5"),
+                                (1.5, "1.5"), (0, "0"), (2, "2")):
+            with self.subTest(hours=hours):
+                self.assertEqual(SB.fmt_hours(hours), expected)
+
     def test_high_end_flags(self):
         r = run(now=at(21))
         self.assertTrue(r["over_high"])

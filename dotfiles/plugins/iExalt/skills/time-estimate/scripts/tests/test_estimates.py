@@ -144,6 +144,29 @@ class LogAndCheck(unittest.TestCase):
         self.assertEqual(oct(self.path.stat().st_mode & 0o777), "0o600")
         self.assertEqual(self.run_cli("check").returncode, 0)
 
+    def test_estimate_roundtrips_through_log_with_skewed_and_mixed_history(self):
+        histories = [
+            unit_recs([0.01] + [1.0] * 31, kind="audit"),
+            unit_recs([100.0] + [1.0] * 31, kind="audit"),
+            unit_recs([1.0] * 120) + unit_recs([0.01, 100.0] * 6, kind="audit"),
+        ]
+        keys = ("est_p10_h", "est_low_h", "est_median_h", "est_high_h", "est_p90_h")
+        self.path.parent.mkdir(parents=True)
+        for history in histories:
+            with self.subTest(actuals=[r["actual_h"] for r in history[-12:]]):
+                self.path.write_text("".join(json.dumps(r) + "\n" for r in history))
+                p = self.run_cli("estimate", "--kind", "audit", "--low", "0.5", "--high", "2")
+                self.assertEqual(p.returncode, 0, p.stderr)
+                fragment = json.loads(p.stdout.splitlines()[-1])
+                values = [fragment[k] for k in keys]
+                self.assertEqual(values, sorted(values))
+                p = self.run_cli("log", stdin=json.dumps(dict(
+                    fragment, task="roundtrip fixture", outcome="done", actual_h=1.0)))
+                self.assertEqual(p.returncode, 0, p.stderr)
+                logged = json.loads(self.path.read_text().splitlines()[-1])
+                self.assertEqual({k: logged[k] for k in fragment}, fragment)
+                self.assertEqual(self.run_cli("check").returncode, 0)
+
     def test_log_refuses_invalid_record_and_writes_nothing(self):
         p = self.run_cli("log", stdin=json.dumps(rec(kind="nope")))
         self.assertNotEqual(p.returncode, 0)
@@ -238,6 +261,21 @@ class Calibration(unittest.TestCase):
         b_audit = model["audit"][0]
         self.assertAlmostEqual(b_audit, 0.25 * math.log(2) + 0.75 * b_all)
         self.assertEqual(model["audit"][1:3], model["_all"][1:3])
+
+    def test_skewed_quartiles_and_pooled_tails_stay_ordered(self):
+        for ratios in ([0.01] + [1.0] * 31, [100.0] + [1.0] * 31):
+            us = E.units(unit_recs(ratios, kind="audit"))[0]
+            model = E.fit(us)
+            for b, q25, q75, _ in model.values():
+                self.assertAlmostEqual(b, sum(math.log(r) for r in ratios) / len(ratios))
+                self.assertLessEqual(q25, 0)
+                self.assertGreaterEqual(q75, 0)
+        us = E.units(unit_recs([1.0] * 120) +
+                     unit_recs([0.01, 100.0] * 6, kind="audit"))[0]
+        b, q25, q75, _ = E.fit(us[-60:])["audit"]
+        t10, t90 = E.tails(us, q25, q75)
+        self.assertLessEqual(t10, q25)
+        self.assertGreaterEqual(t90, q75)
 
     def test_remaining_time_factor_weights_each_record_once(self):
         def revs(*preds):
