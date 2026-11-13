@@ -13,6 +13,12 @@ device; the rules below are the etiquette.
 - Re-check after every fix and every action the user takes. "They should be dead now - double check."; "Check again now."
 
 ## 2. Machines and browsers
+
+Apply `iExalt:working-conventions` › Execution location: the browser host is now
+the task-owned disposable instance or companion VM. The receipts below retain
+the user's device and disruption boundaries; they do not authorize a persistent
+host as the default.
+
 - Run headed browsers on the browser host, never on the laptop. "Please run headed tests on the [browser host]." Headless and headed runs there need no permission: "you may use ssh [browser host] for headed or headless browser testing at your leisure."
 - Cap browser-host use and keep the laptop free. "limit worker processes to 7 vCPU and 16GB RAM maximum"; "The worker's Python processes are pegging my laptop at 100%."
 - The laptop is only for benchmarks that need its hardware, and you ask when one is due. "I'm fine with you asking me to do the benchmarks on the laptop since that's disruptive."
@@ -20,7 +26,7 @@ device; the rules below are the etiquette.
 - Don't break their session. Review servers that shared a cookie across ports unpaired them in the middle of testing: "I was interrupted in the middle of testing".
 
 ## 3. Phone and tablet etiquette
-- Use the browser host and the virtual tablet first, and borrow a real device only when nothing else can answer the question. "We have a [virtual Android tablet]. Only ask for the phone/iPad/laptop if absolutely necessary." This supersedes "Alright, lets do it all on my device.", from before the tablet existed. When you do need a device, batch the checks into one request and say when you are done. With one free port, they swap cables: "let me know when the iPad run is done and I can switch it out with the phone."
+- Use the disposable browser environment and a suitable task-owned virtual device first; use a shared tablet only when explicitly requested. Borrow a real device only when nothing else can answer the question. "We have a [virtual Android tablet]. Only ask for the phone/iPad/laptop if absolutely necessary." This supersedes "Alright, lets do it all on my device.", from before the tablet existed. When you do need a device, batch the checks into one request and say when you are done. With one free port, they swap cables: "let me know when the iPad run is done and I can switch it out with the phone."
 - Time-box each borrow and keep input inside the page under test. "Keep your test to <10m to give me the phone back."; "you should always ensure only the app/web page under test receives input events". When you finish, return to the app that was open before.
 - Keep the device awake without asking them, then restore its settings. "it's disruptive to always have to unlock the phone"; "Please remember to bump the lock screen/sleep timeouts while you work and restore them once you're done."
 - Control rotation yourself where you can. "It's disruptive to have to rotate my mobile devices."

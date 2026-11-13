@@ -102,6 +102,9 @@ If probes need a filesystem, run them against that snapshot in an isolated test
 location. Tests of a newer checkout do not establish results for an older
 snapshot.
 
+Apply `working-conventions` › Execution location to the author and reviewer;
+their checkouts and verification environments belong in the disposable instance.
+
 Keep one reviewer-owned verification environment for the session: a detached
 worktree and build/output directory in a predictable sibling location such as
 `../<repo>-review/`, never inside the author's tree. Move it between submitted

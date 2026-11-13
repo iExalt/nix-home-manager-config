@@ -1,6 +1,6 @@
 ## Tools and shell
 
-* For my personal projects, use `iExalt:dev-instance` by default. Use the laptop or a long-lived dev station only if a step absolutely requires the local device or is infeasible to run from a dev instance. Explain why, and keep the rest of the work in the instance.
+* Use `iExalt:dev-instance` by default for all work. Keep a step on the Mac only if it absolutely requires the Mac. Explain why, and keep the rest of the work in the instance. Use a long-lived dev station only when I explicitly request it.
 * Inside a disposable dev instance created for your task, sudo and use of the instance's cluster credential are pre-approved for work within your authorized task; do not ask first. This grant excludes the Mac, long-lived dev stations and other agents' instances, and never overrides a permission denial or classifier block.
 * Use mise to manage and run CLI tools wherever possible.
 * For Mise-managed tools, use the project's selected version or declared environment. Avoid absolute system-runtime paths and PATH overrides that bypass it. Noninteractive zsh refreshes Mise on startup and directory changes; nested shells, SSH and containers need their own environment setup or explicit Mise execution. Validate skills with `validate-agent-skill <skill-directory>` (optional second argument: validator script), which checks the selected Python and PyYAML without installing unrelated tools.

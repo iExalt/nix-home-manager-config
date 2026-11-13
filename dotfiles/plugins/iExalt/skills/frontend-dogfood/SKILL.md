@@ -66,7 +66,9 @@ source and scope.
 
 ### 2. Prepare the environment
 
-Follow qa-conduct and [references/devices.md](references/devices.md):
+Follow `iExalt:working-conventions` › Execution requirements, qa-conduct and
+[references/devices.md](references/devices.md). Record the task-owned instance,
+companion VM if needed, connection details and cleanup owner in the tester brief:
 
 - Give the QA copy its own writable dependencies and caches. Install from the lockfile with the
   project's normal command, reusing its warm package store; never link another checkout's mutable
@@ -87,10 +89,11 @@ Follow qa-conduct and [references/devices.md](references/devices.md):
   its outbound effects cut, rather than starting from an empty home. Before briefing, compare a
   summary the app derives (a queue, counts, statuses) between the copy and the real data; any
   difference is a setup defect to fix first.
-- Read the user's environment file (devices.md › The environment file); if it is missing, settle
-  it with the user now, because the tester can't ask. Put the host and tier facts the tester needs
-  into the brief. If the browser host is unreachable, ask the user once instead of falling back to
-  the laptop.
+- Provision the browser host through `iExalt:dev-instance` (devices.md › Tier 1).
+  Read the user's environment file only for additional device facts the pass needs;
+  ask once for missing facts before briefing, because the tester can't ask. Put
+  the connection and tier facts in the brief. Missing access or unsupported host
+  capabilities leave the affected proof unmet; report the blocker.
 - Make sure agent-browser is installed on the test host (devices.md) and that the app is reachable
   from it. Open each tester's browser session with `scripts/dogfood.py init --open` (devices.md ›
   Drive the browser), so testers start testing instead of writing their own ssh wrappers.

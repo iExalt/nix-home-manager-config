@@ -3,25 +3,31 @@
 Where the browser runs, how it reaches the app, and how to cover each form factor. Use the lowest
 tier that can answer the question.
 
-**The environment file.** This file describes the kinds of machine. The user's actual machines are
-in `~/.config/frontend-dogfood/environment.md`: the browser host's ssh name and quirks, how to reach
-the virtual tablet and where its guide is, and which devices tier 3 means. Read it before preparing
-the environment. If it is missing, ask the user once for those facts and offer to save them there.
-Keep them out of this skill, project repositories, commits, and reports meant for publishing. Below,
-`<host>` is the browser host's ssh name.
+Apply `iExalt:working-conventions` › Execution location. Provision the browser
+host through `iExalt:dev-instance`; `<host>` below is its SSH alias as reachable
+from the disposable instance. The helper runs in the instance. Use a task-owned
+companion VM when its required systemd user manager and cgroup v2 are unavailable
+in the container; verify those capabilities before starting a pass.
+
+**The environment file.** Read `~/.config/frontend-dogfood/environment.md` for
+additional virtual or real device access only when those tiers are needed. Ask
+once for missing facts and offer to save them privately. An ordinary viewport
+pass does not require a pre-existing browser host or that device inventory.
+Keep access details out of this skill, repositories, commits and public reports.
 
 | Tier | Host | Covers | Can't cover |
 |---|---|---|---|
-| 1 | agent-browser on the browser host | Desktop at any viewport, phone and tablet viewports with emulated touch, light/dark, reduced motion, CPU throttling, timing | Real soft keyboards, Gboard, real GPU timing, Safari |
-| 2 | Virtual Android tablet | Real Android layout, real touch, a real Android soft keyboard | What the environment file lists; typically phone size, Chrome-only behaviour, Gboard, push |
+| 1 | agent-browser in the task-owned instance or companion VM | Desktop at any viewport, phone and tablet viewports with emulated touch, light/dark, reduced motion, CPU throttling, timing | Real soft keyboards, Gboard, real GPU timing, Safari |
+| 2 | Task-owned virtual Android device, or explicitly requested shared tablet | Real Android layout, real touch, a real Android soft keyboard | What the environment file lists; typically phone size, Chrome-only behaviour, Gboard, push |
 | 3 | Ask first: the user's laptop, phone, and tablet | iOS Safari (iOS Simulator on the laptop), Gboard, real phone timing, laptop GPU benchmarks | |
 
 Report anything no reachable tier covers as untested, with the reason.
 
 ## Tier 1: agent-browser on the browser host
 
-`<host>` is a Linux machine the user lets agents use freely. Never run browsers on the laptop
-(SKILL.md step 2 covers an unreachable host).
+`<host>` is the task-owned Linux browser environment. Install its tools yourself
+and verify the helper prerequisites below. Unsupported capabilities are a blocker,
+not permission to use a persistent browser host or the laptop.
 
 **Setup, once per host.** If mise is only on a login shell's PATH there (the environment file
 says), wrap commands in `bash -lc` and call `mise exec -- agent-browser`; the commands below assume
@@ -32,8 +38,9 @@ ssh <host> 'bash -lc "mise use -g npm:agent-browser@latest uv && mise exec -- ag
 ssh <host> 'loginctl show-user "$USER" -p Linger --value'
 ```
 
-Headed sessions also need Xvfb on the host (Ubuntu's `xvfb` package; installing it needs the
-user's say-so). dogfood.py's liveness check reads the unified cgroup v2 tree, which current
+Headed sessions also need Xvfb on the host (Ubuntu's `xvfb` package). Install
+prerequisites within the task's disposable environment under its scoped sudo grant.
+dogfood.py's liveness check reads the unified cgroup v2 tree, which current
 distributions use; on a cgroup v1 host it would report every session as gone. uv runs
 touch_probe.py on the host. Lingering decides whether the browser and the touch hold, which run
 under the user's systemd manager, survive when the last login session on the host ends. With
@@ -43,11 +50,11 @@ missing, and only warns when lingering is off; it doesn't check the cgroup versi
 call checks that the browser (not just its virtual display) and any touch hold are still running,
 including after the browser's idle timeout, failing with exit 3 if not: re-run `init --open` or
 `hold` rather than carrying on, because a restarted browser has default settings and no touch.
-Turning lingering on (`loginctl enable-linger`) changes the user's machine, so ask them first.
+Enable lingering only in the task-owned disposable VM when needed. On any shared
+or user-owned host, changing it still needs permission.
 
-The laptop gets the same `npm:agent-browser@latest` from this repo's `home.nix`, only so its
-version and docs match. Compare `agent-browser --version` on both hosts and update the older one
-if they differ. Testing needs real
+Use the repository's selected agent-browser version when it declares one; otherwise
+install the version above in the disposable browser environment. Testing needs real
 scrollbars, and Chrome needs `--no-sandbox` where AppArmor blocks its user-namespace sandbox (stock
 Ubuntu does), so keep this config at `~/.agent-browser/dogfood.json` on the host and export
 `AGENT_BROWSER_CONFIG` to point at it:
@@ -64,7 +71,7 @@ back to faces with different metrics. Before judging type, legibility, or pixel 
 face and `document.fonts.check()` confirms it loaded. If it didn't, either serve the app's fonts or
 tag type findings "rendered on Linux, intended face missing".
 
-**Drive the browser with [../scripts/dogfood.py](../scripts/dogfood.py).** It runs on the laptop
+**Drive the browser with [../scripts/dogfood.py](../scripts/dogfood.py).** It runs in the instance
 and sends each command to the host in one ssh call, quoting its arguments for you, so JavaScript and
 selectors survive. Testers who wrote their own wrappers spent turns on shell quoting instead of
 testing. Run it with `uv run <skill-dir>/scripts/dogfood.py`; `--help` lists every command. The
@@ -158,16 +165,16 @@ with a `wheel` or `tap`, or time in the page with `eval`. Frame timing on the ho
 
 **Reaching the app.** Two routes; the project brief decides:
 
-- *App on the laptop (default for a first pass).* Serve it on its own high port, then tunnel it
+- *App in the instance, browser in its companion VM.* Serve it on its own high port, then tunnel it
   with its own connection, so the PID you record really owns the forward (with ssh connection
   sharing, a plain `ssh -R` hands the forward to a shared master and exits, and killing it leaves
   the port open on the host):
   `ssh -o ControlMaster=no -o ControlPath=none -o ExitOnForwardFailure=yes -N -R <port>:127.0.0.1:<port> <host> &`.
   At teardown, kill that PID and confirm with `ssh <host> 'ss -ltn'` that the port is gone.
-  Nothing leaves the laptop, but the tunnel adds latency, so treat load and write timings (probes
+  The tunnel adds latency, so treat load and write timings (probes
   14 and 15) as upper bounds.
-- *App on the host.* Run it there from a worktree and a copy of the data. Timings are realistic,
-  but private data leaves the laptop; delete the copy at teardown.
+- *App and browser in the same disposable environment (default).* Run the app
+  there from a worktree and an authorized copy of the data. Delete the copy at teardown.
 
 **Evidence.** `shot` copies each screenshot to the local evidence directory as it takes it. If
 you capture anything else on the host, copy it there (`scp`) before you read or cite it. Cite only
@@ -175,12 +182,13 @@ local absolute paths.
 
 ## Tier 2: the virtual Android tablet
 
-An Android virtual device on a shared machine. The environment file says how to reach it, what it
-is (size, density, Android version), and where its guide is; read the guide before the first use
-in a session. The commands below are adb commands run wherever the guide says.
+Use a task-owned companion Android device through `iExalt:dev-instance` when it
+meets the requested form factor and proof. Report unsupported tablet or OS coverage
+as untested. Use a shared virtual tablet only when explicitly requested: read its
+private environment guide for connection, size, density and Android version first.
+Run the commands below through the selected device's documented adb route.
 
-It is shared with other sessions, which have installed apps and flipped settings in the middle of
-someone else's run:
+For an explicitly requested shared device, other sessions may change apps and settings:
 
 - Check the guide's lock files first. If another session holds one, agree turns with it over
   agent messaging instead of proceeding. Create your own lock while you drive, delete it when done,

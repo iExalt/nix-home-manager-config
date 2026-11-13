@@ -328,7 +328,10 @@ such as `Worker: thread 2, station pilot`.
 Give each worker its own worktree through a Paseo workspace, as
 [references/paseo.md](references/paseo.md) › Run project and workers
 describes; a lone worker may use the run checkout when nothing else runs
-there. A fresh worktree lacks ignored files such as `.env`, so provide what a
+there. This is harness placement; follow `working-conventions` › Execution
+location for each worker's instance checkout and include its connection, budget,
+cleanup owner and any Mac-only exception in the brief.
+A fresh worktree lacks ignored files such as `.env`, so provide what a
 worker needs. Pick each worker's artifact directory for the brief, and resolve
 missing access to ignored inputs or tools before dependent work starts.
 

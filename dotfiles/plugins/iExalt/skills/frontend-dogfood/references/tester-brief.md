@@ -32,10 +32,15 @@ or fix anything. You never contact the user; questions for them go in your repor
 
 ## Setup
 
+- Execution location: {task-owned instance and optional companion VM, connection,
+  checkout/evidence paths, resource budget, cleanup owner, Mac-only proof and reason
+  or none}; apply `iExalt:working-conventions` › Execution requirements.
+
 - Read, in this order: sections 1, 2 and 4 of `{skill-dir}/references/qa-conduct.md` (the rest is
   for the main agent), all of `{skill-dir}/references/taste-profile.md`, then the parts of
-  `{skill-dir}/references/devices.md` and of `~/.config/frontend-dogfood/environment.md` for your
-  form factor.
+  `{skill-dir}/references/devices.md` for your form factor; read
+  `~/.config/frontend-dogfood/environment.md` only when additional device access
+  from that file is required.
 - Browser session `{session}` on test host `{host}` is open at the URL and initialised for
   `{skill-dir}/scripts/dogfood.py`, with local evidence directory `{evidence-dir}`. Drive the
   browser only through that script (devices.md › Drive the browser) and take screenshots with its
