@@ -17,9 +17,11 @@ with measured numbers instead of padding it.
 te() { python3 -I "<this skill's directory>/scripts/estimates.py" "$@"; }   # zsh and bash
 te stats              # current factor and percentile multipliers per kind; read before every estimate
 te estimate --kind small-fix --low 0.5 --high 1   # gut range in hours -> calibrated numbers + JSON
+te remaining --low 0.25 --high 0.5   # mid-task remaining-time gut -> calibrated range + JSON
 te log < record.json  # append one validated record when estimated work finishes
 te check              # validate the whole log
 te stats --backtest   # how this procedure would have scored on past work
+te stats --since 2026-11-11 --by harness,model,kind   # how recent stated estimates did, per group
 ```
 
 The log is private JSONL at `~/.local/state/agent-estimates.jsonl` (override with
@@ -108,11 +110,13 @@ There is no one-hour floor: a third of logged tasks finished in under 30 minutes
   permissions, answers, and interruptions such as reboots or being asked to stop) and time spent on
   scope the user added or changed after the estimate.
 - Re-estimate the remaining time at checkpoints: after a probe, after each review round, at chunk
-  boundaries, and whenever active time passes the high end (stop and re-estimate then). State it
-  as "about R remaining (R1–R2)" with the reason, and answer "how much longer?" with the latest one.
-- Keep each revision as stated at the time (`at`, active `elapsed_h` including added scope,
-  `remaining_low_h`, `remaining_median_h`, `remaining_high_h`, `trigger`: probe, round, boundary,
-  overrun or other, and `reason`). At completion copy them into `revisions` from the
+  boundaries, and whenever active time passes the high end (stop and re-estimate then). Form a
+  remaining-time gut, run `te remaining --low <gut low> --high <gut high>`, and state its range
+  as "about R remaining (R1–R2)" with the reason; remaining-time guts have run short. Answer
+  "how much longer?" with the latest one.
+- Keep each revision as stated at the time (`at`, active `elapsed_h` including added scope, the
+  fields `te remaining` printed, `trigger`: probe, round, boundary, overrun or other, and
+  `reason`). Without calibration, log the gut as both `raw_remaining_*` and `remaining_*`. At completion copy them into `revisions` from the
   conversation; if a compaction lost them, omit them. A revision reconstructed in hindsight is
   worse than none. `te stats` reports how remaining-time estimates compare with the time that
   actually remained.
