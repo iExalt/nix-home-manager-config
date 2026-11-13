@@ -9,6 +9,8 @@ import sys
 import tempfile
 import unittest
 
+import yaml
+
 ROOT = Path(__file__).resolve().parents[1]
 MISE = shutil.which("mise")
 
@@ -19,16 +21,18 @@ class ShellTests(unittest.TestCase):
             base = Path(tmp)
             python = subprocess.check_output([MISE, "which", "python"], text=True).strip()
             (base / "mise.toml").write_text(
-                '[tools]\npython = "path:' + str(base) + '"\n')
+                '[tools]\npython = "path:' + str(base) + '"\n'
+                '[env]\nPYTHONPATH = ' + json.dumps(str(Path(yaml.__file__).parent.parent)) + '\n')
             (base / "bin").mkdir()
             (base / "bin/python").symlink_to(python)
             validator = base / "validator.py"
             validator.write_text('import sys; print(sys.executable); print(sys.argv[1])\n')
+            env = dict(os.environ, PATH="/usr/bin:/bin", AGENT_MISE_BIN=MISE,
+                       MISE_TRUSTED_CONFIG_PATHS=tmp, MISE_AUTO_INSTALL="0")
+            env.pop("VIRTUAL_ENV", None)
             result = subprocess.run(
                 ["/bin/bash", str(ROOT / "scripts/validate-agent-skill"), tmp, str(validator)],
-                cwd=tmp, env=dict(os.environ, PATH="/usr/bin:/bin", AGENT_MISE_BIN=MISE,
-                                  MISE_TRUSTED_CONFIG_PATHS=tmp, MISE_AUTO_INSTALL="0"),
-                capture_output=True, text=True, timeout=10)
+                cwd=tmp, env=env, capture_output=True, text=True, timeout=10)
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(result.stdout.splitlines(), [str(base / "bin/python"), tmp])
 
@@ -63,7 +67,11 @@ class ShellTests(unittest.TestCase):
             isolated.write_text('#!/bin/sh\nexec ' + shlex.quote(python) + ' -S "$@"\n')
             isolated.chmod(0o755)
             fake_mise = base / "mise"
-            fake_mise.write_text('#!/bin/sh\nprintf "%s\\n" ' + shlex.quote(str(isolated)) + '\n')
+            fake_mise.write_text(
+                '#!/bin/sh\ncase "$1" in\n'
+                'which) printf "%s\\n" ' + shlex.quote(str(isolated)) + ' ;;\n'
+                'exec) shift 4; exec ' + shlex.quote(str(isolated)) + ' "$@" ;;\n'
+                '*) exit 2 ;;\nesac\n')
             fake_mise.chmod(0o755)
             validator = base / "validator.py"
             validator.write_text('raise RuntimeError("must not run")\n')
@@ -73,6 +81,54 @@ class ShellTests(unittest.TestCase):
             self.assertEqual(result.returncode, 2)
             self.assertIn("PyYAML is missing", result.stderr)
             self.assertNotIn("must not run", result.stderr)
+
+    def test_validator_uses_declared_venv_and_matching_active_environment(self):
+        python = subprocess.check_output([MISE, "which", "python"], text=True).strip()
+        with tempfile.TemporaryDirectory(prefix="agent-validator-env-") as tmp:
+            base = Path(tmp)
+            runtime = base / "runtime"
+            subprocess.run([python, "-m", "venv", "--without-pip", str(runtime)], check=True, timeout=15)
+            python = str(runtime / "bin/python")
+            venv = base / "venv"
+            subprocess.run([python, "-m", "venv", "--without-pip", str(venv)], check=True, timeout=15)
+            site = subprocess.check_output(
+                [str(venv / "bin/python"), "-c", "import sysconfig; print(sysconfig.get_path('purelib'))"],
+                text=True).strip()
+            shutil.copytree(Path(yaml.__file__).parent, Path(site) / "yaml")
+            # The base runtime cannot import yaml; only the declared environment can.
+            self.assertNotEqual(subprocess.run(
+                [python, "-c", "import yaml"], env=dict(os.environ, PYTHONPATH=""),
+                capture_output=True).returncode, 0)
+            project = base / "project"
+            project.mkdir()
+            config = ('[tools]\npython = "path:' + str(Path(python).parent.parent) + '"\n'
+                      'node = "0.0.999"\n')
+            validator = base / "validator.py"
+            validator.write_text('import sys, yaml; print(sys.executable); print(sys.argv[1])\n')
+            env = dict(os.environ, AGENT_MISE_BIN=MISE, MISE_TRUSTED_CONFIG_PATHS=tmp,
+                       MISE_AUTO_INSTALL="0", PYTHONPATH="", PATH="/usr/bin:/bin")
+            for mode in ("declared", "active", "mismatched"):
+                with self.subTest(mode=mode):
+                    current = env.copy()
+                    declaration = '[env]\n_.python.venv = ' + json.dumps(str(venv)) + '\n'
+                    if mode == "active":
+                        current["VIRTUAL_ENV"] = str(venv)
+                        declaration = ""
+                    elif mode == "mismatched":
+                        other = base / "other" / "bin"
+                        other.mkdir(parents=True)
+                        fake = other / "python"
+                        fake.write_text('#!/bin/sh\nprintf "/different/runtime\\n"\n')
+                        fake.chmod(0o755)
+                        current["VIRTUAL_ENV"] = str(other.parent)
+                    else:
+                        current.pop("VIRTUAL_ENV", None)
+                    (project / "mise.toml").write_text(config + declaration)
+                    result = subprocess.run(
+                        ["/bin/bash", str(ROOT / "scripts/validate-agent-skill"), tmp, str(validator)],
+                        cwd=project, env=current, capture_output=True, text=True, timeout=15)
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertEqual(result.stdout.splitlines(), [str(venv / "bin/python"), tmp])
 
     def test_startup_directory_change_and_external_venv(self):
         python = subprocess.check_output([MISE, "which", "python"], text=True).strip()

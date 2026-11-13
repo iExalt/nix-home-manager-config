@@ -20,8 +20,21 @@ if ! python_bin="$("$mise_bin" which python)"; then
   echo 'Install the configured Python with: mise install python (or select Python with mise use python@latest first).' >&2
   exit 2
 fi
-if ! "$python_bin" -c 'import yaml' 2>/dev/null; then
-  echo "PyYAML is missing from $python_bin. Install it for this interpreter before validating." >&2
+# Keep an explicitly activated uv/venv environment only for the selected runtime.
+active_python="${VIRTUAL_ENV:-}/bin/python"
+if [[ -n "${VIRTUAL_ENV:-}" && -x "$active_python" ]] &&
+    selected_base="$("$python_bin" -c 'import os, sys; print(os.path.realpath(sys.base_prefix))')" &&
+    active_base="$("$active_python" -c 'import os, sys; print(os.path.realpath(sys.base_prefix))' 2>/dev/null)" &&
+    [[ "$active_base" == "$selected_base" ]]; then
+  python_bin="$active_python"
+else
+  # Resolve Python after Mise activates the repository's declared environment.
+  python_bin=python
+fi
+runner=("$mise_bin" exec python -- "$python_bin")
+export MISE_AUTO_INSTALL=0
+if ! "${runner[@]}" -c 'import yaml' 2>/dev/null; then
+  echo "PyYAML is missing from the selected project environment. Set up its declared dependencies or run through uv with PyYAML before validating." >&2
   exit 2
 fi
-exec "$python_bin" "$validator" "$1"
+exec "${runner[@]}" "$validator" "$1"
