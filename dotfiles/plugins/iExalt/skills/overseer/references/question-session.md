@@ -22,13 +22,17 @@ back. It blocks while the user decides, and you keep working. Name it
   ws=$(jq -er '.workspaceId | strings | select(length > 0)' <<< "$workspace_json") || exit 1
   [ -n "$ws" ] && [ "$ws" != "$self_ws" ] || exit 1
   # Apply paseo.md's "Validate every launch" workspace gate before running.
-  "$PASEO_CLI" agent run --no-wait --relationship detached --workspace "$ws" \
-    --title "Question: <topic>" --provider claude --model "<latest Sonnet>" \
+  "$PASEO_CLI" agent run --no-wait --json --relationship detached --workspace "$ws" \
+    --label "task=<unique-key>" --title "Question: <topic>" --provider claude --model "<latest Sonnet>" \
     --mode "<your mode>" --prompt-file "<finished dialog prompt file>"
   ```
 
   Read the agent back as "Validate every launch" requires. Never pipe workspace
   creation into a parser: a parser's success can hide creation's failure.
+  Keep stdout and stderr separate when capturing JSON. If the run response is
+  lost or unparseable, query `paseo agent ls -a -g --label "task=<unique-key>"
+  --json` and reconcile the matching agent's status and workspace before any
+  retry. List rows use `name`; the rich query uses `title`.
 - **Prompt** it with the finished dialog: each question, its options with
   their consequences, and your recommendation. It calls `AskUserQuestion`
   with exactly those, does nothing else, and sends you the answer verbatim,
