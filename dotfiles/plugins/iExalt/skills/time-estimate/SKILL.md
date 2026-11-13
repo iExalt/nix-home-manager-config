@@ -110,11 +110,12 @@ There is no one-hour floor: a third of logged tasks finished in under 30 minutes
 - Re-estimate the remaining time at checkpoints: after a probe, after each review round, at chunk
   boundaries, and whenever active time passes the high end (stop and re-estimate then). State it
   as "about R remaining (R1–R2)" with the reason, and answer "how much longer?" with the latest one.
-- Keep each revision as stated at the time (`at`, active `elapsed_h`, `remaining_low_h`,
-  `remaining_median_h`, `remaining_high_h`, `trigger`: probe, round, boundary, overrun or other,
-  and `reason`). At completion copy them into `revisions` from the conversation; if a compaction
-  lost them, omit them. A revision reconstructed in hindsight is worse than none. `te stats`
-  reports how remaining-time estimates compare with the time that actually remained.
+- Keep each revision as stated at the time (`at`, active `elapsed_h` including added scope,
+  `remaining_low_h`, `remaining_median_h`, `remaining_high_h`, `trigger`: probe, round, boundary,
+  overrun or other, and `reason`). At completion copy them into `revisions` from the
+  conversation; if a compaction lost them, omit them. A revision reconstructed in hindsight is
+  worse than none. `te stats` reports how remaining-time estimates compare with the time that
+  actually remained.
 - Log the original estimate, not the latest revision.
 
 ## At completion
@@ -148,7 +149,9 @@ EOF
 - Paste the numeric fields from `te estimate` as it printed them. To cover another phase, rerun it
   with a gut range that includes the phase rather than editing its numbers. Without calibration,
   still log your gut range as `raw_low_h`/`raw_high_h` (the same as the stated range) and omit
-  `bias_factor` and the percentile fields. Only records with a gut range count toward the factor.
+  `bias_factor` and the percentile fields. Only records with a gut range count toward the factor,
+  and once 30 calibrated records exist, only those that went through `te estimate`: guts logged
+  without it run much closer to the actual, so pooling them leaves calibrated estimates high.
 - When the work had review rounds, set `review_round_minutes` to the median minutes from sending a
   revision to receiving the reviewer's verdict; `te stats` reports it per kind once five records
   carry it. Omit it if the send and verdict times aren't in the transcript, since a reconstructed
@@ -171,6 +174,10 @@ EOF
   Log amendment records only when the campaign record counts in stats: `done`, with a gut range.
   Otherwise stats merge the campaign's worker records, which already include the added work, and
   the amendment records would count it twice.
+- A subagent without a thread id of its own logs `<root thread id>/<agent path>`, such as
+  `<root thread id>/reviewer`; a `parent_id` naming another subagent takes the same form. Bare
+  agent paths like `/root/reviewer` repeat across sessions, so `te log` rejects them. When you
+  brief a subagent that will log, give it your thread id.
 - Keep thread ids and log contents out of public commits and PRs.
 - Put a lesson that applies beyond the task in `lesson`; it stays searchable with
   `rg '"lesson"' ~/.local/state/agent-estimates.jsonl`. Change this skill's rules only on evidence

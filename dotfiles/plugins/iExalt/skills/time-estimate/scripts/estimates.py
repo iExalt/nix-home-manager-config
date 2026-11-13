@@ -63,6 +63,7 @@ REVIEW_MIN = 5  # records with review_round_minutes before stats reports their m
 SHRINK_N = 8      # per-kind factor reaches full weight at this many units
 SPREAD_N = 12     # per-kind quartiles used only from this many units
 BACKTEST_START = 30
+CALIBRATED_MIN = 30  # from this many calibrated units, only calibrated guts fit the factor
 
 
 def log_path():
@@ -115,7 +116,7 @@ def validate(rec):
                                     "est_p90_h") if rec.get(k) is not None]
     if any(a[1] > b[1] for a, b in zip(chain, chain[1:])):
         errs.append("need est_p10_h <= est_low_h <= est_median_h <= est_high_h <= est_p90_h")
-    errs += validate_revisions(rec.get("revisions"), rec.get("actual_h"))
+    errs += validate_revisions(rec.get("revisions"), worked_h(rec))
     if not ported and rec.get("est_low_h") is not None and rec["est_low_h"] <= 0:
         errs.append("est_low_h must be above zero")
     for k in ("actual_h", "blocked_h", "scope_h", "probe_minutes", "actual_rounds",
@@ -166,6 +167,12 @@ def validate(rec):
     return errs, warns
 
 
+def worked_h(rec):
+    """Active time including added scope: the clock revisions' elapsed_h and remaining run on,
+    since actual_h leaves out scope_h."""
+    return None if rec.get("actual_h") is None else rec["actual_h"] + (rec.get("scope_h") or 0)
+
+
 def validate_revisions(revs, actual_h):
     if revs is None:
         return []
@@ -200,7 +207,7 @@ def validate_revisions(revs, actual_h):
             errs.append(f"{where}.elapsed_h is lower than the revision before it")
         prev_el = r["elapsed_h"]
         if actual_h is not None and r["elapsed_h"] > actual_h * 1.05 + 0.02:
-            errs.append(f"{where}.elapsed_h exceeds actual_h")
+            errs.append(f"{where}.elapsed_h exceeds actual_h + scope_h")
         trio = [r["remaining_low_h"], r.get("remaining_median_h", r["remaining_low_h"]),
                 r["remaining_high_h"]]
         if not (0 <= trio[0] <= trio[1] <= trio[2]):
@@ -245,6 +252,10 @@ def cmd_log(_args):
         rec.setdefault("logged_at", now.strftime("%Y-%m-%dT%H:%M:%SZ"))
         rec.setdefault("date", now.strftime("%Y-%m-%d"))
     errs, warns = validate(rec)
+    # Older records carry agent paths and stay valid; units() just never links them.
+    errs += [f"{k} {rec[k]!r} is an agent path, not a thread id; log <root thread id>{rec[k]}"
+             for k in ("thread_id", "parent_id")
+             if isinstance(rec, dict) and isinstance(rec.get(k), str) and rec[k].startswith("/")]
     if errs:
         sys.exit("not logged:\n  " + "\n  ".join(errs))
     data = (json.dumps(rec, separators=(",", ":")) + "\n").encode()
@@ -280,12 +291,28 @@ def gmid(lo, hi):
     return math.sqrt(lo * hi)
 
 
+def link_id(v):
+    """A thread or parent id that can link records. Agent paths such as `/root/reviewer` repeat
+    across sessions, so they never link."""
+    return v if v and not v.startswith("/") else None
+
+
 def units(recs):
     """Headline units in file order, one per standalone task or per unrecorded parent.
 
+    Once CALIBRATED_MIN units went through `te estimate` (they carry bias_factor), only those
+    count. Guts logged without it (mostly subagents sizing their own few-minute step) run far
+    closer to the actual, so pooling them under-corrects the guts the factor is applied to.
+
     Returns (units, exclusion counts)."""
+    out, excluded = _units(recs, calibrated_only=True)
+    return (out, excluded) if len(out) >= CALIBRATED_MIN else _units(recs, calibrated_only=False)
+
+
+def _units(recs, calibrated_only):
     excluded = {"prose port": 0, "not done": 0, "no numbers": 0, "no gut range": 0,
-                "child of recorded parent": 0, "children merged into parent": 0}
+                "not calibrated": 0, "child of recorded parent": 0,
+                "children merged into parent": 0}
     def why_not(r):
         if r.get("source") == "md-port-prose":
             return "prose port"
@@ -297,10 +324,12 @@ def units(recs):
         # corrected by hand (ported summary-era records, mental adjustments), so it can't stand in.
         if not (r.get("raw_low_h") and r.get("raw_high_h")):
             return "no gut range"
+        if calibrated_only and r.get("bias_factor") is None:
+            return "not calibrated"
         return None
 
     # Only a parent that itself counts can stand in for its children.
-    parents = {r["thread_id"] for r in recs if r.get("thread_id") and why_not(r) is None}
+    parents = {link_id(r.get("thread_id")) for r in recs if why_not(r) is None} - {None}
     out, groups = [], {}
     for r in recs:
         reason = why_not(r)
@@ -308,7 +337,7 @@ def units(recs):
             excluded[reason] += 1
             continue
         lo, hi = r["raw_low_h"], r["raw_high_h"]
-        pid = r.get("parent_id")
+        pid = link_id(r.get("parent_id"))
         if pid and pid in parents:
             excluded["child of recorded parent"] += 1
             continue
@@ -383,7 +412,7 @@ def remaining_calibration(recs):
             continue
         logs = []
         for v in r["revisions"]:
-            left = r["actual_h"] - v["elapsed_h"]
+            left = worked_h(r) - v["elapsed_h"]
             lo, hi = v["remaining_low_h"], v["remaining_high_h"]
             pred = v.get("remaining_median_h") or (gmid(lo, hi) if lo > 0 else hi / 2)
             if not (0 < left < math.inf and 0 < pred < math.inf):

@@ -168,10 +168,13 @@ class LogAndCheck(unittest.TestCase):
                 self.assertEqual(self.run_cli("check").returncode, 0)
 
     def test_log_refuses_invalid_record_and_writes_nothing(self):
-        p = self.run_cli("log", stdin=json.dumps(rec(kind="nope")))
-        self.assertNotEqual(p.returncode, 0)
-        self.assertIn("not logged", p.stderr)
-        self.assertFalse(self.path.exists())
+        for bad, why in ((rec(kind="nope"), "kind"), (rec(thread_id="/root/reviewer"), "agent path"),
+                         (rec(parent_id="/root"), "agent path")):
+            p = self.run_cli("log", stdin=json.dumps(bad))
+            self.assertNotEqual(p.returncode, 0)
+            self.assertIn("not logged", p.stderr)
+            self.assertIn(why, p.stderr)
+            self.assertFalse(self.path.exists())
 
     def test_log_does_not_join_a_partial_last_line(self):
         self.path.parent.mkdir(parents=True)
@@ -243,9 +246,20 @@ class Calibration(unittest.TestCase):
         us, ex = E.units([ported])
         self.assertEqual((len(us), ex["no numbers"]), (0, 1))
 
-    def test_null_ids_never_link(self):
+    def test_null_and_agent_path_ids_never_link(self):
         us, _ = E.units([grec(thread_id=None, parent_id=None), grec(parent_id=None)])
         self.assertEqual(len(us), 2)
+        # Agent paths repeat across sessions: neither merge nor drop records that share one.
+        us, _ = E.units([grec(parent_id="/root"), grec(parent_id="/root"), grec(thread_id="/root")])
+        self.assertEqual(len(us), 3)
+
+    def test_uncalibrated_guts_stop_fitting_once_enough_calibrated_units_exist(self):
+        cal = lambda n: [grec(bias_factor=0.5) for _ in range(n)]
+        gut_only = [grec(actual_h=1.0) for _ in range(5)]
+        us, ex = E.units(cal(E.CALIBRATED_MIN) + gut_only)
+        self.assertEqual((len(us), ex["not calibrated"]), (E.CALIBRATED_MIN, 5))
+        us, ex = E.units(cal(E.CALIBRATED_MIN - 1) + gut_only)
+        self.assertEqual((len(us), ex["not calibrated"]), (E.CALIBRATED_MIN + 4, 0))
 
     def test_fit_recovers_bias_and_spread(self):
         model = E.fit(E.units(unit_recs([0.5, 0.5, 0.5, 0.5]))[0])
@@ -276,6 +290,17 @@ class Calibration(unittest.TestCase):
         t10, t90 = E.tails(us, q25, q75)
         self.assertLessEqual(t10, q25)
         self.assertGreaterEqual(t90, q75)
+
+    def test_revisions_run_on_active_time_including_added_scope(self):
+        # A campaign's actual_h leaves out scope_h, but its revisions were stated on the full clock.
+        r = rec(actual_h=1.0, scope_h=3.0, revisions=[
+            {"at": "2026-11-09T16:00:00Z", "elapsed_h": 3.5, "remaining_low_h": 0.25,
+             "remaining_high_h": 1.0}])
+        self.assertEqual(E.validate(r)[0], [])
+        self.assertTrue(E.validate(dict(r, scope_h=0))[0])
+        per_rec, hits, n = E.remaining_calibration([r])
+        self.assertEqual((hits, n), (1, 1))
+        self.assertAlmostEqual(math.exp(per_rec[0]), 1.0)  # 0.5 h left, as predicted
 
     def test_remaining_time_factor_weights_each_record_once(self):
         def revs(*preds):
