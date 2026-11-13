@@ -362,6 +362,26 @@ class Calibration(unittest.TestCase):
             self.assertIn("raw_remaining", " ".join(E.validate(grec(actual_h=0.5, revisions=[
                 {k: x for k, x in dict(v, **bad).items() if x is not None}]))[0]))
 
+    def test_autofill_adds_only_missing_harness_and_matching_thread(self):
+        r = rec(); E.autofill(r, ("claude-code", "t1"))
+        self.assertEqual((r["harness"], r["thread_id"]), ("claude-code", "t1"))
+        r = rec(harness="codex", thread_id="given"); E.autofill(r, ("claude-code", "t1"))
+        self.assertEqual((r["harness"], r["thread_id"]), ("codex", "given"))
+        r = rec(harness="codex"); E.autofill(r, ("claude-code", "t1"))
+        self.assertNotIn("thread_id", r)  # another harness's id would mislabel the record
+        r = rec(); E.autofill(r, None)
+        self.assertNotIn("harness", r)
+
+    def test_log_warns_on_missing_model_and_skipped_calibration(self):
+        history = unit_recs([1.0] * E.PERCENTILE_MIN)
+        uncal = grec(model="m")
+        self.assertIn("no bias_factor", " ".join(E.log_warnings(uncal, history)))
+        for quiet in (dict(uncal, bias_factor=0.5), dict(uncal, parent_id="camp"),
+                      dict(uncal, thread_id="camp#amend-1")):
+            self.assertEqual(E.log_warnings(quiet, history), [])
+        self.assertEqual(E.log_warnings(uncal, history[:5]), [])
+        self.assertIn("model is missing", " ".join(E.log_warnings(rec(), [])))
+
     def test_review_latency_reports_only_groups_with_enough_records(self):
         recs = ([rec(kind="audit", review_round_minutes=m) for m in (2, 3, 4, 5, 6)] +
                 [rec(kind="docs", review_round_minutes=20)] + [rec()])

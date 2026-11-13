@@ -18,6 +18,7 @@ import json
 import math
 import os
 import pathlib
+import subprocess
 import statistics as st
 import sys
 
@@ -247,6 +248,58 @@ def read_log(path):
     return recs, bad
 
 
+HARNESSES = {"claude": ("claude-code", "CLAUDE_CODE_SESSION_ID"), "codex": ("codex", "CODEX_THREAD_ID")}
+
+
+def harness_from_process():
+    """(harness, its thread id or None) for the nearest Claude Code or Codex ancestor process.
+
+    The environment alone can't tell: a harness's variables leak into harnesses it launches."""
+    pid = os.getppid()
+    for _ in range(40):
+        try:
+            out = subprocess.run(["ps", "-o", "ppid=,comm=", "-p", str(pid)], capture_output=True,
+                                 text=True, timeout=2).stdout.split(None, 1)
+        except (OSError, subprocess.SubprocessError):
+            return None
+        if len(out) < 2:
+            return None
+        name = os.path.basename(out[1].strip())
+        if name in HARNESSES:
+            harness, var = HARNESSES[name]
+            return harness, os.environ.get(var) or None
+        if pid <= 1 or not out[0].isdigit():
+            return None
+        pid = int(out[0])
+    return None
+
+
+def autofill(rec, found):
+    """Fill a missing harness and thread id from the running harness; never replace given ones."""
+    if not found:
+        return
+    harness, thread = found
+    if not rec.get("harness"):
+        rec["harness"] = harness
+    if thread and not rec.get("thread_id") and rec["harness"] == harness:
+        rec["thread_id"] = thread
+
+
+def log_warnings(rec, recs):
+    """Nudges for a record that is valid but weaker than it could be."""
+    warns = []
+    if not rec.get("model"):
+        warns.append("model is missing; add it so stats can compare models")
+    standalone = not rec.get("parent_id") and "#amend-" not in (rec.get("thread_id") or "")
+    if (standalone and rec.get("source", "live") == "live" and rec.get("bias_factor") is None
+            and rec.get("raw_low_h") is not None):
+        n = len(units(recs)[0])
+        if n >= PERCENTILE_MIN:
+            warns.append(f"no bias_factor: this range wasn't calibrated, though `te estimate` had "
+                         f"{n} units to calibrate it. Run it before stating a range next time.")
+    return warns
+
+
 def cmd_log(_args):
     try:
         rec = json.loads(sys.stdin.read())
@@ -258,6 +311,7 @@ def cmd_log(_args):
         rec.setdefault("source", "live")
         rec.setdefault("logged_at", now.strftime("%Y-%m-%dT%H:%M:%SZ"))
         rec.setdefault("date", now.strftime("%Y-%m-%d"))
+        autofill(rec, harness_from_process())
     errs, warns = validate(rec)
     # Older records carry agent paths and stay valid; units() just never links them.
     errs += [f"{k} {rec[k]!r} is an agent path, not a thread id; log <root thread id>{rec[k]}"
@@ -278,6 +332,7 @@ def cmd_log(_args):
         os.write(fd, data)  # one O_APPEND write, so concurrent writers don't interleave
     finally:
         os.close(fd)
+    warns += log_warnings(rec, read_log(path)[0])
     for w in warns:
         print(f"warning: {w}", file=sys.stderr)
     print(f"logged to {path}")

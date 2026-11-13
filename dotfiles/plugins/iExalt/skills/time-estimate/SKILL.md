@@ -151,6 +151,8 @@ te log <<'EOF'
 EOF
 ```
 
+- `te log` fills a missing `harness` and `thread_id` from the harness it runs under, and warns when
+  `model` is missing or a standalone record skipped `te estimate` although it had data to use.
 - Paste the numeric fields from `te estimate` as it printed them. To cover another phase, rerun it
   with a gut range that includes the phase rather than editing its numbers. Without calibration,
   still log your gut range as `raw_low_h`/`raw_high_h` (the same as the stated range) and omit
