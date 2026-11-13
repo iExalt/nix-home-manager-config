@@ -217,6 +217,31 @@ uv run --no-project --with playwright==1.64.0 \
   python -m playwright install webkit
 ```
 
+To copy a repository into the running VM, use one sync command:
+
+```sh
+dev-instance guest NAME vm sync /absolute/path/to/repository
+```
+
+The source is a Git worktree root on the machine running the CLI. To sync a
+checkout held inside main, run the configured checkout's task there:
+`mise -C CLI_CHECKOUT run dev-instance -- guest NAME vm sync PATH`.
+The result's `sync.path` is a fresh directory under the guest's home, with a
+sibling `sync.ownership_file` recording the namespace, VM and VMI UIDs.
+Use that path for both the app server and tests through the pinned guest SSH
+connection above. Install the repository's selected tools and dependencies
+inside the guest, then run its normal browser-check command.
+
+Sync includes tracked working files and nonignored untracked files, including
+fixtures. It omits Git metadata, ignored build outputs and dependency caches;
+install those dependencies normally in the guest. Deleted tracked files remain
+absent. Symlinks are preserved, but symlinked parents and submodules are refused;
+sync each initialized submodule worktree separately when needed.
+Each sync creates a new snapshot and leaves earlier ones untouched. A failed
+transfer retains its directory and reports the exact path. The transfer has a
+300-second budget; it does not change the main or VM readiness deadlines.
+Guest snapshots are ephemeral: retain results before stopping the VM.
+
 Follow the project's selected runtime and checks inside the guest.
 
 ## Android phone (Cuttlefish)
