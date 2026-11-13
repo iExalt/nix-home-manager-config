@@ -76,6 +76,10 @@ checkouts, build outputs, homes and credentials private. Existing Git mirrors
 are read-only to instances and are never pruned by this CLI. Run helpers inside
 the instance or a sidecar; separate Pods cannot share a mounted workspace.
 
+Fresh instances need repository-specific setup. Install the repository's declared
+tools and dependencies yourself, including test runners, using its selected Mise
+environment; missing tools are expected setup, not an instance failure.
+
 ## Companion VM
 
 Use a VM for a full guest OS: systemd, kernel modules, nested containers, or
