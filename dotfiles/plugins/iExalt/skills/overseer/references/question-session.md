@@ -62,7 +62,8 @@ back. It blocks while the user decides, and you keep working. Name it
   fi
   ```
 
-  Local workspace archive keeps the directory. Then check the agent with
+  Archiving a workspace created with local isolation on the externally created,
+  non-Paseo-owned run checkout keeps that directory. Then check the agent with
   `paseo agent status <agent-id>`, and if Paseo reopened it, run
   `paseo agent archive --force <agent-id>`. If the user answers some other
   way, archive only the question agent yourself.
