@@ -202,7 +202,10 @@ class LogAndCheck(unittest.TestCase):
         self.assertIn("# 1 finished records", p.stdout)
         self.assertRegex(p.stdout, r"harness: claude-code\s+1 ")
         self.assertNotIn("harness: codex", p.stdout)
-        self.assertNotEqual(self.run_cli("stats", "--since", "last week").returncode, 0)
+        p = self.run_cli("stats", "--since", "2026-11-10T09:00Z", "--by", "harness")
+        self.assertIn("# 1 finished records", p.stdout)  # a record logged at exactly that time
+        for bad in (("stats", "--since", "last week"), ("remaining", "--low", "0", "--high", "inf")):
+            self.assertNotEqual(self.run_cli(*bad).returncode, 0)
 
     def test_log_does_not_join_a_partial_last_line(self):
         self.path.parent.mkdir(parents=True)

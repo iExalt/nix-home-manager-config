@@ -443,8 +443,8 @@ def remaining_mid(lo, hi):
 
 
 def cmd_remaining(args):
-    if not 0 <= args.low <= args.high or args.high <= 0:
-        sys.exit("need 0 <= --low <= --high and --high > 0 (hours)")
+    if not (0 <= args.low <= args.high and 0 < args.high < math.inf):
+        sys.exit("need 0 <= --low <= --high, with --high above zero and finite (hours)")
     recs, _ = read_log(log_path())
     per_rec, _, n, every = remaining_calibration(recs)
     if len(per_rec) < REMAINING_MIN:
@@ -521,12 +521,15 @@ def cmd_stats(args):
 
 def accuracy(recs, since, keys):
     """How the stated estimates of finished live records logged since a date did, per group."""
+    def utc(t):
+        t = dt.datetime.fromisoformat(t.replace("Z", "+00:00"))
+        return t if t.tzinfo else t.replace(tzinfo=dt.timezone.utc)
     try:
-        dt.date.fromisoformat(since[:10])
+        start = utc(since)
     except ValueError:
-        sys.exit("--since takes a date or ISO time, such as 2026-11-11 or 2026-11-11T20:00Z")
+        sys.exit("--since takes a date or ISO time, such as 2026-11-11 or 2026-11-11T20:00:00Z")
     rs = [r for r in recs if r.get("source", "live") == "live" and r["outcome"] == "done"
-          and (r.get("logged_at") or "") >= since and r.get("actual_h")
+          and r.get("logged_at") and utc(r["logged_at"]) >= start and r.get("actual_h")
           and r.get("est_low_h") and r.get("est_high_h")]
     if not rs:
         sys.exit(f"no finished records logged since {since}")
