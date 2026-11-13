@@ -159,6 +159,18 @@ EOF
   approximate rather than measured.
 - In a campaign, each worker sets `parent_id` to the campaign's id, and the coordinator logs the
   campaign's own record with that id as its `thread_id`. Stats then count the campaign once.
+- Scope the user adds to a campaign gets one record per amendment, so the added work's estimate is
+  scored on its own. Give it `thread_id` `<campaign id>#amend-<n>` and no `parent_id`, so stats count
+  it as its own unit. Its stated range is the approved estimate for the tasks it added (the sum of
+  their task estimates), and its gut range is the sum of the gut ranges behind them; omit the gut
+  range when they weren't recorded. Its `actual_h` is the sum of those tasks' measured active time.
+  All are task-hours.
+- The campaign's own record keeps the estimate from plan agreement. Parallel tasks make the campaign's
+  wall-clock split approximate, so set `scope_h` to its active time times the added tasks' share of
+  all tasks' active time, `actual_h` to active time minus `scope_h`, and `actual_approx` to true.
+  Log amendment records only when the campaign record counts in stats: `done`, with a gut range.
+  Otherwise stats merge the campaign's worker records, which already include the added work, and
+  the amendment records would count it twice.
 - Keep thread ids and log contents out of public commits and PRs.
 - Put a lesson that applies beyond the task in `lesson`; it stays searchable with
   `rg '"lesson"' ~/.local/state/agent-estimates.jsonl`. Change this skill's rules only on evidence

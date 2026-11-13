@@ -228,6 +228,11 @@ never compute them yourself.
   the campaign and `--task-estimate` for each task it touches. Record totals,
   not remainders: the tripwires compare a task's `running_h` and the campaign's
   `active_h`, both counted from the start.
+  When an amendment adds work, record in the run log its time, the tasks it
+  added, their approved estimates and the gut ranges behind them. At campaign
+  end, log each such amendment with `time-estimate` as a record of its own,
+  with its added tasks' summed `running_h` as the actual. Then derive the
+  campaign record's `scope_h` from them, as that skill's campaign rules describe.
 - **`task-start <task>`** when work on that task begins: at its worker's launch
   for the thread's first task, and for each later task of the thread when the
   tracker shows the previous one done (check at each wake). **`task-pause <task> --on <decision item>`**
