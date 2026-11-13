@@ -21,6 +21,7 @@ import pathlib
 import subprocess
 import statistics as st
 import sys
+import time
 
 KINDS = ("small-fix", "existing-code", "multi-component", "bounded-operation", "audit",
          "investigation", "planning", "docs", "eval")
@@ -255,11 +256,12 @@ def harness_from_process():
     """(harness, its thread id or None) for the nearest Claude Code or Codex ancestor process.
 
     The environment alone can't tell: a harness's variables leak into harnesses it launches."""
-    pid = os.getppid()
+    pid, deadline = os.getppid(), time.monotonic() + 3
     for _ in range(40):
         try:
             out = subprocess.run(["ps", "-o", "ppid=,comm=", "-p", str(pid)], capture_output=True,
-                                 text=True, timeout=2).stdout.split(None, 1)
+                                 text=True, timeout=max(0.1, deadline - time.monotonic())
+                                 ).stdout.split(None, 1)
         except (OSError, subprocess.SubprocessError):
             return None
         if len(out) < 2:
@@ -313,6 +315,12 @@ def cmd_log(_args):
         rec.setdefault("date", now.strftime("%Y-%m-%d"))
         autofill(rec, harness_from_process())
     errs, warns = validate(rec)
+    path = log_path()
+    if not errs:
+        try:  # judged against the log as it was when the estimate was made
+            warns += log_warnings(rec, read_log(path)[0] if path.exists() else [])
+        except Exception as e:  # a nudge must never block or duplicate a record
+            warns.append(f"skipped log checks: {e}")
     # Older records carry agent paths and stay valid; units() just never links them.
     errs += [f"{k} {rec[k]!r} is an agent path, not a thread id; log <root thread id>{rec[k]}"
              for k in ("thread_id", "parent_id")
@@ -322,7 +330,6 @@ def cmd_log(_args):
     data = (json.dumps(rec, separators=(",", ":")) + "\n").encode()
     if len(data) > MAX_RECORD_BYTES:
         sys.exit(f"not logged: record is {len(data)} bytes; keep it under {MAX_RECORD_BYTES}")
-    path = log_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     fd = os.open(path, os.O_RDWR | os.O_APPEND | os.O_CREAT, 0o600)
     try:
@@ -332,7 +339,6 @@ def cmd_log(_args):
         os.write(fd, data)  # one O_APPEND write, so concurrent writers don't interleave
     finally:
         os.close(fd)
-    warns += log_warnings(rec, read_log(path)[0])
     for w in warns:
         print(f"warning: {w}", file=sys.stderr)
     print(f"logged to {path}")
