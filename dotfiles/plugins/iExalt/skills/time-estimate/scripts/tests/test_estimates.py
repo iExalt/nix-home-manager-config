@@ -176,6 +176,37 @@ class LogAndCheck(unittest.TestCase):
             self.assertIn(why, p.stderr)
             self.assertFalse(self.path.exists())
 
+    def test_remaining_and_since_report_from_the_log(self):
+        self.path.parent.mkdir(parents=True)
+        def write(recs):
+            self.path.write_text("".join(json.dumps(r) + "\n" for r in recs))
+        rev = lambda gut: [{"at": "2026-11-09T16:00:00Z", "elapsed_h": 0.0, "remaining_low_h": gut,
+                            "remaining_high_h": gut}]
+        recs = [rec(actual_h=a, revisions=rev(0.25), logged_at="2026-11-09T17:00:00Z",
+                    harness="codex") for a in (0.5, 0.4, 0.6) * 3]
+        write(recs)
+        p = self.run_cli("remaining", "--low", "0.25", "--high", "0.5")
+        self.assertNotEqual(p.returncode, 0)
+        self.assertIn("only 9 records", p.stderr)
+        write(recs + [rec(actual_h=0.5, revisions=rev(0.25), logged_at="2026-11-10T09:00:00Z",
+                          harness="claude-code")])
+        p = self.run_cli("remaining", "--low", "0.25", "--high", "0.5")
+        self.assertEqual(p.returncode, 0, p.stderr)
+        frag = json.loads(p.stdout.splitlines()[-1])
+        self.assertEqual((frag["raw_remaining_low_h"], frag["raw_remaining_high_h"]), (0.25, 0.5))
+        self.assertLess(frag["remaining_low_h"], frag["remaining_median_h"])
+        self.assertLess(frag["remaining_median_h"], frag["remaining_high_h"])
+        self.assertAlmostEqual(frag["remaining_median_h"] / (0.125 ** 0.5), 2.0, places=1)
+        p = self.run_cli("stats", "--since", "2026-11-10", "--by", "harness")
+        self.assertEqual(p.returncode, 0, p.stderr)
+        self.assertIn("# 1 finished records", p.stdout)
+        self.assertRegex(p.stdout, r"harness: claude-code\s+1 ")
+        self.assertNotIn("harness: codex", p.stdout)
+        p = self.run_cli("stats", "--since", "2026-11-10T09:00Z", "--by", "harness")
+        self.assertIn("# 1 finished records", p.stdout)  # a record logged at exactly that time
+        for bad in (("stats", "--since", "last week"), ("remaining", "--low", "0", "--high", "inf")):
+            self.assertNotEqual(self.run_cli(*bad).returncode, 0)
+
     def test_log_does_not_join_a_partial_last_line(self):
         self.path.parent.mkdir(parents=True)
         self.path.write_text('{"task": "crashed writer"')
@@ -298,7 +329,7 @@ class Calibration(unittest.TestCase):
              "remaining_high_h": 1.0}])
         self.assertEqual(E.validate(r)[0], [])
         self.assertTrue(E.validate(dict(r, scope_h=0))[0])
-        per_rec, hits, n = E.remaining_calibration([r])
+        per_rec, hits, n, _ = E.remaining_calibration([r])
         self.assertEqual((hits, n), (1, 1))
         self.assertAlmostEqual(math.exp(per_rec[0]), 1.0)  # 0.5 h left, as predicted
 
@@ -308,7 +339,7 @@ class Calibration(unittest.TestCase):
                      "remaining_median_h": p, "remaining_high_h": p * 2} for i, p in enumerate(preds)]
         recs = [grec(actual_h=1.0, revisions=revs(0.5, 0.5, 0.5, 0.5)),  # actual 2x stated, 4 times
                 grec(actual_h=1.0, revisions=revs(2.0))]                # actual 0.5x stated, once
-        per_rec, hits, n = E.remaining_calibration(recs)
+        per_rec, hits, n, _ = E.remaining_calibration(recs)
         self.assertEqual((len(per_rec), n), (2, 5))
         self.assertAlmostEqual(math.exp(sum(per_rec) / 2), 1.0)
         self.assertEqual(hits, 5)
@@ -316,6 +347,20 @@ class Calibration(unittest.TestCase):
         self.assertIn("revisions[0] has a non-finite number",
                       " ".join(E.validate(grec(actual_h=1.0, revisions=broken))[0]))
         self.assertEqual(E.remaining_calibration([grec(actual_h=1.0, revisions=broken)])[2], 1)
+
+    def test_remaining_factor_fits_the_logged_remaining_gut_not_the_corrected_range(self):
+        v = {"at": "2026-01-01T10:00:00Z", "elapsed_h": 0.0, "raw_remaining_low_h": 0.25,
+             "raw_remaining_high_h": 0.25, "remaining_low_h": 0.25, "remaining_median_h": 0.5,
+             "remaining_high_h": 1.0}
+        r = grec(actual_h=0.5, revisions=[v])
+        self.assertEqual(E.validate(r)[0], [])
+        per_rec, hits, _, _ = E.remaining_calibration([r])
+        self.assertAlmostEqual(math.exp(per_rec[0]), 2.0)  # 0.5 h left over a 0.25 h gut
+        self.assertEqual(hits, 1)
+        for bad in ({"raw_remaining_low_h": 0.25, "raw_remaining_high_h": None},
+                    {"raw_remaining_low_h": 0.5, "raw_remaining_high_h": 0.25}):
+            self.assertIn("raw_remaining", " ".join(E.validate(grec(actual_h=0.5, revisions=[
+                {k: x for k, x in dict(v, **bad).items() if x is not None}]))[0]))
 
     def test_review_latency_reports_only_groups_with_enough_records(self):
         recs = ([rec(kind="audit", review_round_minutes=m) for m in (2, 3, 4, 5, 6)] +

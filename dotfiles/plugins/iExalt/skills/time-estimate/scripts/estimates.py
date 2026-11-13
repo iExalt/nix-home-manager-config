@@ -6,6 +6,8 @@
     estimates.py estimate --kind K --low L --high H   turn a gut range into calibrated numbers
     estimates.py stats [--window N]      current bias factor and spread, overall and per kind
     estimates.py stats --backtest        score that procedure walk-forward on past records
+    estimates.py stats --since DATE      how stated estimates did since DATE, by harness and kind
+    estimates.py remaining --low L --high H   correct a remaining-time gut mid-task
 
 The log is JSONL at $TIME_ESTIMATE_LOG, default ~/.local/state/agent-estimates.jsonl.
 Stdlib only; Python 3.9+.
@@ -50,6 +52,7 @@ FIELDS = {
     "revisions": ((list,), False),
 }
 REVISION_FIELDS = {"at": STR, "elapsed_h": NUM, "remaining_low_h": NUM,
+                   "raw_remaining_low_h": NUM, "raw_remaining_high_h": NUM,
                    "remaining_median_h": NUM, "remaining_high_h": NUM, "trigger": STR,
                    "reason": STR}
 REVISION_REQUIRED = ("at", "elapsed_h", "remaining_low_h", "remaining_high_h")
@@ -59,6 +62,7 @@ PORTED_OPTIONAL = {"kind", "est_low_h", "est_high_h"}
 MAX_RECORD_BYTES = 64 * 1024
 HEADLINE_WINDOW = 60
 PERCENTILE_MIN = 30  # below this many headline units, percentiles are noise
+REMAINING_MIN = 10  # records with revisions before `remaining` corrects a gut
 REVIEW_MIN = 5  # records with review_round_minutes before stats reports their median
 SHRINK_N = 8      # per-kind factor reaches full weight at this many units
 SPREAD_N = 12     # per-kind quartiles used only from this many units
@@ -210,6 +214,9 @@ def validate_revisions(revs, actual_h):
             errs.append(f"{where}.elapsed_h exceeds actual_h + scope_h")
         trio = [r["remaining_low_h"], r.get("remaining_median_h", r["remaining_low_h"]),
                 r["remaining_high_h"]]
+        raw = (r.get("raw_remaining_low_h"), r.get("raw_remaining_high_h"))
+        if (raw[0] is None) != (raw[1] is None) or (raw[0] is not None and not 0 <= raw[0] <= raw[1]):
+            errs.append(f"{where}: give raw_remaining_low_h <= raw_remaining_high_h together")
         if not (0 <= trio[0] <= trio[1] <= trio[2]):
             errs.append(f"{where}: need 0 <= remaining_low_h <= remaining_median_h <= remaining_high_h")
         if any(isinstance(v, float) and not math.isfinite(v) for v in r.values()):
@@ -405,8 +412,10 @@ def fmt_h(h):
 
 
 def remaining_calibration(recs):
-    """Per-record factor of actual remaining time over the stated remaining estimate."""
-    per_rec, hits, n = [], 0, 0
+    """Actual remaining time over the remaining-time gut (the stated estimate when no gut was
+    logged): per-record mean logs, band hits of the stated range, revision count, and every
+    revision's log ratio."""
+    per_rec, hits, n, every = [], 0, 0, []
     for r in recs:
         if r["outcome"] != "done" or not r.get("actual_h") or not r.get("revisions"):
             continue
@@ -414,7 +423,10 @@ def remaining_calibration(recs):
         for v in r["revisions"]:
             left = worked_h(r) - v["elapsed_h"]
             lo, hi = v["remaining_low_h"], v["remaining_high_h"]
-            pred = v.get("remaining_median_h") or (gmid(lo, hi) if lo > 0 else hi / 2)
+            if v.get("raw_remaining_high_h") is not None:
+                pred = remaining_mid(v["raw_remaining_low_h"], v["raw_remaining_high_h"])
+            else:
+                pred = v.get("remaining_median_h") or remaining_mid(lo, hi)
             if not (0 < left < math.inf and 0 < pred < math.inf):
                 continue
             logs.append(math.log(left / pred))
@@ -422,7 +434,34 @@ def remaining_calibration(recs):
             n += 1
         if logs:
             per_rec.append(st.mean(logs))  # each record counts once in the factor
-    return per_rec, hits, n
+            every += logs
+    return per_rec, hits, n, every
+
+
+def remaining_mid(lo, hi):
+    return gmid(lo, hi) if lo > 0 else hi / 2
+
+
+def cmd_remaining(args):
+    if not (0 <= args.low <= args.high and 0 < args.high < math.inf):
+        sys.exit("need 0 <= --low <= --high, with --high above zero and finite (hours)")
+    recs, _ = read_log(log_path())
+    per_rec, _, n, every = remaining_calibration(recs)
+    if len(per_rec) < REMAINING_MIN:
+        sys.exit(f"only {len(per_rec)} records with revisions; state your remaining-time gut "
+                 "as is and log it as both the raw and stated range")
+    b = st.mean(per_rec)
+    res = [x - b for x in every]
+    q25, q75 = min(0.0, quantile(res, 0.25)), max(0.0, quantile(res, 0.75))
+    likely = remaining_mid(args.low, args.high) * math.exp(b)
+    print(f"# {len(per_rec)} records, {n} revisions: remaining-time factor {math.exp(b):.2f}")
+    print(f"About {fmt_h(likely)} remaining; half the time {fmt_h(likely * math.exp(q25))} to "
+          f"{fmt_h(likely * math.exp(q75))}.")
+    r = lambda h: round(h, 3)
+    print(json.dumps({"raw_remaining_low_h": args.low, "raw_remaining_high_h": args.high,
+                      "remaining_low_h": r(likely * math.exp(q25)),
+                      "remaining_median_h": r(likely),
+                      "remaining_high_h": r(likely * math.exp(q75))}))
 
 
 def review_latency(recs):
@@ -437,6 +476,8 @@ def review_latency(recs):
 
 def cmd_stats(args):
     recs, bad = read_log(log_path())
+    if args.since:
+        return accuracy(recs, args.since, args.by.split(","))
     us, excluded = units(recs)
     if args.backtest:
         return backtest(us, args.window)
@@ -464,10 +505,10 @@ def cmd_stats(args):
         print(f"{k:18s} {n:3d} {math.exp(b):6.2f} {math.exp(t10_row):5.2f} {math.exp(q25):5.2f} "
               f"{math.exp(q75):5.2f} {math.exp(t90_row):5.2f} "
               f"{fmt_h(st.median(u['act'] for u in sub)):>13s} {hit:10.0%}")
-    per_rec, hits, n = remaining_calibration(recs)
+    per_rec, hits, n, _ = remaining_calibration(recs)
     if per_rec:
         print(f"# remaining-time revisions: {n} in {len(per_rec)} records; actual remaining = "
-              f"stated x {math.exp(st.mean(per_rec)):.2f}; {hits / n:.0%} inside the stated range")
+              f"gut x {math.exp(st.mean(per_rec)):.2f}; {hits / n:.0%} inside the stated range")
     lat = review_latency(recs)
     if lat:
         print("# review round minutes (median, n): " +
@@ -476,6 +517,45 @@ def cmd_stats(args):
     else:
         print(f"# review round minutes: fewer than {REVIEW_MIN} records log review_round_minutes; "
               "assume 4-9 min")
+
+
+def accuracy(recs, since, keys):
+    """How the stated estimates of finished live records logged since a date did, per group."""
+    def utc(t):
+        t = dt.datetime.fromisoformat(t.replace("Z", "+00:00"))
+        return t if t.tzinfo else t.replace(tzinfo=dt.timezone.utc)
+    try:
+        start = utc(since)
+    except ValueError:
+        sys.exit("--since takes a date or ISO time, such as 2026-11-11 or 2026-11-11T20:00:00Z")
+    rs = [r for r in recs if r.get("source", "live") == "live" and r["outcome"] == "done"
+          and r.get("logged_at") and utc(r["logged_at"]) >= start and r.get("actual_h")
+          and r.get("est_low_h") and r.get("est_high_h")]
+    if not rs:
+        sys.exit(f"no finished records logged since {since}")
+    print(f"# {len(rs)} finished records logged since {since}, children included; "
+          "actual/likely below 1 means overestimates")
+    print("# error: geometric mean of the miss ratio; calibrated: share that ran `estimate`")
+    print(f"{'group':26s} {'n':>4s} {'actual/likely':>13s} {'error':>6s} {'p25-p75 hit':>11s} "
+          f"{'under p90':>9s} {'actual/gut':>10s} {'calibrated':>10s}")
+    gm = lambda xs: f"{math.exp(st.mean(xs)):.2f}x" if xs else "-"
+    pct = lambda xs: f"{st.mean(xs):.0%}" if xs else "-"
+    def row(name, sub):
+        ratio = [math.log(r["actual_h"] / (r.get("est_median_h") or gmid(r["est_low_h"], r["est_high_h"])))
+                 for r in sub]
+        gut = [math.log(r["actual_h"] / gmid(r["raw_low_h"], r["raw_high_h"]))
+               for r in sub if r.get("raw_low_h") and r.get("raw_high_h")]
+        print(f"{name[:26]:26s} {len(sub):4d} {gm(ratio):>13s} {gm([abs(x) for x in ratio]):>6s} "
+              f"{pct([r['est_low_h'] <= r['actual_h'] <= r['est_high_h'] for r in sub]):>11s} "
+              f"{pct([r['actual_h'] <= r['est_p90_h'] for r in sub if r.get('est_p90_h')]):>9s} "
+              f"{gm(gut):>10s} {pct([r.get('bias_factor') is not None for r in sub]):>10s}")
+    row("all", rs)
+    for key in keys:
+        groups = {}
+        for r in rs:
+            groups.setdefault(f"{key}: {r.get(key) or 'unknown'}", []).append(r)
+        for name, sub in sorted(groups.items(), key=lambda kv: -len(kv[1])):
+            row(name, sub)
 
 
 def cmd_estimate(args):
@@ -557,7 +637,14 @@ def main():
     p.add_argument("--window", type=int, default=HEADLINE_WINDOW,
                    help="most recent headline units to fit (default %(default)s)")
     p.add_argument("--backtest", action="store_true", help="score the procedure walk-forward")
+    p.add_argument("--since", help="report how estimates logged since this date or time did")
+    p.add_argument("--by", default="harness,kind",
+                   help="record fields to group --since by (default %(default)s)")
     p.set_defaults(fn=cmd_stats)
+    m = sub.add_parser("remaining", help="correct a remaining-time gut range mid-task")
+    m.add_argument("--low", type=float, required=True, help="remaining gut low end, hours")
+    m.add_argument("--high", type=float, required=True, help="remaining gut high end, hours")
+    m.set_defaults(fn=cmd_remaining)
     args = ap.parse_args()
     args.fn(args)
 
