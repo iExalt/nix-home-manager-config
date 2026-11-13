@@ -13,7 +13,11 @@ shared-cache locations and local access prerequisites. If either file is missing
 or incomplete, ask the user once for the missing values and save them privately.
 Never commit those values or copy pinned image references into a public repository.
 
-Inside a disposable dev instance created for your task, sudo and use of the instance's cluster credential are pre-approved for work within your authorized task; do not ask first. This grant excludes the Mac, long-lived dev stations and other agents' instances, and never overrides a permission denial or classifier block.
+Inside a disposable dev instance created for your task, sudo and use of the
+instance's cluster credential are pre-approved for work within your authorized
+task; do not ask first. This grant excludes the Mac, long-lived dev stations and
+other agents' instances, and never overrides a permission denial or classifier
+block.
 
 Run `dev-instance COMMAND` from any directory. Home Manager installs this wrapper
 on PATH; it runs the configured AKE checkout's Mise task with that checkout's
@@ -75,6 +79,23 @@ of hardlinking. Read their locations in the private environment file. Keep
 checkouts, build outputs, homes and credentials private. Existing Git mirrors
 are read-only to instances and are never pruned by this CLI. Run helpers inside
 the instance or a sidecar; separate Pods cannot share a mounted workspace.
+
+Clone the requested branch as `dev` in its login environment (`zsh -lc` for
+noninteractive SSH commands). Prefer `git clone --branch BRANCH
+--recurse-submodules URL DIRECTORY`, then follow the repository's own setup and
+check commands. Run `mise trust` and `mise install` in each checkout with a Mise
+config that its checks use; install separately declared dependencies too.
+A tool already installed in the image does not rerun its postinstall hook for a
+new checkout or home.
+
+A parent repository's bare mirror need not contain submodule object stores.
+Do not combine recursive cloning with `--reference` to that mirror. If a parent
+mirror is useful, clone the parent without recursion, then run
+`git submodule update --init --recursive` without reference options. Avoid adding
+`submodule.alternateErrorStrategy` repeatedly with `git clone --config`; normal
+submodule initialization does not need it. Keep enough history for the
+repository's ancestry checks. Before checking a staged snapshot, confirm the
+staged tree is the reviewed tree, and initialize submodules before taking it.
 
 Fresh instances need repository-specific setup. Install the repository's declared
 tools and dependencies yourself, including test runners, using its selected Mise
