@@ -191,8 +191,9 @@ equivalent. A direct invocation of the guard tests its logic, not harness activa
 
 Validate an edited skill with `validate-agent-skill <skill-directory>`. The installed
 helper uses the pinned Mise executable even when a child shell's PATH omits it. Mise
-selects the configured Python for the current project; the helper checks PyYAML and
-runs the installed skill-creator validator. Pass a validator path as the second
+selects the configured Python and environment for the current project. An active
+uv or virtual environment is also supported when it uses that same Python runtime.
+The helper checks PyYAML and runs the installed skill-creator validator. Pass a validator path as the second
 argument if needed. The command does not install missing dependencies or unrelated
 project tools.
 
