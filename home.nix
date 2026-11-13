@@ -129,6 +129,8 @@ in
     source = pkgs.writeShellScript "dev-instance" ''
       export DEV_INSTANCE_MISE=${pkgs.mise}/bin/mise
       export DEV_INSTANCE_JQ=${pkgs.jq}/bin/jq
+      export DEV_INSTANCE_GIT=${pkgs.git}/bin/git
+      export DEV_INSTANCE_TIMEOUT=${pkgs.coreutils}/bin/timeout
       exec ${pkgs.bash}/bin/bash ${./scripts/dev-instance} "$@"
     '';
     executable = true;
