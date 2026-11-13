@@ -111,6 +111,15 @@ in
     executable = true;
   };
 
+  home.file.".local/bin/dev-instance" = {
+    source = pkgs.writeShellScript "dev-instance" ''
+      export DEV_INSTANCE_MISE=${pkgs.mise}/bin/mise
+      export DEV_INSTANCE_JQ=${pkgs.jq}/bin/jq
+      exec ${pkgs.bash}/bin/bash ${./scripts/dev-instance} "$@"
+    '';
+    executable = true;
+  };
+
   programs.zsh = {
     enable = true;
     dotDir = "${config.xdg.configHome}/zsh";

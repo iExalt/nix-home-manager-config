@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Use the private checkout's selected environment, independent of the caller's directory.
+set -euo pipefail
+config="${HOME}/.config/dev-instance/config.json"
+fail() { printf '%s\n' "dev-instance: $*" >&2; exit 2; }
+[[ -f "$config" ]] || fail 'Read the dev-instance skill and configure ~/.config/dev-instance/config.json first.'
+checkout="$("${DEV_INSTANCE_JQ:-jq}" -ers '
+  if length == 1 and (.[0] | type == "object") then
+    .[0].checkout | select(type == "string") |
+    select(startswith("/") and (contains("\n") or contains("\r") | not))
+  else empty end' "$config")" || fail 'config.json must contain one object with an absolute checkout path.'
+[[ -d "$checkout" && -f "$checkout/mise.toml" && -f "$checkout/scripts/dev_instance_cli.py" ]] ||
+  fail 'The configured checkout must be an existing AKE checkout with its Mise task and CLI.'
+exec "${DEV_INSTANCE_MISE:-mise}" -C "$checkout" run dev-instance -- "$@"
