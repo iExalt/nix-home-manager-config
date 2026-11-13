@@ -1,0 +1,3 @@
+# The helper validates every operand before removing any scratch directory.
+prefix_rule(pattern=["scratch-rm"], decision="allow",
+            match=["scratch-rm /example"], not_match=["rm -rf /example"])

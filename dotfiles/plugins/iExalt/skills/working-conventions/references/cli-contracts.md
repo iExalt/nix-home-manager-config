@@ -1,4 +1,4 @@
-# Glean, Slack and Linear CLI contracts
+# CLI contracts
 
 Read the relevant section before using these CLIs. These are user-owned
 corrections to installed skill guidance. Glean and Slack skills are shipped
@@ -69,3 +69,8 @@ message alone does not prove that a requested relation exists.
 If the result is missing, contradictory or unreadable, report the mutation
 as unverified and reconcile current state before retrying. A lost response
 can follow a successful write; blind retries can duplicate it.
+
+## GitHub
+
+Use `gh` for private repositories and pull requests. The GitHub connector can
+return `404 NOT_FOUND` for existing private resources that `gh` reads successfully.

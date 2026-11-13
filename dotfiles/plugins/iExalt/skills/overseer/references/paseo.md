@@ -26,7 +26,7 @@ project, and your whole job is the hand-off, done straight away:
    `paseo workspace create --isolation local --no-background --path <run checkout> --project <project-id> --title "Overseer: <task>" --json`.
    Apply "Validate every launch" below.
 3. Launch the overseer in it with
-   `paseo agent run --no-wait --relationship detached --no-notify-on-finish --workspace <workspace-id> --title "Overseer: <task>" --provider claude --mode <mode> --model <Opus> --thinking medium "<prompt>"`,
+   `paseo agent run --no-wait --relationship detached --no-notify-on-finish --workspace <workspace-id> --title "Overseer: <task>" --provider claude --mode <mode> --model <Opus> --thinking medium --prompt-file "<prompt file>"`,
    with your own mode translated as `working-conventions` ›
    [references/paseo-launch.md](../../working-conventions/references/paseo-launch.md)
    step 4 describes, and the latest Opus model
@@ -62,7 +62,7 @@ launch, with the run checkout and project as the overseer's:
    `paseo workspace create --isolation local --no-background --notifications on --path <run checkout> --project <project-id> --title "Auditor: <task>" --json`.
    Apply "Validate every launch".
 2. Launch it with
-   `paseo agent run --no-wait --relationship detached --no-notify-on-finish --workspace <workspace-id> --title "Auditor: <task>" --provider claude --mode <mode> --model <Opus> --thinking medium "<brief>"`,
+   `paseo agent run --no-wait --relationship detached --no-notify-on-finish --workspace <workspace-id> --title "Auditor: <task>" --provider claude --mode <mode> --model <Opus> --thinking medium --prompt-file "<brief file>"`,
    with the mode chosen as for the overseer, and its brief being
    [../assets/auditor-brief.md](../assets/auditor-brief.md) with
    the run checkout path, the scoreboard script path and the repository filled in.
@@ -115,14 +115,14 @@ have succeeded.
   Keep creation and parsing separate with `|| exit 1` on each; reject an empty or self workspace ID before launching.
 - **Launch:** start each worker as a top-level thread in its workspace, with
   the brief as its initial prompt:
-  `paseo agent run --no-wait --relationship detached --notify-on-finish --workspace <workspace-id> --title "Worker: <subtask>" --provider codex --mode <mode> --model <GPT Sol> --thinking medium "<brief>"`,
+  `paseo agent run --no-wait --relationship detached --notify-on-finish --workspace <workspace-id> --title "Worker: <subtask>" --provider codex --mode <mode> --model <GPT Sol> --thinking medium --prompt-file "<brief file>"`,
   with the latest GPT Sol model `paseo provider models` lists, as
   `SKILL.md` › Model routing requires, unless the user named another route.
   If the route is unavailable, report it and hold the launch. Name
   yourself with `paseo agent update "$PASEO_AGENT_ID" --name "<name>"`.
 - **Address:** reach every agent by its Paseo agent ID, which survives a
   restart, with
-  `paseo agent send --no-wait --notify-on-finish --if-running queue <agent-id> "[overseer] <message>"`;
+  `paseo agent send --no-wait --notify-on-finish --if-running queue <agent-id> --prompt-file "<message file>"`;
   a queued message runs only when the receiver's turn ends, so a busy worker's
   missing acknowledgement means "still queued", not "lost". Use
   `--if-running steer` for time-sensitive or superseding messages (a slot
@@ -133,10 +133,12 @@ have succeeded.
   agent ID in the brief. They send to you the same way, adding
   `--no-notify-on-finish` so your turns don't wake them. Never send with
   `--if-running interrupt`: it cancels the receiver's turn in flight and its
-  subagents. Never put message text inline in a shell-quoted argument: write it to a
-  file with a quoted heredoc (`<<'EOF'`) and pass `"$(cat file)"`, or pass it
-  as an argv element from Python without a shell. Backticks and `$()` in a
-  double-quoted body run as commands.
+  subagents. Send every message to a worker or question session through
+  `--prompt-file` (write the file with a quoted heredoc, `<<'EOF'`) or an argv
+  element from Python without a shell. Never put message text inline in
+  double quotes: backticks and `$` can expand. Use `set -eu` and explicitly
+  check every interpolated value is nonempty (`[ -n "$item_id" ] || exit 1`)
+  before composing or sending; a missing lookup result stops the step.
 - **Watch:** Paseo notifies you once when a run you started with
   `paseo agent run` or `paseo agent send` finishes, errors or needs
   permission. Add no idle subscriptions on top. Whenever something wakes you,
