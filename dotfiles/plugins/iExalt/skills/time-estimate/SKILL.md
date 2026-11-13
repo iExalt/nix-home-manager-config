@@ -120,7 +120,7 @@ There is no one-hour floor: a third of logged tasks finished in under 30 minutes
   Without calibration, log the gut as both `raw_remaining_*` and `remaining_*`. At completion copy
   them into `revisions` from the conversation; if a compaction lost them, omit them. A revision
   reconstructed in hindsight is worse than none. `te stats` reports how remaining-time estimates
-  compare with the time that actually remained.
+  compare with the time that actually remained, leaving out records with added scope.
 - Log the original estimate, not the latest revision.
 
 ## At completion
@@ -153,7 +153,8 @@ EOF
 
 - `te log` fills a missing `harness` and `thread_id` from the harness it runs under, and warns when
   `model` is missing or a standalone record skipped `te estimate` although it had data to use. A
-  subagent still gives its own `<root thread id>/<agent path>`: the filled id is the session's.
+  Codex subagent gets its own thread id that way; a Claude Code subagent shares its session's id,
+  so it still gives `<session id>/<agent name>`.
 - Paste the numeric fields from `te estimate` as it printed them. To cover another phase, rerun it
   with a gut range that includes the phase rather than editing its numbers. Without calibration,
   still log your gut range as `raw_low_h`/`raw_high_h` (the same as the stated range) and omit

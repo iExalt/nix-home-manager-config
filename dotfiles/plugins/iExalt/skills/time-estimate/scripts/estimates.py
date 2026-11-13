@@ -255,15 +255,19 @@ HARNESSES = {"claude": ("claude-code", "CLAUDE_CODE_SESSION_ID"), "codex": ("cod
 def harness_from_process():
     """(harness, its thread id or None) for the nearest Claude Code or Codex ancestor process.
 
-    The environment alone can't tell: a harness's variables leak into harnesses it launches."""
+    The environment alone can't tell when both harnesses' variables are set: a harness's variables
+    leak into harnesses it launches. When `ps` can't run (Codex's macOS sandbox blocks it), use the
+    environment only if exactly one harness's id is set."""
     pid, deadline = os.getppid(), time.monotonic() + 3
     for _ in range(40):
         try:
-            out = subprocess.run(["ps", "-o", "ppid=,comm=", "-p", str(pid)], capture_output=True,
-                                 text=True, timeout=max(0.1, deadline - time.monotonic())
-                                 ).stdout.split(None, 1)
+            p = subprocess.run(["ps", "-o", "ppid=,comm=", "-p", str(pid)], capture_output=True,
+                               text=True, timeout=max(0.1, deadline - time.monotonic()))
         except (OSError, subprocess.SubprocessError):
-            return None
+            return harness_from_env()  # ps can't run here: Codex's macOS sandbox denies it
+        if p.returncode and p.stderr.strip():
+            return harness_from_env()  # ps ran but was refused; a gone pid fails silently
+        out = p.stdout.split(None, 1)
         if len(out) < 2:
             return None
         name = os.path.basename(out[1].strip())
@@ -274,6 +278,11 @@ def harness_from_process():
             return None
         pid = int(out[0])
     return None
+
+
+def harness_from_env():
+    found = [(h, os.environ[v]) for h, v in HARNESSES.values() if os.environ.get(v)]
+    return found[0] if len(found) == 1 else None
 
 
 def autofill(rec, found):
@@ -325,6 +334,9 @@ def cmd_log(_args):
     errs += [f"{k} {rec[k]!r} is an agent path, not a thread id; log <root thread id>{rec[k]}"
              for k in ("thread_id", "parent_id")
              if isinstance(rec, dict) and isinstance(rec.get(k), str) and rec[k].startswith("/")]
+    if isinstance(rec, dict) and rec.get("bias_factor") is not None and rec.get("est_median_h") is None:
+        errs.append("bias_factor without est_median_h: paste the whole fragment `te estimate` "
+                    "printed, or omit bias_factor if you didn't run it")
     if errs:
         sys.exit("not logged:\n  " + "\n  ".join(errs))
     data = (json.dumps(rec, separators=(",", ":")) + "\n").encode()
@@ -433,6 +445,17 @@ def quantile(xs, q):
     return xs[i] + (xs[j] - xs[i]) * (pos - i)
 
 
+def wquantile(pairs, q):
+    """Quantile of (value, weight) pairs: the first value whose cumulative weight reaches q."""
+    pairs = sorted(pairs)
+    target, acc = q * sum(w for _, w in pairs), 0.0
+    for v, w in pairs:
+        acc += w
+        if acc >= target - 1e-12:
+            return v
+    return pairs[-1][0]
+
+
 def fit(us):
     """Log bias and 50% spread overall and per kind, shrunk toward overall for small kinds."""
     logs = [math.log(u["act"] / gmid(u["raw_lo"], u["raw_hi"])) for u in us]
@@ -474,11 +497,15 @@ def fmt_h(h):
 
 def remaining_calibration(recs):
     """Actual remaining time over the remaining-time gut (the stated estimate when no gut was
-    logged): per-record mean logs, band hits of the stated range, revision count, and every
-    revision's log ratio."""
+    logged): per-record mean logs, band hits of the stated range, revision count, and each
+    record's revision log ratios. Records with added scope are skipped."""
     per_rec, hits, n, every = [], 0, 0, []
     for r in recs:
         if r["outcome"] != "done" or not r.get("actual_h") or not r.get("revisions"):
+            continue
+        if r.get("scope_h"):
+            # Added scope lands after some revisions and before others, and the record doesn't
+            # say which, so any remaining time computed from it is biased one way or the other.
             continue
         logs = []
         for v in r["revisions"]:
@@ -495,7 +522,7 @@ def remaining_calibration(recs):
             n += 1
         if logs:
             per_rec.append(st.mean(logs))  # each record counts once in the factor
-            every += logs
+            every.append(logs)
     return per_rec, hits, n, every
 
 
@@ -512,8 +539,8 @@ def cmd_remaining(args):
         sys.exit(f"only {len(per_rec)} records with revisions; state your remaining-time gut "
                  "as is and log it as both the raw and stated range")
     b = st.mean(per_rec)
-    res = [x - b for x in every]
-    q25, q75 = min(0.0, quantile(res, 0.25)), max(0.0, quantile(res, 0.75))
+    res = [(x - b, 1 / len(logs)) for logs in every for x in logs]  # each record weighs once
+    q25, q75 = min(0.0, wquantile(res, 0.25)), max(0.0, wquantile(res, 0.75))
     likely = remaining_mid(args.low, args.high) * math.exp(b)
     print(f"# {len(per_rec)} records, {n} revisions: remaining-time factor {math.exp(b):.2f}")
     print(f"About {fmt_h(likely)} remaining; half the time {fmt_h(likely * math.exp(q25))} to "
@@ -589,6 +616,9 @@ def accuracy(recs, since, keys):
         start = utc(since)
     except ValueError:
         sys.exit("--since takes a date or ISO time, such as 2026-11-11 or 2026-11-11T20:00:00Z")
+    bad = [k for k in keys if k not in FIELDS]
+    if bad:
+        sys.exit(f"--by takes record fields, such as harness, model, kind or repo; not {', '.join(bad)}")
     rs = [r for r in recs if r.get("source", "live") == "live" and r["outcome"] == "done"
           and r.get("logged_at") and utc(r["logged_at"]) >= start and r.get("actual_h")
           and r.get("est_low_h") and r.get("est_high_h")]
@@ -697,8 +727,9 @@ def main():
     p = sub.add_parser("stats", help="bias factor and spread, overall and per kind")
     p.add_argument("--window", type=int, default=HEADLINE_WINDOW,
                    help="most recent headline units to fit (default %(default)s)")
-    p.add_argument("--backtest", action="store_true", help="score the procedure walk-forward")
-    p.add_argument("--since", help="report how estimates logged since this date or time did")
+    mode = p.add_mutually_exclusive_group()
+    mode.add_argument("--backtest", action="store_true", help="score the procedure walk-forward")
+    mode.add_argument("--since", help="report how estimates logged since this date or time did")
     p.add_argument("--by", default="harness,kind",
                    help="record fields to group --since by (default %(default)s)")
     p.set_defaults(fn=cmd_stats)
