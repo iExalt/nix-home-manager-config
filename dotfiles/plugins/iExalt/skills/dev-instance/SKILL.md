@@ -74,6 +74,22 @@ Local private keys and decrypted credentials never enter rendered instance
 manifests or printed CLI JSON. Credentials are projected separately; optional
 push and binary-cache credentials may be absent.
 
+For an image-publishing task, opt in at creation:
+`dev-instance create NAME --nvcr-publisher`. Main then receives
+`~/.config/dev-credentials/nvcr-publisher.json`, owned by `dev` with mode `0400`
+under a `0700` directory. Ordinary instances receive no publisher file; a missing
+requested Secret blocks startup. This selection is part of resumable creation
+intent and cannot be added by silently resuming with different flags.
+
+Pass that filename explicitly as the image factory's `--registry-auth` input.
+It is Docker config JSON, not a shell token and not an automatic Docker login.
+Do not print it or copy it into the checkout, caches, VM or phone. The file is a
+startup snapshot: recreate after rotation; restarting without the selection
+removes a managed stale copy from a retained home. Issuer permissions control
+its authority; the task flag and a registry-host entry do not narrow the key.
+Routine builds use this projection instead of hand-staging credentials from the
+operator's machine. A manifest read proves read access, not push permission.
+
 Shared caches are separate mounts from the workspace, so tools may copy instead
 of hardlinking. Read their locations in the private environment file. Keep
 checkouts, build outputs, homes and credentials private. Existing Git mirrors
