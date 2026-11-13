@@ -402,6 +402,12 @@ class Calibration(unittest.TestCase):
                               ({}, None)):
                 with mock.patch.dict(os.environ, env, clear=True):
                     self.assertEqual(E.harness_from_process(), want)
+        done = lambda rc, err: subprocess.CompletedProcess([], rc, stdout="", stderr=err)
+        with mock.patch.dict(os.environ, {"CODEX_THREAD_ID": "c"}, clear=True):
+            with mock.patch.object(E.subprocess, "run", return_value=done(1, "ps: not permitted")):
+                self.assertEqual(E.harness_from_process(), ("codex", "c"))
+            with mock.patch.object(E.subprocess, "run", return_value=done(1, "")):
+                self.assertIsNone(E.harness_from_process())  # the process is gone; ps ran fine
 
     def test_review_latency_reports_only_groups_with_enough_records(self):
         recs = ([rec(kind="audit", review_round_minutes=m) for m in (2, 3, 4, 5, 6)] +

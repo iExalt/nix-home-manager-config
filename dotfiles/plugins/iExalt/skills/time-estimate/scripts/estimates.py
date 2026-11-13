@@ -261,11 +261,13 @@ def harness_from_process():
     pid, deadline = os.getppid(), time.monotonic() + 3
     for _ in range(40):
         try:
-            out = subprocess.run(["ps", "-o", "ppid=,comm=", "-p", str(pid)], capture_output=True,
-                                 text=True, timeout=max(0.1, deadline - time.monotonic())
-                                 ).stdout.split(None, 1)
+            p = subprocess.run(["ps", "-o", "ppid=,comm=", "-p", str(pid)], capture_output=True,
+                               text=True, timeout=max(0.1, deadline - time.monotonic()))
         except (OSError, subprocess.SubprocessError):
-            return harness_from_env()  # ps can't run here, e.g. a sandbox denies it
+            return harness_from_env()  # ps can't run here: Codex's macOS sandbox denies it
+        if p.returncode and p.stderr.strip():
+            return harness_from_env()  # ps ran but was refused; a gone pid fails silently
+        out = p.stdout.split(None, 1)
         if len(out) < 2:
             return None
         name = os.path.basename(out[1].strip())
