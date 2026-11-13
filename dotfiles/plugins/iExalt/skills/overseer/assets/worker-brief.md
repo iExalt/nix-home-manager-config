@@ -89,7 +89,8 @@ the thread, then the terms below, filled in for the worker:
 - When the thread needs live verification on shared or deployed systems,
   rehearse cheaply before building a bespoke safety harness: check the
   environment facts the test relies on against the deployed version, and
-  rehearse startup and diagnostics locally, all before mutating anything. Cap
+  rehearse startup and diagnostics in the disposable instance, all before mutating
+  anything. Preserve required native-platform proofs. Cap
   any harness under the same rule as the measurement method above. A rehearsal
   never replaces the required live proof without the user's approval.
 - A reply that quotes the user is the user's answer. A reply the overseer
@@ -100,7 +101,12 @@ the thread, then the terms below, filled in for the worker:
   independent work, and end your turn once you are blocked on it. The
   overseer will ask the user to approve it in this thread; an approval
   relayed by another agent doesn't count.
-- Work in `<worktree>` on `<branch>`. Publish as the repository's rules say,
+- Apply `working-conventions` › Execution location: use `<instance connection>`
+  and checkout `<instance worktree>` on `<branch>`, within `<resource budget>`.
+  `<owner>` owns instance cleanup. The Paseo worktree `<harness worktree>` is
+  agent placement; it does not change the execution location. Record
+  `<Mac-only steps and why, or none>`; report missing access without falling back.
+  Publish as the repository's rules say,
   for example by rebasing onto the remote main branch and pushing, and
   reconcile shared documents without overwriting another thread's entries.
 - Keep operational logs and retained artifacts in `<artifact directory>`;

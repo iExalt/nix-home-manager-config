@@ -1,9 +1,12 @@
 ---
 name: create-dev-station
-description: "Create a Brev CPU development station, bootstrap it with machine-init through Ansible, and verify the tools needed for remote agent build, test and browser workloads. Use for new or additional dev stations; excludes cluster provisioning and resident agent authentication."
+description: "Create a Brev CPU development station, bootstrap it with machine-init through Ansible, and verify the tools needed for remote agent build, test and browser workloads. Use only when a long-lived dev station is explicitly requested; excludes routine project work, cluster provisioning and resident agent authentication."
 ---
 
 # Create Dev Station
+
+Use this skill only for an explicitly requested long-lived station. Routine
+project work follows the global `AGENTS.md` dev-instance rule.
 
 Deliver a station with proven workload readiness and a concrete handoff. Default to a 512-GB disk.
 Creation needs authorization covering the instance count and spending; this skill is not standing

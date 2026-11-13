@@ -250,6 +250,25 @@ stop condition.
 
 ### Execution requirements
 
+#### Execution location
+
+Apply the global `AGENTS.md` dev-instance rule to repository inspection, edits,
+builds, tests, rehearsals and Git/GitHub operations, including diagnosis-only work.
+Use `iExalt:dev-instance` to provision the workspace and install the repository's
+selected tools and dependencies there. Missing tools are setup work; an unavailable
+instance or missing authorized access is a blocker to report, not a fallback to
+the Mac or a long-lived station.
+
+Agent/harness placement is separate from task execution. A local Paseo worktree
+or native reviewer does not put repository work on the Mac: give it the instance's
+connection details and checkout path. Keep lifecycle control and other steps that
+absolutely require the Mac there, with the reason recorded in the existing brief
+or progress record. Keep portable preparation and checks in the instance even
+when a native macOS or attached-device proof requires the Mac. Required platform,
+hardware and permission gates below still apply.
+
+#### Proof requirements
+
 Choose where to run a check from the proof it must establish. In the existing
 plan or worker brief, record each required proof's command, owner, required
 capabilities, input restrictions, runtime budget and cleanup. Reuse the
@@ -261,8 +280,9 @@ project's testing documentation; a short sentence suffices for a simple check.
   fails or times out, for example with an EXIT trap.
 - For machine-consumed patches, use `git diff --no-ext-diff --no-color --binary`
   so external diff tools and color settings cannot change the patch format.
-- Portable builds and fixture-based browser checks may run on a compatible
-  remote environment. Confirm its selected tools and prerequisites first.
+- Run portable builds and fixture-based browser checks in the disposable
+  instance, using its companion VM when the required OS services need one.
+  Confirm selected tools and prerequisites first.
 - Native OS behavior and activation need the target platform; real-device and
   hardware gates need the specified device or capability. Compilation,
   emulation and browser simulation do not substitute for those proofs.
@@ -385,7 +405,8 @@ one-line prefix or `overseer`'s state digest.
   the materiality bar, constraints, raw source and evidence locations, prior
   decisions (marking constraints apart from claims that the code is correct),
   its return address, the model policy, the relevant Execution requirements
-  and its stop conditions. Leave out
+  (including the instance connection, checkout, resource budget, cleanup owner
+  and any Mac-only step with its reason) and its stop conditions. Leave out
   your own conclusions when you want an independent reviewer or tester.
 - Use native subagents and native messaging. Delivery is not acknowledgement:
   get the acknowledgement before acting on anything that depends on it. Don't
@@ -413,7 +434,8 @@ one-line prefix or `overseer`'s state digest.
   match yours unless routing says otherwise, and a readback.
 - Harness worktree isolation branches from the repository you run in. When a
   native subagent works in another repository, create a sibling worktree of
-  that repository yourself and pass its absolute path. Have the agent read
+  that repository inside the disposable instance and pass its connection details
+  and absolute path. Have the agent read
   back its Git root and branch before its first edit, compare them with the
   intended ones, and stop on a mismatch.
 - Before handing work to a host or worker, prove it can reach the agreed end

@@ -7,6 +7,9 @@ description: Diagnose reported software or operational failures, develop and ver
 
 Guide the work from symptom to mechanism, remedy, and recurrence prevention, scaled to impact and uncertainty.
 
+Load `iExalt:working-conventions` and apply its Execution requirements to diagnosis,
+reproduction and repair, including diagnosis-only requests.
+
 ## Establish the problem and scope
 
 Identify observed and expected behavior, impact, the affected environment or version, and concrete success criteria. Reuse available context before asking questions. Determine whether the request authorizes diagnosis, a proposed fix, or implementation.
