@@ -180,21 +180,17 @@ ARM64](https://github.com/WebKit/WebKit/blob/main/Source/WTF/wtf/PageBlock.h).
 Changing the host kernel is outside this route. Phone emulation does not prove
 Safari on a real iPhone.
 
-The VM image needs browser system libraries. Its cloud-init currently rewrites
-`/etc/apt/sources.list.d/ubuntu.sources` with `UNAVAILABLE` suites and incorrect
-ARM64 mirrors. Until fixed in the pinned image, correct **only the disposable
-guest's** source URIs to `http://ports.ubuntu.com/ubuntu-ports/` and suites to
-`resolute`, `resolute-updates`, `resolute-backports` and `resolute-security`.
-Then use the project's pinned Playwright version to install browsers and
-dependencies in the guest, for example:
+The VM image includes the system libraries and fonts required by Playwright
+1.64.0 WebKit. Its ARM64 apt sources already use the Ubuntu 26.04 repositories;
+no sources edit or system-dependency installation is needed. Install the browser
+binary with the project's pinned Playwright version, for example:
 
 ```sh
 uv run --no-project --with playwright==1.64.0 \
-  python -m playwright install --with-deps webkit
+  python -m playwright install webkit
 ```
 
-This is a working route with a tracked setup gap, not a preinstalled browser
-image. Follow the project's selected runtime and checks inside the guest.
+Follow the project's selected runtime and checks inside the guest.
 
 ## Android phone (Cuttlefish)
 
