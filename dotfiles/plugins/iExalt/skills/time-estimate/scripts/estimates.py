@@ -265,9 +265,9 @@ def harness_from_process():
                                  text=True, timeout=max(0.1, deadline - time.monotonic())
                                  ).stdout.split(None, 1)
         except (OSError, subprocess.SubprocessError):
-            out = []
+            return harness_from_env()  # ps can't run here, e.g. a sandbox denies it
         if len(out) < 2:
-            return harness_from_env()
+            return None
         name = os.path.basename(out[1].strip())
         if name in HARNESSES:
             harness, var = HARNESSES[name]

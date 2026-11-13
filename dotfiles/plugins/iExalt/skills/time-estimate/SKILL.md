@@ -120,7 +120,7 @@ There is no one-hour floor: a third of logged tasks finished in under 30 minutes
   Without calibration, log the gut as both `raw_remaining_*` and `remaining_*`. At completion copy
   them into `revisions` from the conversation; if a compaction lost them, omit them. A revision
   reconstructed in hindsight is worse than none. `te stats` reports how remaining-time estimates
-  compare with the time that actually remained.
+  compare with the time that actually remained, leaving out records with added scope.
 - Log the original estimate, not the latest revision.
 
 ## At completion
