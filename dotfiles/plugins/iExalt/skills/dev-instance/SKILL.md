@@ -258,7 +258,9 @@ create returns `cuttlefish.state: idle` and `cuttlefish.android_ready: false`.
 Start has one 600-second budget; status and stop each have 60 seconds. A shorter
 caller deadline still applies. Results include `state`, `ready`, `adb_serial`,
 `profile`, `artifact_sha256` and `resources`. Start waits for ADB device state and
-`sys.boot_completed=1`; success adds `timing.operation_to_boot_seconds`.
+`sys.boot_completed=1`, then disables Android Private DNS and verifies the
+setting before reporting ready. Each start applies this setting; status leaves
+it unchanged. Success adds `timing.operation_to_boot_seconds`.
 An uncertain outcome preserves the instance: inspect status before retrying.
 Status and stop use stored identity; start requires the reviewed artifact/profile
 in the AKE checkout's guest config and matching pinned phone image. The immutable
@@ -330,11 +332,12 @@ Android shutdown and does not guarantee unsynced writes. A sidecar restart block
 further guest operations: preserve needed data and recreate the instance rather
 than adopting a new generation.
 
-Ordinary `cluster.local` resolution is unsupported with the default Android
-Private DNS behavior; a successful crafted UDP/53 query does not establish OS
-resolver behavior. Guest HTTP response content remains unproven. The 60-second
-create-to-SSH target is not guaranteed, even though create enforces that deadline.
-Tablet, optional GPU rendering, maximum density and endurance remain unproven.
+With Private DNS off, ordinary guest DNS follows the port-53 path to cluster
+DNS. A fresh phone resolved cluster Service names through Android's resolver and
+fetched an HTTP response body with a verified client. This does not establish
+reliability for every destination or application. The 60-second create-to-SSH
+target is not guaranteed, even though create enforces that deadline. Tablet,
+optional GPU rendering, maximum density and endurance remain unproven.
 
 ## Recovery and boundaries
 
