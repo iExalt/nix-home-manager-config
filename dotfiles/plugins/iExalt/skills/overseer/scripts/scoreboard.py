@@ -111,7 +111,7 @@ def parse_range(text):
 
 
 def fmt_hours(h):
-    return ("%d" % h) if abs(h - round(h)) < 0.05 else ("%.1f" % h)
+    return ("%d" % round(h)) if abs(h - round(h)) < 0.05 else ("%.1f" % h)
 
 
 def fmt_age(seconds):

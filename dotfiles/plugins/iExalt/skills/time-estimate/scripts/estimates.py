@@ -341,7 +341,8 @@ def fit(us):
     logs = [math.log(u["act"] / gmid(u["raw_lo"], u["raw_hi"])) for u in us]
     overall = st.mean(logs)
     res = [lg - overall for lg in logs]
-    model = {"_all": (overall, quantile(res, 0.25), quantile(res, 0.75), len(us))}
+    model = {"_all": (overall, min(0.0, quantile(res, 0.25)),
+                      max(0.0, quantile(res, 0.75)), len(us))}
     by = {}
     for u, lg in zip(us, logs):
         by.setdefault(u["kind"], []).append(lg)
@@ -352,16 +353,16 @@ def fit(us):
         if len(ls) >= SPREAD_N:
             r = [lg - b for lg in ls]
             q25, q75 = quantile(r, 0.25), quantile(r, 0.75)
-        model[k] = (b, q25, q75, len(ls))
+        model[k] = (b, min(0.0, q25), max(0.0, q75), len(ls))
     return model
 
 
-def tails(us):
-    """p10 and p90 multipliers pooled over all kinds and the given units (log offsets)."""
+def tails(us, q25=0.0, q75=0.0):
+    """Pooled log tail offsets, widened to contain the supplied quartiles."""
     logs = [math.log(u["act"] / gmid(u["raw_lo"], u["raw_hi"])) for u in us]
     b = st.mean(logs)
     res = [lg - b for lg in logs]
-    return quantile(res, 0.10), quantile(res, 0.90)
+    return min(quantile(res, 0.10), q25), max(quantile(res, 0.90), q75)
 
 
 def predict(model, u):
@@ -429,9 +430,10 @@ def cmd_stats(args):
         if not sub:
             continue
         b, q25, q75, n = model["_all" if k == "all" else k]
+        t10_row, t90_row = min(t10, q25), max(t90, q75)
         hit = sum(u["lo"] <= u["act"] <= u["hi"] for u in sub) / len(sub)
-        print(f"{k:18s} {n:3d} {math.exp(b):6.2f} {math.exp(t10):5.2f} {math.exp(q25):5.2f} "
-              f"{math.exp(q75):5.2f} {math.exp(t90):5.2f} "
+        print(f"{k:18s} {n:3d} {math.exp(b):6.2f} {math.exp(t10_row):5.2f} {math.exp(q25):5.2f} "
+              f"{math.exp(q75):5.2f} {math.exp(t90_row):5.2f} "
               f"{fmt_h(st.median(u['act'] for u in sub)):>13s} {hit:10.0%}")
     per_rec, hits, n = remaining_calibration(recs)
     if per_rec:
@@ -461,7 +463,7 @@ def cmd_estimate(args):
         likely = gmid(args.low, args.high) * math.exp(b)
         sys.exit(f"only {len(us)} headline units: percentiles would be noise. Likely about "
                  f"{fmt_h(likely)}; state your gut range as the band and log it uncorrected.")
-    t10, t90 = tails(us)
+    t10, t90 = tails(us, q25, q75)
     likely = gmid(args.low, args.high) * math.exp(b)
     pts = {"p10": likely * math.exp(t10), "p25": likely * math.exp(q25), "likely": likely,
            "p75": likely * math.exp(q75), "p90": likely * math.exp(t90)}
@@ -497,7 +499,7 @@ def backtest(us, window):
             rows[name].append((abs(m - y), lo <= y <= hi, hi - lo, interval_score(lo, hi, y)))
         prior = us[max(0, i - window):i]
         m, lo, hi = predict(fit(prior), u)
-        p90_hits += y <= m + tails(us[:i])[1]
+        p90_hits += y <= m + tails(us[:i], lo - m, hi - m)[1]
         rows["fitted"].append((abs(m - y), lo <= y <= hi, hi - lo, interval_score(lo, hi, y)))
     n = len(rows["fitted"])
     print(f"# walk-forward over {n} units: factor and p25/p75 fitted on up to {window} earlier "
