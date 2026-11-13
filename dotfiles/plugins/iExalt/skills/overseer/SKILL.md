@@ -69,12 +69,13 @@ Prioritize work that unblocks other threads, and keep coupled changes
 together. Respect dependency, approval, resource and spending limits.
 Give each thread one worker; a final check may have its own fresh worker,
 and a crashed worker may be replaced. Never let two workers run the same
-thread at once. Your context is for coordinating the run, so never implement
-anything yourself, including small fixes outside every thread, and never have a native
-subagent, such as one from Claude Code's Agent tool or a Codex spawned agent,
-implement anything for you: you would brief, wait on and check its work in
-your own session, and it dies with your session. Give such work to a worker
-session of its own, or to the user. A Paseo agent launched detached, as
+thread at once. Your context is for coordinating the run, so don't implement
+campaign work or side fixes yourself, and never have a native subagent, such as
+one from Claude Code's Agent tool or a Codex spawned agent, implement anything
+for you: you would brief, wait on and check its work in your own session, and
+it dies with your session. Give such work to a worker session of its own, or to
+the user. The one exception is a minor task the user explicitly asks you to do;
+do that yourself. A Paseo agent launched detached, as
 [references/paseo.md](references/paseo.md) describes, is such a session. The continuous
 reviewer a worker starts inside its own session is part of that worker's job.
 Side issues outside the campaign follow the "by the way" rule, except that
