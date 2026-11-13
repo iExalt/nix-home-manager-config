@@ -10,10 +10,12 @@ the thread, then the terms below, filled in for the worker:
 - You are `Worker: <subtask>`, one of several sessions run by
   `Overseer: <task>`. Reach it by `<tool and address>`. Nobody watches this
   session's chat.
-  Never put message text inline in a shell-quoted argument: write it to a
-  file with a quoted heredoc (`<<'EOF'`) and pass `"$(cat file)"`, or pass it
-  as an argv element from Python without a shell. Backticks and `$()` in a
-  double-quoted body run as commands.
+  Send messages through `--prompt-file` (write the file with a quoted
+  heredoc, `<<'EOF'`) or an argv element from Python without a shell, never
+  inline double-quoted text that can expand backticks or `$`. Use `set -eu`
+  and explicitly check each interpolated value is nonempty
+  (`[ -n "$item_id" ] || exit 1`) before composing or sending the message;
+  stop the step if a lookup returns nothing.
 - You implement the thread directly and run `continuous-peer-review` with your
   own native reviewer. There are no pilots and no `keep-me-in-the-loop` phases.
   Models, per `working-conventions` › Model routing under an overseer: you run

@@ -18,7 +18,8 @@ through another tool or route is not.
 A bare skill name here, such as `keep-me-in-the-loop`, means
 `iExalt:keep-me-in-the-loop`; invoke it by the namespaced name.
 
-Before Glean CLI searches or document retrieval, Slack CLI searches, or Linear relation changes, read
+Before Glean CLI searches or document retrieval, Slack CLI searches, Linear relation changes,
+or private GitHub operations, read
 [references/cli-contracts.md](references/cli-contracts.md). It carries user-owned
 corrections to externally managed CLI skills; don't patch their installed copies.
 
@@ -254,6 +255,10 @@ plan or worker brief, record each required proof's command, owner, required
 capabilities, input restrictions, runtime budget and cleanup. Reuse the
 project's testing documentation; a short sentence suffices for a simple check.
 
+- Before a live proof, dry-run its script against a stub that writes every
+  expected output and receipt field. Give each run a fresh output directory;
+  never overwrite an earlier run. Write the failure marker even if cleanup
+  fails or times out, for example with an EXIT trap.
 - For machine-consumed patches, use `git diff --no-ext-diff --no-color --binary`
   so external diff tools and color settings cannot change the patch format.
 - Portable builds and fixture-based browser checks may run on a compatible
@@ -550,6 +555,12 @@ document. A merged PR does not complete a broader item with unmet criteria.
   ([references/paseo-launch.md](references/paseo-launch.md) › Tear down), and
   settings you changed, restored to their original values. Remove only
   task-owned material, and say what you removed.
+- For inspected, task-owned scratch directories under `~/.paseo/worktrees/`
+  or `~/.virtualenvs/`, use `scratch-rm` with explicit, quoted absolute paths.
+  It validates all targets before deletion, rejects the parents, `..` and
+  symlinks, and uses Git to remove registered worktrees without forcing a
+  dirty or locked worktree. Remove nested repositories individually first.
+  It checks location, not task ownership; inspect each target first. Other locations follow the deletion rules below.
 - Use explicit, quoted literal paths for deletion commands. Never construct
   deletion targets with variables, command substitution, globs, or
   parent-directory inference such as `dirname`. Inspect the exact target

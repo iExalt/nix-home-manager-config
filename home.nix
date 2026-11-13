@@ -111,6 +111,20 @@ in
     executable = true;
   };
 
+  home.file.".local/bin/scratch-rm" = {
+    source = pkgs.writeShellScript "scratch-rm" ''
+      export SCRATCH_RM_GIT=${pkgs.git}/bin/git
+      exec ${pkgs.python3}/bin/python3 -I ${./scripts/scratch-rm.py} "$@"
+    '';
+    executable = true;
+  };
+  home.file.".codex/rules/scratch-rm.rules".source = ./dotfiles/.codex/rules/scratch-rm.rules;
+  home.activation.allowScratchRemoval = lib.hm.dag.entryAfter [ "syncAgentConfig" ] ''
+    run ${pkgs.python3}/bin/python3 -I ${./scripts/allow-scratch-rm.py} \
+      "${config.home.homeDirectory}/.claude/settings.json"
+  '';
+
+
   home.file.".local/bin/dev-instance" = {
     source = pkgs.writeShellScript "dev-instance" ''
       export DEV_INSTANCE_MISE=${pkgs.mise}/bin/mise

@@ -363,6 +363,12 @@ model; report a mismatch instead.
 
 ## Brief each worker
 
+When a brief or message names a resource, host or repository, copy the
+identifier from the live system or source at writing time, never from memory.
+For Kubernetes objects, include kind, scope and name from `kubectl get -o name`
+and its namespace; verify the defining repository with `git grep`, and host or
+SSH aliases against the inventory or SSH config.
+
 Build each brief from [assets/worker-brief.md](assets/worker-brief.md): the
 load instruction, then the script's prompt for the thread with its
 `/iExalt:keep-me-in-the-loop` invocation replaced by

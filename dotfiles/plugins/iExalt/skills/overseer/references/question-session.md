@@ -33,7 +33,7 @@ back. It blocks while the user decides, and you keep working. Name it
   their consequences, and your recommendation. It calls `AskUserQuestion`
   with exactly those, does nothing else, and sends you the answer verbatim,
   with any notes the user typed, with
-  `paseo agent send --no-wait --if-running queue --no-notify-on-finish <your agent ID> "<answer>"`.
+  `paseo agent send --no-wait --if-running queue --no-notify-on-finish <your agent ID> --prompt-file "<answer file>"`.
   Put questions that come due together in one session; its dialog takes up to
   four.
 - **Archive** it once its answer arrives. Put this exact footer in its prompt.
