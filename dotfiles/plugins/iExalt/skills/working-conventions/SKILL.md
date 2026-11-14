@@ -252,10 +252,10 @@ stop condition.
 
 #### Execution location
 
-Build on the global `AGENTS.md` script-and-interpreter rule for remote work:
-send the complete script to the instance as one unit, for example
-`ssh <target> bash -s < script`. Never put repository-writing commands after
-the local heredoc terminator of an SSH command.
+Build on the global `AGENTS.md` script-and-interpreter rule for remote work.
+For edits that need heredocs, put the complete script in a staged file, syntax-check
+it with the target interpreter, then send it with `ssh <target> <interpreter> -s < <script-file>`.
+Do not wrap that file in a local SSH heredoc; plain SSH commands without a remote script can remain direct commands.
 
 Apply the global `AGENTS.md` dev-instance rule to repository inspection, edits,
 builds, tests, rehearsals and Git/GitHub operations, including diagnosis-only work.
