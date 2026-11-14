@@ -2,6 +2,7 @@
 """Exercise dispatch and reject invalid private configuration before executing Mise."""
 import json
 import os
+import stat
 from pathlib import Path
 import shlex
 import shutil
@@ -85,20 +86,24 @@ class Dispatch(unittest.TestCase):
             (origin / 'scripts/dev_instance_cli.py').touch()
             git('add', '.', cwd=origin)
             git('commit', '-m', 'test: initial fixture', cwd=origin)
-            checkout = root / 'checkout'
+            checkout = root / 'checkout with spaces'
             git('clone', str(origin), str(checkout))
             revision = git('rev-parse', 'HEAD', cwd=checkout)
             config.write_text(json.dumps({'checkout': str(checkout)}))
             shim = root / 'mise'
-            shim.write_text('#!/usr/bin/env bash\nprintf \'{"ready":true}\\n\'\n')
+            shim.write_text('#!/usr/bin/env bash\nprintf \'{"ready":true}\\n\'\n'
+                            'exit "${FIXTURE_MISE_EXIT:-0}"\n')
             shim.chmod(0o700)
-            env = dict(os.environ, HOME=str(home), DEV_INSTANCE_MISE=str(shim))
+            diagnostics = root / 'diagnostics with spaces'
+            diagnostics.mkdir()
+            env = dict(os.environ, HOME=str(home), DEV_INSTANCE_MISE=str(shim),
+                       TMPDIR=str(diagnostics))
             env.pop('DEV_INSTANCE_JQ', None)
 
             def run(command='create'):
                 result = subprocess.run(['bash', str(SCRIPT), command, 'fixture'],
                                         env=env, capture_output=True, timeout=5)
-                self.assertEqual(result.returncode, 0)
+                self.assertEqual(result.returncode, int(env.get('FIXTURE_MISE_EXIT', '0')))
                 self.assertEqual(result.stdout, b'{"ready":true}\n')
                 self.assertIn(revision.encode(), result.stderr)
                 self.assertEqual(git('rev-parse', 'HEAD', cwd=checkout), revision)
@@ -106,6 +111,7 @@ class Dispatch(unittest.TestCase):
                 return result.stderr
 
             self.assertNotIn(b'warning:', run())
+            self.assertEqual(list(diagnostics.iterdir()), [])
             git('commit', '--allow-empty', '-m', 'test: upstream update', cwd=origin)
             self.assertNotIn(b'missing', run('destroy'))  # Cached ref is still current.
             self.assertIn(b'missing 1 commit(s)', run())
@@ -122,12 +128,32 @@ class Dispatch(unittest.TestCase):
             timeout_shim = root / 'timeout'
             timeout_shim.write_text('#!/usr/bin/env bash\n'
                                     '[[ "$1" == --kill-after=0.2s && "$2" == 1.8s ]] || exit 99\n'
+                                    "printf 'private-fetch-error %s\\n' 'https://example.invalid/private' >&2\n"
+                                    'dd if=/dev/zero bs=1024 count=64 2>/dev/null >&2\n'
                                     'exit "${FIXTURE_TIMEOUT_EXIT:-124}"\n')
             timeout_shim.chmod(0o700)
             env['DEV_INSTANCE_TIMEOUT'] = str(timeout_shim)
-            for code in ('124', '128'):
+            env['FIXTURE_MISE_EXIT'] = '17'
+            for code in ('124', '137', '128'):
                 env['FIXTURE_TIMEOUT_EXIT'] = code
-                self.assertIn(b'freshness unverified (using cached ref)', run())
+                stderr = run()
+                self.assertIn(b'freshness unverified (using cached ref)', stderr)
+                self.assertIn(f'exit {code}, elapsed '.encode(), stderr)
+                self.assertIn(b'timed out' if code in ('124', '137') else b'refresh failed', stderr)
+                self.assertNotIn(b'private-fetch-error', stderr)
+                self.assertNotIn(b'https://example.invalid/private', stderr)
+                diagnostic_line = next(line for line in stderr.decode().splitlines()
+                                       if line.startswith('dev-instance: refresh diagnostics: '))
+                diagnostic = Path(diagnostic_line.split('diagnostics: ', 1)[1])
+                self.assertEqual(stat.S_IMODE(diagnostic.parent.stat().st_mode), 0o700)
+                self.assertEqual(stat.S_IMODE(diagnostic.stat().st_mode), 0o600)
+                self.assertGreater(diagnostic.stat().st_size, 0)
+                self.assertLessEqual(diagnostic.stat().st_size, 16 * 1024)
+                self.assertTrue(diagnostic.read_bytes().startswith(b'private-fetch-error'))
+            env['DEV_INSTANCE_TIMEOUT'] = str(root / 'missing-timeout')
+            stderr = run()
+            self.assertIn(b'refresh failed (exit 127, elapsed ', stderr)
+            self.assertNotIn(b'No such file', stderr)
             git('remote', 'remove', 'origin', cwd=checkout)
             self.assertIn(b'origin/main unavailable', run())
 
