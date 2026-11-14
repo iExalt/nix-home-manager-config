@@ -15,7 +15,7 @@ Never commit those values or copy pinned image references into a public reposito
 
 Inside a disposable dev instance created for your task, sudo and use of the
 instance's cluster credential are pre-approved for work within your authorized
-task; do not ask first. This grant excludes the Mac, long-lived dev stations and
+task; do not ask first. This grant excludes the Mac, long-lived dev instances and
 other agents' instances, and never overrides a permission denial or classifier
 block.
 
