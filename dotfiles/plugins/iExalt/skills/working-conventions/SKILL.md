@@ -280,9 +280,13 @@ capabilities, input restrictions, runtime budget and cleanup. Reuse the
 project's testing documentation; a short sentence suffices for a simple check.
 
 - Before a live proof, dry-run its script against a stub that writes every
-  expected output and receipt field. Give each run a fresh output directory;
-  never overwrite an earlier run. Write the failure marker even if cleanup
-  fails or times out, for example with an EXIT trap.
+  expected output and receipt field. When the stub dispatches to an external
+  service, fail closed: use explicit fake runners or executables, apply dummy
+  service configuration after inherited settings, and include a hostile caller
+  environment/config negative control that must still select the fake. Give
+  each run a fresh output directory; never overwrite an earlier run. Write the
+  failure marker even if cleanup fails or times out, for example with an EXIT
+  trap.
 - For machine-consumed patches, use `git diff --no-ext-diff --no-color --binary`
   so external diff tools and color settings cannot change the patch format.
 - Run portable builds and fixture-based browser checks in the disposable
