@@ -151,12 +151,12 @@ evidence.
 Use a VM for a full guest OS: systemd, kernel modules, nested containers, or
 testing Ansible roles. Use the main container for ordinary builds and checkouts.
 
-Each instance supports one companion VM. The station admits at most eight
+Each instance supports one companion VM. The station admits at most twelve
 **disposable instances**, including Pending and Terminating namespaces;
 long-lived instances are outside that cap. There is no separate VM-count quota.
 Three simultaneous VMs have been verified within 16 CPU / 64Gi of total instance
 requests: one 8 CPU / 16Gi guest in a 10 CPU / 32Gi instance and two 1 CPU / 4Gi
-guests in 3 CPU / 16Gi instances. Eight is an admission cap, not a demonstrated
+guests in 3 CPU / 16Gi instances. Twelve is an admission cap, not a demonstrated
 VM capacity. Additional VMs must fit the station's remaining CPU and memory
 requests; the KVM device plugin's advertised device count is not a capacity test.
 
@@ -319,7 +319,7 @@ remainder with equal requests and limits and owns the single KVM allocation.
 Android uses at most 4 vCPUs / 8192 MiB, reserving 1 CPU / 2048 MiB from the
 sidecar budget for host tools. The sidecar shares the workspace and read-only CVD
 cache, with no mounted credentials or API token; main retains its intentional
-cluster-admin access. The eight-disposable-instance cap also covers phones;
+cluster-admin access. The twelve-disposable-instance cap also covers phones;
 maximum phone density has not been demonstrated.
 
 Reach ADB inside the instance's sidecar. There is no ADB Service or CLI port
