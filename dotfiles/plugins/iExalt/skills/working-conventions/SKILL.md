@@ -257,18 +257,16 @@ For edits that need heredocs, put the complete script in a staged file, syntax-c
 it with the target interpreter, then send it with `ssh <target> <interpreter> -s < <script-file>`.
 Do not wrap that file in a local SSH heredoc; plain SSH commands without a remote script can remain direct commands.
 
-Apply the global `AGENTS.md` dev-instance rule to repository inspection, edits,
-builds, tests, rehearsals and Git/GitHub operations, including diagnosis-only work.
-Use `iExalt:dev-instance` to provision the workspace and install the repository's
-selected tools and dependencies there. Missing tools are setup work; an unavailable
-instance or missing authorized access is a blocker to report, not a fallback to
-the Mac or a long-lived station.
+Follow the global `AGENTS.md` dev-instance rule. Use `iExalt:dev-instance` to
+provision the workspace and install the repository's selected tools and
+dependencies there. Missing tools are setup work; an unavailable instance or
+missing authorized access is a blocker to report, not a fallback to the Mac or a
+long-lived station.
 
 Agent/harness placement is separate from task execution. A local Paseo worktree
 or native reviewer does not put repository work on the Mac: give it the instance's
-connection details and checkout path. Keep lifecycle control and other steps that
-absolutely require the Mac there, with the reason recorded in the existing brief
-or progress record. Keep portable preparation and checks in the instance even
+connection details and checkout path. Keep lifecycle control and other work the
+global rule allows on the Mac there. Keep portable preparation and checks in the instance even
 when a native macOS or attached-device proof requires the Mac. Required platform,
 hardware and permission gates below still apply.
 
