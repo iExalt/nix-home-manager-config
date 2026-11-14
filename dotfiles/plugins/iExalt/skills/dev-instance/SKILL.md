@@ -117,6 +117,15 @@ Fresh instances need repository-specific setup. Install the repository's declare
 tools and dependencies yourself, including test runners, using its selected Mise
 environment; missing tools are expected setup, not an instance failure.
 
+Before a native build, check the instance architecture and the architectures of
+native executables the build will launch, including tools installed by SDK
+managers. Guest support does not make host tools compatible: each native
+executable must run on the architecture of the environment that launches it. If
+they do not match, use an already authorized builder with a matching
+architecture. Keep runtime and device proof in the disposable instance; do not
+change shared `binfmt` settings or shared caches to work around an architecture
+mismatch.
+
 ## Companion VM
 
 Use a VM for a full guest OS: systemd, kernel modules, nested containers, or
