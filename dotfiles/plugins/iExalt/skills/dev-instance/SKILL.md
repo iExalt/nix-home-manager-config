@@ -126,6 +126,26 @@ architecture. Keep runtime and device proof in the disposable instance; do not
 change shared `binfmt` settings or shared caches to work around an architecture
 mismatch.
 
+### Container images
+
+The main container cannot run podman, buildah or BuildKit: it has no user
+namespaces, and the runtime seccomp filter makes `unshare -U` fail with ENOSYS.
+qemu-user cannot run amd64 binaries there either, because the station kernel
+uses 64 KiB pages.
+
+- Build images in the [companion VM](#companion-vm) (`--vm`: 4 KiB pages, full
+  OS). Install podman or buildah there.
+- For amd64 images, run a BuildKit Job on an amd64 worker.
+- If the image needs no RUN steps, build daemonless with `crane mutate --append`
+  or `ko`.
+- Run amd64 runtime proofs as a one-off pod on an amd64 worker.
+
+Giving the main pod its own user namespace (`hostUsers: false`) was tested on
+2026-11-14 and rejected. Builds then also needed AppArmor unconfined, an unmasked
+`/proc` and extra capabilities, and the pod lost its `/dev/net/tun` hostPath
+mount, because devtmpfs cannot be id-mapped. Do not re-propose it without new
+evidence.
+
 ## Companion VM
 
 Use a VM for a full guest OS: systemd, kernel modules, nested containers, or
