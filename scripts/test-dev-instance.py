@@ -3,6 +3,7 @@
 import json
 import os
 from pathlib import Path
+import shlex
 import shutil
 import subprocess
 import tempfile
@@ -25,8 +26,16 @@ class Dispatch(unittest.TestCase):
             shim = root / 'mise'
             shim.write_text('#!/usr/bin/env bash\nprintf "%s\\0" "$@"\nprintf "diagnostic\\n" >&2\nexit 17\n')
             shim.chmod(0o700)
+            jq = shutil.which('jq')
+            self.assertIsNotNone(jq)
+            jq_shim = root / 'jq'
+            jq_log = root / 'jq.log'
+            jq_shim.write_text(f'#!/usr/bin/env bash\nprintf called >> {shlex.quote(str(jq_log))}\n'
+                               f'exec {shlex.quote(jq)} "$@"\n')
+            jq_shim.chmod(0o700)
             env = dict(os.environ, HOME=str(home), DEV_INSTANCE_MISE=str(shim),
-                       DEV_INSTANCE_JQ=shutil.which('jq'))
+                       PATH=f'{root}:{os.environ["PATH"]}')
+            env.pop('DEV_INSTANCE_JQ', None)
 
             def run():
                 return subprocess.run(['bash', str(SCRIPT), 'create', 'a b', '$(false)', '--dry-run'],
@@ -47,6 +56,7 @@ class Dispatch(unittest.TestCase):
             config.write_text(json.dumps({'checkout': str(checkout)}))
             result = run()
             self.assertEqual(result.returncode, 17)
+            self.assertTrue(jq_log.exists())
             self.assertEqual(result.stdout.split(b'\0')[:-1],
                              [os.fsencode(x) for x in ['-C', str(checkout), 'run', 'dev-instance', '--',
                                                       'create', 'a b', '$(false)', '--dry-run']])
@@ -82,8 +92,8 @@ class Dispatch(unittest.TestCase):
             shim = root / 'mise'
             shim.write_text('#!/usr/bin/env bash\nprintf \'{"ready":true}\\n\'\n')
             shim.chmod(0o700)
-            env = dict(os.environ, HOME=str(home), DEV_INSTANCE_MISE=str(shim),
-                       DEV_INSTANCE_JQ=shutil.which('jq'))
+            env = dict(os.environ, HOME=str(home), DEV_INSTANCE_MISE=str(shim))
+            env.pop('DEV_INSTANCE_JQ', None)
 
             def run(command='create'):
                 result = subprocess.run(['bash', str(SCRIPT), command, 'fixture'],
