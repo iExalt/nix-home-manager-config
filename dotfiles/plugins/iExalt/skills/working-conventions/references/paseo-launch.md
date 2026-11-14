@@ -48,8 +48,10 @@ Reviewers stay native subagents (`SKILL.md` › Delegation), not Paseo agents.
 
 Never launch into your own workspace, and never use `run --new-workspace`.
 Create the workspace, then gate the launch on its ID and an exact inventory
-readback. Build `workspace_args` as a shell array, for example
-`(--isolation worktree --no-background --path <checkout> --project "$project_id" --base origin/main --title "Worker: <subtask>")`
+readback. For worktree isolation, resolve `<default>` once from the target
+checkout using [the default-branch procedure](../../overseer/references/paseo.md#run-project-and-workers).
+Build `workspace_args` as a shell array, for example
+`(--isolation worktree --no-background --path <checkout> --project "$project_id" --base <default> --title "Worker: <subtask>")`
 or `--isolation local` for a lone thread in an existing checkout. Set
 `project_id` to match. Set `expected_isolation` to `worktree` for a requested
 worktree. For a requested local checkout, inspect the supplied path before

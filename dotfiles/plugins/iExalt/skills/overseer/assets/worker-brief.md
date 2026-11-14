@@ -107,7 +107,7 @@ the thread, then the terms below, filled in for the worker:
   agent placement; it does not change the execution location. Record
   `<Mac-only steps and why, or none>`; report missing access without falling back.
   Publish as the repository's rules say,
-  for example by rebasing onto the remote main branch and pushing, and
+  for example by rebasing onto the remote default branch and pushing, and
   reconcile shared documents without overwriting another thread's entries.
 - Keep operational logs and retained artifacts in `<artifact directory>`;
   confirm access before long operations. Run compute and checks within
