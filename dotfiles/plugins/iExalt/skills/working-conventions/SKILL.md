@@ -252,6 +252,11 @@ stop condition.
 
 #### Execution location
 
+Build on the global `AGENTS.md` script-and-interpreter rule for remote work:
+send the complete script to the instance as one unit, for example
+`ssh <target> bash -s < script`. Never put repository-writing commands after
+the local heredoc terminator of an SSH command.
+
 Apply the global `AGENTS.md` dev-instance rule to repository inspection, edits,
 builds, tests, rehearsals and Git/GitHub operations, including diagnosis-only work.
 Use `iExalt:dev-instance` to provision the workspace and install the repository's
