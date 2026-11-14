@@ -613,7 +613,7 @@ pushed and verified, as `working-conventions` ›
 worktree, so inspect the worktree first. If Paseo leaves a worktree behind,
 force its removal only when nothing in it is work, such as a file a Git filter
 normalized. Delete a `worker/<slug>` branch once its commits are on the
-remote main branch. Say what you removed in the final report. Unpushed work
+remote default branch. Say what you removed in the final report. Unpushed work
 follows `working-conventions` › Workspace and cleanup.
 
 Follow [references/paseo.md](references/paseo.md) › Clean up the run project for

@@ -91,9 +91,24 @@ have succeeded.
 
 ## Run project and workers
 
+Resolve the repository's remote default branch once, from its checkout:
+
+```bash
+default_ref=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD) || {
+  default_branch=$(LC_ALL=C git remote show origin |
+    awk '/^[[:space:]]*HEAD branch: / {print $NF}') || exit 1
+  [ -n "$default_branch" ] && [ "$default_branch" != "(unknown)" ] || exit 1
+  default_ref="origin/$default_branch"
+}
+git rev-parse --verify "$default_ref^{commit}" >/dev/null || exit 1
+```
+
+Use that resolved ref wherever `<default>` appears below; stop if it cannot
+be resolved or is not available locally.
+
 - **Run project:** keep the run's threads together in a temporary Paseo
   project of their own. Add a checkout for the run with
-  `git worktree add ../<repo>-overseer-<slug> -b overseer/<slug> origin/main`,
+  `git worktree add ../<repo>-overseer-<slug> -b overseer/<slug> <default>`,
   register it with `paseo project create ../<repo>-overseer-<slug> --json`,
   and name it with `paseo project rename <project-id> "Overseer: <task>"`.
   The session the user started does this and hands off to an overseer inside
@@ -101,9 +116,9 @@ have succeeded.
   the user doesn't agree to the plan, offer to clean up the project, as
   "Clean up the run project" below describes.
 - **Isolation:** give each worker a workspace with worktree isolation in the
-  run project, branching off the remote main branch rather than the local
-  `main`, named after the worker:
-  `paseo workspace create --isolation worktree --no-background --notifications off --path <run checkout> --project <project-id> --base origin/main --title "Worker: <subtask>" --json`.
+  run project, branching off the remote default branch rather than a local
+  branch, named after the worker:
+  `paseo workspace create --isolation worktree --no-background --notifications off --path <run checkout> --project <project-id> --base <default> --title "Worker: <subtask>" --json`.
   Paseo puts these worktrees under `~/.paseo/worktrees/`. Use the
   repository's `paseo.json` setup for ignored files when it provides them. A
   lone worker may use the run checkout itself, through a workspace created
