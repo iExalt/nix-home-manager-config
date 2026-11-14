@@ -142,11 +142,15 @@ in
     # Agent tool shells have no prompt: activate now and refresh on directory changes.
     envExtra = ''
       source ${./dotfiles/shell/agent-mise.zsh} ${pkgs.mise}/bin/mise
+      source ${./dotfiles/shell/nix-path.zsh}
     '';
     # macOS path_helper runs after .zshenv and can reorder a login shell's PATH.
     profileExtra = ''
       if [[ ! -o interactive ]] && (( $+functions[_mise_hook] )); then
         _mise_hook --force
+      fi
+      if (( $+functions[_nix_path_before_system] )); then
+        _nix_path_before_system
       fi
     '';
     antidote = {
